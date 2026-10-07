@@ -25,7 +25,7 @@ puis relancer le workflow depuis l'onglet **Actions** (ou pousser un commit).
 Sur le téléphone : ouvrir l'adresse, autoriser la caméra, puis
 « Ajouter à l'écran d'accueil » pour l'avoir comme une application.
 
-Mode démo sans internet : ajouter `#demo` à la fin de l'adresse.
+Mode démo sans internet : ajouter `?demo` à la fin de l'adresse.
 
 ## Développer en local
 
@@ -43,8 +43,10 @@ Sur ordinateur, la caméra fonctionne sur `localhost`.
 ```
 public/                 l'app (à héberger telle quelle)
   index.html
-  app.js                scan caméra (html5-qrcode), recherche, affichage, historique local
-  style.css             thème clair/sombre
+  app.js                onglets Scanner, Recherche, Historique, Additifs, Infos + fiche produit
+  style.css             thème clair/sombre, barre d'onglets en bas
+  lib/scanner.js        pilotage de la caméra (html5-qrcode), une détection = un résultat
+  lib/store.js          historique et favoris (localStorage, consultables hors connexion)
   lib/rules.js          moteur de classification halal
   lib/off.js            appels à Open Food Facts depuis le navigateur
   lib/fixtures.js       produits d'exemple (tests + mode démo)

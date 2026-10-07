@@ -33,17 +33,17 @@ const get = async (path) => {
 };
 
 test("GET /api/product/:code renvoie le verdict", async () => {
-  const { status, body } = await get("/api/product/3019081100146");
+  const { status, body } = await get("/api/product/3019081100148");
   assert.equal(status, 200);
   assert.equal(body.product.verdict.status, "haram");
   assert.equal(body.product.name, "Saucisson sec pur porc");
-  assert.match(calls.at(-1).url, /api\/v2\/product\/3019081100146\.json\?fields=/);
+  assert.match(calls.at(-1).url, /api\/v2\/product\/3019081100148\.json\?fields=/);
   assert.match(calls.at(-1).ua, /HalalScan/);
 });
 
 test("le cache évite un second appel à Open Food Facts", async () => {
   const before = calls.length;
-  await get("/api/product/3019081100146");
+  await get("/api/product/3019081100148");
   assert.equal(calls.length, before);
 });
 

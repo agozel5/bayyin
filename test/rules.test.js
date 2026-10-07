@@ -10,13 +10,13 @@ test("produits d'exemple : verdicts attendus", () => {
   const expected = {
     "3017620422003": "halal_probable", // Nutella
     "4001686301029": "mashbouh",       // Dragibus : gélatine + E120
-    "3019081100146": "haram",          // saucisson pur porc
-    "6111242002017": "halal_certifie", // nuggets AVS
-    "3245390011017": "mashbouh",       // pain de mie : E471
-    "3560070462801": "halal_probable", // vinaigrette : vinaigre de vin = info
-    "3560070998003": "halal_probable", // bière 0,0 %
-    "3250392420013": "haram",          // baba au rhum
-    "3228021587012": "mashbouh",       // camembert : présure
+    "3019081100148": "haram",          // saucisson pur porc
+    "6111242002012": "halal_certifie", // nuggets AVS
+    "3245390011015": "mashbouh",       // pain de mie : E471
+    "3560070462803": "halal_probable", // vinaigrette : vinaigre de vin = info
+    "3560070998005": "halal_probable", // bière 0,0 %
+    "3250392420017": "haram",          // baba au rhum
+    "3228021587011": "mashbouh",       // camembert : présure
     "3263859893408": "halal_probable", // chips arôme poulet, végétalien
     "3274080005003": "inconnu",        // eau sans ingrédients
   };

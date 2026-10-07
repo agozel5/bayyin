@@ -22,8 +22,8 @@ export const FIXTURES = {
     ingredients_analysis_tags: ["en:palm-oil-free", "en:non-vegan", "en:non-vegetarian"],
     labels_tags: [],
   },
-  "3019081100146": {
-    code: "3019081100146",
+  "3019081100148": {
+    code: "3019081100148",
     product_name_fr: "Saucisson sec pur porc",
     brands: "Cochonou",
     ingredients_text_fr: "Viande de porc, sel, dextrose, épices, ferments, conservateurs : E252, antioxydant : E301, boyau naturel de porc.",
@@ -31,8 +31,8 @@ export const FIXTURES = {
     ingredients_analysis_tags: ["en:non-vegan", "en:non-vegetarian"],
     labels_tags: [],
   },
-  "6111242002017": {
-    code: "6111242002017",
+  "6111242002012": {
+    code: "6111242002012",
     product_name_fr: "Nuggets de poulet",
     brands: "Isla Délice",
     ingredients_text_fr: "Viande de poulet 55%, chapelure (farine de _blé_, eau, levure, sel), huile de tournesol, épices, sel, E471.",
@@ -41,8 +41,8 @@ export const FIXTURES = {
     labels_tags: ["en:halal", "fr:avs"],
     labels: "Halal, AVS",
   },
-  "3245390011017": {
-    code: "3245390011017",
+  "3245390011015": {
+    code: "3245390011015",
     product_name_fr: "Pain de mie nature",
     brands: "Harrys",
     ingredients_text_fr: "Farine de _blé_, eau, sucre, huile de colza, levure, sel, émulsifiant : E471, _gluten_ de _blé_, farine de fève.",
@@ -50,8 +50,8 @@ export const FIXTURES = {
     ingredients_analysis_tags: ["en:palm-oil-free", "en:maybe-vegan", "en:maybe-vegetarian"],
     labels_tags: [],
   },
-  "3560070462801": {
-    code: "3560070462801",
+  "3560070462803": {
+    code: "3560070462803",
     product_name_fr: "Vinaigrette balsamique",
     brands: "Exemple",
     ingredients_text_fr: "Huile de colza, eau, vinaigre de vin, vinaigre balsamique de Modène, sel, moutarde, épaississant : gomme xanthane.",
@@ -59,8 +59,8 @@ export const FIXTURES = {
     ingredients_analysis_tags: ["en:vegan", "en:vegetarian"],
     labels_tags: [],
   },
-  "3560070998003": {
-    code: "3560070998003",
+  "3560070998005": {
+    code: "3560070998005",
     product_name_fr: "Bière sans alcool 0,0%",
     brands: "Exemple",
     ingredients_text_fr: "Eau, malt d'_orge_, houblon. Teneur en alcool : 0,0% vol.",
@@ -68,8 +68,8 @@ export const FIXTURES = {
     ingredients_analysis_tags: ["en:vegan", "en:vegetarian"],
     labels_tags: [],
   },
-  "3250392420013": {
-    code: "3250392420013",
+  "3250392420017": {
+    code: "3250392420017",
     product_name_fr: "Baba au rhum",
     brands: "Exemple",
     ingredients_text_fr: "Sirop (eau, sucre, rhum 4,5%), farine de _blé_, _œufs_, beurre, levure, sel.",
@@ -77,8 +77,8 @@ export const FIXTURES = {
     ingredients_analysis_tags: ["en:non-vegan", "en:vegetarian"],
     labels_tags: [],
   },
-  "3228021587012": {
-    code: "3228021587012",
+  "3228021587011": {
+    code: "3228021587011",
     product_name_fr: "Camembert au lait cru",
     brands: "Exemple",
     ingredients_text_fr: "_Lait_ cru de vache, sel, présure, ferments lactiques et d'affinage.",

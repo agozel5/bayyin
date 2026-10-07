@@ -50,7 +50,7 @@ export function segments(text) {
 // L'ordre compte : une règle plus spécifique placée avant "consomme" le segment.
 // ---------------------------------------------------------------------------
 
-const TEXT_RULES = [
+export const TEXT_RULES = [
   {
     id: "porc",
     severity: "haram",

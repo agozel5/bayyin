@@ -3,68 +3,200 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1F6F54">
+<meta name="theme-color" content="#F4F2EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1411" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Halal Scan">
+<meta name="description" content="Scannez le code-barres d'un produit alimentaire pour savoir s'il est halal, douteux ou haram, et pourquoi.">
 <title>Halal Scan</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Work+Sans:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="page">
 
-  <header class="app">
-    <div class="brandrow">
-      <img class="mark" src="icon.svg" alt="" width="40" height="40">
-      <span class="wordmark">Halal Scan</span>
-    </div>
-    <p class="tagline">Scannez le code-barres d'un produit alimentaire pour savoir s'il est halal, douteux ou haram, et pourquoi.</p>
-  </header>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#scan" aria-label="Halal Scan, accueil">
+      <img src="icon.svg" alt="" width="30" height="30">
+      <span>Halal Scan</span>
+    </a>
+    <span class="demo-badge" id="demoBadge" hidden>Démo</span>
+  </div>
+</header>
 
-  <section class="search-card">
-    <button class="scan-btn" id="scanBtn" type="button">
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Scanner avec la caméra
-    </button>
+<main class="views">
 
-    <div id="scanner" class="scanner" hidden>
+  <!-- ============ SCANNER ============ -->
+  <section class="view" id="view-scan" data-view="scan" aria-labelledby="h-scan">
+    <h1 class="sr-only" id="h-scan">Scanner un produit</h1>
+
+    <div class="viewfinder" id="viewfinder" data-state="idle">
       <div id="reader"></div>
-      <button class="ghost" id="stopBtn" type="button">Arrêter la caméra</button>
+      <div class="vf-frame" aria-hidden="true">
+        <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+        <span class="laser"></span>
+      </div>
+      <div class="vf-panel vf-idle">
+        <button class="btn btn-primary btn-lg" id="startScan" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>
+          <span id="startLabel">Activer la caméra</span>
+        </button>
+        <p class="vf-hint">Placez le code-barres dans le cadre, à 10–20 cm.</p>
+      </div>
+      <div class="vf-panel vf-busy"><span class="spinner" aria-hidden="true"></span><p>Ouverture de la caméra…</p></div>
+      <div class="vf-panel vf-error">
+        <p class="vf-error-title" id="vfErrorTitle">Caméra inaccessible</p>
+        <p class="vf-error-text" id="vfErrorText"></p>
+        <button class="btn btn-light" id="retryScan" type="button">Réessayer</button>
+      </div>
+      <button class="vf-stop" id="stopScan" type="button" aria-label="Arrêter la caméra">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </div>
 
-    <div class="divider"><span>ou</span></div>
+    <div id="scanResult" aria-live="polite"></div>
 
-    <form class="search-row" id="searchForm">
-      <label class="sr-only" for="searchInput">Code-barres ou nom du produit</label>
-      <input id="searchInput" type="text" placeholder="Code-barres ou nom du produit" autocomplete="off" enterkeyhint="search">
-      <button class="primary" type="submit">Vérifier</button>
+    <form class="manual" id="manualForm" autocomplete="off">
+      <label for="manualInput">Pas de caméra ? Tapez le code-barres</label>
+      <div class="field-row">
+        <input id="manualInput" class="field mono" type="text" inputmode="numeric" pattern="[0-9 ]*" placeholder="Ex. 3017620422003" enterkeyhint="go">
+        <button class="btn btn-secondary" type="submit">Vérifier</button>
+      </div>
     </form>
-    <p class="hint" id="modeHint">Données : Open Food Facts, base collaborative de plus de 3 millions de produits.</p>
   </section>
 
-  <section id="result" aria-live="polite"></section>
-
-  <section id="history" hidden>
-    <h2 class="section-heading">Recherches récentes</h2>
-    <div class="list" id="historyList"></div>
-  </section>
-
-  <section>
-    <h2 class="section-heading">Comment lire les statuts</h2>
-    <div class="legend">
-      <div class="legend-item"><span class="dot s-halal_certifie"></span><div><h3>Halal certifié</h3><p>Label d'un organisme de certification présent sur la fiche produit.</p></div></div>
-      <div class="legend-item"><span class="dot s-halal_probable"></span><div><h3>Halal probable</h3><p>Aucun ingrédient problématique dans la liste déclarée, sans certification.</p></div></div>
-      <div class="legend-item"><span class="dot s-mashbouh"></span><div><h3>Douteux</h3><p>Ingrédient d'origine inconnue ou au statut débattu entre écoles.</p></div></div>
-      <div class="legend-item"><span class="dot s-haram"></span><div><h3>Haram</h3><p>Porc, sang, alcool ou dérivé explicitement interdit.</p></div></div>
+  <!-- ============ RECHERCHE ============ -->
+  <section class="view" id="view-search" data-view="search" aria-labelledby="h-search" hidden>
+    <div class="view-head">
+      <h1 id="h-search">Recherche</h1>
+      <p>Par nom de produit, marque ou code-barres.</p>
     </div>
+    <form class="searchbar" id="searchForm" role="search" autocomplete="off">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="sr-only" for="searchInput">Rechercher un produit</label>
+      <input id="searchInput" type="search" placeholder="Nutella, Haribo, 3017620422003…" enterkeyhint="search">
+    </form>
+    <div id="searchSuggest" class="suggest">
+      <p class="label">Essayez</p>
+      <div class="chips" id="suggestChips"></div>
+    </div>
+    <div id="searchResults" aria-live="polite"></div>
   </section>
 
-  <footer class="about">
-    <p>L'analyse repose sur la liste d'ingrédients publiée sur Open Food Facts, qui peut être incomplète ou dépassée. Seule une certification officielle garantit l'abattage et la chaîne de production. En cas de doute, l'emballage du produit fait foi.</p>
-  </footer>
+  <!-- ============ HISTORIQUE ============ -->
+  <section class="view" id="view-history" data-view="history" aria-labelledby="h-history" hidden>
+    <div class="view-head">
+      <h1 id="h-history">Historique</h1>
+      <p>Les produits vérifiés sur cet appareil.</p>
+    </div>
+    <div id="historyStats"></div>
+    <div class="chips filter" id="historyFilter" role="tablist" aria-label="Filtrer l'historique"></div>
+    <div id="historyList" class="list"></div>
+    <div class="danger-zone" id="historyClear"></div>
+  </section>
+
+  <!-- ============ ADDITIFS ============ -->
+  <section class="view" id="view-additives" data-view="additives" aria-labelledby="h-add" hidden>
+    <div class="view-head">
+      <h1 id="h-add">Additifs et ingrédients</h1>
+      <p>Ce que l'app surveille sur les étiquettes, et pourquoi.</p>
+    </div>
+    <form class="searchbar" id="addForm" role="search" autocomplete="off" onsubmit="return false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label class="sr-only" for="addInput">Chercher un additif</label>
+      <input id="addInput" type="search" placeholder="E471, gélatine, carmin…">
+    </form>
+    <div class="chips filter" id="addFilter" role="tablist" aria-label="Filtrer par statut"></div>
+    <div id="addList"></div>
+  </section>
+
+  <!-- ============ INFOS ============ -->
+  <section class="view" id="view-infos" data-view="infos" aria-labelledby="h-infos" hidden>
+    <div class="view-head">
+      <h1 id="h-infos">Comment ça marche</h1>
+    </div>
+
+    <ol class="steps">
+      <li><strong>Lecture du code-barres.</strong> La caméra lit le code EAN imprimé sous le produit.</li>
+      <li><strong>Fiche Open Food Facts.</strong> L'app récupère la liste d'ingrédients, les additifs et les labels depuis cette base collaborative de plus de 3 millions de produits.</li>
+      <li><strong>Analyse.</strong> Chaque ingrédient est comparé à une liste de termes et de codes E sensibles. Un label de certification halal est reconnu (AVS, Achahada, Mosquée de Paris…).</li>
+    </ol>
+
+    <h2 class="sub">Les statuts</h2>
+    <div class="legend" id="legend"></div>
+
+    <h2 class="sub">Ce que l'app ne peut pas garantir</h2>
+    <div class="prose">
+      <p>Le verdict dépend de la fiche Open Food Facts, remplie par des bénévoles : elle peut être incomplète ou ancienne. L'emballage que vous avez en main fait foi.</p>
+      <p>Sans certification, personne ne peut vérifier le mode d'abattage d'une viande ni l'origine exacte d'un additif. « Halal probable » signifie seulement qu'aucun ingrédient problématique n'est déclaré.</p>
+      <p>Pour les cas débattus entre écoles (carmin, présure, vinaigre de vin…), l'app signale le point plutôt que de trancher.</p>
+    </div>
+
+    <h2 class="sub">Aller plus loin</h2>
+    <div class="links">
+      <a class="link-row" href="https://fr.openfoodfacts.org" target="_blank" rel="noopener">
+        <span><strong>Open Food Facts</strong><small>Ajouter ou corriger un produit</small></span><span aria-hidden="true">↗</span>
+      </a>
+      <a class="link-row" href="https://github.com/agozel5/halal-scan/issues" target="_blank" rel="noopener">
+        <span><strong>Signaler une erreur de classement</strong><small>Sur GitHub</small></span><span aria-hidden="true">↗</span>
+      </a>
+      <a class="link-row" id="demoLink" href="?demo#scan">
+        <span><strong>Mode démo</strong><small>11 produits d'exemple, sans connexion</small></span><span aria-hidden="true">→</span>
+      </a>
+    </div>
+    <p class="fineprint">Halal Scan · données <a href="https://world.openfoodfacts.org/data" target="_blank" rel="noopener">Open Food Facts</a> (licence ODbL) · code sur <a href="https://github.com/agozel5/halal-scan" target="_blank" rel="noopener">GitHub</a></p>
+  </section>
 </main>
+
+<!-- ============ FICHE PRODUIT (panneau) ============ -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-bar">
+    <button class="icon-btn" id="sheetClose" type="button" aria-label="Retour">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="sheet-title" id="sheetTitle">Fiche produit</span>
+    <button class="icon-btn" id="sheetShare" type="button" aria-label="Partager" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg>
+    </button>
+    <button class="icon-btn fav-btn" id="sheetFav" type="button" aria-label="Ajouter aux favoris" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<nav class="tabbar" aria-label="Navigation principale">
+  <div class="tabbar-inner">
+    <a class="tab" href="#scan" data-tab="scan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>
+      <span>Scanner</span>
+    </a>
+    <a class="tab" href="#search" data-tab="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <span>Recherche</span>
+    </a>
+    <a class="tab" href="#history" data-tab="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      <span>Historique</span>
+    </a>
+    <a class="tab" href="#additives" data-tab="additives">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3M7.5 15h9"/></svg>
+      <span>Additifs</span>
+    </a>
+    <a class="tab" href="#infos" data-tab="infos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.1"/></svg>
+      <span>Infos</span>
+    </a>
+  </div>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 <script src="app.js" type="module"></script>
