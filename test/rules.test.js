@@ -86,3 +86,57 @@ test("sans alcool et polyols ne sont pas de l'alcool", () => {
   assert.equal(classify(p("Eau, malt, houblon. Bière sans alcool")).status, "halal_probable");
   assert.equal(classify(p("Édulcorants : polyols (sucres-alcools)")).status, "halal_probable");
 });
+
+// ---------------------------------------------------------------------------
+// Écoles et sujets débattus
+// ---------------------------------------------------------------------------
+import { SCHOOLS } from "../public/lib/rules.js";
+const withSchool = (s) => ({ school: s, topics: SCHOOLS[s] });
+
+test("carmin : douteux par défaut, interdit chez les hanafites, permis chez les malékites", () => {
+  const dragibus = FIXTURES["4001686301029"];
+  assert.equal(classify(dragibus).flags.find((f) => f.id === "e120").severity, "mashbouh");
+  assert.equal(classify(dragibus, withSchool("hanafi")).status, "haram");
+  const maliki = classify(dragibus, withSchool("maliki"));
+  assert.equal(maliki.flags.find((f) => f.id === "e120").severity, "info");
+  assert.equal(maliki.status, "mashbouh"); // la gélatine reste douteuse
+});
+
+test("présure : acceptée par les hanafites, douteuse chez les chaféites", () => {
+  const camembert = FIXTURES["3228021587011"];
+  assert.equal(classify(camembert, withSchool("hanafi")).status, "halal_probable");
+  assert.equal(classify(camembert, withSchool("shafii")).status, "mashbouh");
+});
+
+test("vinaigre de vin : info par défaut, douteux pour le réglage prudent", () => {
+  const v = FIXTURES["3560070462803"];
+  assert.equal(classify(v).status, "halal_probable");
+  assert.equal(classify(v, withSchool("prudent")).status, "mashbouh");
+});
+
+test("réglage personnalisé d'un seul sujet", () => {
+  const prefs = { school: "custom", topics: { ...SCHOOLS.standard, gelatine: "interdit" } };
+  assert.equal(classify(p("Sucre, gélatine"), prefs).status, "haram");
+  const f = classify(p("Sucre, gélatine"), prefs).flags[0];
+  assert.equal(f.topic, "gelatine");
+  assert.equal(f.decision, "interdit");
+});
+
+test("une origine végétale déclarée n'est pas modifiée par le réglage", () => {
+  const prefs = { school: "custom", topics: { ...SCHOOLS.standard, derives: "interdit" } };
+  const v = classify(p("Farine, E471 (origine végétale)", { additives_tags: ["en:e471"] }), prefs);
+  assert.equal(v.status, "halal_probable");
+});
+
+test("mots-clés turcs et arabes", () => {
+  assert.equal(classify(p("Su, şeker, domuz jelatini")).status, "haram");
+  assert.equal(classify(p("Şeker, sığır jelatini")).status, "mashbouh");
+  assert.equal(classify(p("Şeker, helal sığır jelatini")).status, "halal_probable");
+  assert.equal(classify(p("Su, şarap, şeker")).status, "haram");
+  assert.equal(classify(p("Alkolsüz malt içeceği")).status, "halal_probable");
+  assert.equal(classify(p("Peynir mayası, süt, tuz")).status, "mashbouh");
+  assert.equal(classify(p("ماء، سكر، دهن خنزير")).status, "haram");
+  assert.equal(classify(p("سكر، جيلاتين، منكهات")).status, "mashbouh");
+  assert.equal(classify(p("سكر، جيلاتين حلال")).status, "halal_probable");
+  assert.equal(classify(p("Süt, tuz", { labels: "Helal" })).status, "halal_certifie");
+});

@@ -7,6 +7,13 @@ Web app qui scanne le code-barres d'un produit alimentaire et indique :
 - les **additifs à surveiller**, les allergènes et le niveau de transformation (NOVA) ;
 - des **alternatives halal mieux notées** dans la même catégorie.
 
+Ce qui la distingue :
+
+- **verdict selon votre école** (hanafite, malékite, chaféite, hanbalite, prudent, ou point par point) pour les sujets débattus : insectes (carmin), présure, vinaigre de vin, alcool, etc. ;
+- **photo de la liste d'ingrédients** (OCR dans le navigateur) quand le produit n'est pas dans la base : texte corrigeable, analyse immédiate, mémorisée pour ce code-barres ;
+- **quatre langues** : français, anglais, arabe (de droite à gauche) et turc, avec détection des ingrédients sensibles dans ces langues ;
+- **hors connexion** : l'app et les fiches déjà vues restent disponibles sans réseau, plus un pack des 500 produits les plus scannés en France.
+
 Les données produits viennent d'[Open Food Facts](https://fr.openfoodfacts.org)
 (base collaborative, gratuite, plus de 3 millions de produits).
 
@@ -51,6 +58,10 @@ public/                 l'app (à héberger telle quelle)
   lib/camera.js         caméra plein écran + décodage (BarcodeDetector natif ou ZXing WebAssembly)
   lib/barcode.js        validation des codes EAN/UPC
   lib/health.js         note santé, seuils nutritionnels, risque des additifs, allergènes, NOVA
+  lib/settings.js       réglages (langue, école, avis par sujet), gardés sur l'appareil
+  lib/i18n.js           traductions ; dictionnaires dans lib/i18n/{fr,en,ar,tr}.js
+  lib/ocr.js            lecture d'étiquette (Tesseract.js chargé à la demande)
+  sw.js                 service worker : mode hors connexion
   lib/store.js          historique et favoris (localStorage, consultables hors connexion)
   lib/rules.js          moteur de classification halal
   lib/off.js            appels à Open Food Facts depuis le navigateur
@@ -144,3 +155,18 @@ l'écran. Secours : photo du code-barres ou saisie des chiffres.
 Sans Nutri-Score sur la fiche, aucune note n'est affichée. Les seuils sucre, sel, graisses
 saturées et calories suivent les feux tricolores de la Food Standards Agency (aliments et
 boissons séparés). Les niveaux de risque des additifs résument des avis EFSA, ANSES et CIRC.
+
+## Écoles et sujets débattus (`public/lib/rules.js`)
+
+Chaque point débattu est un « sujet » : `insectes`, `presure`, `vinaigre`, `arome_alcool`,
+`traces_alcool`, `gelatine`, `viande`, `derives`. Pour chacun, l'utilisateur choisit
+**permis** (simple information), **douteux** ou **interdit**. Les préréglages `SCHOOLS`
+résument des tendances générales et sont modifiables point par point. Gélatine, viande et
+dérivés d'origine inconnue restent « douteux » partout : c'est un manque d'information,
+pas une divergence d'école.
+
+## Traductions
+
+`lib/i18n/fr.js` est la référence. Un test vérifie que `en`, `ar` et `tr` ont exactement
+les mêmes clés et les mêmes variables `{x}`. Pour ajouter une langue : un nouveau fichier,
+puis l'ajouter à `DICTS` (`lib/i18n.js`) et à `LANGS` (`lib/settings.js`).

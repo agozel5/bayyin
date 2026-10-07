@@ -1,21 +1,25 @@
-import { createClient, OffError } from "./lib/off.js";
+import { createClient, OffError, present } from "./lib/off.js";
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
-import { store } from "./lib/store.js";
-import { ADDITIVES, TEXT_RULES } from "./lib/rules.js";
-import { ADDITIVE_RISK, RISK_LABELS, HEALTH_GRADES } from "./lib/health.js";
+import { store, localProducts } from "./lib/store.js";
+import { settings, LANGS } from "./lib/settings.js";
+import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF } from "./lib/rules.js";
+import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
+import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
+import { readIngredients, additivesFromText } from "./lib/ocr.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
-const off = createClient({ demo: DEMO });
+const prefs = () => settings.get();
+const off = createClient({ demo: DEMO, prefs });
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const svg = (paths, cls = "") => `<svg viewBox="0 0 24 24" class="${cls}" aria-hidden="true">${paths}</svg>`;
-const fmt = (v) => Number(v).toLocaleString("fr-FR", { maximumFractionDigits: v < 10 ? 1 : 0 });
+const fmt = (v) => Number(v).toLocaleString(locale(), { maximumFractionDigits: v < 10 ? 1 : 0 });
 
 // ===========================================================================
-// Libellés
+// Icônes et statuts
 // ===========================================================================
 const I = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
@@ -26,6 +30,8 @@ const I = {
   box: '<path d="M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  flask: '<path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3"/>',
+  doc: '<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 12h6M9 15.5h6M9 19h4"/>',
   energy: '<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.3 1.2-3.6 2.3-4.6.3 1.6 1 2.6 2 3.1C11 9 11.2 5.8 12 3z"/>',
   sugars: '<path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/>',
   "saturated-fat": '<path d="M12 3.5c3 4 6 7.4 6 10.5a6 6 0 0 1-12 0c0-3.1 3-6.5 6-10.5z"/>',
@@ -34,33 +40,36 @@ const I = {
   fiber: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7"/>',
   fruits: '<path d="M12 7c-4-2-8 1-7 6 .8 4 3.5 7 7 7s6.2-3 7-7c1-5-3-8-7-6zM12 7c0-2 1-3.5 3-4"/>',
 };
-
-const STATUS = {
-  halal_certifie: { label: "Halal certifié", short: "Certifié", icon: I.check,
-    lead: "Ce produit porte un label de certification halal.",
-    legend: "Label d'un organisme de certification sur la fiche. Seul statut qui couvre l'abattage et l'origine des ingrédients." },
-  halal_probable: { label: "Halal probable", short: "Halal", icon: I.check,
-    lead: "Aucun ingrédient problématique dans la liste déclarée.",
-    legend: "Rien d'interdit ni de douteux dans les ingrédients déclarés, mais pas de certification." },
-  mashbouh: { label: "Douteux", short: "Douteux", icon: I.question,
-    lead: "Un ingrédient a une origine inconnue ou un statut débattu.",
-    legend: "Ingrédient d'origine inconnue (gélatine, E471…) ou au statut débattu entre écoles (carmin, présure…)." },
-  haram: { label: "Haram", short: "Haram", icon: I.cross,
-    lead: "Ce produit contient un ingrédient interdit.",
-    legend: "Porc, sang, alcool ou dérivé explicitement interdit." },
-  inconnu: { label: "Non déterminé", short: "Inconnu", icon: I.dash,
-    lead: "Pas assez d'informations pour conclure.",
-    legend: "La liste d'ingrédients n'est pas renseignée sur Open Food Facts." },
-};
-const SEV_LABEL = { haram: "Haram", mashbouh: "Douteux", info: "Info" };
+const STATUS_ICON = { halal_certifie: I.check, halal_probable: I.check, mashbouh: I.question, haram: I.cross, inconnu: I.dash };
 const STATUS_ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
+const LEGEND_ORDER = ["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"];
+const S = (st, part) => t(`status.${st}.${part}`);
 
-const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${STATUS[st].short}</span>`;
+// Le verdict est recalculé à l'affichage : il suit toujours les réglages actuels.
+const verdictOf = (p) => (p.raw ? classify(p.raw, prefs()) : p.verdict);
+const nameOf = (p) => {
+  const n = p.names || {};
+  return n[getLang()] || p.name || n.any || n.en || t("product.unnamed");
+};
+const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${S(st, "short")}</span>`;
 const scoreOf = (p) => (p.health && p.health.score) || null;
 const miniScore = (p) => {
   const s = scoreOf(p);
-  return s ? `<span class="mini-score g-${s.grade}"><span class="dot"></span>${s.score}/100</span>` : "";
+  return s ? `<span class="mini-score g-${s.grade}" dir="ltr"><span class="dot"></span>${s.score}/100</span>` : "";
 };
+
+// Libellés des signalements (traduits à partir de leur identifiant)
+function flagLabel(f) {
+  if (f.group === "gras") return `${f.code} · ${t("flag.fatty.label")}`;
+  const label = t(`flag.${f.id}.label`);
+  return f.code ? `${f.code} · ${label}` : label;
+}
+function flagReason(f) {
+  if (f.variant) return t(`flag.variant.${f.variant}`);
+  if (f.group === "gras") return t("flag.fatty.reason");
+  return t(`flag.${f.id}.reason`);
+}
+const noteText = (n) => (/\s/.test(n) ? n : t(`note.${n}`)); // anciennes entrées : texte déjà rédigé
 
 // ===========================================================================
 // Fiche produit
@@ -68,63 +77,74 @@ const miniScore = (p) => {
 function productTop(p) {
   const img = p.image
     ? `<img class="p-img" src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">`
-    : `<span class="p-img ph">${svg(I.box)}</span>`;
+    : `<span class="p-img ph">${svg(p.local ? I.doc : I.box)}</span>`;
   const meta = [p.brand, p.quantity].filter(Boolean).map(esc).join(" · ");
+  const code = /^\d+$/.test(p.code) ? p.code : "";
   return `<div class="p-top">${img}<div class="p-text">
-    <span class="p-name">${esc(p.name)}</span>
+    <span class="p-name">${esc(nameOf(p))}</span>
     ${meta ? `<span class="p-meta">${meta}</span>` : ""}
-    <span class="p-code">${esc(p.code)}</span>
+    ${code ? `<span class="p-code" dir="ltr">${esc(code)}</span>` : ""}
   </div></div>`;
 }
 
-function scoreTiles(p) {
-  const st = p.verdict.status;
+function scoreTiles(p, v) {
   const s = scoreOf(p);
   const health = s
     ? `<div class="score-tile health g-${s.grade}">
-         <span class="ring" style="--p:${s.score}"><span>${s.score}<small>/100</small></span></span>
-         <span class="st-text"><span class="st-kicker">Santé</span><span class="st-value">${s.label}</span></span>
+         <span class="ring" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
+         <span class="st-text"><span class="st-kicker">${t("detail.health")}</span><span class="st-value">${t(`grade.${s.grade}`)}</span></span>
        </div>`
     : `<div class="score-tile health none">
          <span class="ring" style="--p:0"><span>?</span></span>
-         <span class="st-text"><span class="st-kicker">Santé</span><span class="st-value">Non noté</span></span>
+         <span class="st-text"><span class="st-kicker">${t("detail.health")}</span><span class="st-value">${t("detail.not_rated")}</span></span>
        </div>`;
   return `<div class="scores">
-    <div class="score-tile s-${st}">
-      <span class="st-ico">${svg(STATUS[st].icon)}</span>
-      <span class="st-text"><span class="st-kicker">Halal</span><span class="st-value">${STATUS[st].label}</span></span>
-    </div>
-    ${health}
-  </div>`;
+    <div class="score-tile s-${v.status}">
+      <span class="st-ico">${svg(STATUS_ICON[v.status])}</span>
+      <span class="st-text"><span class="st-kicker">${t("detail.halal")}</span><span class="st-value">${S(v.status, "label")}</span></span>
+    </div>${health}</div>`;
 }
 
-function halalSection(p) {
-  const v = p.verdict;
+function halalSection(p, v) {
   const cert = v.certification
-    ? `<div class="cert">${svg(I.shield)}Certifié halal${v.certification.organisme ? " · " + esc(v.certification.organisme) : ""}</div>`
+    ? `<div class="cert">${svg(I.shield)}${t("detail.certified")}${v.certification.organisme ? " · " + esc(v.certification.organisme) : ""}</div>`
     : "";
-  const notes = v.notes.length ? `<div class="notes">${v.notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : "";
+  const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
   const flags = v.flags.length
     ? `<div class="flags">${v.flags
-        .map(
-          (f) => `<div class="flag ${f.severity}">
-            <div class="flag-top"><span class="flag-term">${esc(f.label)}</span><span class="pill ${f.severity === "haram" ? "s-haram" : f.severity === "mashbouh" ? "s-mashbouh" : "r-info"}">${SEV_LABEL[f.severity]}</span></div>
-            <span class="flag-why">${esc(f.reason)}</span>
-            <span class="flag-src">Trouvé dans « ${esc(f.source)} »</span>
-          </div>`
-        )
+        .map((f) => {
+          const pillCls = f.severity === "haram" ? "s-haram" : f.severity === "mashbouh" ? "s-mashbouh" : "r-info";
+          const setting = f.covered
+            ? `<span class="flag-setting">${t("detail.covered")}</span>`
+            : f.topic && f.decision
+              ? `<span class="flag-setting">${esc(t("detail.by_setting", { topic: t(`topic.${f.topic}`), d: t(`decision.${f.decision}`).toLowerCase() }))} <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>`
+              : "";
+          return `<div class="flag ${f.severity}">
+            <div class="flag-top"><span class="flag-term">${esc(flagLabel(f))}</span><span class="pill ${pillCls}">${t(`sev.${f.severity}`)}</span></div>
+            <span class="flag-why">${esc(flagReason(f))}</span>
+            ${setting}
+            ${f.source && !f.code ? `<span class="flag-src">${esc(t("detail.found_in", { s: f.source }))}</span>` : ""}
+          </div>`;
+        })
         .join("")}</div>`
     : "";
-  return `<section class="sec"><div class="sec-head"><h3>Halal</h3></div>
-    <p class="lead">${STATUS[v.status].lead}</p>${cert}${notes}${flags}</section>`;
+  const ocrCta =
+    v.status === "inconnu" && /^\d+$/.test(p.code)
+      ? `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
+      : "";
+  return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
+    <p class="lead">${S(v.status, "lead")}</p>${cert}
+    ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
+    ${flags}${ocrCta}</section>`;
 }
 
 function nutRow(n) {
   const pct = Math.max(4, Math.min(100, (n.value / n.max) * 100));
+  const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
   return `<div class="nut lv-${n.level}">
     <span class="nut-ico">${svg(I[n.id] || I.box)}</span>
-    <span class="nut-text"><strong>${esc(n.name)}</strong><small>${esc(n.text)}</small></span>
-    <span class="nut-val">${fmt(n.value)} ${esc(n.unit)}<span class="dot"></span></span>
+    <span class="nut-text"><strong>${t(`nut.${n.id}`)}</strong><small>${t(`nut.${n.id}.${textKey}`)}</small></span>
+    <span class="nut-val" dir="ltr">${fmt(n.value)} ${esc(n.unit)}<span class="dot"></span></span>
     <span class="nut-bar"><i style="width:${pct}%"></i></span>
   </div>`;
 }
@@ -134,106 +154,135 @@ function healthSection(p) {
   if (!h) return "";
   const s = h.score;
   const risky = h.additives.length;
-  const neg = [...h.nutrition.negatives];
-  const pos = [...h.nutrition.positives];
+  const neg = h.nutrition.negatives;
+  const pos = h.nutrition.positives;
   const lead = s
-    ? `Note de <strong>${s.score}/100</strong> : Nutri-Score ${s.nutriscore.toUpperCase()} (${s.parts.nutrition}/60), additifs ${s.parts.additives}/30, bio ${s.parts.bio}/10.`
-    : "Pas de Nutri-Score sur la fiche : la note santé ne peut pas être calculée.";
+    ? t("detail.health_lead_html", { n: s.score, g: s.nutriscore.toUpperCase(), a: s.parts.nutrition, b: s.parts.additives, c: s.parts.bio })
+    : esc(t("detail.health_none"));
   const list = (items) => `<div class="nut-list">${items.map(nutRow).join("")}</div>`;
-  return `<section class="sec"><div class="sec-head"><h3>Santé</h3><small>pour ${h.nutrition.per}</small></div>
+  const addRow = (bad) =>
+    `<div class="nut ${bad ? "lv-eleve" : "lv-bon"}"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.additives")}</strong><small>${bad ? tn("detail.additives_risky", risky) : t("detail.additives_none")}</small></span><span class="nut-val">${bad ? risky : ""}<span class="dot"></span></span></div>`;
+  const hasNut = neg.length || pos.length;
+  return `<section class="sec"><div class="sec-head"><h3>${t("detail.health")}</h3><small>${t("detail.per", { u: t(h.nutrition.drink ? "unit.100ml" : "unit.100g") })}</small></div>
     <p class="lead">${lead}</p>
-    ${neg.length || risky ? `<p class="sub-label">Défauts</p>${list(neg)}${risky ? `<div class="nut lv-eleve"><span class="nut-ico">${svg('<path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3"/>')}</span><span class="nut-text"><strong>Additifs</strong><small>${risky} additif${risky > 1 ? "s" : ""} à risque</small></span><span class="nut-val">${risky}<span class="dot"></span></span></div>` : ""}` : ""}
-    ${pos.length || (!risky && p.verdict) ? `<p class="sub-label">Qualités</p>${list(pos)}${!risky ? `<div class="nut lv-bon"><span class="nut-ico">${svg('<path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3"/>')}</span><span class="nut-text"><strong>Additifs</strong><small>Aucun additif à risque</small></span><span class="nut-val"><span class="dot"></span></span></div>` : ""}` : ""}
-    ${!neg.length && !pos.length ? `<p class="notes">Valeurs nutritionnelles non renseignées sur la fiche.</p>` : ""}
+    ${neg.length || risky ? `<p class="sub-label">${t("detail.defects")}</p>${list(neg)}${risky ? addRow(true) : ""}` : ""}
+    ${pos.length || !risky ? `<p class="sub-label">${t("detail.qualities")}</p>${list(pos)}${!risky ? addRow(false) : ""}` : ""}
+    ${!hasNut ? `<p class="notes">${t("detail.nut_missing")}</p>` : ""}
   </section>`;
 }
 
 function additivesSection(p) {
   const h = p.health;
   if (!h || !h.additives.length) return "";
-  return `<section class="sec"><div class="sec-head"><h3>Additifs à surveiller</h3><small>${h.additives.length}</small></div>
+  return `<section class="sec"><div class="sec-head"><h3>${t("detail.watch")}</h3><small>${h.additives.length}</small></div>
     <div class="risks">${h.additives
       .map(
-        (a) => `<details class="risk"><summary><span>${esc(a.code)} · ${esc(a.name)}</span><span class="pill r-${a.level}">${RISK_LABELS[a.level]}</span></summary><p>${esc(a.reason)}</p></details>`
+        (a) => `<details class="risk"><summary><span>${esc(a.code)} · ${esc(t(`addname.${a.code.toLowerCase()}`))}</span><span class="pill r-${a.level}">${t(`risk.${a.level}`)}</span></summary><p>${esc(t(`risk.reason.${a.key}`))}</p></details>`
       )
       .join("")}</div></section>`;
 }
 
 function extraSection(p) {
   const h = p.health;
-  if (!h) return "";
-  const allergens = h.allergens.length
-    ? `<div class="tags">${h.allergens.map((a) => `<span class="tag">${esc(a)}</span>`).join("")}</div>`
-    : `<p class="notes">Aucun allergène majeur déclaré sur la fiche.</p>`;
+  if (!h || p.local) return "";
+  const tags = h.allergenTags || [];
+  const allergens = tags.length
+    ? `<div class="tags">${tags.map((a) => `<span class="tag">${esc(t(`allergen.${a}`))}</span>`).join("")}</div>`
+    : (h.allergens || []).length
+      ? `<div class="tags">${h.allergens.map((a) => `<span class="tag">${esc(a)}</span>`).join("")}</div>`
+      : `<p class="notes">${t("detail.allergens_none")}</p>`;
   const nova = h.nova
-    ? `<div class="nova"><span class="nova-num nova-${h.nova.group}">${h.nova.group}</span><p><strong>${esc(h.nova.label)}</strong>${esc(h.nova.text)}</p></div>`
+    ? `<div class="nova"><span class="nova-num nova-${h.nova.group}">${h.nova.group}</span><p><strong>${t(`nova.${h.nova.group}.t`)}</strong>${t(`nova.${h.nova.group}.p`)}</p></div>`
     : "";
-  return `<section class="sec"><div class="sec-head"><h3>Allergènes</h3></div>${allergens}</section>
-    ${nova ? `<section class="sec"><div class="sec-head"><h3>Transformation</h3><small>groupe NOVA</small></div>${nova}</section>` : ""}`;
+  return `<section class="sec"><div class="sec-head"><h3>${t("detail.allergens")}</h3></div>${allergens}</section>
+    ${nova ? `<section class="sec"><div class="sec-head"><h3>${t("detail.nova")}</h3><small>${t("detail.nova_sub")}</small></div>${nova}</section>` : ""}`;
 }
 
 function productDetail(p) {
+  const v = verdictOf(p);
   const ingr = p.ingredients
-    ? `<section class="sec"><details class="ingr"><summary>Ingrédients</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
+    ? `<section class="sec"><details class="ingr"${p.local ? " open" : ""}><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
     : "";
-  return `${productTop(p)}${scoreTiles(p)}
-    ${halalSection(p)}
-    ${healthSection(p)}
-    ${additivesSection(p)}
-    <section class="sec" id="altSection"><div class="sec-head"><h3>Alternatives</h3><small>halal, mieux notées</small></div>
-      <div id="altBox"><div class="loading"><span class="spinner"></span>Recherche d'alternatives…</div></div></section>
-    ${extraSection(p)}
-    ${ingr}
-    <section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">Voir ou corriger la fiche sur Open Food Facts ↗</a></section>`;
+  const isBarcode = /^\d+$/.test(p.code);
+  const alt = p.local
+    ? ""
+    : `<section class="sec" id="altSection"><div class="sec-head"><h3>${t("detail.alternatives")}</h3><small>${t("detail.alt_sub")}</small></div>
+      <div id="altBox"><div class="loading"><span class="spinner"></span>${t("detail.alt_loading")}</div></div></section>`;
+  const offLink = p.local
+    ? isBarcode
+      ? `<section class="sec"><a class="off-link" href="https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${esc(p.code)}" target="_blank" rel="noopener">${t("msg.add_off")}</a></section>`
+      : ""
+    : `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t("detail.off_link")}</a></section>`;
+  return `${productTop(p)}${scoreTiles(p, v)}${halalSection(p, v)}${healthSection(p)}${additivesSection(p)}${alt}${extraSection(p)}${ingr}${offLink}`;
 }
 
 function altCard(a) {
   const img = a.image ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="ph"></span>`;
   return `<button type="button" class="alt" data-open="${esc(a.code)}">${img}
-    <strong>${esc(a.name)}</strong><small>${esc(a.brand || "")}</small>
-    <span class="alt-tags">${statusPill(a.verdict.status)}${miniScore(a)}</span></button>`;
+    <strong>${esc(nameOf(a))}</strong><small>${esc(a.brand || "")}</small>
+    <span class="alt-tags">${statusPill(verdictOf(a).status)}${miniScore(a)}</span></button>`;
 }
 
 async function loadAlternatives(p, code) {
-  const box = $("altBox");
-  if (!box) return;
+  if (!$("altBox")) return;
   try {
     const alts = await off.alternatives(p);
     if (sheetCode !== code || !$("altBox")) return;
     alts.forEach((a) => memo.set(a.code, a));
     $("altBox").innerHTML = alts.length
       ? `<div class="alts">${alts.map(altCard).join("")}</div>`
-      : `<p class="notes">${p.categories && p.categories.length ? "Pas d'alternative halal mieux notée trouvée dans cette catégorie." : "Catégorie du produit inconnue : impossible de chercher des alternatives."}</p>`;
+      : `<p class="notes">${t(p.categories && p.categories.length ? "detail.alt_none" : "detail.alt_nocat")}</p>`;
   } catch {
-    if (sheetCode === code && $("altBox")) $("altBox").innerHTML = `<p class="notes">Alternatives indisponibles pour le moment.</p>`;
+    if (sheetCode === code && $("altBox")) $("altBox").innerHTML = `<p class="notes">${t("detail.alt_error")}</p>`;
   }
 }
 
-const loadingHtml = (t = "Recherche du produit…") => `<div class="loading"><span class="spinner"></span>${esc(t)}</div>`;
-const messageHtml = (title, text, actions = "") => `<div class="card-msg"><strong>${esc(title)}</strong><p>${text}</p>${actions}</div>`;
-const errorText = (err) => esc(err instanceof OffError ? err.message : "Erreur inattendue. Vérifiez votre connexion puis réessayez.");
-const notFoundText = (code) =>
-  `Le code ${esc(code)} n'est pas encore dans Open Food Facts. Vous pouvez l'ajouter avec l'application Open Food Facts : il sera ensuite analysé ici.`;
+const loadingHtml = (text) => `<div class="loading"><span class="spinner"></span>${esc(text)}</div>`;
+const messageHtml = (title, text, actions = "") =>
+  `<div class="card-msg"><strong>${esc(title)}</strong><p>${esc(text)}</p>${actions ? `<div class="msg-actions">${actions}</div>` : ""}</div>`;
+function errorText(err) {
+  if (err instanceof OffError) {
+    if (err.code === "network") return t(navigator.onLine === false ? "msg.offline_missing" : "msg.network");
+    return t("msg.server");
+  }
+  return t("msg.unexpected");
+}
+const ocrButton = (code = "") =>
+  `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`;
+const notFoundHtml = (code) => messageHtml(t("msg.notfound.t"), t("msg.notfound.p", { code }), ocrButton(code));
 
 function rowHtml(p, { fav = false, when = "" } = {}) {
   const img = p.image
     ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-    : `<span class="row-img ph"></span>`;
+    : `<span class="row-img ph">${p.local ? svg(I.doc) : ""}</span>`;
   const meta = [p.brand, when].filter(Boolean).map(esc).join(" · ");
   return `<button type="button" class="row" data-open="${esc(p.code)}">${img}
-    <span class="row-text"><span class="row-name">${esc(p.name)}</span>
+    <span class="row-text"><span class="row-name">${esc(nameOf(p))}</span>
       ${meta ? `<span class="row-meta">${meta}</span>` : ""}
-      <span class="row-tags">${statusPill(p.verdict.status)}${miniScore(p)}${fav ? svg(I.star, "row-fav") : ""}</span>
-    </span>${svg(I.chev, "row-chev")}</button>`;
+      <span class="row-tags">${statusPill(verdictOf(p).status)}${miniScore(p)}${fav ? svg(I.star, "row-fav") : ""}</span>
+    </span>${svg(I.chev, "row-chev flip")}</button>`;
 }
 
 // ===========================================================================
-// Données
+// Données : Open Food Facts, puis fiche complétée par photo, puis historique (hors ligne)
 // ===========================================================================
 const memo = new Map();
 async function fetchProduct(code) {
   if (memo.has(code)) return memo.get(code);
-  const p = await off.product(code);
+  let p = null;
+  let error = null;
+  try {
+    p = await off.product(code);
+  } catch (err) {
+    error = err;
+  }
+  const local = localProducts.get(code);
+  if (local && (!p || !p.ingredients)) p = present(local, prefs());
+  if (!p && error) {
+    const saved = store.get(code);
+    if (saved) p = saved.p;
+    else throw error;
+  }
   if (p) memo.set(code, p);
   return p;
 }
@@ -242,56 +291,68 @@ async function fetchProduct(code) {
 // Fiche produit (panneau plein écran)
 // ===========================================================================
 const sheet = $("sheet");
+const cameraEl = $("camera");
 let sheetCode = null;
+let sheetProduct = null;
 
 function refreshFav() {
-  const e = store.get(sheetCode);
+  const e = sheetCode && store.get(sheetCode);
   const on = !!(e && e.fav);
+  $("sheetFav").hidden = !sheetProduct;
   $("sheetFav").setAttribute("aria-pressed", String(on));
-  $("sheetFav").setAttribute("aria-label", on ? "Retirer des favoris" : "Ajouter aux favoris");
+  $("sheetFav").setAttribute("aria-label", t(on ? "sheet.fav_remove" : "sheet.fav_add"));
 }
+const lockScroll = () => document.body.classList.toggle("no-scroll", !sheet.hidden || !cameraEl.hidden);
 
-function lockScroll() {
-  document.body.classList.toggle("no-scroll", !sheet.hidden || !cameraEl.hidden);
-}
-
-async function openSheet(code, { fromScan = false, replace = false } = {}) {
-  sheetCode = code;
-  const cached = memo.get(code) || (store.get(code) && store.get(code).p);
-  const fresh = cached && cached.health; // les anciennes entrées d'historique n'ont pas de données santé
-  $("sheetTitle").textContent = cached ? cached.name : "Fiche produit";
-  $("sheetBody").innerHTML = fresh ? productDetail(cached) : loadingHtml();
+function showSheet({ replace = false, fromScan = false } = {}) {
   $("sheetFoot").hidden = !fromScan;
   sheet.hidden = false;
   $("sheetBody").scrollTop = 0;
   if (replace) history.replaceState({ sheet: true }, "");
   else if (!(history.state && history.state.sheet)) history.pushState({ sheet: true }, "");
   lockScroll();
+}
+
+function renderSheetProduct(p) {
+  sheetProduct = p;
+  $("sheetTitle").textContent = nameOf(p);
+  $("sheetBody").innerHTML = productDetail(p);
+  refreshFav();
+}
+
+async function openSheet(code, { fromScan = false, replace = false } = {}) {
+  sheetCode = code;
+  sheetProduct = null;
+  const cached = memo.get(code) || (store.get(code) && store.get(code).p);
+  const fresh = cached && cached.health; // les très anciennes entrées n'ont pas de données santé
+  $("sheetTitle").textContent = cached ? nameOf(cached) : t("sheet.title");
+  $("sheetBody").innerHTML = loadingHtml(t("msg.loading"));
+  showSheet({ replace, fromScan });
   refreshFav();
 
   if (fresh) {
+    renderSheetProduct(cached);
     if (fromScan || !store.get(code)) store.add(cached);
     refreshFav();
-    loadAlternatives(cached, code);
+    if (!cached.local) loadAlternatives(cached, code);
     return;
   }
   try {
     const p = await fetchProduct(code);
     if (sheetCode !== code) return;
     if (!p) {
-      $("sheetTitle").textContent = "Produit introuvable";
-      $("sheetBody").innerHTML = messageHtml("Produit introuvable", notFoundText(code));
+      $("sheetTitle").textContent = t("msg.notfound.t");
+      $("sheetBody").innerHTML = notFoundHtml(code);
       return;
     }
-    $("sheetTitle").textContent = p.name;
-    $("sheetBody").innerHTML = productDetail(p);
+    renderSheetProduct(p);
     store.add(p);
     refreshFav();
-    loadAlternatives(p, code);
+    if (!p.local) loadAlternatives(p, code);
   } catch (err) {
-    if (sheetCode === code)
-      $("sheetBody").innerHTML = messageHtml("Chargement impossible", errorText(err),
-        `<button class="btn btn-primary" type="button" data-open="${esc(code)}">Réessayer</button>`);
+    if (sheetCode !== code) return;
+    $("sheetBody").innerHTML = messageHtml(t("msg.load_error.t"), errorText(err),
+      `<button class="btn btn-primary" type="button" data-open="${esc(code)}">${t("msg.retry")}</button>${ocrButton(code)}`);
   }
 }
 
@@ -299,21 +360,18 @@ function closeSheet({ fromPop = false } = {}) {
   if (sheet.hidden) return;
   sheet.hidden = true;
   sheetCode = null;
+  sheetProduct = null;
   lockScroll();
   if (!fromPop && history.state && history.state.sheet) history.back();
 }
 
 $("sheetClose").addEventListener("click", () => closeSheet());
 $("sheetFav").addEventListener("click", () => {
-  if (!sheetCode) return;
-  if (!store.get(sheetCode)) {
-    const p = memo.get(sheetCode);
-    if (!p) return;
-    store.add(p);
-  }
+  if (!sheetCode || !sheetProduct) return;
+  if (!store.get(sheetCode)) store.add(sheetProduct);
   const on = store.toggleFav(sheetCode);
   refreshFav();
-  toast(on ? "Ajouté aux favoris" : "Retiré des favoris");
+  toast(t(on ? "sheet.fav_added" : "sheet.fav_removed"));
 });
 $("scanAgain").addEventListener("click", () => {
   sheet.hidden = true;
@@ -323,51 +381,126 @@ $("scanAgain").addEventListener("click", () => {
 if (navigator.share) {
   $("sheetShare").hidden = false;
   $("sheetShare").addEventListener("click", async () => {
-    const p = memo.get(sheetCode) || (store.get(sheetCode) && store.get(sheetCode).p);
+    const p = sheetProduct;
     if (!p) return;
     const s = scoreOf(p);
     try {
       await navigator.share({
-        title: p.name,
-        text: `${p.name} : ${STATUS[p.verdict.status].label}${s ? `, santé ${s.score}/100` : ""} (Halal Scan)`,
+        title: nameOf(p),
+        text: t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t("sheet.share_health", { n: s.score }) : "" }),
         url: location.origin + location.pathname,
       });
     } catch { /* partage annulé */ }
   });
 }
+
+// Délégation : ouvrir une fiche, aller aux réglages, préparer une photo d'ingrédients
+let pendingOcrCode = null;
 document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-open]");
-  if (b) openSheet(b.dataset.open, { replace: !sheet.hidden });
+  const open = e.target.closest("[data-open]");
+  if (open) return openSheet(open.dataset.open, { replace: !sheet.hidden });
+  const ocr = e.target.closest("[data-ocr-code], label[for=ocrInput]");
+  if (ocr) pendingOcrCode = ocr.dataset.ocrCode || null;
+  if (e.target.closest("[data-goto-settings]")) {
+    e.preventDefault();
+    closeSheet();
+    setTimeout(() => {
+      location.hash = "#settings";
+      $("schoolBlock").scrollIntoView({ block: "start" });
+    }, 50);
+  }
+});
+
+// ===========================================================================
+// Photo de la liste d'ingrédients (OCR)
+// ===========================================================================
+let ocrTicket = 0;
+async function startOcr(file, code) {
+  const ticket = ++ocrTicket;
+  sheetCode = code ? `ocr:${code}` : "ocr";
+  sheetProduct = null;
+  $("sheetTitle").textContent = t("ocr.title");
+  $("sheetBody").innerHTML = `<div class="ocr-progress"><span class="spinner"></span><p id="ocrStep">${t("ocr.loading")}</p><small>${t("ocr.loading_note")}</small><div class="progress"><i id="ocrBar"></i></div></div>`;
+  showSheet({ replace: !sheet.hidden });
+  refreshFav();
+  try {
+    const text = await readIngredients(file, {
+      lang: getLang(),
+      onProgress: (n) => {
+        if (ticket !== ocrTicket || !$("ocrStep")) return;
+        $("ocrStep").textContent = t("ocr.reading", { n });
+        $("ocrBar").style.width = n + "%";
+      },
+    });
+    if (ticket !== ocrTicket) return;
+    if (!text || text.replace(/[^\p{L}]/gu, "").length < 6) {
+      $("sheetBody").innerHTML = messageHtml(t("ocr.empty.t"), t("ocr.empty.p"),
+        `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>`);
+      return;
+    }
+    $("sheetBody").innerHTML = `<div class="ocr-review">
+      <h3>${t("ocr.review")}</h3><p class="muted">${t("ocr.review_hint")}</p>
+      <textarea id="ocrText" class="field area" rows="8" spellcheck="false">${esc(text)}</textarea>
+      <label class="muted small" for="ocrName">${t("ocr.name")}</label>
+      <input id="ocrName" class="field" type="text" autocomplete="off">
+      <button class="btn btn-primary btn-block" type="button" id="ocrAnalyze">${t("ocr.analyze")}</button>
+      <label class="btn btn-soft btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
+    </div>`;
+    $("ocrAnalyze").addEventListener("click", () => analyzeOcr(code));
+  } catch {
+    if (ticket === ocrTicket) $("sheetBody").innerHTML = messageHtml(t("msg.reader_error.t"), t("ocr.error.p"));
+  }
+}
+
+function analyzeOcr(code) {
+  const text = $("ocrText").value.trim();
+  if (!text) return;
+  const name = $("ocrName").value.trim();
+  const raw = {
+    code: code || `local-${Date.now()}`,
+    product_name: name || t("ocr.unnamed"),
+    ingredients_text: text,
+    additives_tags: additivesFromText(text),
+    categories_tags: [],
+    local: true,
+  };
+  if (code) localProducts.set(code, raw);
+  const p = present(raw, prefs());
+  memo.set(p.code, p);
+  store.add(p);
+  sheetCode = p.code;
+  renderSheetProduct(p);
+  if (code) toast(t("ocr.saved"));
+}
+
+$("ocrInput").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  const code = pendingOcrCode;
+  pendingOcrCode = null;
+  if (!cameraEl.hidden) closeCamera({ keepHistory: true });
+  startOcr(file, code);
 });
 
 // ===========================================================================
 // Caméra plein écran
 // ===========================================================================
-const cameraEl = $("camera");
 let torchOn = false;
-
 const camera = createCamera({
   video: $("camVideo"),
   frame: $("camFrame"),
   onState(state, detail) {
     cameraEl.dataset.state = state;
+    if (state === "starting") $("camBusyText").textContent = t("cam.opening");
     if (state === "scanning") {
       $("torchBtn").hidden = !detail.torch;
       $("engineInfo").textContent = detail.engine || detectorEngine() || "—";
     }
     if (state === "error") {
-      const msgs = {
-        https: ["Caméra bloquée", "La caméra ne fonctionne que sur une adresse sécurisée (https)."],
-        unsupported: ["Caméra non prise en charge", "Ce navigateur ne donne pas accès à la caméra. Utilisez la photo ou tapez le code."],
-        denied: ["Accès à la caméra refusé", "Autorisez la caméra pour ce site. Sur iPhone : Réglages › Safari › Caméra › Autoriser, puis rechargez la page."],
-        nocamera: ["Aucune caméra trouvée", "Utilisez la photo ou tapez le code-barres."],
-        busy: ["Caméra déjà utilisée", "Une autre application utilise la caméra. Fermez-la puis réessayez."],
-        decoder: ["Lecteur indisponible", "Le module de lecture n'a pas pu se charger. Vérifiez votre connexion puis réessayez."],
-        camera: ["Caméra inaccessible", "La caméra n'a pas pu démarrer."],
-      };
-      const [title, text] = msgs[detail.kind] || msgs.camera;
-      $("camErrorTitle").textContent = title;
-      $("camErrorText").textContent = text + (detail.message && !["denied", "https"].includes(detail.kind) ? ` (${detail.message})` : "");
+      const kind = ["https", "unsupported", "denied", "nocamera", "busy", "decoder"].includes(detail.kind) ? detail.kind : "camera";
+      $("camErrorTitle").textContent = t(`cam.err.${kind}.t`);
+      $("camErrorText").textContent = t(`cam.err.${kind}.p`) + (detail.message && !["denied", "https"].includes(kind) ? ` (${detail.message})` : "");
     }
   },
   onCode(code) {
@@ -408,9 +541,9 @@ $("camManual").addEventListener("click", () => {
 });
 
 // ===========================================================================
-// Photo et saisie manuelle
+// Photo du code-barres et saisie manuelle
 // ===========================================================================
-async function handlePhoto(input) {
+async function handleBarcodePhoto(input) {
   const file = input.files && input.files[0];
   input.value = "";
   if (!file) return;
@@ -418,8 +551,9 @@ async function handlePhoto(input) {
   if (fromCamera) {
     camera.stop();
     cameraEl.dataset.state = "decoding";
+    $("camBusyText").textContent = t("cam.reading");
   } else {
-    $("homeStatus").innerHTML = loadingHtml("Lecture de la photo…");
+    $("homeStatus").innerHTML = loadingHtml(t("cam.reading"));
   }
   try {
     const code = await decodeImageFile(file);
@@ -427,15 +561,14 @@ async function handlePhoto(input) {
     $("homeStatus").innerHTML = "";
     if (code) return openSheet(code, { fromScan: true, replace: fromCamera });
     if (fromCamera && history.state && history.state.cam) history.back();
-    $("homeStatus").innerHTML = messageHtml("Code-barres illisible",
-      "Aucun code-barres trouvé sur la photo. Cadrez le code de près, bien à plat, sans reflet, ou tapez les chiffres.");
-  } catch (err) {
+    $("homeStatus").innerHTML = messageHtml(t("msg.photo_unreadable.t"), t("msg.photo_unreadable.p"));
+  } catch {
     if (fromCamera) closeCamera();
-    $("homeStatus").innerHTML = messageHtml("Lecture impossible", esc("Le module de lecture n'a pas pu se charger. Vérifiez votre connexion."));
+    $("homeStatus").innerHTML = messageHtml(t("msg.reader_error.t"), t("msg.reader_error.p"));
   }
 }
-$("photoInput").addEventListener("change", (e) => handlePhoto(e.target));
-$("photoInputCam").addEventListener("change", (e) => handlePhoto(e.target));
+$("photoInput").addEventListener("change", (e) => handleBarcodePhoto(e.target));
+$("photoInputCam").addEventListener("change", (e) => handleBarcodePhoto(e.target));
 
 function showManual() {
   $("manualForm").hidden = false;
@@ -449,7 +582,7 @@ $("manualForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const code = $("manualInput").value.replace(/\D/g, "");
   if (code.length < 8 || code.length > 14) {
-    $("homeStatus").innerHTML = messageHtml("Code incomplet", "Un code-barres compte en général 13 chiffres (parfois 8, 12 ou 14).");
+    $("homeStatus").innerHTML = messageHtml(t("msg.code_short.t"), t("msg.code_short.p"));
     return;
   }
   $("homeStatus").innerHTML = "";
@@ -458,7 +591,7 @@ $("manualForm").addEventListener("submit", (e) => {
 });
 
 // ===========================================================================
-// Accueil : derniers produits
+// Accueil
 // ===========================================================================
 function renderHome() {
   const recent = store.all().slice(0, 4);
@@ -471,7 +604,9 @@ function renderHome() {
 // Recherche
 // ===========================================================================
 const SUGGESTIONS = DEMO ? ["Haribo", "Nutella", "Saucisson", "Camembert", "Nuggets"] : ["Nutella", "Haribo", "Kinder", "Isla Délice", "Danone", "Oreo"];
-$("suggestChips").innerHTML = SUGGESTIONS.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
+function renderSuggestions() {
+  $("suggestChips").innerHTML = SUGGESTIONS.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
+}
 $("suggestChips").addEventListener("click", (e) => {
   const b = e.target.closest("[data-q]");
   if (!b) return;
@@ -480,31 +615,39 @@ $("suggestChips").addEventListener("click", (e) => {
 });
 
 let searchTicket = 0;
+let lastResults = null;
 async function runSearch(raw) {
   const q = raw.trim();
   const out = $("searchResults");
   $("searchSuggest").hidden = !!q;
+  lastResults = null;
   if (!q) return (out.innerHTML = "");
   const ticket = ++searchTicket;
-  out.innerHTML = loadingHtml("Recherche en cours…");
+  out.innerHTML = loadingHtml(t("search.searching"));
   const digits = q.replace(/\s+/g, "");
   try {
     if (/^\d{8,14}$/.test(digits)) {
       const p = await fetchProduct(digits);
       if (ticket !== searchTicket) return;
-      out.innerHTML = p ? `<div class="list">${rowHtml(p)}</div>` : messageHtml("Produit introuvable", notFoundText(digits));
+      lastResults = p ? [p] : [];
+      out.innerHTML = p ? `<div class="list">${rowHtml(p)}</div>` : notFoundHtml(digits);
       return;
     }
-    if (q.length < 2) return (out.innerHTML = messageHtml("Recherche trop courte", "Tapez au moins 2 caractères."));
+    if (q.length < 2) return (out.innerHTML = messageHtml(t("search.short.t"), t("search.short.p")));
     const list = await off.search(q);
     if (ticket !== searchTicket) return;
     list.forEach((p) => memo.set(p.code, p));
-    out.innerHTML = list.length
-      ? `<p class="label" style="margin-bottom:4px">${list.length} résultat${list.length > 1 ? "s" : ""}</p><div class="list">${list.map((p) => rowHtml(p)).join("")}</div>`
-      : messageHtml("Aucun résultat", `Aucun produit ne correspond à « ${esc(q)} ». Le code-barres donne un résultat plus sûr que le nom.`);
+    lastResults = list;
+    renderResults(q);
   } catch (err) {
-    if (ticket === searchTicket) out.innerHTML = messageHtml("Recherche impossible", errorText(err));
+    if (ticket === searchTicket) out.innerHTML = messageHtml(t("msg.error.t"), errorText(err));
   }
+}
+function renderResults(q) {
+  if (!lastResults) return;
+  $("searchResults").innerHTML = lastResults.length
+    ? `<p class="label" style="margin-bottom:4px">${tn("search.results", lastResults.length)}</p><div class="list">${lastResults.map((p) => rowHtml(p)).join("")}</div>`
+    : messageHtml(t("search.none.t"), t("search.none.p", { q }));
 }
 $("searchForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -523,43 +666,44 @@ let confirmClear = false;
 
 function relTime(ts) {
   const s = (Date.now() - ts) / 1000;
-  if (s < 60) return "à l'instant";
-  if (s < 3600) return `il y a ${Math.floor(s / 60)} min`;
+  if (s < 60) return t("when.now");
+  if (s < 3600) return t("when.min", { n: Math.floor(s / 60) });
   const d = new Date(ts);
-  const hm = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  if (d.toDateString() === new Date().toDateString()) return `aujourd'hui ${hm}`;
-  if (d.toDateString() === new Date(Date.now() - 864e5).toDateString()) return `hier ${hm}`;
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  const hm = d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === new Date().toDateString()) return t("when.today", { t: hm });
+  if (d.toDateString() === new Date(Date.now() - 864e5).toDateString()) return t("when.yesterday", { t: hm });
+  return d.toLocaleDateString(locale(), { day: "numeric", month: "short" });
 }
 
 const HISTORY_FILTERS = [
-  { id: "all", label: "Tous", test: () => true },
-  { id: "fav", label: "Favoris", test: (e) => e.fav },
-  { id: "ok", label: "Halal", test: (e) => e.p.verdict.status.startsWith("halal") },
-  { id: "mashbouh", label: "Douteux", test: (e) => e.p.verdict.status === "mashbouh" },
-  { id: "haram", label: "Haram", test: (e) => e.p.verdict.status === "haram" },
+  { id: "all", test: () => true },
+  { id: "fav", test: (e) => e.fav },
+  { id: "halal", test: (e) => verdictOf(e.p).status.startsWith("halal") },
+  { id: "doubt", test: (e) => verdictOf(e.p).status === "mashbouh" },
+  { id: "haram", test: (e) => verdictOf(e.p).status === "haram" },
 ];
 const STATUS_COLOR = { halal_certifie: "var(--c-cert)", halal_probable: "var(--c-prob)", mashbouh: "var(--c-doubt)", haram: "var(--c-haram)", inconnu: "var(--c-none)" };
 
 function renderHistory() {
   const all = store.all();
   const counts = {};
-  all.forEach((e) => (counts[e.p.verdict.status] = (counts[e.p.verdict.status] || 0) + 1));
-  const present = STATUS_ORDER.filter((s) => counts[s]);
+  all.forEach((e) => {
+    const st = verdictOf(e.p).status;
+    counts[st] = (counts[st] || 0) + 1;
+  });
+  const seen = STATUS_ORDER.filter((s) => counts[s]);
 
-  if (!all.length) {
-    $("historyStats").innerHTML = `<div class="empty">${svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>')}<strong>Aucun produit pour l'instant</strong><p>Les produits que vous scannez apparaîtront ici, consultables même sans connexion.</p><a class="btn btn-primary" href="#scan">Scanner un produit</a></div>`;
-  } else {
-    $("historyStats").innerHTML = `<div class="stats">
-      <div class="stats-top"><span class="stats-num">${all.length}</span><span class="stats-unit">produit${all.length > 1 ? "s" : ""} vérifié${all.length > 1 ? "s" : ""}</span></div>
-      <div class="bar" role="img" aria-label="${present.map((s) => `${counts[s]} ${STATUS[s].label}`).join(", ")}">${present.map((s) => `<i style="flex:${counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("")}</div>
-      <div class="bar-legend">${present.map((s) => `<span><i class="dot" style="--c:${STATUS_COLOR[s]}"></i>${counts[s]} ${STATUS[s].label.toLowerCase()}</span>`).join("")}</div>
+  $("historyStats").innerHTML = !all.length
+    ? `<div class="empty">${svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>')}<strong>${t("history.empty.t")}</strong><p>${t("history.empty.p")}</p><a class="btn btn-primary" href="#scan">${t("home.scan")}</a></div>`
+    : `<div class="stats">
+      <div class="stats-top"><span class="stats-num">${all.length}</span><span class="stats-unit">${t(all.length === 1 ? "history.count_one" : "history.count_other")}</span></div>
+      <div class="bar" role="img" aria-label="${seen.map((s) => `${counts[s]} ${S(s, "label")}`).join(", ")}">${seen.map((s) => `<i style="flex:${counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("")}</div>
+      <div class="bar-legend">${seen.map((s) => `<span><i class="dot" style="--c:${STATUS_COLOR[s]}"></i>${counts[s]} ${S(s, "label")}</span>`).join("")}</div>
     </div>`;
-  }
 
   $("historyFilter").hidden = !all.length;
   $("historyFilter").innerHTML = HISTORY_FILTERS.map(
-    (f) => `<button type="button" class="chip" role="tab" aria-selected="${f.id === historyFilter}" data-f="${f.id}">${f.label}<span class="n">${all.filter(f.test).length}</span></button>`
+    (f) => `<button type="button" class="chip" role="tab" aria-selected="${f.id === historyFilter}" data-f="${f.id}">${t(`history.f.${f.id}`)}<span class="n">${all.filter(f.test).length}</span></button>`
   ).join("");
 
   const shown = all.filter(HISTORY_FILTERS.find((f) => f.id === historyFilter).test);
@@ -567,13 +711,13 @@ function renderHistory() {
     ? ""
     : shown.length
       ? shown.map((e) => rowHtml(e.p, { fav: e.fav, when: relTime(e.at) })).join("")
-      : `<div class="empty"><p>${historyFilter === "fav" ? "Aucun favori. Touchez l'étoile sur une fiche produit pour l'ajouter." : "Aucun produit dans cette catégorie."}</p></div>`;
+      : `<div class="empty"><p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`;
 
   $("historyClear").innerHTML = !all.length
     ? ""
     : confirmClear
-      ? `<span>Effacer l'historique ? Les favoris sont gardés.</span><button type="button" class="link-btn danger" data-clear="yes">Effacer</button><button type="button" class="link-btn" data-clear="no">Annuler</button>`
-      : `<button type="button" class="link-btn" data-clear="ask">Effacer l'historique</button>`;
+      ? `<span>${t("history.clear_q")}</span><button type="button" class="link-btn danger" data-clear="yes">${t("history.clear_yes")}</button><button type="button" class="link-btn" data-clear="no">${t("history.clear_no")}</button>`
+      : `<button type="button" class="link-btn" data-clear="ask">${t("history.clear")}</button>`;
 }
 $("historyFilter").addEventListener("click", (e) => {
   const b = e.target.closest("[data-f]");
@@ -587,7 +731,7 @@ $("historyClear").addEventListener("click", (e) => {
   confirmClear = b.dataset.clear === "ask";
   if (b.dataset.clear === "yes") {
     store.clear({ keepFavs: true });
-    toast("Historique effacé");
+    toast(t("history.cleared"));
   }
   renderHistory();
 });
@@ -597,64 +741,77 @@ store.subscribe(() => {
 });
 
 // ===========================================================================
-// Additifs (deux listes : halal et santé)
+// Additifs (deux listes : halal selon vos réglages, et santé)
 // ===========================================================================
 let addMode = "halal";
 let addFilter = "all";
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
 
-function groupBy(entries, toItem) {
-  const groups = new Map();
-  for (const [code, a] of entries) {
-    const key = a.level || a.severity;
-    const gk = key + "|" + a.reason;
-    if (!groups.has(gk)) groups.set(gk, { level: key, reason: a.reason, members: [] });
-    groups.get(gk).members.push({ code: code.toUpperCase(), ...a });
+function halalItems() {
+  const topics = prefs().topics;
+  const level = (id, base) => (TOPIC_OF[id] ? SEVERITY_OF[topics[TOPIC_OF[id]]] : base);
+  const items = TEXT_RULES.map((r) => ({
+    group: t("add.group_ingredients"), name: t(`flag.${r.id}.label`), codes: [], reason: t(`flag.${r.id}.reason`),
+    level: level(r.id, r.severity), topic: TOPIC_OF[r.id],
+  }));
+  const fattyCodes = [];
+  for (const [code, a] of Object.entries(ADDITIVES)) {
+    if (a.group === "gras") { fattyCodes.push(code.toUpperCase()); continue; }
+    items.push({
+      group: t("add.group_additives"), name: `${code.toUpperCase()} · ${t(`flag.${code}.label`)}`, codes: [],
+      reason: t(`flag.${code}.reason`), level: level(code, a.severity), topic: TOPIC_OF[code],
+    });
   }
-  return [...groups.values()].map(toItem);
+  items.push({
+    group: t("add.group_additives"), name: t("add.fatty"), codes: fattyCodes, reason: t("flag.fatty.reason"),
+    level: SEVERITY_OF[topics.derives], topic: "derives",
+  });
+  return items;
 }
 
-const HALAL_ITEMS = [
-  ...TEXT_RULES.map((r) => ({ group: "Ingrédients", name: r.label, sub: "", codes: [], level: r.severity, reason: r.reason })),
-  ...groupBy(Object.entries(ADDITIVES), (g) => ({
-    group: "Additifs (codes E)",
-    name: g.members.length > 1 ? "Dérivés d'acides gras" : g.members[0].label,
-    sub: "",
-    codes: g.members.length > 1 ? g.members.map((m) => m.code) : [],
+function healthItems() {
+  const groups = new Map();
+  for (const [code, a] of Object.entries(ADDITIVE_RISK)) {
+    if (!groups.has(a.key)) groups.set(a.key, { level: a.level, key: a.key, members: [] });
+    groups.get(a.key).members.push(code);
+  }
+  return [...groups.values()].map((g) => ({
+    group: t(`risk.${g.level}`),
+    name: g.members.map((c) => t(`addname.${c}`)).join(", "),
+    codes: g.members.map((c) => c.toUpperCase()),
+    reason: t(`risk.reason.${g.key}`),
     level: g.level,
-    reason: g.reason,
-  })),
-];
-const HEALTH_ITEMS = groupBy(Object.entries(ADDITIVE_RISK), (g) => ({
-  group: RISK_LABELS[g.level],
-  name: g.members.length > 1 ? g.members.map((m) => m.name).join(", ") : g.members[0].name,
-  sub: g.members.length > 1 ? "" : g.members[0].code,
-  codes: g.members.length > 1 ? g.members.map((m) => m.code) : [],
-  level: g.level,
-  reason: g.reason,
-}));
+  }));
+}
 
-const MODES = {
-  halal: { items: HALAL_ITEMS, filters: [["all", "Tous"], ["haram", "Haram"], ["mashbouh", "Douteux"], ["info", "Info"]],
-    pill: (l) => `<span class="pill ${l === "haram" ? "s-haram" : l === "mashbouh" ? "s-mashbouh" : "r-info"}">${SEV_LABEL[l]}</span>`,
-    order: { haram: 0, mashbouh: 1, info: 2 } },
-  sante: { items: HEALTH_ITEMS, filters: [["all", "Tous"], ["eleve", "Élevé"], ["modere", "Modéré"], ["limite", "Limité"]],
-    pill: (l) => `<span class="pill r-${l}">${RISK_LABELS[l].replace("Risque ", "")}</span>`,
-    order: { eleve: 0, modere: 1, limite: 2 } },
+const ADD_MODES = {
+  halal: {
+    items: halalItems,
+    filters: [["all", "add.f.all"], ["haram", "sev.haram"], ["mashbouh", "sev.mashbouh"], ["info", "sev.info"]],
+    pill: (it) => `<span class="pill ${it.level === "haram" ? "s-haram" : it.level === "mashbouh" ? "s-mashbouh" : "r-info"}">${t(`sev.${it.level}`)}</span>`,
+    order: { haram: 0, mashbouh: 1, info: 2 },
+  },
+  sante: {
+    items: healthItems,
+    filters: [["all", "add.f.all"], ["eleve", "risk.short.eleve"], ["modere", "risk.short.modere"], ["limite", "risk.short.limite"]],
+    pill: (it) => `<span class="pill r-${it.level}">${t(`risk.short.${it.level}`)}</span>`,
+    order: { eleve: 0, modere: 1, limite: 2 },
+  },
 };
 
 function renderAdditives() {
-  const m = MODES[addMode];
+  const m = ADD_MODES[addMode];
+  const all = m.items();
   const q = norm($("addInput").value || "");
-  document.querySelectorAll(".segmented button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === addMode)));
+  document.querySelectorAll("#addModes button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === addMode)));
   $("addFilter").innerHTML = m.filters
-    .map(([id, label]) => {
-      const n = id === "all" ? m.items.length : m.items.filter((i) => i.level === id).length;
-      return `<button type="button" class="chip" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${label}<span class="n">${n}</span></button>`;
+    .map(([id, key]) => {
+      const n = id === "all" ? all.length : all.filter((i) => i.level === id).length;
+      return `<button type="button" class="chip" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${t(key)}<span class="n">${n}</span></button>`;
     })
     .join("");
-  const items = m.items
-    .filter((it) => (addFilter === "all" || it.level === addFilter) && (!q || norm([it.name, it.sub, it.codes.join(" "), it.reason].join(" ")).includes(q)))
+  const items = all
+    .filter((it) => (addFilter === "all" || it.level === addFilter) && (!q || norm([it.name, it.codes.join(" "), it.reason].join(" ")).includes(q)))
     .sort((a, b) => m.order[a.level] - m.order[b.level]);
   const groups = [...new Set(items.map((i) => i.group))];
   $("addList").innerHTML = items.length
@@ -663,16 +820,18 @@ function renderAdditives() {
           (g) => `<div class="add-group"><p class="label">${esc(g)}</p>${items
             .filter((i) => i.group === g)
             .map(
-              (it) => `<div class="add-item"><div class="add-head"><span class="add-name">${esc(it.name)}${it.sub ? `<small>${esc(it.sub)}</small>` : ""}</span>${m.pill(it.level)}</div>
-                ${it.codes.length ? `<div class="add-codes">${it.codes.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
-                <p class="add-why">${esc(it.reason)}</p></div>`
+              (it) => `<div class="add-item"><div class="add-head"><span class="add-name">${esc(it.name)}</span>${m.pill(it)}</div>
+                ${it.codes.length ? `<div class="add-codes" dir="ltr">${it.codes.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
+                <p class="add-why">${esc(it.reason)}</p>
+                ${it.topic ? `<p class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[it.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></p>` : ""}
+              </div>`
             )
             .join("")}</div>`
         )
         .join("")
-    : `<div class="empty"><strong>Rien de trouvé</strong><p>${addMode === "halal" ? "Cet ingrédient n'est pas surveillé pour le halal : il est considéré sans problème." : "Cet additif n'est pas classé à risque dans l'app."}</p></div>`;
+    : `<div class="empty"><strong>${t("add.empty.t")}</strong><p>${t(addMode === "halal" ? "add.empty_halal" : "add.empty_health")}</p></div>`;
 }
-document.querySelector(".segmented").addEventListener("click", (e) => {
+$("addModes").addEventListener("click", (e) => {
   const b = e.target.closest("[data-mode]");
   if (!b) return;
   addMode = b.dataset.mode;
@@ -688,34 +847,128 @@ $("addFilter").addEventListener("click", (e) => {
 $("addInput").addEventListener("input", renderAdditives);
 
 // ===========================================================================
-// Infos
+// Réglages
 // ===========================================================================
-$("legendHalal").innerHTML = STATUS_ORDER.slice()
-  .sort((a, b) => ["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"].indexOf(a) - ["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"].indexOf(b))
-  .map((s) => `<div class="legend-row"><span class="pill s-${s}"><span class="dot"></span>${STATUS[s].label}</span><p>${STATUS[s].legend}</p></div>`)
-  .join("");
-$("legendHealth").innerHTML = HEALTH_GRADES.map((g, i) => {
-  const max = i === 0 ? 100 : HEALTH_GRADES[i - 1].min - 1;
-  return `<div class="legend-row"><span class="pill g-${g.id}" style="--cbg:var(--tint)"><span class="dot"></span>${g.label}</span><p>De ${g.min} à ${max} sur 100.</p></div>`;
-}).join("");
-if (DEMO) {
-  $("demoLink").href = location.pathname + "#scan";
-  $("demoLink").querySelector("strong").textContent = "Quitter le mode démo";
-  $("demoLink").querySelector("small").textContent = "Revenir aux vraies données Open Food Facts";
+function renderSettings() {
+  const st = prefs();
+  $("langGrid").innerHTML = LANGS.map(
+    (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`
+  ).join("");
+
+  const schools = [...Object.keys(SCHOOLS), ...(st.school === "custom" ? ["custom"] : [])];
+  $("schoolList").innerHTML = schools
+    .map(
+      (s) => `<button type="button" role="radio" class="school" aria-checked="${st.school === s}" data-school="${s}">
+        <span class="radio" aria-hidden="true"></span>
+        <span class="school-text"><strong>${t(`school.${s}`)}</strong><small>${t(`school.${s}.d`)}</small></span>
+      </button>`
+    )
+    .join("");
+
+  $("topicList").innerHTML = TOPICS.map(
+    (topic) => `<div class="topic">
+      <span class="topic-name" id="tp-${topic}">${t(`topic.${topic}`)}</span>
+      <div class="seg3" role="radiogroup" aria-labelledby="tp-${topic}">${DECISIONS.map(
+        (d) => `<button type="button" role="radio" class="d-${d}" aria-checked="${st.topics[topic] === d}" data-topic="${topic}" data-decision="${d}">${t(`decision.${d}`)}</button>`
+      ).join("")}</div>
+    </div>`
+  ).join("");
+
+  renderOfflineStatus();
+
+  $("legendHalal").innerHTML = LEGEND_ORDER.map(
+    (s) => `<div class="legend-row"><span class="pill s-${s}"><span class="dot"></span>${S(s, "label")}</span><p>${S(s, "legend")}</p></div>`
+  ).join("");
+  $("legendHealth").innerHTML = HEALTH_GRADES.map((g, i) => {
+    const max = i === 0 ? 100 : HEALTH_GRADES[i - 1].min - 1;
+    return `<div class="legend-row"><span class="pill g-${g.id}" style="--cbg:var(--tint)"><span class="dot"></span>${t(`grade.${g.id}`)}</span><p>${t("health.range", { a: g.min, b: max })}</p></div>`;
+  }).join("");
+  document.querySelectorAll(".se-pts").forEach((el) => (el.textContent = t("health.pts", { n: el.dataset.pts })));
+  $("demoLink").href = DEMO ? location.pathname + "#scan" : "?demo#scan";
+  $("demoLinkT").textContent = t(DEMO ? "link.demo_exit.t" : "link.demo.t");
+  $("demoLinkD").textContent = t(DEMO ? "link.demo_exit.d" : "link.demo.d");
 }
+
+$("langGrid").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-lang]");
+  if (b) settings.set({ lang: b.dataset.lang });
+});
+$("schoolList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-school]");
+  if (b && b.dataset.school !== "custom") settings.setSchool(b.dataset.school);
+});
+$("topicList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-topic]");
+  if (b) settings.setTopic(b.dataset.topic, b.dataset.decision);
+});
+
+// Pack hors connexion
+let packing = false;
+function renderOfflineStatus(progress) {
+  const st = prefs();
+  const btn = $("offlineBtn");
+  btn.disabled = packing;
+  btn.textContent = t(st.offlinePackAt ? "settings.offline_update" : "settings.offline_btn");
+  $("offlineStatus").textContent =
+    progress !== undefined
+      ? t("settings.offline_progress", { n: progress })
+      : st.offlinePackAt
+        ? t("settings.offline_done", { n: st.offlinePackCount, d: new Date(st.offlinePackAt).toLocaleDateString(locale(), { day: "numeric", month: "long" }) })
+        : "";
+}
+$("offlineBtn").addEventListener("click", async () => {
+  if (packing) return;
+  if (!("caches" in window) || !("serviceWorker" in navigator)) {
+    $("offlineStatus").textContent = t("settings.offline_unsupported");
+    return;
+  }
+  packing = true;
+  renderOfflineStatus(0);
+  try {
+    getDetector().catch(() => {}); // garde aussi le lecteur de codes-barres en cache
+    const n = await off.offlinePack({ onProgress: (count) => renderOfflineStatus(count) });
+    packing = false;
+    settings.set({ offlinePackAt: Date.now(), offlinePackCount: n });
+  } catch {
+    packing = false;
+    renderOfflineStatus();
+    $("offlineStatus").textContent = t("settings.offline_error");
+  }
+});
+
+// Changement de réglage : tout ce qui est affiché est recalculé
+settings.subscribe((st, patch) => {
+  if (patch.lang) {
+    setLang(st.lang);
+    applyStatic();
+    renderSuggestions();
+  }
+  renderSettings();
+  if (current === "scan") renderHome();
+  if (current === "history") renderHistory();
+  if (current === "additives") renderAdditives();
+  if (current === "search") renderResults($("searchInput").value.trim());
+  if (!sheet.hidden && sheetProduct) {
+    const top = $("sheetBody").scrollTop;
+    renderSheetProduct(sheetProduct);
+    if (!sheetProduct.local) loadAlternatives(sheetProduct, sheetCode);
+    $("sheetBody").scrollTop = top;
+  }
+});
 
 // ===========================================================================
 // Navigation
 // ===========================================================================
-const TABS = ["scan", "search", "history", "additives", "infos"];
+const TABS = ["scan", "search", "history", "additives", "settings"];
 let current = null;
 
 function showTab(name) {
+  if (name === "infos") name = "settings"; // ancienne adresse
   if (!TABS.includes(name)) name = "scan";
   current = name;
   document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
-  document.querySelectorAll(".tab").forEach((t) =>
-    t.dataset.tab === name ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current")
+  document.querySelectorAll(".tab").forEach((tab) =>
+    tab.dataset.tab === name ? tab.setAttribute("aria-current", "page") : tab.removeAttribute("aria-current")
   );
   if (name === "scan") renderHome();
   if (name === "history") {
@@ -723,6 +976,7 @@ function showTab(name) {
     renderHistory();
   }
   if (name === "additives") renderAdditives();
+  if (name === "settings") renderSettings();
   window.scrollTo(0, 0);
 }
 
@@ -749,20 +1003,36 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // ===========================================================================
+// Connexion et service worker
+// ===========================================================================
+function renderOnline() {
+  $("offlineBadge").hidden = navigator.onLine !== false;
+}
+window.addEventListener("online", renderOnline);
+window.addEventListener("offline", renderOnline);
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
+// ===========================================================================
 // Toast
 // ===========================================================================
 let toastTimer;
 function toast(text) {
-  const t = $("toast");
-  t.textContent = text;
-  t.hidden = false;
+  const el = $("toast");
+  el.textContent = text;
+  el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.hidden = true), 2000);
+  toastTimer = setTimeout(() => (el.hidden = true), 2200);
 }
 
 // ===========================================================================
 // Démarrage
 // ===========================================================================
+setLang(prefs().lang);
+applyStatic();
+renderSuggestions();
+renderOnline();
 if (DEMO) $("demoBadge").hidden = false;
 showTab(location.hash.slice(1) || "scan");
 // Prépare le lecteur en arrière-plan pour que le premier scan soit immédiat.

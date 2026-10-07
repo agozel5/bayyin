@@ -64,3 +64,25 @@ export const store = {
     return () => listeners.delete(fn);
   },
 };
+
+// Fiches complétées par l'utilisateur (photo de la liste d'ingrédients), par code-barres.
+// Utilisées quand Open Food Facts ne connaît pas le produit ou n'a pas ses ingrédients.
+const LOCAL_KEY = "halalscan_local_v1";
+export const localProducts = {
+  get(code) {
+    try {
+      return (JSON.parse(localStorage.getItem(LOCAL_KEY)) || {})[code] || null;
+    } catch {
+      return null;
+    }
+  },
+  set(code, raw) {
+    try {
+      const all = JSON.parse(localStorage.getItem(LOCAL_KEY)) || {};
+      all[code] = raw;
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
+    } catch {
+      /* stockage indisponible */
+    }
+  },
+};
