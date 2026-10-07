@@ -1,0 +1,122 @@
+# Halal Scan
+
+Web app qui scanne le code-barres d'un produit alimentaire et indique s'il est
+**halal certifié**, **halal probable**, **douteux** ou **haram**, en expliquant
+quel ingrédient pose problème et pourquoi.
+
+Les données produits viennent d'[Open Food Facts](https://fr.openfoodfacts.org)
+(base collaborative, gratuite, plus de 3 millions de produits).
+
+L'app est **100 % statique** : le dossier `public/` suffit. Le navigateur
+interroge directement Open Food Facts et applique les règles lui-même, donc
+aucun serveur n'est nécessaire en production.
+
+## Mettre l'app en ligne (GitHub Pages, gratuit, HTTPS)
+
+La caméra du téléphone n'est autorisée qu'en HTTPS : il faut donc héberger
+l'app, pas seulement l'ouvrir en local. GitHub Pages le fait gratuitement.
+
+1. Sur github.com, **New repository** → nom `halal-scan` → **Public** → Create.
+2. Dans le dépôt vide : **uploading an existing file**, puis glisser-déposer
+   **le contenu** du dossier `public/` (`index.html`, `app.js`, `style.css`,
+   `icon.svg`, `manifest.webmanifest` et le dossier `lib/`) → **Commit changes**.
+   `index.html` doit être à la racine du dépôt.
+3. **Settings → Pages** → Source : *Deploy from a branch* → Branch : `main`,
+   dossier `/ (root)` → **Save**.
+4. Après une à deux minutes, l'app est en ligne sur
+   `https://<ton-pseudo>.github.io/halal-scan/`.
+
+Sur le téléphone : ouvrir cette adresse, autoriser la caméra, puis
+« Ajouter à l'écran d'accueil » pour l'avoir comme une application.
+
+Pour mettre à jour : ré-uploader les fichiers modifiés dans le dépôt.
+
+Mode démo sans internet : ajouter `#demo` à la fin de l'adresse.
+
+## Développer en local
+
+Prérequis : Node.js 18 ou plus récent. Aucune dépendance à installer.
+
+```bash
+npm start        # http://localhost:3000 (sert public/ + une API JSON)
+npm test         # 20 tests (règles + API)
+```
+
+Sur ordinateur, la caméra fonctionne sur `localhost`.
+
+## Architecture
+
+```
+public/                 l'app (à héberger telle quelle)
+  index.html
+  app.js                scan caméra (html5-qrcode), recherche, affichage, historique local
+  style.css             thème clair/sombre
+  lib/rules.js          moteur de classification halal
+  lib/off.js            appels à Open Food Facts depuis le navigateur
+  lib/fixtures.js       produits d'exemple (tests + mode démo)
+src/server.js           serveur local optionnel : sert public/ + API JSON
+test/                   tests node:test
+```
+
+### API du serveur local (optionnelle)
+
+Utile pour un futur client mobile natif ; l'app web ne s'en sert pas.
+
+| Route | Rôle |
+|---|---|
+| `GET /api/product/:code` | Fiche + verdict pour un code-barres (8 à 14 chiffres) |
+| `GET /api/search?q=nutella` | Recherche par nom, 12 résultats max avec verdict |
+| `GET /api/health` | État du serveur, mode hors-ligne ou non |
+
+Exemple de réponse (abrégée) :
+
+```json
+{
+  "found": true,
+  "product": {
+    "code": "4001686301029",
+    "name": "Dragibus",
+    "brand": "Haribo",
+    "verdict": {
+      "status": "mashbouh",
+      "statusLabel": "Douteux",
+      "certification": null,
+      "flags": [
+        { "id": "gelatine", "severity": "mashbouh", "label": "Gélatine", "reason": "…", "source": "gelatine" },
+        { "id": "e120", "severity": "mashbouh", "label": "E120 (carmin)", "reason": "…", "source": "E120" }
+      ],
+      "notes": []
+    }
+  }
+}
+```
+
+## Comment le verdict est calculé (`public/lib/rules.js`)
+
+1. **Texte des ingrédients**, découpé en segments pour que les exceptions
+   s'appliquent localement (« vinaigre de vin », « jambon de dinde »,
+   « bière sans alcool », « orange sanguine »…).
+2. **Additifs** : codes E lus dans `additives_tags` d'Open Food Facts et dans le
+   texte. Les dérivés d'acides gras (E471, E472…, E481…) passent en simple
+   information si l'étiquette précise une origine végétale ou si le produit est
+   végétalien.
+3. **Certification** : label « halal » sur la fiche, avec reconnaissance des
+   organismes (AVS, Achahada, Mosquée de Paris, Mosquée de Lyon, HMC, HFA…).
+4. **Décision** : haram > certifié > douteux > halal probable > non déterminé.
+   Un ingrédient haram l'emporte même sur un label (la fiche peut être fausse).
+
+Chaque signalement a une sévérité : `haram`, `mashbouh` (douteux) ou `info`
+(point d'attention qui ne change pas le verdict, ex. vinaigre de vin).
+
+Pour ajouter une règle (`public/lib/rules.js`) : une entrée dans `TEXT_RULES` ou `ADDITIVES`, puis un
+test dans `test/rules.test.js`.
+
+## Limites connues
+
+- Le verdict dépend de la qualité de la fiche Open Food Facts : liste
+  d'ingrédients absente, ancienne ou mal transcrite = verdict incertain.
+- Les labels de certification ne sont pas vérifiés auprès des organismes.
+  Une prochaine étape serait d'importer leurs listes publiques de produits.
+- Les positions retenues pour les cas débattus (E120, présure, vinaigre de vin…)
+  sont des choix à valider ; l'idéal serait un réglage « école / niveau de
+  prudence » dans l'app.
