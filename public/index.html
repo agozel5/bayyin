@@ -3,158 +3,187 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F4F2EC" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0E1411" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light only">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Halal Scan">
-<meta name="description" content="Scannez le code-barres d'un produit alimentaire pour savoir s'il est halal, douteux ou haram, et pourquoi.">
+<meta name="description" content="Scannez un produit alimentaire : halal, douteux ou haram, note santé, additifs et meilleures alternatives.">
 <title>Halal Scan</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="topbar">
-  <div class="topbar-inner">
-    <a class="brand" href="#scan" aria-label="Halal Scan, accueil">
-      <img src="icon.svg" alt="" width="30" height="30">
-      <span>Halal Scan</span>
-    </a>
-    <span class="demo-badge" id="demoBadge" hidden>Démo</span>
-  </div>
-</header>
-
 <main class="views">
 
-  <!-- ============ SCANNER ============ -->
-  <section class="view" id="view-scan" data-view="scan" aria-labelledby="h-scan">
-    <h1 class="sr-only" id="h-scan">Scanner un produit</h1>
+  <!-- ================= ACCUEIL / SCANNER ================= -->
+  <section class="view" id="view-scan" data-view="scan" aria-labelledby="h-home">
+    <header class="home-head">
+      <div class="brand"><img src="icon.svg" alt="" width="36" height="36"><span>Halal Scan</span><span class="demo-badge" id="demoBadge" hidden>Démo</span></div>
+      <h1 id="h-home">Halal, santé, additifs.<br>Tout en un scan.</h1>
+      <p>Scannez le code-barres d'un produit alimentaire pour savoir s'il est halal, ce qu'il vaut pour la santé, et trouver mieux.</p>
+    </header>
 
-    <div class="viewfinder" id="viewfinder" data-state="idle">
-      <div id="reader"></div>
-      <div class="vf-frame" aria-hidden="true">
-        <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
-        <span class="laser"></span>
-      </div>
-      <div class="vf-panel vf-idle">
-        <button class="btn btn-primary btn-lg" id="startScan" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>
-          <span id="startLabel">Activer la caméra</span>
-        </button>
-        <p class="vf-hint">Placez le code-barres dans le cadre, à 10–20 cm.</p>
-      </div>
-      <div class="vf-panel vf-busy"><span class="spinner" aria-hidden="true"></span><p>Ouverture de la caméra…</p></div>
-      <div class="vf-panel vf-error">
-        <p class="vf-error-title" id="vfErrorTitle">Caméra inaccessible</p>
-        <p class="vf-error-text" id="vfErrorText"></p>
-        <button class="btn btn-light" id="retryScan" type="button">Réessayer</button>
-      </div>
-      <button class="vf-stop" id="stopScan" type="button" aria-label="Arrêter la caméra">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <button class="scan-cta" id="openCamera" type="button">
+      <span class="scan-cta-art" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <b class="scan-cta-line"></b>
+      </span>
+      <span class="scan-cta-text"><strong>Scanner un produit</strong><small>Ouvre la caméra</small></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="alt-actions">
+      <label class="alt-btn" for="photoInput">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span>Photo du code-barres</span>
+      </label>
+      <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
+      <button class="alt-btn" type="button" id="focusManual">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
+        <span>Taper le code</span>
       </button>
     </div>
 
-    <div id="scanResult" aria-live="polite"></div>
-
-    <form class="manual" id="manualForm" autocomplete="off">
-      <label for="manualInput">Pas de caméra ? Tapez le code-barres</label>
+    <form class="manual" id="manualForm" autocomplete="off" hidden>
+      <label for="manualInput">Les chiffres sous le code-barres</label>
       <div class="field-row">
-        <input id="manualInput" class="field mono" type="text" inputmode="numeric" pattern="[0-9 ]*" placeholder="Ex. 3017620422003" enterkeyhint="go">
-        <button class="btn btn-secondary" type="submit">Vérifier</button>
+        <input id="manualInput" class="field" type="text" inputmode="numeric" pattern="[0-9 ]*" placeholder="3017620422003" enterkeyhint="go">
+        <button class="btn btn-primary" type="submit">Vérifier</button>
       </div>
     </form>
+
+    <div id="homeStatus" aria-live="polite"></div>
+
+    <section class="home-recent" id="homeRecent" hidden>
+      <div class="section-head"><h2>Derniers produits</h2><a href="#history">Tout voir</a></div>
+      <div class="list" id="homeRecentList"></div>
+    </section>
+
+    <section class="home-explain" id="homeExplain">
+      <h2>Ce que vous saurez</h2>
+      <div class="feature-grid">
+        <div class="feature"><span class="f-ico f-halal">✓</span><strong>Statut halal</strong><p>Certifié, probable, douteux ou haram, avec l'ingrédient en cause.</p></div>
+        <div class="feature"><span class="f-ico f-health">72</span><strong>Note santé</strong><p>Sur 100, d'après le Nutri-Score, les additifs et le bio.</p></div>
+        <div class="feature"><span class="f-ico f-add">E</span><strong>Additifs</strong><p>Ceux à éviter et pourquoi, sources à l'appui.</p></div>
+        <div class="feature"><span class="f-ico f-alt">↻</span><strong>Alternatives</strong><p>Des produits halal mieux notés dans le même rayon.</p></div>
+      </div>
+    </section>
   </section>
 
-  <!-- ============ RECHERCHE ============ -->
+  <!-- ================= RECHERCHE ================= -->
   <section class="view" id="view-search" data-view="search" aria-labelledby="h-search" hidden>
-    <div class="view-head">
-      <h1 id="h-search">Recherche</h1>
-      <p>Par nom de produit, marque ou code-barres.</p>
-    </div>
+    <header class="view-head"><h1 id="h-search">Recherche</h1><p>Par nom de produit, marque ou code-barres.</p></header>
     <form class="searchbar" id="searchForm" role="search" autocomplete="off">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <label class="sr-only" for="searchInput">Rechercher un produit</label>
       <input id="searchInput" type="search" placeholder="Nutella, Haribo, 3017620422003…" enterkeyhint="search">
     </form>
     <div id="searchSuggest" class="suggest">
-      <p class="label">Essayez</p>
+      <p class="label">Idées de recherche</p>
       <div class="chips" id="suggestChips"></div>
     </div>
     <div id="searchResults" aria-live="polite"></div>
   </section>
 
-  <!-- ============ HISTORIQUE ============ -->
+  <!-- ================= HISTORIQUE ================= -->
   <section class="view" id="view-history" data-view="history" aria-labelledby="h-history" hidden>
-    <div class="view-head">
-      <h1 id="h-history">Historique</h1>
-      <p>Les produits vérifiés sur cet appareil.</p>
-    </div>
+    <header class="view-head"><h1 id="h-history">Historique</h1><p>Les produits vérifiés sur cet appareil.</p></header>
     <div id="historyStats"></div>
     <div class="chips filter" id="historyFilter" role="tablist" aria-label="Filtrer l'historique"></div>
     <div id="historyList" class="list"></div>
     <div class="danger-zone" id="historyClear"></div>
   </section>
 
-  <!-- ============ ADDITIFS ============ -->
+  <!-- ================= ADDITIFS ================= -->
   <section class="view" id="view-additives" data-view="additives" aria-labelledby="h-add" hidden>
-    <div class="view-head">
-      <h1 id="h-add">Additifs et ingrédients</h1>
-      <p>Ce que l'app surveille sur les étiquettes, et pourquoi.</p>
+    <header class="view-head"><h1 id="h-add">Additifs</h1><p>Ce que l'app repère sur les étiquettes, et pourquoi.</p></header>
+    <div class="segmented" role="tablist" aria-label="Type de liste">
+      <button type="button" role="tab" aria-selected="true" data-mode="halal">Pour le halal</button>
+      <button type="button" role="tab" aria-selected="false" data-mode="sante">Pour la santé</button>
     </div>
     <form class="searchbar" id="addForm" role="search" autocomplete="off" onsubmit="return false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <label class="sr-only" for="addInput">Chercher un additif</label>
-      <input id="addInput" type="search" placeholder="E471, gélatine, carmin…">
+      <input id="addInput" type="search" placeholder="E471, gélatine, aspartame…">
     </form>
-    <div class="chips filter" id="addFilter" role="tablist" aria-label="Filtrer par statut"></div>
+    <div class="chips filter" id="addFilter" role="tablist" aria-label="Filtrer"></div>
     <div id="addList"></div>
   </section>
 
-  <!-- ============ INFOS ============ -->
+  <!-- ================= INFOS ================= -->
   <section class="view" id="view-infos" data-view="infos" aria-labelledby="h-infos" hidden>
-    <div class="view-head">
-      <h1 id="h-infos">Comment ça marche</h1>
-    </div>
+    <header class="view-head"><h1 id="h-infos">Comment ça marche</h1></header>
 
     <ol class="steps">
-      <li><strong>Lecture du code-barres.</strong> La caméra lit le code EAN imprimé sous le produit.</li>
-      <li><strong>Fiche Open Food Facts.</strong> L'app récupère la liste d'ingrédients, les additifs et les labels depuis cette base collaborative de plus de 3 millions de produits.</li>
-      <li><strong>Analyse.</strong> Chaque ingrédient est comparé à une liste de termes et de codes E sensibles. Un label de certification halal est reconnu (AVS, Achahada, Mosquée de Paris…).</li>
+      <li><strong>Lecture du code-barres</strong>La caméra lit le code imprimé sur l'emballage.</li>
+      <li><strong>Fiche Open Food Facts</strong>Ingrédients, additifs, labels et valeurs nutritionnelles viennent de cette base collaborative de plus de 3 millions de produits.</li>
+      <li><strong>Deux analyses</strong>Le statut halal à partir des ingrédients et des certifications ; la note santé à partir du Nutri-Score, des additifs et du label bio.</li>
     </ol>
 
-    <h2 class="sub">Les statuts</h2>
-    <div class="legend" id="legend"></div>
+    <h2 class="sub">Statut halal</h2>
+    <div class="legend" id="legendHalal"></div>
 
-    <h2 class="sub">Ce que l'app ne peut pas garantir</h2>
+    <h2 class="sub">Note santé sur 100</h2>
+    <div class="score-explain">
+      <div class="se-row"><span class="se-pts">60 pts</span><p><strong>Qualité nutritionnelle.</strong> Nutri-Score A = 60, B = 45, C = 30, D = 15, E = 0.</p></div>
+      <div class="se-row"><span class="se-pts">30 pts</span><p><strong>Additifs.</strong> Retrait de 4 à 30 points par additif selon son niveau de risque. Un additif à risque élevé plafonne la note à 49.</p></div>
+      <div class="se-row"><span class="se-pts">10 pts</span><p><strong>Bio.</strong> Label agriculture biologique.</p></div>
+    </div>
+    <div class="legend" id="legendHealth"></div>
+
+    <h2 class="sub">Limites</h2>
     <div class="prose">
-      <p>Le verdict dépend de la fiche Open Food Facts, remplie par des bénévoles : elle peut être incomplète ou ancienne. L'emballage que vous avez en main fait foi.</p>
+      <p>Les fiches Open Food Facts sont remplies par des bénévoles : elles peuvent être incomplètes ou anciennes. L'emballage que vous avez en main fait foi.</p>
       <p>Sans certification, personne ne peut vérifier le mode d'abattage d'une viande ni l'origine exacte d'un additif. « Halal probable » signifie seulement qu'aucun ingrédient problématique n'est déclaré.</p>
-      <p>Pour les cas débattus entre écoles (carmin, présure, vinaigre de vin…), l'app signale le point plutôt que de trancher.</p>
+      <p>Les niveaux de risque des additifs résument des avis publics (EFSA, ANSES, CIRC). Ce sont des repères, pas un avis médical.</p>
     </div>
 
-    <h2 class="sub">Aller plus loin</h2>
     <div class="links">
-      <a class="link-row" href="https://fr.openfoodfacts.org" target="_blank" rel="noopener">
-        <span><strong>Open Food Facts</strong><small>Ajouter ou corriger un produit</small></span><span aria-hidden="true">↗</span>
-      </a>
-      <a class="link-row" href="https://github.com/agozel5/halal-scan/issues" target="_blank" rel="noopener">
-        <span><strong>Signaler une erreur de classement</strong><small>Sur GitHub</small></span><span aria-hidden="true">↗</span>
-      </a>
-      <a class="link-row" id="demoLink" href="?demo#scan">
-        <span><strong>Mode démo</strong><small>11 produits d'exemple, sans connexion</small></span><span aria-hidden="true">→</span>
-      </a>
+      <a class="link-row" href="https://fr.openfoodfacts.org" target="_blank" rel="noopener"><span><strong>Open Food Facts</strong><small>Ajouter ou corriger un produit</small></span><span aria-hidden="true">↗</span></a>
+      <a class="link-row" href="https://github.com/agozel5/halal-scan/issues" target="_blank" rel="noopener"><span><strong>Signaler une erreur</strong><small>Sur GitHub</small></span><span aria-hidden="true">↗</span></a>
+      <a class="link-row" id="demoLink" href="?demo#scan"><span><strong>Mode démo</strong><small>Produits d'exemple, sans connexion</small></span><span aria-hidden="true">→</span></a>
     </div>
-    <p class="fineprint">Halal Scan · données <a href="https://world.openfoodfacts.org/data" target="_blank" rel="noopener">Open Food Facts</a> (licence ODbL) · code sur <a href="https://github.com/agozel5/halal-scan" target="_blank" rel="noopener">GitHub</a></p>
+    <p class="fineprint">Données <a href="https://world.openfoodfacts.org/data" target="_blank" rel="noopener">Open Food Facts</a> (licence ODbL) · <a href="https://github.com/agozel5/halal-scan" target="_blank" rel="noopener">code source</a> · lecteur : <span id="engineInfo">—</span></p>
   </section>
 </main>
 
-<!-- ============ FICHE PRODUIT (panneau) ============ -->
+<!-- ================= CAMÉRA PLEIN ÉCRAN ================= -->
+<div class="camera" id="camera" data-state="idle" role="dialog" aria-modal="true" aria-label="Scanner un code-barres" hidden>
+  <video id="camVideo" playsinline muted autoplay></video>
+  <div class="cam-mask" aria-hidden="true"><div class="cam-frame" id="camFrame"><span class="laser"></span></div></div>
+  <div class="cam-top">
+    <button class="cam-btn" id="closeCamera" type="button" aria-label="Fermer la caméra">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="cam-btn" id="torchBtn" type="button" aria-label="Lampe" aria-pressed="false" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1 5h-6zM9 8h6v3l-1.5 2v8h-3v-8L9 11z"/></svg>
+    </button>
+  </div>
+  <div class="cam-bottom">
+    <p class="cam-hint" id="camHint">Placez le code-barres dans le cadre</p>
+    <div class="cam-actions">
+      <label class="cam-pill" for="photoInputCam">Prendre une photo</label>
+      <input id="photoInputCam" type="file" accept="image/*" capture="environment" hidden>
+      <button class="cam-pill" type="button" id="camManual">Taper le code</button>
+    </div>
+  </div>
+  <div class="cam-panel cam-busy"><span class="spinner light" aria-hidden="true"></span><p>Ouverture de la caméra…</p></div>
+  <div class="cam-panel cam-error">
+    <p class="cam-error-title" id="camErrorTitle">Caméra inaccessible</p>
+    <p class="cam-error-text" id="camErrorText"></p>
+    <button class="btn btn-white" id="camRetry" type="button">Réessayer</button>
+  </div>
+</div>
+
+<!-- ================= FICHE PRODUIT ================= -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
   <div class="sheet-bar">
     <button class="icon-btn" id="sheetClose" type="button" aria-label="Retour">
@@ -169,6 +198,12 @@
     </button>
   </div>
   <div class="sheet-body" id="sheetBody"></div>
+  <div class="sheet-foot" id="sheetFoot" hidden>
+    <button class="btn btn-primary btn-block" type="button" id="scanAgain">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>
+      Scanner un autre produit
+    </button>
+  </div>
 </div>
 
 <nav class="tabbar" aria-label="Navigation principale">
@@ -198,7 +233,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 <script src="app.js" type="module"></script>
 </body>
 </html>

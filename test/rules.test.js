@@ -18,7 +18,7 @@ test("produits d'exemple : verdicts attendus", () => {
     "3250392420017": "haram",          // baba au rhum
     "3228021587011": "mashbouh",       // camembert : présure
     "3263859893408": "halal_probable", // chips arôme poulet, végétalien
-    "3274080005003": "inconnu",        // eau sans ingrédients
+    "3274080005003": "halal_probable", // eau sans ingrédients
   };
   for (const [code, status] of Object.entries(expected)) {
     assert.equal(classify(FIXTURES[code]).status, status, FIXTURES[code].product_name_fr);

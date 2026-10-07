@@ -1,5 +1,5 @@
 // Produits d'exemple au format Open Food Facts (API v2).
-// Servent aux tests et au mode hors-ligne (OFFLINE=1).
+// Servent aux tests et au mode démo (?demo). Les valeurs nutritionnelles sont des ordres de grandeur.
 // Les listes d'ingrédients reprennent la forme des étiquettes réelles ; elles peuvent
 // différer de la composition actuelle du produit.
 
@@ -104,4 +104,69 @@ export const FIXTURES = {
     ingredients_analysis_tags: [],
     labels_tags: [],
   },
+  // Alternatives d'exemple (marques fictives), pour montrer les suggestions en mode démo.
+  "3760001230017": {
+    code: "3760001230017",
+    product_name_fr: "Bonbons gélifiés fruits",
+    brands: "Douceurs d'Anatolie",
+    ingredients_text_fr: "Sucre, sirop de glucose, gélatine bovine halal, acide citrique, arômes naturels, concentrés de spiruline et de carotte noire.",
+    additives_tags: ["en:e330"],
+    ingredients_analysis_tags: ["en:non-vegan", "en:non-vegetarian"],
+    labels_tags: ["en:halal", "fr:avs"],
+    labels: "Halal, AVS",
+  },
+  "3760001230024": {
+    code: "3760001230024",
+    product_name_fr: "Saucisson sec de bœuf",
+    brands: "Boucherie Selim",
+    ingredients_text_fr: "Viande de bœuf halal, sel, dextrose, épices, ail, ferments, boyau naturel de bœuf.",
+    additives_tags: [],
+    ingredients_analysis_tags: ["en:non-vegan", "en:non-vegetarian"],
+    labels_tags: ["en:halal", "fr:achahada"],
+    labels: "Halal, Achahada",
+  },
+  "3760001230031": {
+    code: "3760001230031",
+    product_name_fr: "Pâte à tartiner noisettes sans huile de palme",
+    brands: "Jardin d'Orient",
+    ingredients_text_fr: "_Noisettes_ 40%, sucre, cacao maigre, huile de tournesol, _lait_ écrémé en poudre, extrait de vanille.",
+    additives_tags: [],
+    ingredients_analysis_tags: ["en:palm-oil-free", "en:non-vegan", "en:vegetarian"],
+    labels_tags: ["en:organic"],
+  },
 };
+
+// Données santé (Nutri-Score, nutriments pour 100 g, NOVA, allergènes, catégories)
+const HEALTH = {
+  "3017620422003": { nutriscore_grade: "e", nova_group: 4, allergens_tags: ["en:milk", "en:nuts", "en:soybeans"],
+    categories_tags: ["en:spreads", "en:sweet-spreads", "en:hazelnut-spreads"],
+    nutriments: { "energy-kcal_100g": 539, "sugars_100g": 56.3, "saturated-fat_100g": 10.6, "salt_100g": 0.107, "proteins_100g": 6.3, "fiber_100g": 0 } },
+  "3760001230031": { nutriscore_grade: "d", nova_group: 3, allergens_tags: ["en:milk", "en:nuts"],
+    categories_tags: ["en:spreads", "en:sweet-spreads", "en:hazelnut-spreads"],
+    nutriments: { "energy-kcal_100g": 560, "sugars_100g": 32, "saturated-fat_100g": 4.1, "salt_100g": 0.05, "proteins_100g": 9.5, "fiber_100g": 6.2 } },
+  "4001686301029": { nutriscore_grade: "e", nova_group: 4, allergens_tags: [],
+    categories_tags: ["en:confectioneries", "en:candies", "en:gummies"],
+    nutriments: { "energy-kcal_100g": 343, "sugars_100g": 46, "saturated-fat_100g": 0.1, "salt_100g": 0.07, "proteins_100g": 6.9, "fiber_100g": 0 } },
+  "3760001230017": { nutriscore_grade: "d", nova_group: 4, allergens_tags: [],
+    categories_tags: ["en:confectioneries", "en:candies", "en:gummies"],
+    nutriments: { "energy-kcal_100g": 330, "sugars_100g": 44, "saturated-fat_100g": 0.1, "salt_100g": 0.05, "proteins_100g": 6.5, "fiber_100g": 0.5 } },
+  "3019081100148": { nutriscore_grade: "e", nova_group: 4, allergens_tags: [],
+    categories_tags: ["en:meats", "en:prepared-meats", "en:sausages", "en:dry-sausages"],
+    nutriments: { "energy-kcal_100g": 410, "sugars_100g": 1.5, "saturated-fat_100g": 12, "salt_100g": 4.8, "proteins_100g": 26 } },
+  "3760001230024": { nutriscore_grade: "d", nova_group: 3, allergens_tags: [],
+    categories_tags: ["en:meats", "en:prepared-meats", "en:sausages", "en:dry-sausages"],
+    nutriments: { "energy-kcal_100g": 330, "sugars_100g": 1, "saturated-fat_100g": 8, "salt_100g": 3.9, "proteins_100g": 30 } },
+  "6111242002012": { nutriscore_grade: "c", nova_group: 4, allergens_tags: ["en:gluten"],
+    categories_tags: ["en:meats", "en:poultries", "en:chicken-nuggets"],
+    nutriments: { "energy-kcal_100g": 245, "sugars_100g": 1.2, "saturated-fat_100g": 1.6, "salt_100g": 1.1, "proteins_100g": 14, "fiber_100g": 1 } },
+  "3245390011015": { nutriscore_grade: "b", nova_group: 4, allergens_tags: ["en:gluten"],
+    categories_tags: ["en:breads", "en:sandwich-breads"],
+    nutriments: { "energy-kcal_100g": 268, "sugars_100g": 4.9, "saturated-fat_100g": 0.5, "salt_100g": 1.1, "proteins_100g": 8.5, "fiber_100g": 3.4 } },
+  "3228021587011": { nutriscore_grade: "d", nova_group: 3, allergens_tags: ["en:milk"],
+    categories_tags: ["en:dairies", "en:cheeses", "en:camemberts"],
+    nutriments: { "energy-kcal_100g": 281, "sugars_100g": 0.5, "saturated-fat_100g": 14.5, "salt_100g": 1.5, "proteins_100g": 20 } },
+  "3274080005003": { nutriscore_grade: "a", nova_group: 1, allergens_tags: [],
+    categories_tags: ["en:beverages", "en:waters", "en:mineral-waters"],
+    nutriments: { "energy-kcal_100g": 0, "sugars_100g": 0, "saturated-fat_100g": 0, "salt_100g": 0 } },
+};
+for (const [code, extra] of Object.entries(HEALTH)) Object.assign(FIXTURES[code], extra);

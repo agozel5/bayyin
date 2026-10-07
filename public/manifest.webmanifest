@@ -1,11 +1,11 @@
 {
   "name": "Halal Scan",
   "short_name": "Halal Scan",
-  "description": "Scannez un code-barres pour savoir si un produit est halal, douteux ou haram.",
+  "description": "Scannez un produit : halal ou non, note santé, additifs et meilleures alternatives.",
   "start_url": "./#scan",
   "display": "standalone",
-  "background_color": "#F4F2EC",
-  "theme_color": "#17694F",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "lang": "fr",
   "icons": [
     {

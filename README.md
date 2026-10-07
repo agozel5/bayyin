@@ -1,8 +1,11 @@
 # Halal Scan
 
-Web app qui scanne le code-barres d'un produit alimentaire et indique s'il est
-**halal certifié**, **halal probable**, **douteux** ou **haram**, en expliquant
-quel ingrédient pose problème et pourquoi.
+Web app qui scanne le code-barres d'un produit alimentaire et indique :
+
+- son statut **halal** : certifié, probable, douteux ou haram, avec l'ingrédient en cause ;
+- une **note santé sur 100** (Nutri-Score, additifs à risque, bio), avec défauts et qualités nutritionnels ;
+- les **additifs à surveiller**, les allergènes et le niveau de transformation (NOVA) ;
+- des **alternatives halal mieux notées** dans la même catégorie.
 
 Les données produits viennent d'[Open Food Facts](https://fr.openfoodfacts.org)
 (base collaborative, gratuite, plus de 3 millions de produits).
@@ -33,7 +36,7 @@ Prérequis : Node.js 18 ou plus récent. Aucune dépendance à installer.
 
 ```bash
 npm start        # http://localhost:3000 (sert public/ + une API JSON)
-npm test         # 20 tests (règles + API)
+npm test         # tests des règles halal, de la note santé et de l'API
 ```
 
 Sur ordinateur, la caméra fonctionne sur `localhost`.
@@ -44,8 +47,10 @@ Sur ordinateur, la caméra fonctionne sur `localhost`.
 public/                 l'app (à héberger telle quelle)
   index.html
   app.js                onglets Scanner, Recherche, Historique, Additifs, Infos + fiche produit
-  style.css             thème clair/sombre, barre d'onglets en bas
-  lib/scanner.js        pilotage de la caméra (html5-qrcode), une détection = un résultat
+  style.css             thème clair, barre d'onglets en bas
+  lib/camera.js         caméra plein écran + décodage (BarcodeDetector natif ou ZXing WebAssembly)
+  lib/barcode.js        validation des codes EAN/UPC
+  lib/health.js         note santé, seuils nutritionnels, risque des additifs, allergènes, NOVA
   lib/store.js          historique et favoris (localStorage, consultables hors connexion)
   lib/rules.js          moteur de classification halal
   lib/off.js            appels à Open Food Facts depuis le navigateur
@@ -116,3 +121,26 @@ test dans `test/rules.test.js`.
 - Les positions retenues pour les cas débattus (E120, présure, vinaigre de vin…)
   sont des choix à valider ; l'idéal serait un réglage « école / niveau de
   prudence » dans l'app.
+
+## Lecture des codes-barres (`public/lib/camera.js`)
+
+La caméra est pilotée directement (`getUserMedia`), sans bibliothèque de scan. Plusieurs fois
+par seconde, la zone du cadre est copiée dans un canvas et décodée :
+
+- par l'API `BarcodeDetector` du navigateur quand elle existe (Chrome sur Android) ;
+- sinon par ZXing compilé en WebAssembly, via le paquet `barcode-detector` chargé depuis jsDelivr (iPhone, Firefox).
+
+Une analyse sur quatre porte sur l'image entière, pour les caméras dont l'image est rognée à
+l'écran. Secours : photo du code-barres ou saisie des chiffres.
+
+## Note santé (`public/lib/health.js`)
+
+| Composante | Points |
+|---|---|
+| Nutri-Score A / B / C / D / E | 60 / 45 / 30 / 15 / 0 |
+| Additifs (30 au départ) | −30 risque élevé, −10 modéré, −4 limité ; un risque élevé plafonne la note à 49 |
+| Label bio | +10 |
+
+Sans Nutri-Score sur la fiche, aucune note n'est affichée. Les seuils sucre, sel, graisses
+saturées et calories suivent les feux tricolores de la Food Standards Agency (aliments et
+boissons séparés). Les niveaux de risque des additifs résument des avis EFSA, ANSES et CIRC.

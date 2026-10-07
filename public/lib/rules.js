@@ -322,6 +322,9 @@ export function classify(product) {
     if (mashbouh.length) notes.push("Les ingrédients signalés sont couverts par la certification, qui contrôle leur origine.");
   } else if (mashbouh.length) {
     status = "mashbouh";
+  } else if (!text && !codes.size && (product.categories_tags || []).includes("en:waters")) {
+    status = "halal_probable";
+    notes.push("Eau sans ingrédient ajouté.");
   } else if (!text && !codes.size) {
     status = "inconnu";
     notes.push("La liste d'ingrédients n'est pas renseignée pour ce produit.");
