@@ -13,23 +13,17 @@ aucun serveur n'est nécessaire en production.
 
 ## Mettre l'app en ligne (GitHub Pages, gratuit, HTTPS)
 
-La caméra du téléphone n'est autorisée qu'en HTTPS : il faut donc héberger
-l'app, pas seulement l'ouvrir en local. GitHub Pages le fait gratuitement.
+Adresse : **https://agozel5.github.io/halal-scan/**
 
-1. Sur github.com, **New repository** → nom `halal-scan` → **Public** → Create.
-2. Dans le dépôt vide : **uploading an existing file**, puis glisser-déposer
-   **le contenu** du dossier `public/` (`index.html`, `app.js`, `style.css`,
-   `icon.svg`, `manifest.webmanifest` et le dossier `lib/`) → **Commit changes**.
-   `index.html` doit être à la racine du dépôt.
-3. **Settings → Pages** → Source : *Deploy from a branch* → Branch : `main`,
-   dossier `/ (root)` → **Save**.
-4. Après une à deux minutes, l'app est en ligne sur
-   `https://<ton-pseudo>.github.io/halal-scan/`.
+La caméra du téléphone n'est autorisée qu'en HTTPS, d'où l'hébergement sur
+GitHub Pages. Le workflow `.github/workflows/pages.yml` lance les tests puis
+publie le dossier `public/` à chaque push sur `main`.
 
-Sur le téléphone : ouvrir cette adresse, autoriser la caméra, puis
+Réglage à faire une seule fois : **Settings → Pages → Source : GitHub Actions**,
+puis relancer le workflow depuis l'onglet **Actions** (ou pousser un commit).
+
+Sur le téléphone : ouvrir l'adresse, autoriser la caméra, puis
 « Ajouter à l'écran d'accueil » pour l'avoir comme une application.
-
-Pour mettre à jour : ré-uploader les fichiers modifiés dans le dépôt.
 
 Mode démo sans internet : ajouter `#demo` à la fin de l'adresse.
 
