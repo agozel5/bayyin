@@ -4,7 +4,6 @@ import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS } from "./lib/settings.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
-import { COSMETIC_PENALTY, COSMETIC_CAP } from "./lib/cosmetic.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
 import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
@@ -269,23 +268,37 @@ function healthSection(p) {
   </section>`;
 }
 
-// Cosmétiques : la note vient des ingrédients controversés, chacun expliqué avec ses sources
+// Cosmétiques : la note croise le danger de chaque ingrédient et l'exposition (type de produit)
+const CTX_ORDER = ["rinse", "spray", "powder", "lip", "child"];
 function cosmeticSection(p) {
   const h = p.health;
   if (!h || !h.cosmetic) return "";
   const s = h.score;
   if (!s) return `<section class="sec"><div class="sec-head"><h3>${t("detail.cosmetic")}</h3></div><p class="notes">${t("detail.cosmetic_none")}</p></section>`;
-  const risks = h.risks || [];
+  const all = h.risks || [];
+  const risks = all.filter((r) => r.level);
+  const safeHere = all.filter((r) => !r.level);
+  const ctx = h.context || {};
+  const ctxTags = [ctx.rinse ? "rinse" : "leave", ...CTX_ORDER.slice(1).filter((k) => ctx[k])]
+    .map((k) => `<span class="ctx-tag">${esc(t(`cosm.ctx.${k}`))}</span>`).join("");
   const lead = risks.length
     ? t("detail.cosmetic_lead", { n: s.score, k: h.analyzed, e: s.parts.eleve, m: s.parts.modere, l: s.parts.limite })
     : t("detail.cosmetic_clean", { n: s.score, k: h.analyzed });
+  const title = (r) => t(`cosm.${r.key}.t`);
   const rows = risks
-    .map((r) => `<details class="risk"><summary><span class="risk-name"><span dir="ltr">${esc(r.name)}</span>${r.name.toLowerCase() === t(`cosm.${r.key}.t`).toLowerCase() ? "" : `<small>${esc(t(`cosm.${r.key}.t`))}</small>`}</span><span class="pill r-${r.level}">${t(`risk.${r.level}`)}</span></summary><p>${esc(t(`cosm.${r.key}.p`))}</p><p class="risk-src">${sourceLine(r.sources)}</p></details>`)
+    .map((r) => `<details class="risk"><summary><span class="risk-name"><span dir="ltr">${esc(r.name)}</span>${r.name.toLowerCase() === title(r).toLowerCase() ? "" : `<small>${esc(title(r))}</small>`}<span class="kind-tags">${r.kinds.map((k) => `<span class="kind-tag k-${k}">${esc(t(`cosm.kind.${k}`))}</span>`).join("")}</span></span><span class="pill r-${r.level}">${t(`risk.${r.level}`)}</span></summary>
+      <p>${esc(t(`cosm.${r.key}.p`))}</p>
+      ${r.dose ? `<p class="risk-dose">${esc(t(`cosm.dose.${r.dose}`))}</p>` : ""}
+      <p class="risk-src">${sourceLine(r.sources)}</p></details>`)
     .join("");
+  const safe = safeHere.length
+    ? `<details class="risk risk-safe"><summary><span class="risk-name"><span>${esc(t("detail.cosmetic_safe_here", { n: safeHere.length }))}</span><small dir="ltr">${esc(safeHere.map((r) => r.name).join(", "))}</small></span></summary><p>${esc(t("detail.cosmetic_safe_here_p"))}</p></details>`
+    : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.cosmetic")}</h3><small>${t("detail.cosmetic_sub")}</small></div>
     <p class="lead">${esc(lead)}</p>
-    ${risks.length ? `<p class="sub-label">${t("detail.cosmetic_watch")}</p><div class="risks">${rows}</div>` : `<div class="nut lv-bon"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.cosmetic_ok_t")}</strong><small>${t("detail.cosmetic_ok_p")}</small></span><span class="nut-val"><span class="dot"></span></span></div>`}
-    <p class="notes">${t("detail.cosmetic_method", { e: COSMETIC_PENALTY.eleve, m: COSMETIC_PENALTY.modere, l: COSMETIC_PENALTY.limite, ce: COSMETIC_CAP.eleve, cm: COSMETIC_CAP.modere })}</p>
+    <div class="ctx-line"><span>${t("detail.cosmetic_ctx")}</span>${ctxTags}</div>
+    ${risks.length ? `<p class="sub-label">${t("detail.cosmetic_watch")}</p><div class="risks">${rows}${safe}</div>` : `<div class="nut lv-bon"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.cosmetic_ok_t")}</strong><small>${t("detail.cosmetic_ok_p")}</small></span><span class="nut-val"><span class="dot"></span></span></div>${safe ? `<div class="risks">${safe}</div>` : ""}`}
+    <p class="notes">${t("detail.cosmetic_method")}</p>
   </section>`;
 }
 
@@ -1202,7 +1215,7 @@ function renderSettings() {
     const max = i === 0 ? 100 : HEALTH_GRADES[i - 1].min - 1;
     return `<div class="legend-row"><span class="pill g-${g.id}" style="--cbg:var(--tint)"><span class="dot"></span>${t(`grade.${g.id}`)}</span><p>${t("health.range", { a: g.min, b: max })}</p></div>`;
   }).join("");
-  document.querySelectorAll(".se-pts").forEach((el) => (el.textContent = t("health.pts", { n: el.dataset.pts })));
+  document.querySelectorAll(".se-pts[data-pts]").forEach((el) => (el.textContent = t("health.pts", { n: el.dataset.pts })));
   $("demoLink").href = DEMO ? location.pathname + "#scan" : "?demo#scan";
   $("demoLinkT").textContent = t(DEMO ? "link.demo_exit.t" : "link.demo.t");
   $("demoLinkD").textContent = t(DEMO ? "link.demo_exit.d" : "link.demo.d");
