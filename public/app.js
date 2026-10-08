@@ -1240,7 +1240,7 @@ function setRow(page, value, { href, external = false } = {}) {
   const url = href || `#settings/${page}`;
   return `<a class="set-row" href="${esc(url)}"${external ? ' target="_blank" rel="noopener"' : ` data-go="${page}"`}>
     <span class="set-ico si-${page}">${svg(SI[page])}</span>
-    <span class="set-text"><strong>${esc(t(page === "off" ? "link.off.t" : page === "report" ? "link.report.t" : page === "demo" ? (DEMO ? "link.demo_exit.t" : "link.demo.t") : `settings.menu.${page}`))}</strong>${value ? `<small>${esc(value)}</small>` : ""}</span>
+    <span class="set-text"><strong>${esc(t(page === "off" ? "link.off.t" : page === "report" ? "link.report.t" : page === "demo" ? "link.demo_exit.t" : `settings.menu.${page}`))}</strong>${value ? `<small>${esc(value)}</small>` : ""}</span>
     <span class="set-chev" aria-hidden="true">${external ? "↗" : svg(I.chev, "flip")}</span>
   </a>`;
 }
@@ -1255,7 +1255,7 @@ function renderSettingsMenu() {
         <a class="ss-item" href="#settings/offline" data-go="offline"><small>${t("settings.summary_offline")}</small><strong>${esc(offlineValue(st))}</strong></a>
       </div>
     </div>`;
-  const group = (title, rows) => `<p class="set-group-t">${t(title)}</p><div class="set-group">${rows.join("")}</div>`;
+  const group = (title, rows) => `<section class="set-section"><h2 class="set-group-t">${t(title)}</h2><div class="set-group">${rows.join("")}</div></section>`;
   $("setMenu").innerHTML =
     group("settings.g_prefs", [
       setRow("lang", LANG_NAMES[st.lang]),
@@ -1268,7 +1268,7 @@ function renderSettingsMenu() {
     group("settings.g_links", [
       setRow("off", t("link.off.d"), { href: "https://fr.openfoodfacts.org", external: true }),
       setRow("report", t("link.report.d"), { href: "https://github.com/agozel5/bayyin/issues", external: true }),
-      setRow("demo", t(DEMO ? "link.demo_exit.d" : "link.demo.d"), { href: DEMO ? location.pathname + "#scan" : "?demo#scan", external: false }).replace(` data-go="demo"`, ""),
+      ...(DEMO ? [setRow("demo", t("link.demo_exit.d"), { href: location.pathname + "#scan" }).replace(` data-go="demo"`, "")] : []),
     ]);
 }
 function showSetPage(page, { animate = true } = {}) {
@@ -1462,47 +1462,6 @@ $("resetBtn").addEventListener("click", () => {
   settings.reset();
   renderDataPage(t("data.reset_done"));
 });
-$("exportBtn").addEventListener("click", () => {
-  const data = {
-    app: "bayyin",
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    settings: prefs(),
-    history: store.all(),
-    basket: basket.all(),
-    local: localProductsAll(),
-  };
-  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `bayyin-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  renderDataPage(t("data.exported"));
-});
-$("importInput").addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  e.target.value = "";
-  if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    if (!data || data.app !== "bayyin") throw new Error("format");
-    store.merge(data.history || []);
-    if (Array.isArray(data.basket)) {
-      const have = new Set(basket.all().map((x) => x.code));
-      basket.save([...basket.all(), ...data.basket.filter((x) => x && x.code && !have.has(x.code))].slice(0, 80));
-    }
-    if (data.local && typeof data.local === "object") {
-      for (const [code, raw] of Object.entries(data.local)) if (!localProducts.get(code)) localProducts.set(code, raw);
-    }
-    if (data.settings) settings.import(data.settings);
-    renderDataPage(t("data.imported", { n: (data.history || []).length }));
-  } catch {
-    renderDataPage(t("data.import_error"));
-  }
-});
-
 // Comprendre les notes : un onglet par type de note
 $("notesTabs").addEventListener("click", (e) => {
   const b = e.target.closest("[data-notes]");
