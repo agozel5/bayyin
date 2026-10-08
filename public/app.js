@@ -69,10 +69,7 @@ const nameOf = (p) => {
 const kindOf = (p) => p.kind || (p.raw && p.raw.kind) || "food";
 const KIND_ICON = { food: I.box, beauty: I.drop, medicine: I.pill };
 const profileOf = (p) => checkProfile(p.raw, verdictOf(p), prefs().profile);
-const alertPill = (p) => {
-  const a = profileOf(p).alert;
-  return a ? `<span class="pill a-${a}">${t(`alert.short.${a}`)}</span>` : "";
-};
+const alertPill = (p) => alertTag(p); // allergène ou régime en toutes lettres
 const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${S(st, "short")}</span>`;
 // Cosmétiques : la note est recalculée quand la base CosIng arrive (chargée après l'ouverture de l'app)
 function healthOf(p) {
@@ -429,15 +426,29 @@ function productDetail(p) {
   return `${productTop(p)}${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
+// Mot clair à la place d'un « ! » : l'allergène en cause, ou le régime non respecté
+function alertTag(p) {
+  const pr = profileOf(p);
+  if (!pr.alert) return "";
+  const al = (x) => t(`allergen.${x}`);
+  const word = pr.contains.length
+    ? al(pr.contains[0]) + (pr.contains.length > 1 ? ` +${pr.contains.length - 1}` : "")
+    : pr.diet
+      ? t(`alert.tag.${pr.diet.id}.${pr.diet.level}`)
+      : t("alert.tag.traces", { x: al(pr.traces[0]) });
+  const full = pr.contains.length ? t("alert.contains", { list: pr.contains.map(al).join(", ") }) : t(`alert.${pr.alert}`);
+  return `<span class="alert-tag a-${pr.alert}" title="${esc(full)}">${svg(I.alert)}<span>${esc(word)}</span></span>`;
+}
+
 function altCard(a, { fav = false } = {}) {
   const img = a.image
     ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
     : `<span class="ph">${svg(a.local ? I.doc : KIND_ICON[kindOf(a)])}</span>`;
-  const al = profileOf(a).alert;
-  return `<button type="button" class="alt" data-open="${esc(a.code)}">${img}
-    ${al ? `<span class="alt-badge a-${al}" aria-label="${esc(t(`alert.${al}`))}">!</span>` : ""}${fav ? svg(I.star, "alt-fav") : ""}
+  const st = verdictOf(a).status;
+  return `<button type="button" class="alt" data-open="${esc(a.code)}">
+    <span class="alt-band s-${st}">${svg(STATUS_ICON[st])}<span>${esc(S(st, "label"))}</span>${fav ? svg(I.star, "alt-fav") : ""}</span>${img}
     <strong>${esc(nameOf(a))}</strong><small>${esc(a.brand || "")}</small>
-    <span class="alt-tags">${statusPill(verdictOf(a).status)}${miniScore(a)}</span></button>`;
+    <span class="alt-tags">${miniScore(a)}${alertTag(a)}</span></button>`;
 }
 
 async function loadAlternatives(p, code) {
@@ -655,12 +666,22 @@ document.addEventListener("click", (e) => {
     navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`).then(() => toast(t("ask.copied")), () => {});
     return;
   }
+  const base = e.target.closest("[data-compare-base]");
+  if (base) {
+    const p = (store.get(base.dataset.compareBase) || {}).p;
+    if (p) pickCompareSecond(p);
+    return;
+  }
   const cmp = e.target.closest("[data-compare]");
   if (cmp) return showCompare(cmp.dataset.compare);
   if (e.target.closest("[data-basket-clear]")) {
     basket.clear();
     toast(t("basket.cleared"));
     return renderBasket();
+  }
+  if (e.target.closest("[data-scan-now]")) {
+    closeSheet();
+    return setTimeout(() => openCamera(), 60);
   }
   if (e.target.closest("[data-basket-scan]")) {
     basketMode = true;
@@ -864,11 +885,15 @@ $("photoInputCam").addEventListener("change", (e) => handleBarcodePhoto(e.target
 
 function showManual() {
   $("manualForm").hidden = false;
+  $("focusManual").setAttribute("aria-expanded", "true");
   $("manualInput").focus();
 }
 $("focusManual").addEventListener("click", () => {
   if ($("manualForm").hidden) showManual();
-  else $("manualForm").hidden = true;
+  else {
+    $("manualForm").hidden = true;
+    $("focusManual").setAttribute("aria-expanded", "false");
+  }
 });
 $("manualForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -879,15 +904,56 @@ $("manualForm").addEventListener("submit", (e) => {
   }
   $("homeStatus").innerHTML = "";
   $("manualInput").blur();
+  $("manualInput").value = "";
+  $("manualForm").hidden = true;
+  $("focusManual").setAttribute("aria-expanded", "false");
   openSheet(code, { fromScan: true });
 });
 
 // ===========================================================================
 // Accueil
 // ===========================================================================
+const TIP_COUNT = 8;
+const TIP_KEY = "bayyin_tip_hidden";
+const today = () => Math.floor(Date.now() / 864e5);
+function tipHiddenToday() {
+  try {
+    return Number(localStorage.getItem(TIP_KEY)) === today();
+  } catch {
+    return false;
+  }
+}
+$("homeTipClose").addEventListener("click", () => {
+  try {
+    localStorage.setItem(TIP_KEY, String(today())); // revient demain, avec une autre astuce
+  } catch { /* stockage indisponible */ }
+  $("homeTipBox").classList.add("closing");
+  setTimeout(() => ($("homeTipBox").hidden = true), 220);
+});
+
+// Petit bilan des 7 derniers jours
+function weekSummary(all) {
+  const week = all.filter((e) => e.at > Date.now() - 7 * 864e5);
+  if (!week.length) return esc(t("home.week_none"));
+  const c = { ok: 0, doubt: 0, bad: 0 };
+  week.forEach((e) => {
+    const st = verdictOf(e.p).status;
+    if (st === "haram" || profileOf(e.p).alert === "no") c.bad++;
+    else if (st === "mashbouh") c.doubt++;
+    else if (st === "halal_certifie" || st === "halal_probable") c.ok++;
+  });
+  const part = (k, cls) => (c[k] ? `<span class="wk ${cls}"><i class="dot"></i>${esc(t(`home.wk_${k}`, { n: c[k] }))}</span>` : "");
+  return `<span>${esc(tn("home.week", week.length))}</span>${part("ok", "wk-ok")}${part("doubt", "wk-doubt")}${part("bad", "wk-bad")}`;
+}
+
 function renderHome() {
   const all = store.all();
   $("view-scan").classList.toggle("returning", all.length > 0); // accueil court pour qui revient
+  $("homeHello").hidden = !all.length;
+  if (all.length) {
+    $("homeGreet").textContent = t("home.greet");
+    $("homeWeek").innerHTML = weekSummary(all);
+  }
   renderBasketButtons();
   const recent = all.slice(0, 10);
   const favs = all.filter((e) => e.fav).slice(0, 10);
@@ -906,7 +972,9 @@ function renderHome() {
   $("homeChips").innerHTML =
     `<a class="set-chip" href="#settings" data-goto-settings="school">${svg(I.shield)}<span>${esc(t("home.school_chip", { s: t(`school.${st.school}`) }))}</span></a>` +
     `<a class="set-chip${profText ? "" : " accent"}" href="#settings" data-goto-settings="profile">${svg(I.user)}<span>${esc(profText ? t("home.profile_chip", { p: profText }) : t("home.profile_add"))}</span></a>`;
-  $("homeTip").textContent = t(`home.tip.${1 + (Math.floor(Date.now() / 864e5) % 4)}`); // une astuce par jour
+  $("homeTip").textContent = t(`home.tip.${1 + (today() % TIP_COUNT)}`); // une astuce par jour
+  $("homeTipBox").hidden = tipHiddenToday();
+  $("homeTipBox").classList.remove("closing");
 }
 
 // ===========================================================================
@@ -1815,9 +1883,10 @@ function renderBasketButtons() {
   $("camBasketMode").textContent = t(basketMode ? "basket.mode_on" : "basket.mode");
   $("camBasketOpen").hidden = !basketMode || !n;
   $("camBasketOpen").textContent = t("basket.open", { n });
-  const home = $("homeBasket");
-  home.hidden = !n;
-  if (n) home.innerHTML = `${svg('<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.5a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>')}<span><strong>${t("basket.title")}</strong><small>${esc(tn("basket.count", n))}</small></span>${svg(I.chev, "flip")}`;
+  const badge = $("toolBasketN");
+  badge.hidden = !n;
+  badge.textContent = n > 99 ? "99+" : String(n);
+  $("toolBasket").setAttribute("aria-label", n ? `${t("basket.mode")} · ${tn("basket.count", n)}` : t("basket.mode"));
 }
 
 async function basketScan(code) {
@@ -1862,7 +1931,12 @@ $("camBasketOpen").addEventListener("click", () => {
   closeCamera({ keepHistory: true });
   openBasket({ replace: true });
 });
-$("homeBasket").addEventListener("click", () => openBasket());
+// Panier déjà commencé : on l'ouvre ; sinon on lance la caméra en mode courses
+$("toolBasket").addEventListener("click", () => {
+  if (basket.all().length) return openBasket();
+  basketMode = true;
+  openCamera();
+});
 
 function openBasket({ replace = false } = {}) {
   sheetCode = "basket";
@@ -1907,15 +1981,32 @@ function renderBasket() {
 // Comparer deux produits
 // ===========================================================================
 let compareBase = null;
-$("sheetCompare").addEventListener("click", () => {
-  if (!sheetProduct) return;
-  compareBase = sheetProduct;
-  const others = store.all().map((e) => e.p).filter((p) => p.code !== compareBase.code && kindOf(p) === kindOf(compareBase));
+function pickCompareSecond(base) {
+  compareBase = base;
+  const others = store.all().map((e) => e.p).filter((p) => p.code !== base.code && kindOf(p) === kindOf(base));
   $("sheetTitle").textContent = t("cmp.title");
   $("sheetCompare").hidden = true;
-  $("sheetBody").innerHTML = `<p class="lead cmp-intro">${esc(t("cmp.pick", { name: nameOf(compareBase) }))}</p>
+  $("sheetBody").innerHTML = `<p class="lead cmp-intro">${esc(t("cmp.pick", { name: nameOf(base) }))}</p>
     ${others.length ? `<div class="list">${others.map((p) => rowHtml(p).replace('data-open="', 'data-compare="')).join("")}</div>` : `<div class="empty">${emptyArt()}<p>${t("cmp.none")}</p></div>`}`;
   $("sheetBody").scrollTop = 0;
+}
+$("sheetCompare").addEventListener("click", () => {
+  if (sheetProduct) pickCompareSecond(sheetProduct);
+});
+// Depuis l'accueil : choisir d'abord le premier produit dans l'historique
+$("toolCompare").addEventListener("click", () => {
+  sheetCode = "compare";
+  sheetProduct = null;
+  compareBase = null;
+  $("sheetTitle").textContent = t("cmp.title");
+  $("sheetCompare").hidden = true;
+  $("sheetShare").hidden = true;
+  showSheet();
+  refreshFav();
+  const items = store.all().map((e) => e.p).filter((p) => kindOf(p) !== "medicine");
+  $("sheetBody").innerHTML = items.length >= 2
+    ? `<p class="lead cmp-intro">${esc(t("cmp.pick_first"))}</p><div class="list">${items.map((p) => rowHtml(p).replace('data-open="', 'data-compare-base="')).join("")}</div>`
+    : `<div class="empty">${emptyArt()}<strong>${esc(t("cmp.need_two.t"))}</strong><p>${esc(t("cmp.need_two.p"))}</p><button class="btn btn-primary" type="button" data-scan-now>${esc(t("home.scan"))}</button></div>`;
 });
 
 function showCompare(code) {

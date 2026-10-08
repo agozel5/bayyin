@@ -324,11 +324,28 @@ const CERTIFIERS = [
   { re: /\btse\b.*helal|helal.*\btse\b/, name: "TSE Helal" },
 ];
 
+// Marques spécialisées dont toute la gamme est vendue halal, avec une certification.
+// Leurs fiches Open Food Facts oublient souvent le label : la marque suffit alors à lever le doute,
+// et la fiche le signale (note « brand_halal »).
+export const HALAL_BRANDS = [
+  { re: /\bisla\s*(delice|mondial)\b/, name: "Isla Délice / Isla Mondial" },
+  { re: /\bmedina\s*halal\b/, name: "Médina Halal" },
+  { re: /\bwassila\b/, name: "Wassila" },
+  { re: /\bzakia\b/, name: "Zakia" },
+  { re: /\breghalal\b/, name: "Reghalal" },
+  { re: /\bid\s*halal\b/, name: "ID Halal" },
+  { re: /\bdjebbels?\b/, name: "Djebbels" },
+];
+
 export function detectCertification(product) {
   const tags = (product.labels_tags || []).map(normalize).join(" ");
   const text = normalize([product.labels, product.labels_fr, product.product_name, product.product_name_fr].filter(Boolean).join(" "));
   const all = tags.replace(/[-:]/g, " ") + " " + text;
-  if (!/\bhalal\b|\bhelal\b|حلال/.test(all)) return null;
+  if (!/\bhalal\b|\bhelal\b|حلال/.test(all)) {
+    const brands = normalize([product.brands, ...(product.brands_tags || [])].filter(Boolean).join(" ")).replace(/[-_]/g, " ");
+    const brand = HALAL_BRANDS.find((b) => b.re.test(brands));
+    return brand ? { certified: true, organisme: null, byBrand: true, brand: brand.name } : null;
+  }
   const org = CERTIFIERS.find((c) => c.re.test(all));
   return { certified: true, organisme: org ? org.name : null };
 }
@@ -426,6 +443,7 @@ export function classify(product, prefs = DEFAULT_PREFS) {
 
   const certification = detectCertification(product);
   const notes = []; // identifiants, traduits par l'interface
+  if (certification && certification.byBrand) notes.push("brand_halal");
 
   // Un label halal lève le doute sur l'origine (gélatine, viande, dérivés…), qui passe en simple information.
   // Il ne tranche ni une divergence d'école (carmin, fruits de mer, vinaigre…) ni un interdit fixe (porc, sang).

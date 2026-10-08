@@ -182,3 +182,16 @@ test("mots-clés turcs et arabes", () => {
   assert.equal(classify(p("سكر، جيلاتين حلال")).status, "halal_probable");
   assert.equal(classify(p("Süt, tuz", { labels: "Helal" })).status, "halal_certifie");
 });
+
+test("marque spécialisée halal : la fiche sans label est reconnue", () => {
+  const hanafi = { topics: { ...SCHOOLS.hanafi } };
+  const p = { product_name_fr: "Blanc de poulet", brands: "Isla Mondial", ingredients_text_fr: "Filet de poulet 92%, eau, sel, dextrose, arôme naturel" };
+  const v = classify(p, hanafi);
+  assert.equal(v.status, "halal_certifie");
+  assert.ok(v.notes.includes("brand_halal"));
+  assert.equal(v.certification.brand, "Isla Délice / Isla Mondial");
+  // Une autre marque reste soumise à l'avis choisi
+  assert.equal(classify({ ...p, brands: "Le Gaulois" }, hanafi).status, "haram");
+  // Le porc reste interdit quelle que soit la marque
+  assert.equal(classify({ ...p, ingredients_text_fr: "Viande de porc" }).status, "haram");
+});
