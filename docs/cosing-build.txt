@@ -4,102 +4,91 @@ annexe IV : 154 lignes
 annexe V : 58 lignes
 annexe VI : 34 lignes
 inventaire annoncé : 33655
-préfixe 1 : 4723 / 4723
-préfixe 3 : 4188 / 4188
-préfixe 4 : 1332 / 1332
-préfixe 5 : 5490 / 5490
-préfixe 6 : 305 / 305
-préfixe 7 : 2872 / 2872
-préfixe 8 : 6549 / 6549
-sans identifiant numérique : 33655
-sans identifiant, EXFOLIATING : 156 / 156
-sans identifiant, FRAGRANCE : 1546 / 1546
-sans identifiant, DEODORANT : 230 / 230
-sans identifiant, BUFFERING : 218 / 218
-sans identifiant, ORAL CARE : 265 / 265
-sans identifiant, SKIN CONDITIONING - MISCELLANEOUS : 2982 / 2982
-sans identifiant, ANTIOXIDANT : 3336 / 3336
-sans identifiant, ANTI-SEBUM : 364 / 364
-sans identifiant, SKIN PROTECTING : 3285 / 3285
-sans identifiant, NOT REPORTED : 308 / 308
-sans identifiant, COLORANT : 326 / 326
-sans identifiant, SURFACTANT - EMULSIFYING : 2971 / 2971
-sans identifiant, SURFACTANT - FOAM BOOSTING : 484 / 484
-sans identifiant, SURFACTANT - HYDROTROPE : 218 / 218
-sans identifiant, SURFACTANT - CLEANSING : 3218 / 3218
-sans identifiant, ANTIMICROBIAL : 1162 / 1162
-sans identifiant, SKIN CONDITIONING - EMOLLIENT : 3981 / 3981
-sans identifiant, HAIR DYEING : 453 / 453
-sans identifiant, SKIN CONDITIONING - HUMECTANT : 1088 / 1088
-sans identifiant, HUMECTANT : 2350 / 2350
-sans identifiant, PERFUMING : 2799 / 2799
-sans identifiant, ABRASIVE : 388 / 388
-sans identifiant, ASTRINGENT : 590 / 590
-sans identifiant, HAIR CONDITIONING : 4029 / 4029
-sans identifiant, NAIL CONDITIONING : 218 / 218
-sans identifiant, BULKING : 217 / 217
-sans identifiant, DENATURANT : 42 / 42
-sans identifiant, SLIP MODIFIER : 51 / 51
-sans identifiant, EMULSION STABILISING : 726 / 726
-sans identifiant, VISCOSITY CONTROLLING : 1463 / 1463
-sans identifiant, BLEACHING : 365 / 365
-sans identifiant, SURFACTANT - DISPERSING : 19 / 19
-sans identifiant, SURFACTANT - SOLUBILIZING : 68 / 68
-sans identifiant, EPILATING : 2 / 2
-sans identifiant, SURFACE MODIFIER : 43 / 43
-sans identifiant, PLASTICISER : 179 / 179
-sans identifiant, PRESERVATIVE : 222 / 222
-sans identifiant, FILM FORMING : 1362 / 1362
-sans identifiant, HAIR FIXING : 251 / 251
-sans identifiant, HAIR WAVING OR STRAIGHTENING : 111 / 111
-sans identifiant, UV ABSORBER : 183 / 183
-sans identifiant, BINDING : 556 / 556
-sans identifiant, SOLVENT : 694 / 694
-sans identifiant, SKIN CONDITIONING - OCCLUSIVE : 123 / 123
-sans identifiant, LIGHT STABILIZER : 178 / 178
-sans identifiant, FLAVOURING : 197 / 197
-sans identifiant, OPACIFYING : 229 / 229
-sans identifiant, ANTISTATIC : 1079 / 1079
-sans identifiant, ABSORBENT : 192 / 192
-sans identifiant, UV FILTER : 96 / 96
-sans identifiant, ANTI-SEBORRHEIC : 150 / 150
-sans identifiant, SKIN CONDITIONING : 10000 / 10000
-sans identifiant, DISPERSING NON-SURFACTANT : 50 / 50
-sans identifiant, CHELATING : 194 / 194
-sans identifiant, EYELASH CONDITIONING : 29 / 29
-sans identifiant, pH ADJUSTERS : 27 / 27
-sans identifiant, DEPILATORY : 48 / 48
-sans identifiant, SURFACTANT : 31 / 31
-sans identifiant, OXIDISING : 39 / 39
-sans identifiant, ANTICAKING : 138 / 138
-sans identifiant, ADHESIVE : 20 / 20
-sans identifiant, CLEANSING : 1373 / 1373
-sans identifiant, ANTIFOAMING : 55 / 55
-sans identifiant, NAIL SCULPTING : 18 / 18
-sans identifiant, REDUCING : 81 / 81
-sans identifiant, ANTIPERSPIRANT : 40 / 40
-sans identifiant, ANTICORROSIVE : 28 / 28
-sans identifiant, SOOTHING : 126 / 126
-sans identifiant, FOAMING : 205 / 205
-sans identifiant, TONIC : 305 / 305
-sans identifiant, MOISTURISING : 72 / 72
-sans identifiant, ANTIPLAQUE : 82 / 82
-sans identifiant, PROPELLANT : 20 / 20
-sans identifiant, KERATOLYTIC : 20 / 20
-sans identifiant, REFATTING : 21 / 21
-sans identifiant, SMOOTHING : 41 / 41
-sans identifiant, GEL FORMING : 23 / 23
-sans identifiant, DETANGLING : 6 / 6
-sans identifiant, REFRESHING : 45 / 45
-sans identifiant, TANNING : 3 / 3
-sans identifiant, PEARLESCENT : 1 / 1
-sans identifiant ni fonction : 192 / 192
-ingrédients récupérés : 32581
-file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:159
-if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
-                                                      ^
-
-Error: Inventaire incomplet : 32581 sur 33655
-    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:159:55
-
-Node.js v22.23.3
+fonctions : 83
+ADHESIVE (ASC) : 20 / 20
+ANTI-SEBORRHEIC (ASC) : 150 / 150
+ANTI-SEBUM (ASC) : 364 / 364
+ANTICAKING (ASC) : 138 / 138
+ANTICORROSIVE (ASC) : 28 / 28
+ANTIFOAMING (ASC) : 55 / 55
+ANTIMICROBIAL (ASC) : 1162 / 1162
+ANTIOXIDANT (ASC) : 3336 / 3336
+ANTIPERSPIRANT (ASC) : 40 / 40
+ANTIPLAQUE (ASC) : 82 / 82
+ANTISTATIC (ASC) : 1079 / 1079
+ASTRINGENT (ASC) : 590 / 590
+BINDING (ASC) : 556 / 556
+BLEACHING (ASC) : 365 / 365
+BUFFERING (ASC) : 218 / 218
+BULKING (ASC) : 217 / 217
+CHELATING (ASC) : 194 / 194
+CLEANSING (ASC) : 1373 / 1373
+COLORANT (ASC) : 326 / 326
+DENATURANT (ASC) : 42 / 42
+DEODORANT (ASC) : 230 / 230
+DEPILATORY (ASC) : 48 / 48
+DETANGLING (ASC) : 6 / 6
+DISPERSING NON-SURFACTANT (ASC) : 50 / 50
+EMULSION STABILISING (ASC) : 726 / 726
+EPILATING (ASC) : 2 / 2
+EXFOLIATING (ASC) : 156 / 156
+EYELASH CONDITIONING (ASC) : 29 / 29
+FILM FORMING (ASC) : 1362 / 1362
+FLAVOURING (ASC) : 197 / 197
+FOAMING (ASC) : 205 / 205
+FRAGRANCE (ASC) : 1546 / 1546
+GEL FORMING (ASC) : 23 / 23
+HAIR CONDITIONING (ASC) : 4029 / 4029
+HAIR DYEING (ASC) : 453 / 453
+HAIR FIXING (ASC) : 251 / 251
+HAIR WAVING OR STRAIGHTENING (ASC) : 111 / 111
+HUMECTANT (ASC) : 2350 / 2350
+KERATOLYTIC (ASC) : 20 / 20
+LIGHT STABILIZER (ASC) : 178 / 178
+LYTIC (ASC) : 1 / 1
+MOISTURISING (ASC) : 72 / 72
+NAIL CONDITIONING (ASC) : 218 / 218
+NAIL SCULPTING (ASC) : 18 / 18
+NOT REPORTED (ASC) : 308 / 308
+OPACIFYING (ASC) : 229 / 229
+ORAL CARE (ASC) : 265 / 265
+OXIDISING (ASC) : 39 / 39
+PEARLESCENT (ASC) : 1 / 1
+PERFUMING (ASC) : 2799 / 2799
+pH ADJUSTERS (ASC) : 27 / 27
+PLASTICISER (ASC) : 179 / 179
+PRESERVATIVE (ASC) : 222 / 222
+PROPELLANT (ASC) : 20 / 20
+REDUCING (ASC) : 81 / 81
+REFATTING (ASC) : 21 / 21
+REFRESHING (ASC) : 45 / 45
+SKIN CONDITIONING (ASC) : 10000 / 12532
+SKIN CONDITIONING (DESC) : 10000 / 12532
+SKIN CONDITIONING - EMOLLIENT (ASC) : 3981 / 3981
+SKIN CONDITIONING - HUMECTANT (ASC) : 1088 / 1088
+SKIN CONDITIONING - MISCELLANEOUS (ASC) : 2982 / 2982
+SKIN CONDITIONING - OCCLUSIVE (ASC) : 123 / 123
+SKIN PROTECTING (ASC) : 3285 / 3285
+SLIP MODIFIER (ASC) : 51 / 51
+SMOOTHING (ASC) : 41 / 41
+SOLVENT (ASC) : 694 / 694
+SOOTHING (ASC) : 126 / 126
+SURFACE MODIFIER (ASC) : 43 / 43
+SURFACTANT (ASC) : 31 / 31
+SURFACTANT - CLEANSING (ASC) : 3218 / 3218
+SURFACTANT - DISPERSING (ASC) : 19 / 19
+SURFACTANT - EMULSIFYING (ASC) : 2971 / 2971
+SURFACTANT - FOAM BOOSTING (ASC) : 484 / 484
+SURFACTANT - HYDROTROPE (ASC) : 218 / 218
+SURFACTANT - SOLUBILIZING (ASC) : 68 / 68
+TANNING (ASC) : 3 / 3
+TONIC (ASC) : 305 / 305
+UV ABSORBER (ASC) : 183 / 183
+UV FILTER (ASC) : 96 / 96
+VISCOSITY CONTROLLING (ASC) : 1463 / 1463
+ABRASIVE (ASC) : 388 / 388
+ABSORBENT (ASC) : 192 / 192
+sans fonction (ASC) : 192 / 192
+ingrédients récupérés : 33639
+noms : 33601, fonctions : 82, interdits : 858, CMR : 86, allergènes : 132
+écrit : /home/runner/work/bayyin/bayyin/public/data/cosing.json
