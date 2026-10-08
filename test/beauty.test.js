@@ -20,12 +20,15 @@ test("cosmétique : alcool dénaturé suit le réglage alcool_cosmetique", () =>
   const p = beauty("Alcohol Denat., Aqua, Parfum, Linalool");
   assert.equal(classifyBeauty(p, { topics: SCHOOLS.standard }).status, "halal_probable");
   assert.deepEqual(ids(classifyBeauty(p, { topics: SCHOOLS.standard })), ["cosm_alcool"]);
-  assert.equal(classifyBeauty(p, { topics: SCHOOLS.shafii }).status, "mashbouh");
+  assert.equal(classifyBeauty(p, { topics: SCHOOLS.shafii }).status, "halal_probable");
+  assert.equal(classifyBeauty(p, { topics: SCHOOLS.maliki }).status, "mashbouh");
   assert.equal(classifyBeauty(p, { topics: { ...SCHOOLS.standard, alcool_cosmetique: "interdit" } }).status, "haram");
 });
 
 test("cosmétique : suif, porc, collagène, carmin", () => {
-  assert.equal(classifyBeauty(beauty("Sodium Tallowate, Aqua, Glycerin")).status, "mashbouh");
+  assert.equal(classifyBeauty(beauty("Sodium Tallowate, Aqua, Glycerin")).status, "halal_probable"); // savon : transformation
+  assert.equal(classifyBeauty(beauty("Sodium Tallowate, Aqua, Glycerin"), { topics: SCHOOLS.shafii }).status, "mashbouh");
+  assert.equal(classifyBeauty(beauty("Talc, CI 75470"), { topics: SCHOOLS.hanafi }).status, "mashbouh"); // carmin sur la peau : au plus douteux
   assert.equal(classifyBeauty(beauty("Aqua, Hydrolyzed Porcine Collagen")).status, "haram");
   assert.deepEqual(ids(classifyBeauty(beauty("Aqua, Marine Collagen"))), []);
   assert.deepEqual(ids(classifyBeauty(beauty("Talc, CI 75470, Mica"))), ["cosm_carmin"]);
@@ -51,6 +54,9 @@ test("médicament : gélule douteuse, comprimé non déterminé, sirop en inform
   assert.equal(classifyMedicine(raw("gélule")).status, "mashbouh");
   assert.equal(classifyMedicine(raw("gélule végétale")).status, "inconnu");
   assert.equal(classifyMedicine(raw("comprimé pelliculé")).status, "inconnu");
+  const strict = { topics: { ...SCHOOLS.standard, gelatine: "interdit" } };
+  assert.equal(classifyMedicine(raw("gélule"), strict).status, "mashbouh"); // jamais haram pour un médicament
+  assert.equal(classifyMedicine(medicineRaw("3400936404816", ["HEPARINE SODIQUE 5000 UI", "solution injectable", "Labo", "1"])).status, "mashbouh");
   const sirop = classifyMedicine(raw("sirop"));
   assert.equal(sirop.status, "inconnu");
   assert.equal(sirop.flags[0].severity, "info");
@@ -62,7 +68,7 @@ test("médicament : gélule douteuse, comprimé non déterminé, sirop en inform
 });
 
 test("present garde le type cosmétique et recalcule avec classifyAny", () => {
-  const p = present(beauty("Aqua, Sodium Tallowate"));
+  const p = present(beauty("Aqua, Hydrolyzed Collagen"));
   assert.equal(p.kind, "beauty");
   assert.equal(p.health, null);
   assert.equal(classifyAny(p.raw).status, "mashbouh");
@@ -87,6 +93,8 @@ test("traductions des cosmétiques, médicaments et allergènes du profil", () =
   const keys = [
     ...BEAUTY_RULES.flatMap((r) => [`flag.${r.id}.label`, `flag.${r.id}.reason`]),
     "flag.med_gelule.label", "flag.med_gelule.reason", "flag.med_alcool.label", "flag.med_alcool.reason",
+    "flag.med_porcin.label", "flag.med_porcin.reason", "flag.cosm_vernis.label", "flag.cosm_vernis.reason",
+    "flag.boissons_desalcoolisees.label", "flag.boissons_desalcoolisees.reason", "note.cert_school",
     "note.vegan_beauty", "note.beauty_external", "note.med_excipients", "note.med_notice", "note.med_necessity",
     ...PROFILE_ALLERGENS.map((a) => `allergen.${a}`),
   ];

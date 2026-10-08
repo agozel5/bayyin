@@ -2,7 +2,7 @@ import { createClient, OffError, present, classifyAny } from "./lib/off.js";
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
 import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS } from "./lib/settings.js";
-import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF } from "./lib/rules.js";
+import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
@@ -1082,14 +1082,16 @@ function renderSettings() {
     )
     .join("");
 
-  $("topicList").innerHTML = TOPICS.map(
-    (topic) => `<div class="topic">
+  // Sujets regroupés : origine inconnue (une certification lève le doute) / divergences entre écoles
+  const topicRow = (topic) => `<div class="topic">
       <span class="topic-name" id="tp-${topic}">${t(`topic.${topic}`)}</span>
       <div class="seg3" role="radiogroup" aria-labelledby="tp-${topic}">${DECISIONS.map(
         (d) => `<button type="button" role="radio" class="d-${d}" aria-checked="${st.topics[topic] === d}" data-topic="${topic}" data-decision="${d}">${t(`decision.${d}`)}</button>`
       ).join("")}</div>
-    </div>`
-  ).join("");
+    </div>`;
+  $("topicList").innerHTML =
+    `<p class="topic-group">${t("settings.topics_origin")}</p>` + TOPICS.filter((x) => !SCHOOL_TOPICS.includes(x)).map(topicRow).join("") +
+    `<p class="topic-group">${t("settings.topics_school")}</p>` + TOPICS.filter((x) => SCHOOL_TOPICS.includes(x)).map(topicRow).join("");
 
   renderOfflineStatus();
 

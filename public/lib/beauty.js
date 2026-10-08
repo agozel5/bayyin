@@ -3,7 +3,7 @@
 // Question halal pour un produit appliqué sur la peau : origine animale (porc, animal non sacrifié)
 // et pureté (alcool, selon l'école). Les textes sont traduits par l'interface (clés flag.<id>.*).
 
-import { normalize, segments, detectCertification, ingredientsText, SCHOOLS, DEFAULT_PREFS, TOPIC_OF, SEVERITY_OF } from "./rules.js";
+import { normalize, segments, detectCertification, ingredientsText, SCHOOLS, DEFAULT_PREFS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./rules.js";
 
 export const BEAUTY_RULES = [
   {
@@ -30,7 +30,7 @@ export const BEAUTY_RULES = [
   {
     id: "cosm_animal", severity: "mashbouh",
     label: "Ingrédient d'origine animale",
-    match: /\b(keratin|keratine|hydrolyzed keratin|elastin|elastine|placenta\w*|squalene|shark liver|musk|civet|castoreum|animal fat|graisse animale)\b/,
+    match: /\b(keratin|keratine|hydrolyzed keratin|elastin|elastine|placenta\w*|shark liver|civet|castoreum|animal fat|graisse animale)\b/,
     exclude: /\b(vegetal|plant|olive|amaranth|vegan|phyto)\b/,
   },
   {
@@ -69,17 +69,28 @@ export function classifyBeauty(product, prefs = DEFAULT_PREFS) {
         f.topic = topic;
         f.decision = topics[topic];
         f.severity = SEVERITY_OF[f.decision];
+        // Le carmin est interdit à la consommation, pas sur la peau : au plus « douteux » pour un cosmétique
+        if (rule.id === "cosm_carmin" && f.severity === "haram") f.severity = "mashbouh";
       }
       flags.push(f);
     }
   }
 
+  // Vernis à ongles : sans effet sur le statut halal, mais il empêche l'eau d'atteindre l'ongle
+  if ((product.categories_tags || []).some((c) => /nail-polish|vernis/.test(c))) {
+    flags.push({ id: "cosm_vernis", severity: "info", label: "Vernis à ongles", source: "" });
+  }
+
   const certification = detectCertification(product);
   const notes = [];
+  const isSchool = (f) => f.topic && SCHOOL_TOPICS.includes(f.topic);
   let status;
   if (flags.some((f) => f.severity === "haram")) {
     status = "haram";
-    if (certification) notes.push("cert_conflict");
+    if (certification) notes.push(flags.filter((f) => f.severity === "haram").every(isSchool) ? "cert_school" : "cert_conflict");
+  } else if (certification && flags.some((f) => f.severity === "mashbouh" && isSchool(f))) {
+    status = "mashbouh";
+    notes.push("cert_school");
   } else if (certification) {
     status = "halal_certifie";
   } else if (flags.some((f) => f.severity === "mashbouh")) {
@@ -94,7 +105,7 @@ export function classifyBeauty(product, prefs = DEFAULT_PREFS) {
   }
   const order = { haram: 0, mashbouh: 1, info: 2 };
   const final = flags
-    .map((f) => (status === "halal_certifie" && f.severity === "mashbouh" ? { ...f, severity: "info", covered: true } : f))
+    .map((f) => (certification && f.severity === "mashbouh" && !isSchool(f) ? { ...f, severity: "info", covered: true } : f))
     .sort((a, b) => order[a.severity] - order[b.severity]);
   return { status, certification, flags: final, notes, vegan, vegetarian: vegan };
 }

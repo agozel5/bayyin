@@ -26,10 +26,14 @@ const FORM_RULES = [
   { id: "med_alcool", severity: "info", match: /\b(sirop|solution buvable|suspension buvable|gouttes buvables|elixir|teinture|solution pour pulverisation buccale)\b/ },
 ];
 
+// Principes actifs d'origine porcine (OCI, résolution 210, 2015 : permis en cas de nécessité)
+const PORCINE = /\b(heparine|enoxaparine|dalteparine|tinzaparine|nadroparine|pancreatine|pancrelipase)\b/;
+
 export function classifyMedicine(product, prefs = DEFAULT_PREFS) {
   const topics = { ...SCHOOLS.standard, ...((prefs && prefs.topics) || {}) };
   const form = normalize(product.med_form);
   const flags = [];
+  if (PORCINE.test(normalize(product.product_name))) flags.push({ id: "med_porcin", severity: "mashbouh", source: product.product_name });
   for (const rule of FORM_RULES) {
     if (!rule.match.test(form) || (rule.exclude && rule.exclude.test(form))) continue;
     const f = { id: rule.id, severity: rule.severity, source: product.med_form };
@@ -39,6 +43,8 @@ export function classifyMedicine(product, prefs = DEFAULT_PREFS) {
       f.decision = topics[topic];
       // L'alcool d'un médicament reste une information : il ne change pas le verdict à lui seul.
       f.severity = rule.severity === "info" && f.decision !== "interdit" ? "info" : SEVERITY_OF[f.decision];
+      // Jamais « haram » pour un médicament : toutes les instances consultées l'autorisent en cas de nécessité
+      if (f.severity === "haram") f.severity = "mashbouh";
     }
     flags.push(f);
   }

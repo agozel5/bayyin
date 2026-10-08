@@ -14,7 +14,7 @@ test("produits d'exemple : verdicts attendus", () => {
     "6111242002012": "halal_certifie", // nuggets AVS
     "3245390011015": "mashbouh",       // pain de mie : E471
     "3560070462803": "halal_probable", // vinaigrette : vinaigre de vin = info
-    "3560070998005": "halal_probable", // bière 0,0 %
+    "3560070998005": "mashbouh",       // bière 0,0 % : bière sans alcool, sujet débattu
     "3250392420017": "haram",          // baba au rhum
     "3228021587011": "mashbouh",       // camembert : présure
     "3263859893408": "halal_probable", // chips arôme poulet, végétalien
@@ -93,25 +93,67 @@ test("sans alcool et polyols ne sont pas de l'alcool", () => {
 import { SCHOOLS } from "../public/lib/rules.js";
 const withSchool = (s) => ({ school: s, topics: SCHOOLS[s] });
 
-test("carmin : douteux par défaut, interdit chez les hanafites, permis chez les malékites", () => {
+test("carmin : douteux par défaut et chez malékites et chaféites, interdit chez hanafites et hanbalites", () => {
   const dragibus = FIXTURES["4001686301029"];
   assert.equal(classify(dragibus).flags.find((f) => f.id === "e120").severity, "mashbouh");
   assert.equal(classify(dragibus, withSchool("hanafi")).status, "haram");
-  const maliki = classify(dragibus, withSchool("maliki"));
-  assert.equal(maliki.flags.find((f) => f.id === "e120").severity, "info");
-  assert.equal(maliki.status, "mashbouh"); // la gélatine reste douteuse
+  assert.equal(classify(dragibus, withSchool("hanbali")).status, "haram");
+  assert.equal(classify(dragibus, withSchool("maliki")).flags.find((f) => f.id === "e120").severity, "mashbouh");
+  assert.equal(classify(dragibus, withSchool("shafii")).flags.find((f) => f.id === "e120").severity, "mashbouh");
 });
 
-test("présure : acceptée par les hanafites, douteuse chez les chaféites", () => {
+test("présure : douteuse partout (origine et abattage inconnus)", () => {
   const camembert = FIXTURES["3228021587011"];
-  assert.equal(classify(camembert, withSchool("hanafi")).status, "halal_probable");
-  assert.equal(classify(camembert, withSchool("shafii")).status, "mashbouh");
+  for (const s of ["standard", "hanafi", "maliki", "shafii", "hanbali"]) assert.equal(classify(camembert, withSchool(s)).status, "mashbouh", s);
 });
 
-test("vinaigre de vin : info par défaut, douteux pour le réglage prudent", () => {
+test("vinaigre de vin : permis hanafites/malékites, interdit chaféites/hanbalites", () => {
   const v = FIXTURES["3560070462803"];
   assert.equal(classify(v).status, "halal_probable");
-  assert.equal(classify(v, withSchool("prudent")).status, "mashbouh");
+  assert.equal(classify(v, withSchool("hanafi")).status, "halal_probable");
+  assert.equal(classify(v, withSchool("maliki")).status, "halal_probable");
+  assert.equal(classify(v, withSchool("shafii")).status, "haram");
+  assert.equal(classify(v, withSchool("hanbali")).status, "haram");
+  assert.equal(classify(v, withSchool("prudent")).status, "haram");
+});
+
+test("fruits de mer : interdits pour les hanafites seulement ; crevettes débattues", () => {
+  const moules = p("Moules, vin blanc, échalotes");
+  assert.equal(classify(p("Moules, échalotes, beurre")).status, "halal_probable");
+  assert.equal(classify(p("Moules, échalotes, beurre"), withSchool("hanafi")).status, "haram");
+  assert.equal(classify(p("Crevettes, sel"), withSchool("hanafi")).status, "halal_probable");
+  assert.equal(classify(p("Crevettes, sel"), withSchool("prudent")).status, "mashbouh");
+  assert.ok(ids(classify(moules)).includes("alcool"));
+});
+
+test("grenouille, escargot, cheval, âne, sanglier, insectes", () => {
+  assert.equal(classify(p("Cuisses de grenouille, ail"), withSchool("maliki")).status, "halal_probable");
+  assert.equal(classify(p("Cuisses de grenouille, ail"), withSchool("shafii")).status, "haram");
+  assert.equal(classify(p("Escargots, beurre, persil")).status, "mashbouh");
+  const cheval = classify(p("Viande de cheval, sel"), withSchool("shafii"));
+  assert.ok(ids(cheval).includes("cheval") && ids(cheval).includes("viande")); // l'abattage reste en question
+  assert.equal(classify(p("Viande d'âne, sel")).status, "haram");
+  assert.equal(classify(p("Savon au lait d'ânesse")).status, "halal_probable");
+  assert.equal(classify(p("Pâté de sanglier, sel")).status, "haram");
+  assert.equal(classify(p("Farine, poudre de grillon (Acheta domesticus)"), withSchool("hanafi")).status, "haram");
+  assert.equal(classify(p("Criquets grillés, sel")).status, "halal_probable");
+});
+
+test("viande non certifiée : interdite ; un label halal lève le doute sur l'abattage", () => {
+  assert.equal(classify(p("Filet de poulet, sel")).status, "haram");
+  assert.equal(classify(p("Filet de poulet, sel", { labels_tags: ["en:halal"] })).status, "halal_certifie");
+  assert.ok(!ids(classify(p("Chips, arôme poulet"))).includes("viande"));
+});
+
+test("un label halal ne tranche pas une divergence d'école", () => {
+  const v = classify(p("Moules, crème", { labels_tags: ["en:halal"] }), withSchool("hanafi"));
+  assert.equal(v.status, "haram");
+  assert.ok(v.notes.includes("cert_school"));
+});
+
+test("kombucha et traces d'alcool de fermentation : simple information", () => {
+  const v = classify(p("Thé fermenté (kombucha), sucre, traces d'alcool"));
+  assert.equal(v.status, "halal_probable");
 });
 
 test("réglage personnalisé d'un seul sujet", () => {

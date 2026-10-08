@@ -20,6 +20,12 @@ export const SOURCES = [
   { id: "nutrinet", group: "health", kind: "study", name: "NutriNet-Santé", url: "https://etude-nutrinet-sante.fr" },
   // Halal
   { id: "quran", group: "halal", kind: "text", name: "Coran 2:173, 5:3, 5:90", url: "https://quran.com/5/3" },
+  { id: "iifa", group: "halal", kind: "fatwa", name: "Académie internationale de fiqh (OCI)", url: "https://iifa-aifi.org/en/33099.html" },
+  { id: "ecfr", group: "halal", kind: "fatwa", name: "Conseil européen de la fatwa et de la recherche", url: "https://www.e-cfr.org" },
+  { id: "diyanet", group: "halal", kind: "fatwa", name: "Diyanet (Turquie)", url: "https://kurul.diyanet.gov.tr" },
+  { id: "daralifta", group: "halal", kind: "fatwa", name: "Dar al-Ifta (Égypte)", url: "https://www.dar-alifta.org" },
+  { id: "muftiwp", group: "halal", kind: "fatwa", name: "Mufti du Territoire fédéral (Malaisie)", url: "https://muftiwp.gov.my" },
+  { id: "mui", group: "halal", kind: "fatwa", name: "Majelis Ulama Indonesia (MUI)", url: "https://halalmui.org" },
 ];
 
 export const SOURCE_BY_ID = Object.fromEntries(SOURCES.map((s) => [s.id, s]));
@@ -47,5 +53,24 @@ export const RISK_SOURCES = {
 export const FLAG_SOURCES = {
   porc: ["quran"],
   sang: ["quran"],
-  alcool: ["quran"],
+  alcool: ["quran", "iifa"],
+  gelatine: ["iifa", "diyanet", "muftiwp"],
+  e441: ["iifa", "diyanet", "muftiwp"],
+  viande: ["ecfr", "iifa"],
+  e120: ["muftiwp", "mui"],
+  cosm_carmin: ["muftiwp", "mui"],
+  ethanol_support: ["iifa", "muftiwp"],
+  e1510: ["iifa", "muftiwp"],
+  alcool_naturel: ["muftiwp", "mui"],
+  boissons_desalcoolisees: ["muftiwp", "mui"],
+  cosm_alcool: ["iifa", "daralifta", "muftiwp"],
+  cosm_suif: ["iifa", "muftiwp"],
+  plasma: ["iifa"],
+  med_porcin: ["iifa"],
+  med_gelule: ["iifa", "daralifta"],
+  e920: ["ecfr"],
+  fruits_de_mer: ["muftiwp"],
+  grenouille: ["muftiwp"],
+  cheval: ["muftiwp"],
+  ane: ["quran"],
 };

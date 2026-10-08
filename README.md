@@ -219,12 +219,19 @@ boissons séparés). Les niveaux de risque des additifs résument des avis EFSA,
 
 ## Écoles et sujets débattus (`public/lib/rules.js`)
 
-Chaque point débattu est un « sujet » : `insectes`, `presure`, `vinaigre`, `arome_alcool`,
-`traces_alcool`, `gelatine`, `viande`, `derives`. Pour chacun, l'utilisateur choisit
-**permis** (simple information), **douteux** ou **interdit**. Les préréglages `SCHOOLS`
-résument des tendances générales et sont modifiables point par point. Gélatine, viande et
-dérivés d'origine inconnue restent « douteux » partout : c'est un manque d'information,
-pas une divergence d'école.
+Chaque point débattu est un « sujet ». Pour chacun, l'utilisateur choisit **permis** (simple information),
+**douteux** ou **interdit**, directement ou via un préréglage d'école (`SCHOOLS`). Les préréglages s'appuient sur
+une recherche documentée et sourcée : [`docs/avis-des-ecoles.md`](docs/avis-des-ecoles.md).
+
+Les sujets sont de deux natures, que le moteur distingue :
+
+- **origine inconnue** (`gelatine`, `viande`, `extraits_animaux`, `derives`, `presure`, `arome_alcool`,
+  `traces_alcool`) : un label halal lève le doute ;
+- **divergences entre écoles** (`insectes`, `vinaigre`, `fruits_de_mer`, `crevettes`, `insectes_alimentaires`,
+  `grenouille`, `escargot`, `cheval`, `boissons_desalcoolisees`, `alcool_cosmetique`, `graisse_cosmetique`) :
+  un label ne les tranche pas ; le produit certifié reçoit alors la note « interdit ou débattu selon votre école ».
+
+Un médicament n'est jamais classé « haram » : toutes les instances consultées l'autorisent en cas de nécessité.
 
 ## Traductions
 

@@ -727,3 +727,5 @@ h2,.sub{font-weight:750}
 #historyList{background:none;box-shadow:none;padding:0;border-radius:0}
 .row-img.ph{display:flex;align-items:center;justify-content:center;color:var(--faint)}
 .row-img.ph svg{width:24px;height:24px}
+.topic-group{margin:14px 0 2px;font-size:.85rem;font-weight:700;color:var(--brand-dark)}
+.topic-group:first-child{margin-top:4px}
