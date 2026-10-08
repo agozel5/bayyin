@@ -99,34 +99,39 @@ async function searchPage(query, page, size = 200) {
 }
 const items = new Map(); // substanceId -> metadata
 const BASE_Q = { term: { itemType: "ingredient" } };
-// L'API ne renvoie pas plus de 10 000 résultats par requête : on découpe par tranches
-// d'identifiant (substanceId), en coupant en deux toute tranche trop grande.
+// L'API ne renvoie pas plus de 10 000 résultats par requête : on découpe par préfixe de
+// l'identifiant (substanceId, comparé comme du texte), en affinant tout préfixe trop fréquent.
 async function countOf(must) {
   const j = await searchPage({ bool: { must } }, 1, 1);
   return j.totalResults || 0;
 }
-async function collectRange(lo, hi) {
-  const must = [BASE_Q, { range: { substanceId: { gte: lo, lt: hi } } }];
-  const n = await countOf(must);
-  if (!n) return;
-  if (n > 9500 && hi - lo > 1) {
-    const mid = Math.floor((lo + hi) / 2);
-    await collectRange(lo, mid);
-    await collectRange(mid, hi);
-    return;
-  }
+const next = (p) => p.slice(0, -1) + String.fromCharCode(p.charCodeAt(p.length - 1) + 1); // "19" -> "1:"
+async function pageAll(must, n, label) {
   let got = 0;
   for (let page = 1; (page - 1) * 200 < n; page++) {
     const j = await searchPage({ bool: { must } }, page);
     for (const r of j.results || []) { const m = r.metadata || {}; items.set((m.substanceId || [r.reference])[0], m); got++; }
     await sleep(100);
   }
-  console.log(`tranche ${lo}-${hi} : ${got} / ${n}`);
+  console.log(`${label} : ${got} / ${n}`);
+}
+async function collectPrefix(p) {
+  const must = [BASE_Q, { range: { substanceId: { gte: p, lt: next(p) } } }];
+  const n = await countOf(must);
+  if (!n) return;
+  if (n <= 9500) return pageAll(must, n, `préfixe ${p}`);
+  const exact = [BASE_Q, { term: { substanceId: p } }];
+  const e = await countOf(exact);
+  if (e) await pageAll(exact, e, `identifiant ${p}`);
+  for (const d of "0123456789") await collectPrefix(p + d);
 }
 const TOTAL = await countOf([BASE_Q]);
 console.log("inventaire annoncé :", TOTAL);
-// Les identifiants sont dispersés (jusqu'à plusieurs millions) : on part d'une très grande tranche
-await collectRange(0, 2 ** 31);
+for (const d of "0123456789") await collectPrefix(d);
+// Identifiants non numériques éventuels
+const rest = [BASE_Q, { range: { substanceId: { gte: ":" } } }];
+const nr = await countOf(rest);
+if (nr && nr <= 9500) await pageAll(rest, nr, "autres identifiants");
 console.log("ingrédients récupérés :", items.size);
 if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
 
