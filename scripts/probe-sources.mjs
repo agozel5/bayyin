@@ -1,32 +1,32 @@
 // Sonde temporaire : vérifie depuis GitHub Actions les adresses des bases officielles
 // (CosIng, CLP) et écrit un rapport. À supprimer une fois l'import en place.
 import { writeFile } from "node:fs/promises";
-
-const urls = [
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/II/export-csv",
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/III/export-csv",
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/ingredients/export-csv",
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/inventory/export-csv",
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/substances/export-csv",
-  "https://data.europa.eu/api/hub/search/datasets/cosmetic-ingredient-database-ingredients-and-fragrance-inventory",
-  "https://data.europa.eu/api/hub/search/search?q=cosing&filter=dataset&limit=10",
-  "https://ec.europa.eu/growth/tools-databases/cosing/",
-  "https://echa.europa.eu/information-on-chemicals/annex-vi-to-clp",
-  "https://echa.europa.eu/fr/information-on-chemicals/annex-vi-to-clp",
-];
+const UA = { "User-Agent": "Mozilla/5.0 (Bayyin probe)", Accept: "*/*" };
 let out = "";
-for (const u of urls) {
+const get = async (u) => {
+  const res = await fetch(u, { headers: UA, signal: AbortSignal.timeout(60000) });
+  return { res, text: await res.text() };
+};
+const base = "https://ec.europa.eu/growth/tools-databases/cosing/";
+const { text: html } = await get(base);
+const scripts = [...html.matchAll(/src="([^"]+\.js)"/g)].map((m) => new URL(m[1], base).href);
+out += "SCRIPTS:\n" + scripts.join("\n") + "\n";
+for (const s of scripts) {
   try {
-    const res = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0 (Bayyin probe)", Accept: "*/*" }, signal: AbortSignal.timeout(60000) });
-    const buf = Buffer.from(await res.arrayBuffer());
-    const text = buf.toString("utf8");
-    out += `\n===== ${u}\nHTTP ${res.status} ${res.headers.get("content-type")} ${buf.length} octets\n`;
-    const links = [...new Set(text.match(/https?:[^"'\s<>]+?\.(xlsx|csv|zip|xls)(\?[^"'\s<>]*)?|\/documents\/[^"'\s<>]+|"(download_?url|access_?url)"\s*:\s*\[?"[^"]+"/gi) || [])].slice(0, 60);
-    if (links.length) out += "LIENS :\n" + links.join("\n") + "\n";
-    out += "DÉBUT :\n" + text.slice(0, 1500).replace(/\s+/g, " ") + "\n";
-  } catch (e) {
-    out += `\n===== ${u}\nERREUR ${e.message}\n`;
-  }
+    const { text } = await get(s);
+    const hits = [...new Set(text.match(/https?:\/\/[a-z.]*europa\.eu[^"'`\s]*|[a-zA-Z0-9_\/.-]*export[a-zA-Z0-9_\/.-]*|apiKey[^,;]{0,80}|"\/api\/[^"]+"|`[^`]*api[^`]*`/g) || [])].slice(0, 200);
+    out += `\n===== ${s} (${text.length})\n` + hits.join("\n") + "\n";
+  } catch (e) { out += `\n===== ${s} ERREUR ${e.message}\n`; }
+}
+// Essais directs
+for (const u of [
+  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/IV/export-csv",
+  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/V/export-csv",
+  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/VI/export-csv",
+  "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02008R1272-20250801",
+]) {
+  try { const { res, text } = await get(u); out += `\n===== ${u}\nHTTP ${res.status} ${text.length}\n${text.slice(0, 800).replace(/\s+/g, " ")}\n`; }
+  catch (e) { out += `\n===== ${u} ERREUR ${e.message}\n`; }
 }
 await writeFile(new URL("../docs/probe-report.txt", import.meta.url), out);
-console.log(out);
+console.log(out.slice(0, 5000));
