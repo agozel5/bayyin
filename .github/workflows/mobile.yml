@@ -70,6 +70,11 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+      # Expo récent demande Swift 6.2, donc Xcode 26 ou plus
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - run: xcodebuild -version
       - uses: actions/setup-node@v4
         with:
           node-version: 22
