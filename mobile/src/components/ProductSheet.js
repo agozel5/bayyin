@@ -1,10 +1,11 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
-import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Image, Linking, Share } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable, Image, Linking, Share, Animated, Easing } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
-import { Txt, H2, Muted, Label, Row, Btn, Pill, StatusPill, MiniScore, Loading, Message } from "./ui";
+import { Txt, H2, Muted, Label, Row, Btn, Pill, StatusPill, MiniScore, Loading, Message, Skeleton, FadeIn } from "./ui";
+import { haptic, ms, announce } from "../motion";
 import { C, R, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir } from "../theme";
 import { t, tn, tPlain } from "../i18n";
 import { SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "../core";
@@ -14,6 +15,7 @@ import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteTe
 
 const STATUS_ICON = { halal_certifie: "check", halal_probable: "check", mashbouh: "question", haram: "cross", inconnu: "dash" };
 const open = (url) => Linking.openURL(url).catch(() => {});
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // ---------------------------------------------------------------------------
 // Petits éléments
@@ -50,7 +52,15 @@ function Expand({ head, children, initial = false }) {
   const [on, setOn] = useState(initial);
   return (
     <View style={{ backgroundColor: C.tint, borderRadius: R.md, overflow: "hidden" }}>
-      <Pressable onPress={() => setOn(!on)} style={{ flexDirection: dir().row, alignItems: "center", gap: 10, padding: 14 }}>
+      <Pressable
+        onPress={() => {
+          haptic.tap();
+          setOn(!on);
+        }}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: on }}
+        style={{ flexDirection: dir().row, alignItems: "center", gap: 10, padding: 14 }}
+      >
         <View style={{ flex: 1 }}>{head}</View>
         <View style={{ transform: [{ rotate: on ? "90deg" : "0deg" }] }}>
           <Icon name="chev" size={16} color={C.muted} flip={dir().rtl && !on} />
@@ -65,16 +75,22 @@ function Ring({ value, color, size = 58 }) {
   const w = 6;
   const r = (size - w) / 2;
   const len = 2 * Math.PI * r;
+  // L'anneau se remplit jusqu'à la note
+  const v = useRef(new Animated.Value(ms(1) ? 0 : value || 0)).current;
+  useEffect(() => {
+    Animated.timing(v, { toValue: value || 0, duration: ms(700), delay: ms(150), easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [value]);
+  const dash = v.interpolate({ inputRange: [0, 100], outputRange: [0, len] });
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.line} strokeWidth={w} fill="none" />
         {value ? (
-          <Circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={w} fill="none" strokeLinecap="round"
-            strokeDasharray={`${(len * value) / 100} ${len}`} />
+          <AnimatedCircle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={w} fill="none" strokeLinecap="round"
+            strokeDasharray={[len, len]} strokeDashoffset={Animated.subtract(len, dash)} />
         ) : null}
       </Svg>
-      <Text style={{ fontWeight: "800", fontSize: value ? 18 : 20, color: C.fg }}>{value || "?"}</Text>
+      <Text maxFontSizeMultiplier={1.2} style={{ fontWeight: "800", fontSize: value ? 18 : 20, color: C.fg }}>{value || "?"}</Text>
     </View>
   );
 }
@@ -87,7 +103,7 @@ function Top({ p }) {
   return (
     <Row gap={14} style={{ alignItems: "flex-start" }}>
       {p.image ? (
-        <Image source={{ uri: p.image }} style={{ width: 84, height: 84, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: "#fff" }} resizeMode="contain" />
+        <Image source={{ uri: p.image }} style={{ width: 84, height: 84, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: "#fff" }} resizeMode="contain" accessible={false} />
       ) : (
         <View style={{ width: 84, height: 84, borderRadius: 16, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}>
           <Icon name={p.local ? "doc" : "box"} size={30} color={C.faint} />
@@ -108,7 +124,7 @@ function Tiles({ p, v }) {
   const tile = { flex: 1, borderRadius: R.lg, padding: 14, gap: 10, minHeight: 128 };
   return (
     <View style={{ flexDirection: dir().row, gap: 10 }}>
-      <View style={[tile, { backgroundColor: bg }]}>
+      <View style={[tile, { backgroundColor: bg }]} accessible accessibilityLabel={`${t("detail.halal")} : ${S(v.status, "label")}`}>
         <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: fg, alignItems: "center", justifyContent: "center" }}>
           <Icon name={STATUS_ICON[v.status]} size={26} color="#fff" width={2.8} />
         </View>
@@ -117,7 +133,11 @@ function Tiles({ p, v }) {
           <Txt style={{ fontSize: 18, lineHeight: 23, fontWeight: "800", color: fg }}>{S(v.status, "label")}</Txt>
         </View>
       </View>
-      <View style={[tile, { backgroundColor: C.tint }]}>
+      <View
+        style={[tile, { backgroundColor: C.tint }]}
+        accessible
+        accessibilityLabel={`${t("detail.health")} : ${s ? `${s.score}/100, ${t(`grade.${s.grade}`)}` : t("detail.not_rated")}`}
+      >
         <Ring value={s ? s.score : 0} color={s ? GRADE_COLORS[s.grade] : C.faint} />
         <View>
           <Label>{t("detail.health")}</Label>
@@ -417,10 +437,10 @@ function ProductBody({ p, onOpen, onGotoSettings, onOcr }) {
     : null;
   return (
     <View style={{ gap: 18 }}>
-      <Top p={p} />
-      <Tiles p={p} v={v} />
-      <HalalSection p={p} v={v} onGotoSettings={onGotoSettings} onOcr={onOcr} />
-      <HealthSection p={p} />
+      <FadeIn><Top p={p} /></FadeIn>
+      <FadeIn delay={60}><Tiles p={p} v={v} /></FadeIn>
+      <FadeIn delay={120}><HalalSection p={p} v={v} onGotoSettings={onGotoSettings} onOcr={onOcr} /></FadeIn>
+      <FadeIn delay={180}><HealthSection p={p} /></FadeIn>
       <WatchSection p={p} />
       {!p.local ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
       <AllAdditivesSection p={p} v={v} />
@@ -445,6 +465,29 @@ function ProductBody({ p, onOpen, onGotoSettings, onOcr }) {
 // ---------------------------------------------------------------------------
 // Fiche complète (chargement, en-tête, favoris, partage)
 // ---------------------------------------------------------------------------
+function SheetSkeleton() {
+  return (
+    <View style={{ gap: 18 }} accessible accessibilityLabel={t("msg.loading")}>
+      <Row gap={14}>
+        <Skeleton width={84} height={84} radius={16} />
+        <View style={{ flex: 1, gap: 10 }}>
+          <Skeleton height={22} width="85%" />
+          <Skeleton height={16} width="50%" />
+        </View>
+      </Row>
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <Skeleton height={128} radius={R.lg} style={{ flex: 1 }} width={null} />
+        <Skeleton height={128} radius={R.lg} style={{ flex: 1 }} width={null} />
+      </View>
+      <Skeleton height={20} width="40%" />
+      <Skeleton height={14} />
+      <Skeleton height={14} width="90%" />
+      <Skeleton height={70} radius={R.md} />
+      <Skeleton height={70} radius={R.md} />
+    </View>
+  );
+}
+
 export default function ProductSheet({ code, product, fromScan, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
@@ -470,9 +513,15 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
     fetchProduct(code)
       .then((p) => {
         if (!alive) return;
-        if (!p) return setState({ notFound: true, loading: false });
+        if (!p) {
+          haptic.warn();
+          return setState({ notFound: true, loading: false });
+        }
         setState({ p, loading: false });
         addToHistory(p);
+        const st = verdictOf(p).status;
+        if (fromScan) (st === "haram" ? haptic.error : st === "mashbouh" ? haptic.warn : haptic.success)();
+        announce(`${nameOf(p)}. ${t("detail.halal")} : ${S(st, "label")}`);
       })
       .catch((err) => {
         if (!alive) return;
@@ -491,10 +540,12 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
     if (!p) return;
     if (!getEntry(p.code)) addToHistory(p);
     const on = toggleFav(p.code);
+    on ? haptic.success() : haptic.tap();
     toast && toast(t(on ? "sheet.fav_added" : "sheet.fav_removed"));
   };
   const onShare = () => {
     if (!p) return;
+    haptic.light();
     const s = scoreOf(p);
     Share.share({
       message:
@@ -507,19 +558,19 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <Pressable onPress={onClose} style={headBtn} accessibilityLabel={t("sheet.back")} hitSlop={6}>
+        <Pressable onPress={onClose} style={headBtn} accessibilityRole="button" accessibilityLabel={t("sheet.back")} hitSlop={6}>
           <Icon name="back" size={22} flip={dir().rtl} />
         </Pressable>
         <Txt style={{ flex: 1, fontWeight: "800", fontSize: 17 }} numberOfLines={1}>
           {p ? nameOf(p) : state.notFound ? t("msg.notfound.t") : t("sheet.title")}
         </Txt>
         {p && isBarcode(p.code) ? (
-          <Pressable onPress={onShare} style={headBtn} accessibilityLabel={t("sheet.share")} hitSlop={6}>
+          <Pressable onPress={onShare} style={headBtn} accessibilityRole="button" accessibilityLabel={t("sheet.share")} hitSlop={6}>
             <Icon name="share" size={20} />
           </Pressable>
         ) : null}
         {p ? (
-          <Pressable onPress={onFav} style={headBtn} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
+          <Pressable onPress={onFav} style={headBtn} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
             <Icon name="star" size={21} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
           </Pressable>
         ) : null}
@@ -527,7 +578,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
 
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
-          <Loading text={t("msg.loading")} />
+          <SheetSkeleton />
         ) : state.notFound ? (
           <Message title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })}>
             <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(code)} />

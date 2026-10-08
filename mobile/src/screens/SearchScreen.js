@@ -8,13 +8,19 @@ import { C, R, dir } from "../theme";
 import { t, tn } from "../i18n";
 import { fetchProduct, searchProducts } from "../api";
 import { errorText } from "../view";
+import { haptic } from "../motion";
 
 const SUGGESTIONS = ["Nutella", "Haribo", "Kinder", "Isla Délice", "Danone", "Oreo"];
 
 export function Chip({ text, n, on, onPress }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.tap();
+        onPress && onPress();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={n !== undefined ? `${text}, ${n}` : text}
       accessibilityState={{ selected: !!on }}
       style={{ flexDirection: dir().row, alignItems: "center", gap: 6, paddingVertical: 9, paddingHorizontal: 14, borderRadius: 999, backgroundColor: on ? C.fg : C.tint }}
     >
@@ -39,7 +45,7 @@ export function SearchField({ value, onChangeText, onSubmit, placeholder }) {
         style={{ flex: 1, paddingVertical: 13, fontSize: 17, color: C.fg, textAlign: dir().ta }}
       />
       {value ? (
-        <Pressable onPress={() => onChangeText("")} hitSlop={10}>
+        <Pressable onPress={() => onChangeText("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="✕">
           <Icon name="close" size={18} color={C.muted} />
         </Pressable>
       ) : null}

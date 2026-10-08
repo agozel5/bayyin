@@ -23,7 +23,7 @@ export default function CameraScanner({ onCode, onClose, onManual }) {
     const code = normalizeScan(data);
     if (!code) return; // la clé de contrôle écarte les lectures erronées
     done.current = true;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); // code lu ; le verdict a sa propre vibration
     onCode(code);
   };
 
@@ -74,18 +74,22 @@ export default function CameraScanner({ onCode, onClose, onManual }) {
           <View style={[styles.corner, { bottom: -2, right: -2, borderBottomWidth: 4, borderRightWidth: 4, borderBottomRightRadius: 18 }]} />
           <View style={styles.laser} />
         </View>
-        <Text style={styles.hint}>{t("cam.hint")}</Text>
+        <Text style={styles.hint} accessibilityLiveRegion="polite">{t("cam.hint")}</Text>
       </View>
 
       <View style={[styles.topBar, { top: insets.top + 10 }]}>
-        <Pressable onPress={onClose} style={round} accessibilityLabel={t("cam.close")} hitSlop={8}>
+        <Pressable onPress={onClose} style={round} accessibilityRole="button" accessibilityLabel={t("cam.close")} hitSlop={8}>
           <Icon name="close" color="#fff" size={24} />
         </Pressable>
         <Pressable
-          onPress={() => setTorch((v) => !v)}
+          onPress={() => {
+            Haptics.selectionAsync().catch(() => {});
+            setTorch((v) => !v);
+          }}
+          accessibilityRole="switch"
           style={[round, torch ? { backgroundColor: C.gold } : null]}
           accessibilityLabel={t("cam.torch")}
-          accessibilityState={{ selected: torch }}
+          accessibilityState={{ checked: torch }}
           hitSlop={8}
         >
           <Icon name="torch" color={torch ? "#000" : "#fff"} size={22} />
@@ -93,7 +97,7 @@ export default function CameraScanner({ onCode, onClose, onManual }) {
       </View>
 
       <View style={[styles.bottomBar, { bottom: insets.bottom + 18 }]}>
-        <Pressable onPress={onManual} style={styles.pillBtn}>
+        <Pressable onPress={onManual} style={styles.pillBtn} accessibilityRole="button">
           <Icon name="keyboard" color="#fff" size={20} />
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>{t("cam.type")}</Text>
         </Pressable>

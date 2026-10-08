@@ -9,6 +9,7 @@ import { C, R, STATUS_COLORS, dir } from "../theme";
 import { t } from "../i18n";
 import { getHistory, clearHistory } from "../storage";
 import { verdictOf, relTime, S } from "../view";
+import { haptic } from "../motion";
 
 const STATUS_ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
 const FILTERS = [
@@ -60,7 +61,11 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           <Text style={{ fontSize: 34, fontWeight: "800", color: C.fg }}>{all.length}</Text>
           <Muted>{t(all.length === 1 ? "history.count_one" : "history.count_other")}</Muted>
         </Row>
-        <View style={{ flexDirection: dir().row, height: 12, borderRadius: 6, overflow: "hidden", gap: 2 }}>
+        <View
+          accessible
+          accessibilityLabel={seen.map((s) => `${counts[s]} ${S(s, "label")}`).join(", ")}
+          style={{ flexDirection: dir().row, height: 12, borderRadius: 6, overflow: "hidden", gap: 2 }}
+        >
           {seen.map((s) => (
             <View key={s} style={{ flex: counts[s], backgroundColor: STATUS_COLORS[s][0] }} />
           ))}
@@ -93,7 +98,9 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         <Row gap={16} style={{ justifyContent: "center", flexWrap: "wrap" }}>
           <Txt style={{ fontWeight: "700" }}>{t("history.clear_q")}</Txt>
           <Pressable
+            accessibilityRole="button"
             onPress={() => {
+              haptic.warn();
               clearHistory();
               setConfirm(false);
               toast(t("history.cleared"));
@@ -101,12 +108,12 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           >
             <Text style={{ color: STATUS_COLORS.haram[0], fontWeight: "800" }}>{t("history.clear_yes")}</Text>
           </Pressable>
-          <Pressable onPress={() => setConfirm(false)}>
+          <Pressable onPress={() => setConfirm(false)} accessibilityRole="button">
             <Text style={{ color: C.muted, fontWeight: "700" }}>{t("history.clear_no")}</Text>
           </Pressable>
         </Row>
       ) : (
-        <Pressable onPress={() => setConfirm(true)} style={{ alignSelf: "center", padding: 8 }}>
+        <Pressable onPress={() => setConfirm(true)} accessibilityRole="button" style={{ alignSelf: "center", padding: 8 }}>
           <Text style={{ color: C.muted, fontWeight: "700", textDecorationLine: "underline" }}>{t("history.clear")}</Text>
         </Pressable>
       )}

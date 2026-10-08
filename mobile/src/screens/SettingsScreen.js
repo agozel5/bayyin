@@ -11,6 +11,7 @@ import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES } from "
 import { getSettings, setSettings, setSchool, setTopic } from "../storage";
 import { downloadPack } from "../api";
 import { S } from "../view";
+import { haptic } from "../motion";
 
 const LEGEND_ORDER = ["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"];
 const DECISION_COLORS = { permis: SEV_COLORS.info, douteux: SEV_COLORS.mashbouh, interdit: SEV_COLORS.haram };
@@ -35,7 +36,7 @@ function Radio({ on }) {
 
 function LinkRow({ title, text, url }) {
   return (
-    <Pressable onPress={() => open(url)} style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.md, backgroundColor: pressed ? C.tint2 : C.tint })}>
+    <Pressable onPress={() => open(url)} accessibilityRole="link" accessibilityLabel={text ? `${title}. ${text}` : title} style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.md, backgroundColor: pressed ? C.tint2 : C.tint })}>
       <View style={{ flex: 1, gap: 2 }}>
         <Txt style={{ fontWeight: "700" }}>{title}</Txt>
         {text ? <Muted style={{ fontSize: 13, lineHeight: 18 }}>{text}</Muted> : null}
@@ -63,6 +64,7 @@ export default function SettingsScreen({ focusSchool }) {
     setPacking(0);
     try {
       const n = await downloadPack((count) => setPacking(count));
+      haptic.success();
       setPacking(null);
       setSettings({ packAt: Date.now(), packCount: n });
     } catch {
@@ -93,8 +95,12 @@ export default function SettingsScreen({ focusSchool }) {
           {LANGS.map((l) => (
             <Pressable
               key={l}
-              onPress={() => setSettings({ lang: l })}
-              accessibilityState={{ selected: st.lang === l }}
+              onPress={() => {
+                haptic.tap();
+                setSettings({ lang: l });
+              }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: st.lang === l }}
               style={{ flexBasis: "47%", flexGrow: 1, paddingVertical: 14, borderRadius: R.md, alignItems: "center", borderWidth: 2, borderColor: st.lang === l ? C.brand : C.line, backgroundColor: st.lang === l ? C.brandSoft : "#fff" }}
             >
               <Text style={{ fontWeight: "800", fontSize: 16, color: st.lang === l ? C.brandDark : C.fg }}>{LANG_NAMES[l]}</Text>
@@ -109,8 +115,14 @@ export default function SettingsScreen({ focusSchool }) {
           {schools.map((s) => (
             <Pressable
               key={s}
-              onPress={() => s !== "custom" && setSchool(s)}
-              accessibilityState={{ selected: st.school === s }}
+              onPress={() => {
+                if (s === "custom") return;
+                haptic.tap();
+                setSchool(s);
+              }}
+              accessibilityRole="radio"
+              accessibilityLabel={`${t(`school.${s}`)}. ${t(`school.${s}.d`)}`}
+              accessibilityState={{ checked: st.school === s }}
               style={{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.md, borderWidth: 2, borderColor: st.school === s ? C.brand : C.line, backgroundColor: st.school === s ? C.brandSoft : "#fff" }}
             >
               <Radio on={st.school === s} />
@@ -133,8 +145,13 @@ export default function SettingsScreen({ focusSchool }) {
                   return (
                     <Pressable
                       key={d}
-                      onPress={() => setTopic(topic, d)}
-                      accessibilityState={{ selected: on }}
+                      onPress={() => {
+                        haptic.tap();
+                        setTopic(topic, d);
+                      }}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`${t(`topic.${topic}`)} : ${t(`decision.${d}`)}`}
+                      accessibilityState={{ checked: on }}
                       style={{ flex: 1, paddingVertical: 9, borderRadius: R.sm, alignItems: "center", backgroundColor: on ? bg : "transparent", borderWidth: on ? 1.5 : 0, borderColor: fg }}
                     >
                       <Text style={{ fontWeight: "800", fontSize: 14, color: on ? fg : C.muted }}>{t(`decision.${d}`)}</Text>

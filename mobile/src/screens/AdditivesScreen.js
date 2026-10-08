@@ -8,6 +8,7 @@ import { C, R, SEV_COLORS, RISK_COLORS, dir } from "../theme";
 import { t } from "../i18n";
 import { ADDITIVES, TEXT_RULES, TOPIC_OF, SEVERITY_OF, ADDITIVE_RISK } from "../core";
 import { getSettings } from "../storage";
+import { haptic } from "../motion";
 
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
 
@@ -84,7 +85,9 @@ export default function AdditivesScreen({ onGotoSettings }) {
         {[["halal", "add.mode_halal"], ["sante", "add.mode_health"]].map(([id, key]) => (
           <Pressable
             key={id}
+            accessibilityRole="tab"
             onPress={() => {
+              haptic.tap();
               setMode(id);
               setFilter("all");
             }}

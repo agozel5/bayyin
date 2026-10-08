@@ -7,12 +7,19 @@ import Screen from "../components/Screen";
 import { C, R, dir } from "../theme";
 import { t, tPlain } from "../i18n";
 import { getHistory } from "../storage";
+import { haptic } from "../motion";
 
 function AltButton({ icon, text, onPress, wide }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.light();
+        onPress();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={text}
       style={({ pressed }) => ({
+        transform: [{ scale: pressed ? 0.98 : 1 }],
         flexBasis: wide ? "100%" : "47%", flexGrow: 1, flexDirection: dir().row, alignItems: "center", gap: 10,
         padding: 14, borderRadius: R.md, backgroundColor: pressed ? C.tint2 : C.tint,
       })}
@@ -42,7 +49,10 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onPhotoBarcode, onGo
 
   const submit = () => {
     const digits = code.replace(/\D/g, "");
-    if (digits.length < 8 || digits.length > 14) return setError(true);
+    if (digits.length < 8 || digits.length > 14) {
+      haptic.error();
+      return setError(true);
+    }
     setError(null);
     onOpen(digits, { fromScan: true });
   };
@@ -50,7 +60,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onPhotoBarcode, onGo
   return (
     <Screen>
       <Row gap={10}>
-        <Logo size={36} />
+        <View accessible={false} importantForAccessibility="no-hide-descendants"><Logo size={36} /></View>
         <Text style={{ fontSize: 22, fontWeight: "800", color: C.fg }}>{t("app.name")}</Text>
         <Text style={{ fontSize: 20, fontWeight: "700", color: C.brand }}>بيّن</Text>
       </Row>
@@ -61,9 +71,14 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onPhotoBarcode, onGo
       </View>
 
       <Pressable
-        onPress={onScan}
+        onPress={() => {
+          haptic.light();
+          onScan();
+        }}
         accessibilityRole="button"
+        accessibilityLabel={`${t("home.scan")}. ${t("home.scan_sub")}`}
         style={({ pressed }) => ({
+          transform: [{ scale: pressed ? 0.98 : 1 }],
           flexDirection: dir().row, alignItems: "center", gap: 16, padding: 18, borderRadius: R.xl,
           backgroundColor: pressed ? C.brandDark : C.brand,
           shadowColor: C.brand, shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5,
@@ -117,7 +132,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onPhotoBarcode, onGo
         <View style={{ gap: 4 }}>
           <Row style={{ justifyContent: "space-between" }}>
             <H2>{t("home.recent")}</H2>
-            <Pressable onPress={() => onGoto("history")} hitSlop={8}>
+            <Pressable onPress={() => onGoto("history")} hitSlop={8} accessibilityRole="link">
               <Text style={{ color: C.brand, fontWeight: "700" }}>{t("home.see_all")}</Text>
             </Pressable>
           </Row>

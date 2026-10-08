@@ -1,21 +1,25 @@
 // Briques d'interface réutilisées par tous les écrans.
-import React from "react";
-import { View, Text, Pressable, ActivityIndicator, StyleSheet, Image } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, Image, Animated } from "react-native";
 import Icon from "./Icon";
 import { C, R, STATUS_COLORS, GRADE_COLORS, dir } from "../theme";
 import { t } from "../i18n";
 import { S, nameOf, verdictOf, scoreOf } from "../view";
+import { haptic, ms } from "../motion";
+
+// Les grandes polices du téléphone sont respectées, avec une limite pour garder la mise en page lisible.
+export const FONT_MAX = 1.6;
 
 export function Txt({ style, children, ...rest }) {
   return (
-    <Text style={[{ color: C.fg, fontSize: 16, lineHeight: 23, textAlign: dir().ta, writingDirection: dir().rtl ? "rtl" : "ltr" }, style]} {...rest}>
+    <Text maxFontSizeMultiplier={FONT_MAX} style={[{ color: C.fg, fontSize: 16, lineHeight: 23, textAlign: dir().ta, writingDirection: dir().rtl ? "rtl" : "ltr" }, style]} {...rest}>
       {children}
     </Text>
   );
 }
 
-export const H1 = ({ children, style }) => <Txt style={[{ fontSize: 30, lineHeight: 35, fontWeight: "800", letterSpacing: -0.5 }, style]}>{children}</Txt>;
-export const H2 = ({ children, style }) => <Txt style={[{ fontSize: 20, lineHeight: 26, fontWeight: "800" }, style]}>{children}</Txt>;
+export const H1 = ({ children, style }) => <Txt accessibilityRole="header" style={[{ fontSize: 30, lineHeight: 35, fontWeight: "800", letterSpacing: -0.5 }, style]}>{children}</Txt>;
+export const H2 = ({ children, style }) => <Txt accessibilityRole="header" style={[{ fontSize: 20, lineHeight: 26, fontWeight: "800" }, style]}>{children}</Txt>;
 export const Muted = ({ children, style }) => <Txt style={[{ color: C.muted, fontSize: 15, lineHeight: 22 }, style]}>{children}</Txt>;
 export const Label = ({ children, style }) => (
   <Txt style={[{ color: C.muted, fontSize: 12, fontWeight: "800", letterSpacing: dir().rtl ? 0 : 0.8, textTransform: "uppercase" }, style]}>{children}</Txt>
@@ -25,18 +29,29 @@ export function Row({ children, style, gap = 10 }) {
   return <View style={[{ flexDirection: dir().row, alignItems: "center", gap }, style]}>{children}</View>;
 }
 
-export function Btn({ title, onPress, kind = "primary", icon, style, disabled }) {
+export function Btn({ title, onPress, kind = "primary", icon, style, disabled, a11yHint }) {
   const bg = kind === "primary" ? C.brand : kind === "white" ? "#fff" : C.tint;
   const fg = kind === "primary" ? "#fff" : C.fg;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={(e) => {
+        haptic.light();
+        onPress && onPress(e);
+      }}
       disabled={disabled}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.btn, { backgroundColor: bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1, flexDirection: dir().row }, style]}
+      accessibilityLabel={title}
+      accessibilityHint={a11yHint}
+      accessibilityState={{ disabled: !!disabled }}
+      style={({ pressed }) => [
+        styles.btn,
+        { backgroundColor: bg, opacity: disabled ? 0.5 : 1, flexDirection: dir().row, transform: [{ scale: pressed ? 0.97 : 1 }] },
+        pressed && kind === "primary" ? { backgroundColor: C.brandDark } : null,
+        style,
+      ]}
     >
       {icon ? <Icon name={icon} color={fg} size={20} /> : null}
-      <Text style={{ color: fg, fontWeight: "700", fontSize: 16 }}>{title}</Text>
+      <Text maxFontSizeMultiplier={FONT_MAX} style={{ color: fg, fontWeight: "700", fontSize: 16, textAlign: "center", flexShrink: 1 }}>{title}</Text>
     </Pressable>
   );
 }
@@ -46,7 +61,7 @@ export function Pill({ text, colors, dot = false }) {
   return (
     <View style={[styles.pill, { backgroundColor: bg, flexDirection: dir().row }]}>
       {dot ? <View style={[styles.dot, { backgroundColor: fg }]} /> : null}
-      <Text style={{ color: fg, fontWeight: "800", fontSize: 12 }}>{text}</Text>
+      <Text maxFontSizeMultiplier={1.4} style={{ color: fg, fontWeight: "800", fontSize: 12 }}>{text}</Text>
     </View>
   );
 }
@@ -59,14 +74,14 @@ export function MiniScore({ p }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <View style={[styles.dot, { width: 9, height: 9, backgroundColor: GRADE_COLORS[s.grade] }]} />
-      <Text style={{ fontSize: 13, fontWeight: "800", color: C.muted }}>{s.score}/100</Text>
+      <Text maxFontSizeMultiplier={1.4} style={{ fontSize: 13, fontWeight: "800", color: C.muted }}>{s.score}/100</Text>
     </View>
   );
 }
 
 export function Loading({ text }) {
   return (
-    <View style={{ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 12, padding: 28 }}>
+    <View accessible accessibilityLabel={text} accessibilityLiveRegion="polite" style={{ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 12, padding: 28 }}>
       <ActivityIndicator color={C.brand} />
       <Muted>{text}</Muted>
     </View>
@@ -85,9 +100,17 @@ export function Message({ title, text, children }) {
 
 export function ProductRow({ p, onPress, fav = false, when = "" }) {
   const meta = [p.brand, when].filter(Boolean).join(" · ");
+  const s = scoreOf(p);
+  const label = [nameOf(p), p.brand, `${t("detail.halal")} : ${S(verdictOf(p).status, "label")}`, s ? `${t("detail.health")} : ${s.score}/100` : null, fav ? t("history.f.fav") : null, when]
+    .filter(Boolean).join(", ");
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, { flexDirection: dir().row, backgroundColor: pressed ? C.tint : "transparent" }]}>
-      {p.image ? <Image source={{ uri: p.image }} style={styles.rowImg} resizeMode="contain" /> : (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.row, { flexDirection: dir().row, backgroundColor: pressed ? C.tint : "transparent" }]}
+    >
+      {p.image ? <Image source={{ uri: p.image }} style={styles.rowImg} resizeMode="contain" accessible={false} /> : (
         <View style={[styles.rowImg, { backgroundColor: C.tint, borderColor: C.tint, alignItems: "center", justifyContent: "center" }]}>
           <Icon name={p.local ? "doc" : "box"} color={C.faint} size={22} />
         </View>
@@ -104,6 +127,33 @@ export function ProductRow({ p, onPress, fav = false, when = "" }) {
       <Icon name="chev" size={18} color={C.faint} flip={dir().rtl} />
     </Pressable>
   );
+}
+
+// Bloc gris qui « respire » pendant un chargement (à la place d'une roue qui tourne).
+export function Skeleton({ width = "100%", height = 16, radius = 8, style }) {
+  const v = useRef(new Animated.Value(0.55)).current;
+  useEffect(() => {
+    if (!ms(1)) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 650, useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0.55, duration: 650, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  return <Animated.View style={[{ width, height, borderRadius: radius, backgroundColor: C.tint2, opacity: v }, style]} />;
+}
+
+// Apparition en fondu, avec un léger glissement vers le haut.
+export function FadeIn({ children, delay = 0, style, distance = 8 }) {
+  const v = useRef(new Animated.Value(ms(1) ? 0 : 1)).current;
+  useEffect(() => {
+    Animated.timing(v, { toValue: 1, duration: ms(260), delay: ms(delay), useNativeDriver: true }).start();
+  }, []);
+  const translateY = v.interpolate({ inputRange: [0, 1], outputRange: [distance, 0] });
+  return <Animated.View style={[{ opacity: v, transform: [{ translateY }] }, style]}>{children}</Animated.View>;
 }
 
 export function Card({ children, style }) {
