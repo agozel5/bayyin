@@ -8,7 +8,7 @@
 *Bayyin* signifie « clair » en arabe : les trois statuts de l'app (halal, douteux, haram)
 viennent de ce hadith. L'icône reprend la lettre ب, initiale du mot.
 
-Web app qui scanne le code-barres d'un produit alimentaire et indique :
+Application **iOS et Android** (et version web) qui scanne le code-barres d'un produit alimentaire et indique :
 
 - son statut **halal** : certifié, probable, douteux ou haram, avec l'ingrédient en cause ;
 - une **note santé sur 100** (Nutri-Score, additifs à risque, bio), avec défauts et qualités nutritionnels ;
@@ -32,7 +32,41 @@ L'app est **100 % statique** : le dossier `public/` suffit. Le navigateur
 interroge directement Open Food Facts et applique les règles lui-même, donc
 aucun serveur n'est nécessaire en production.
 
-## Mettre l'app en ligne (GitHub Pages, gratuit, HTTPS)
+## Application mobile (iOS et Android)
+
+Le dossier `mobile/` contient la vraie application native, écrite avec **React Native + Expo**.
+Elle reprend le même moteur que la version web (`public/lib` : règles halal, note santé,
+traductions, sources), donc une règle corrigée profite aux deux.
+
+Différences avec la version web : lecture des codes-barres par la caméra native du téléphone,
+retour haptique, lampe, partage natif, données gardées sur l'appareil (AsyncStorage).
+
+### Android
+
+À chaque modification, le workflow `.github/workflows/mobile.yml` compile un APK et le publie :
+**https://github.com/agozel5/bayyin/releases/download/android-latest/Bayyin.apk**
+
+Sur le téléphone : télécharger le fichier, l'ouvrir, autoriser « installer depuis cette source ».
+
+### iPhone
+
+Apple n'autorise pas l'installation d'un fichier comme sur Android. Deux possibilités :
+
+1. **Pour tester (gratuit)** : installer l'app *Expo Go* depuis l'App Store, puis sur un ordinateur
+   avec Node.js 20 ou plus :
+   ```bash
+   git clone https://github.com/agozel5/bayyin && cd bayyin/mobile
+   npm run setup        # installe Expo et les modules natifs aux bonnes versions
+   npm run tunnel       # affiche un QR code
+   ```
+   Scanner le QR code avec l'appareil photo de l'iPhone : l'app s'ouvre dans Expo Go.
+2. **Pour publier** : un compte Apple Developer (99 $/an), puis `npx eas build --platform ios`
+   et `npx eas submit` (TestFlight, puis App Store). Pour le Play Store : compte Google Play (25 $),
+   `npx eas build --platform android --profile production`.
+
+Le workflow vérifie aussi à chaque modification que l'app iOS compile.
+
+## Version web (GitHub Pages, gratuit, HTTPS)
 
 Adresse : **https://agozel5.github.io/bayyin/**
 
@@ -62,7 +96,12 @@ Sur ordinateur, la caméra fonctionne sur `localhost`.
 ## Architecture
 
 ```
-public/                 l'app (à héberger telle quelle)
+mobile/                 l'app native iOS / Android (Expo)
+  src/App.js            onglets + pile d'écrans (caméra, fiche, lecture d'étiquette)
+  src/screens/          Scanner, Recherche, Historique, Additifs, Réglages
+  src/components/       fiche produit, caméra, OCR (Tesseract dans une WebView), icônes
+  src/core.js           réexporte le moteur de public/lib
+public/                 la version web (à héberger telle quelle)
   index.html
   app.js                onglets Scanner, Recherche, Historique, Additifs, Infos + fiche produit
   style.css             thème clair, barre d'onglets en bas
