@@ -6,7 +6,7 @@
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
 
-const VERSION = "2026-10-08-8";
+const VERSION = "2026-10-08-9";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";

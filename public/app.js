@@ -1211,6 +1211,14 @@ settings.subscribe((st, patch) => {
 const TABS = ["scan", "search", "history", "additives", "settings"];
 let current = null;
 
+// Bouton central : depuis un autre onglet il ramène à l'accueil ; sur l'accueil il ouvre la caméra.
+$("tabScan").addEventListener("click", (e) => {
+  if (current !== "scan") return;
+  e.preventDefault();
+  if (navigator.vibrate) navigator.vibrate(15);
+  openCamera();
+});
+
 function showTab(name) {
   if (name === "infos") name = "settings"; // ancienne adresse
   if (!TABS.includes(name)) name = "scan";
@@ -1226,6 +1234,7 @@ function showTab(name) {
   }
   if (name === "additives") renderAdditives();
   if (name === "settings") renderSettings();
+  $("tabScan").setAttribute("aria-label", t(name === "scan" ? "home.scan" : "tab.scan"));
   window.scrollTo(0, 0);
 }
 

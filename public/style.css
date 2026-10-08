@@ -729,3 +729,18 @@ h2,.sub{font-weight:750}
 .row-img.ph svg{width:24px;height:24px}
 .topic-group{margin:14px 0 2px;font-size:.85rem;font-weight:700;color:var(--brand-dark)}
 .topic-group:first-child{margin-top:4px}
+
+/* ---------- barre d'onglets : bouton de scan central ---------- */
+.tab-scan{color:var(--brand)}
+.tab-scan svg{padding:0;background:none!important;width:30px;height:30px;stroke-width:2.2;color:#fff}
+.scan-orb{position:relative;width:62px;height:62px;margin-top:-28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--brand) var(--khatam);background-size:40px 40px;border:4px solid #fff;
+  box-shadow:0 10px 22px -8px rgb(18 114 79 / .65);transition:transform .15s ease,box-shadow .15s ease}
+.tab-scan:active .scan-orb{transform:scale(.93)}
+.tab-scan[aria-current="page"] .scan-orb{background-color:var(--brand-dark)}
+.tab-scan span:last-child{color:var(--brand-dark);font-weight:700}
+@media (prefers-reduced-motion:no-preference){
+  /* Sur l'accueil, un halo discret indique qu'un appui lance le scan */
+  .tab-scan[aria-current="page"] .scan-orb::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--brand);animation:orb 2.2s ease-out infinite}
+  @keyframes orb{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(1.35);opacity:0}}
+}
