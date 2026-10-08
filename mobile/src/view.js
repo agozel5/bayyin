@@ -1,10 +1,13 @@
 // Fonctions d'affichage communes aux écrans.
-import { classify } from "./core";
+import { classifyAny, checkProfile } from "./core";
 import { getSettings } from "./storage";
 import { t, getLang, locale } from "./i18n";
 
 // Le verdict est recalculé à l'affichage pour suivre les réglages actuels.
-export const verdictOf = (p) => (p.raw ? classify(p.raw, getSettings()) : p.verdict);
+export const verdictOf = (p) => (p.raw ? classifyAny(p.raw, getSettings()) : p.verdict);
+export const kindOf = (p) => p.kind || (p.raw && p.raw.kind) || "food";
+// Comparaison avec le profil (allergies, régime) de l'utilisateur
+export const profileOf = (p) => checkProfile(p.raw, verdictOf(p), getSettings().profile);
 export const nameOf = (p) => {
   const n = p.names || {};
   return n[getLang()] || p.name || n.any || n.en || t("product.unnamed");

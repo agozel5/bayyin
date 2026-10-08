@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
 import { Txt, H2, Muted, Label, Row, Btn, Pill, StatusPill, MiniScore, Loading, Message, Skeleton, FadeIn } from "./ui";
 import { haptic, ms, announce } from "../motion";
-import { C, R, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir } from "../theme";
+import { C, R, ALERT_COLORS, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir } from "../theme";
 import { t, tn, tPlain } from "../i18n";
-import { SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "../core";
+import { SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES, isMedicineCode } from "../core";
 import { fetchProduct, fetchAlternatives } from "../api";
 import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../storage";
-import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteText, fmt, errorText } from "../view";
+import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 
 const STATUS_ICON = { halal_certifie: "check", halal_probable: "check", mashbouh: "question", haram: "cross", inconnu: "dash" };
 const open = (url) => Linking.openURL(url).catch(() => {});
@@ -133,6 +133,19 @@ function Tiles({ p, v }) {
           <Txt style={{ fontSize: 18, lineHeight: 23, fontWeight: "800", color: fg }}>{S(v.status, "label")}</Txt>
         </View>
       </View>
+      {kindOf(p) !== "food" ? (
+        <View style={[tile, { backgroundColor: C.tint }]} accessible accessibilityLabel={t(`kind.${kindOf(p)}`)}>
+          <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
+            <Icon name={kindOf(p) === "medicine" ? "pill" : "drop"} size={24} color={C.brand} />
+          </View>
+          <View>
+            <Label>{t(`kind.${kindOf(p)}`)}</Label>
+            <Txt style={{ fontSize: 16, lineHeight: 21, fontWeight: "800" }} numberOfLines={3}>
+              {kindOf(p) === "medicine" ? p.form || t("kind.medicine") : t("detail.beauty_note")}
+            </Txt>
+          </View>
+        </View>
+      ) : (
       <View
         style={[tile, { backgroundColor: C.tint }]}
         accessible
@@ -146,7 +159,65 @@ function Tiles({ p, v }) {
           </Txt>
         </View>
       </View>
+      )}
     </View>
+  );
+}
+
+// Alerte personnelle (allergies, régime) en haut de la fiche
+function ProfileAlert({ p, onGotoProfile }) {
+  const r = profileOf(p);
+  if (!r.alert) return null;
+  const [fg, bg] = ALERT_COLORS[r.alert];
+  const label = (tags) => tags.map((a) => t(`allergen.${a}`)).join(", ");
+  const lines = [
+    r.contains.length ? t("alert.contains", { list: label(r.contains) }) : null,
+    r.diet ? t(`alert.${r.diet.id}.${r.diet.level}`) : null,
+    r.traces.length ? t("alert.traces", { list: label(r.traces) }) : null,
+  ].filter(Boolean);
+  return (
+    <View
+      accessible
+      accessibilityRole="alert"
+      accessibilityLabel={`${t(`alert.${r.alert}`)}. ${lines.join(". ")}`}
+      style={{ backgroundColor: bg, borderRadius: R.lg, padding: 14, gap: 6, borderWidth: 1.5, borderColor: fg }}
+    >
+      <Row gap={8}>
+        <Icon name="alert" size={22} color={fg} width={2.4} />
+        <Txt style={{ color: fg, fontWeight: "800", fontSize: 17, flex: 1 }}>{t(`alert.${r.alert}`)}</Txt>
+      </Row>
+      {lines.map((l) => (
+        <Txt key={l} style={{ color: C.fg, fontWeight: "600" }}>{l}</Txt>
+      ))}
+      <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("alert.note")}</Muted>
+      <Text onPress={onGotoProfile} style={{ color: fg, fontWeight: "700", textAlign: dir().ta }}>{t("alert.edit")}</Text>
+    </View>
+  );
+}
+
+// Médicament : forme, laboratoire, conseil, lien vers la fiche officielle
+function MedicineSection({ p }) {
+  return (
+    <Section title={t("kind.medicine")}>
+      <Txt>{t("detail.med_lead")}</Txt>
+      <View style={{ backgroundColor: C.tint, borderRadius: R.md, padding: 14, gap: 8 }}>
+        <Row style={{ justifyContent: "space-between" }}>
+          <Muted>{t("detail.med_form")}</Muted>
+          <Txt style={{ fontWeight: "700", flexShrink: 1 }}>{p.form || "—"}</Txt>
+        </Row>
+        {p.brand ? (
+          <Row style={{ justifyContent: "space-between" }}>
+            <Muted>{t("detail.med_holder")}</Muted>
+            <Txt style={{ fontWeight: "700", flexShrink: 1 }}>{p.brand}</Txt>
+          </Row>
+        ) : null}
+      </View>
+      <Row gap={10} style={{ alignItems: "flex-start" }}>
+        <Icon name="bulb" size={20} color={C.brand} />
+        <Txt style={{ flex: 1 }}>{t("detail.med_ask")}</Txt>
+      </Row>
+      <Muted style={{ fontSize: 13 }}>{t("detail.med_source")}</Muted>
+    </Section>
   );
 }
 
@@ -177,7 +248,7 @@ function HalalSection({ p, v, onGotoSettings, onOcr }) {
   const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
   return (
     <Section title={t("detail.halal")}>
-      <Txt>{S(v.status, "lead")}</Txt>
+      {kindOf(p) !== "medicine" || v.status !== "inconnu" ? <Txt>{S(v.status, "lead")}</Txt> : null}
       {v.certification ? (
         <Row gap={8} style={{ backgroundColor: C.brandSoft, borderRadius: R.md, padding: 12 }}>
           <Icon name="shield" size={20} color={C.brand} />
@@ -193,7 +264,7 @@ function HalalSection({ p, v, onGotoSettings, onOcr }) {
       {v.flags.map((f, i) => (
         <FlagCard key={f.id + i} f={f} onGotoSettings={onGotoSettings} />
       ))}
-      {v.status === "inconnu" && isBarcode(p.code) ? <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(p.code)} /> : null}
+      {v.status === "inconnu" && isBarcode(p.code) && kindOf(p) === "food" ? <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(p.code)} /> : null}
     </Section>
   );
 }
@@ -426,8 +497,9 @@ function LinkRow({ text, url, muted = false }) {
   );
 }
 
-function ProductBody({ p, onOpen, onGotoSettings, onOcr }) {
+function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
   const v = verdictOf(p);
+  const kind = kindOf(p);
   const st = getSettings();
   const report = isBarcode(p.code)
     ? "https://github.com/agozel5/bayyin/issues/new?title=" +
@@ -438,12 +510,14 @@ function ProductBody({ p, onOpen, onGotoSettings, onOcr }) {
   return (
     <View style={{ gap: 18 }}>
       <FadeIn><Top p={p} /></FadeIn>
+      <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
       <FadeIn delay={60}><Tiles p={p} v={v} /></FadeIn>
       <FadeIn delay={120}><HalalSection p={p} v={v} onGotoSettings={onGotoSettings} onOcr={onOcr} /></FadeIn>
-      <FadeIn delay={180}><HealthSection p={p} /></FadeIn>
-      <WatchSection p={p} />
-      {!p.local ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
-      <AllAdditivesSection p={p} v={v} />
+      {kind === "medicine" ? <FadeIn delay={180}><MedicineSection p={p} /></FadeIn> : null}
+      {kind === "food" ? <FadeIn delay={180}><HealthSection p={p} /></FadeIn> : null}
+      {kind === "food" ? <WatchSection p={p} /> : null}
+      {!p.local && kind === "food" ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {kind === "food" ? <AllAdditivesSection p={p} v={v} /> : null}
       <ExtraSections p={p} />
       {p.ingredients ? (
         <Section title={t("detail.ingredients")}>
@@ -453,9 +527,9 @@ function ProductBody({ p, onOpen, onGotoSettings, onOcr }) {
       <View style={{ paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
-        ) : (
-          <LinkRow text={t("detail.off_link")} url={p.offUrl} />
-        )}
+        ) : p.offUrl ? (
+          <LinkRow text={t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")} url={p.offUrl} />
+        ) : null}
         {report ? <LinkRow text={t("detail.report")} url={report} muted /> : null}
       </View>
     </View>
@@ -488,7 +562,7 @@ function SheetSkeleton() {
   );
 }
 
-export default function ProductSheet({ code, product, fromScan, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, toast }) {
+export default function ProductSheet({ code, product, fromScan, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
@@ -520,7 +594,8 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         setState({ p, loading: false });
         addToHistory(p);
         const st = verdictOf(p).status;
-        if (fromScan) (st === "haram" ? haptic.error : st === "mashbouh" ? haptic.warn : haptic.success)();
+        const alert = profileOf(p).alert;
+        if (fromScan) (st === "haram" || alert === "no" ? haptic.error : st === "mashbouh" || alert ? haptic.warn : haptic.success)();
         announce(`${nameOf(p)}. ${t("detail.halal")} : ${S(st, "label")}`);
       })
       .catch((err) => {
@@ -580,16 +655,20 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         {state.loading ? (
           <SheetSkeleton />
         ) : state.notFound ? (
-          <Message title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })}>
-            <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(code)} />
-          </Message>
+          isMedicineCode(code) ? (
+            <Message title={t("msg.notfound.t")} text={t("msg.med_notfound", { code })} />
+          ) : (
+            <Message title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })}>
+              <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(code)} />
+            </Message>
+          )
         ) : state.error ? (
           <Message title={t("msg.load_error.t")} text={errorText(state.error)}>
             <Btn title={t("msg.retry")} onPress={() => onOpen(code)} />
             <Btn title={t("detail.photo_ingredients")} icon="doc" kind="white" onPress={() => onOcr(code)} />
           </Message>
         ) : p ? (
-          <ProductBody p={p} onOpen={onOpen} onGotoSettings={onGotoSettings} onOcr={onOcr} />
+          <ProductBody p={p} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} />
         ) : null}
       </ScrollView>
 

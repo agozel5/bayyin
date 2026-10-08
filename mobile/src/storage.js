@@ -3,7 +3,7 @@
 // Tout est chargé en mémoire au démarrage ; les écritures partent en arrière-plan.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocales } from "expo-localization";
-import { SCHOOLS, TOPICS, DEFAULT_PREFS } from "./core";
+import { SCHOOLS, TOPICS, DEFAULT_PREFS, PROFILE_ALLERGENS, DIETS } from "./core";
 import { LANGS } from "./i18n";
 
 const K = { settings: "bayyin:settings", history: "bayyin:history", local: "bayyin:local", pack: "bayyin:pack" };
@@ -44,6 +44,11 @@ export async function initStorage() {
     topics: { ...SCHOOLS.standard, ...(SCHOOLS[school] || {}), ...(s.topics || {}) },
     packAt: s.packAt || null,
     packCount: s.packCount || 0,
+    profile: {
+      allergens: ((s.profile && s.profile.allergens) || []).filter((a) => PROFILE_ALLERGENS.includes(a)),
+      diet: s.profile && DIETS.includes(s.profile.diet) ? s.profile.diet : null,
+    },
+    onboarded: !!s.onboarded,
   };
   history = Array.isArray(get(K.history)) ? get(K.history) : [];
   local = get(K.local) || {};
@@ -69,6 +74,15 @@ export function setTopic(topic, decision) {
   const topics = { ...settings.topics, [topic]: decision };
   const match = Object.keys(SCHOOLS).find((s) => TOPICS.every((tp) => SCHOOLS[s][tp] === topics[tp]));
   setSettings({ topics, school: match || "custom" });
+}
+
+export function toggleAllergen(tag) {
+  const list = settings.profile.allergens;
+  const allergens = list.includes(tag) ? list.filter((a) => a !== tag) : [...list, tag];
+  setSettings({ profile: { ...settings.profile, allergens } });
+}
+export function setDiet(diet) {
+  setSettings({ profile: { ...settings.profile, diet: DIETS.includes(diet) ? diet : null } });
 }
 
 // ---------- historique ----------

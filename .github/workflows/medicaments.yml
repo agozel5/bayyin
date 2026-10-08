@@ -1,0 +1,38 @@
+name: Base des médicaments
+
+# Met à jour public/data/med/ depuis la Base de données publique des médicaments :
+# chaque lundi, à la demande, ou quand le script change.
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/build-medicaments.mjs", ".github/workflows/medicaments.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: medicaments
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/build-medicaments.mjs
+      - name: Enregistrer si la base a changé
+        run: |
+          git add public/data/med
+          if git diff --cached --quiet -- public/data/med ':!public/data/med/README.md'; then
+            echo "Aucun changement."
+            exit 0
+          fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Base des médicaments mise à jour"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -6,7 +6,7 @@ import Screen from "../components/Screen";
 import { Chip, SearchField } from "./SearchScreen";
 import { C, R, SEV_COLORS, RISK_COLORS, dir } from "../theme";
 import { t } from "../i18n";
-import { ADDITIVES, TEXT_RULES, TOPIC_OF, SEVERITY_OF, ADDITIVE_RISK } from "../core";
+import { ADDITIVES, TEXT_RULES, TOPIC_OF, SEVERITY_OF, ADDITIVE_RISK, BEAUTY_RULES } from "../core";
 import { getSettings } from "../storage";
 import { haptic } from "../motion";
 
@@ -28,6 +28,12 @@ function halalItems() {
     items.push({
       key: "a" + code, group: t("add.group_additives"), name: `${code.toUpperCase()} · ${t(`flag.${code}.label`)}`, codes: [],
       reason: t(`flag.${code}.reason`), level: level(code, a.severity), topic: TOPIC_OF[code],
+    });
+  }
+  for (const r of BEAUTY_RULES) {
+    items.push({
+      key: "b" + r.id, group: t("kind.beauty"), name: t(`flag.${r.id}.label`), codes: [], reason: t(`flag.${r.id}.reason`),
+      level: level(r.id, r.severity), topic: TOPIC_OF[r.id],
     });
   }
   items.push({ key: "fatty", group: t("add.group_additives"), name: t("add.fatty"), codes: fatty, reason: t("flag.fatty.reason"), level: SEVERITY_OF[topics.derives], topic: "derives" });

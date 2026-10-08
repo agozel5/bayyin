@@ -7,8 +7,8 @@ import Icon from "../components/Icon";
 import { Txt, H1, H2, Muted, Label, Row, Btn, Pill } from "../components/ui";
 import { C, R, STATUS_COLORS, GRADE_COLORS, SEV_COLORS, dir } from "../theme";
 import { t, tPlain, locale, LANGS } from "../i18n";
-import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES } from "../core";
-import { getSettings, setSettings, setSchool, setTopic } from "../storage";
+import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES, PROFILE_ALLERGENS, DIETS } from "../core";
+import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet } from "../storage";
 import { downloadPack } from "../api";
 import { S } from "../view";
 import { haptic } from "../motion";
@@ -46,17 +46,20 @@ function LinkRow({ title, text, url }) {
   );
 }
 
-export default function SettingsScreen({ focusSchool }) {
+export default function SettingsScreen({ focus }) {
   const insets = useSafeAreaInsets();
   const scroller = useRef(null);
   const schoolY = useRef(0);
+  const profileY = useRef(0);
   const [packing, setPacking] = useState(null); // null | nombre de produits téléchargés
   const [packError, setPackError] = useState(false);
   const st = getSettings();
 
   useEffect(() => {
-    if (focusSchool) setTimeout(() => scroller.current && scroller.current.scrollTo({ y: Math.max(0, schoolY.current - 10), animated: true }), 120);
-  }, [focusSchool]);
+    if (!focus || !focus.n) return;
+    const y = focus.target === "profile" ? profileY.current : schoolY.current;
+    setTimeout(() => scroller.current && scroller.current.scrollTo({ y: Math.max(0, y - 10), animated: true }), 120);
+  }, [focus && focus.n]);
 
   const pack = async () => {
     if (packing !== null) return;
@@ -106,6 +109,53 @@ export default function SettingsScreen({ focusSchool }) {
               <Text style={{ fontWeight: "800", fontSize: 16, color: st.lang === l ? C.brandDark : C.fg }}>{LANG_NAMES[l]}</Text>
             </Pressable>
           ))}
+        </View>
+      </Block>
+
+      <Block title={t("settings.profile")} onLayout={(e) => (profileY.current = e.nativeEvent.layout.y)}>
+        <Muted>{t("settings.profile_p")}</Muted>
+        <Label style={{ marginTop: 4 }}>{t("settings.diet")}</Label>
+        <View style={{ flexDirection: dir().row, backgroundColor: C.tint, borderRadius: R.md, padding: 4, gap: 4 }}>
+          {[null, ...DIETS].map((d) => {
+            const on = (st.profile.diet || null) === d;
+            const label = t(d ? `diet.${d}` : "diet.none");
+            return (
+              <Pressable
+                key={d || "none"}
+                onPress={() => {
+                  haptic.tap();
+                  setDiet(d);
+                }}
+                accessibilityRole="radio"
+                accessibilityLabel={`${t("settings.diet")} : ${label}`}
+                accessibilityState={{ checked: on }}
+                style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 4, borderRadius: R.sm, alignItems: "center", backgroundColor: on ? "#fff" : "transparent" }}
+              >
+                <Text style={{ fontWeight: "800", fontSize: 13, color: on ? C.brandDark : C.muted, textAlign: "center" }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Label style={{ marginTop: 8 }}>{t("settings.allergens")}</Label>
+        <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
+          {PROFILE_ALLERGENS.map((a) => {
+            const on = st.profile.allergens.includes(a);
+            return (
+              <Pressable
+                key={a}
+                onPress={() => {
+                  haptic.tap();
+                  toggleAllergen(a);
+                }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: on }}
+                style={{ flexDirection: dir().row, alignItems: "center", gap: 6, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : "#fff" }}
+              >
+                {on ? <Icon name="check" size={15} color={C.brand} width={2.6} /> : null}
+                <Text style={{ fontWeight: "700", fontSize: 14, color: on ? C.brandDark : C.fg }}>{t(`allergen.${a}`)}</Text>
+              </Pressable>
+            );
+          })}
         </View>
       </Block>
 

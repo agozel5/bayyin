@@ -1,5 +1,5 @@
 // Accès à Open Food Facts depuis l'app, avec repli hors connexion.
-import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError } from "./core";
+import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny } from "./core";
 import { getSettings, getCachedRaw, cacheRaw, getLocal, setPack, getEntry } from "./storage";
 
 const HEADERS = { "User-Agent": "Bayyin/1.0 (https://github.com/agozel5/bayyin)", Accept: "application/json" };
@@ -21,10 +21,11 @@ async function getJson(url, ms = 12000) {
 }
 
 // Fiche allégée pour le stockage : seuls les nutriments utilisés par la note santé.
+const OBF_BASE = "https://world.openbeautyfacts.org";
 const NUT_KEYS = ["energy-kcal_100g", "energy_100g", "sugars_100g", "saturated-fat_100g", "salt_100g", "proteins_100g",
   "fiber_100g", "fruits-vegetables-nuts-estimate-from-ingredients_100g", "fruits-vegetables-legumes-estimate-from-ingredients_100g"];
 function compact(raw) {
-  const out = {};
+  const out = raw.kind ? { kind: raw.kind } : {};
   for (const k of FIELDS.split(",")) if (raw[k] !== undefined && raw[k] !== "") out[k] = raw[k];
   if (raw.nutriments) {
     out.nutriments = {};
@@ -36,14 +37,32 @@ function compact(raw) {
 const show = (raw) => present(raw, getSettings());
 const memo = new Map();
 
+// Médicament : petit fichier de la base publique (≈ 1/100), gardé en mémoire.
+const medShards = new Map();
+async function fetchMedicine(code) {
+  const url = medShardUrl(code);
+  if (!medShards.has(url)) medShards.set(url, getJson(url, 15000).catch((e) => (medShards.delete(url), Promise.reject(e))));
+  const shard = (await medShards.get(url)) || {};
+  return shard[code] ? medicineRaw(code, shard[code]) : null;
+}
+
+// Cherche dans Open Food Facts, puis dans Open Beauty Facts (cosmétiques, hygiène).
+async function fetchRemote(code) {
+  if (isMedicineCode(code)) return fetchMedicine(code);
+  const data = await getJson(productUrl(code));
+  if (data && data.status === 1 && data.product) return compact({ code, ...data.product });
+  const beauty = await getJson(`${OBF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`).catch(() => null);
+  if (beauty && beauty.status === 1 && beauty.product) return compact({ code, kind: "beauty", ...beauty.product });
+  return null;
+}
+
 export async function fetchProduct(code) {
   let raw = memo.get(code) || null;
   let error = null;
   if (!raw) {
     try {
-      const data = await getJson(productUrl(code));
-      if (data && data.status === 1 && data.product) {
-        raw = compact({ code, ...data.product });
+      raw = await fetchRemote(code);
+      if (raw) {
         cacheRaw(code, raw);
         memo.set(code, raw);
       }
@@ -54,7 +73,7 @@ export async function fetchProduct(code) {
   }
   // Fiche sans ingrédients complétée par une photo de l'étiquette
   const localRaw = getLocal(code);
-  if (localRaw && (!raw || !(raw.ingredients_text || raw.ingredients_text_fr))) raw = localRaw;
+  if (localRaw && (!raw || (raw.kind !== "medicine" && !(raw.ingredients_text || raw.ingredients_text_fr)))) raw = localRaw;
   if (!raw) {
     if (error) {
       const saved = getEntry(code);
@@ -92,7 +111,9 @@ export async function fetchAlternatives(product) {
       memo.set(p.code, raw);
       tried.push(show(raw));
     }
-    found = pickAlternatives(product, tried);
+    // Les alternatives respectent aussi le profil (allergies, régime)
+    const profile = getSettings().profile;
+    found = pickAlternatives(product, tried.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, getSettings()), profile).alert));
     if (found.length >= 4) break;
   }
   return found;

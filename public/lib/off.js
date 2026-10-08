@@ -6,6 +6,8 @@
 
 import { classify, ingredientsText, DEFAULT_PREFS } from "./rules.js";
 import { analyzeHealth } from "./health.js";
+import { classifyBeauty } from "./beauty.js";
+import { classifyMedicine, medNoticeUrl } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
 
 export const OFF_BASE = "https://world.openfoodfacts.org";
@@ -15,20 +17,38 @@ export const FIELDS = [
   "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
   "image_front_small_url", "image_front_url",
-  "nutriscore_grade", "nutriments", "nova_group", "allergens_tags", "categories_tags",
+  "nutriscore_grade", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
 ].join(",");
 
 export const productUrl = (code) => `${OFF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
 
 // Champs nécessaires pour recalculer le verdict quand l'utilisateur change de réglage.
 const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
-  "additives_tags", "ingredients_analysis_tags", "labels", "labels_fr", "labels_tags", "categories_tags"];
+  "additives_tags", "ingredients_analysis_tags", "labels", "labels_fr", "labels_tags", "categories_tags",
+  "allergens_tags", "traces_tags", "kind", "brands", "med_form", "med_cis"];
+
+// Type de produit : alimentaire (Open Food Facts), cosmétique (Open Beauty Facts) ou médicament (base publique).
+// Le verdict halal suit des règles différentes pour chacun.
+export function classifyAny(p, prefs = DEFAULT_PREFS) {
+  if (p && p.kind === "beauty") return classifyBeauty(p, prefs);
+  if (p && p.kind === "medicine") return classifyMedicine(p, prefs);
+  return classify(p, prefs);
+}
 
 // Mise en forme commune (navigateur et serveur)
 export function present(p, prefs = DEFAULT_PREFS) {
   const raw = {};
   for (const k of RAW_KEYS) if (p[k] !== undefined) raw[k] = p[k];
+  const kind = p.kind || "food";
+  if (kind === "medicine") {
+    return {
+      code: p.code, kind, name: p.product_name || "", names: { any: p.product_name }, brand: p.brands || "",
+      quantity: null, image: null, ingredients: "", categories: [], form: p.med_form || "", cis: p.med_cis || "",
+      offUrl: p.med_cis ? medNoticeUrl(p.med_cis) : "", verdict: classifyMedicine(p, prefs), health: null, raw, local: false,
+    };
+  }
   return {
+    kind,
     code: p.code,
     name: p.product_name_fr || p.product_name || p.product_name_en || "",
     names: { fr: p.product_name_fr, en: p.product_name_en, ar: p.product_name_ar, tr: p.product_name_tr, any: p.product_name },
@@ -37,9 +57,9 @@ export function present(p, prefs = DEFAULT_PREFS) {
     image: p.image_front_small_url || p.image_front_url || null,
     ingredients: ingredientsText(p),
     categories: p.categories_tags || [],
-    offUrl: `https://world.openfoodfacts.org/product/${p.code}`,
-    verdict: classify(p, prefs),
-    health: analyzeHealth(p),
+    offUrl: kind === "beauty" ? `https://world.openbeautyfacts.org/product/${p.code}` : `https://world.openfoodfacts.org/product/${p.code}`,
+    verdict: classifyAny(p, prefs),
+    health: kind === "beauty" ? null : analyzeHealth(p),
     raw,
     local: !!p.local, // ingrédients saisis ou photographiés par l'utilisateur
   };
@@ -47,7 +67,7 @@ export function present(p, prefs = DEFAULT_PREFS) {
 
 // Recalcule le verdict d'un produit déjà présenté avec d'autres réglages.
 export function reclassify(p, prefs) {
-  return p && p.raw ? { ...p, verdict: classify(p.raw, prefs) } : p;
+  return p && p.raw ? { ...p, verdict: classifyAny(p.raw, prefs) } : p;
 }
 
 const isHalal = (p) => p.verdict.status === "halal_certifie" || p.verdict.status === "halal_probable";

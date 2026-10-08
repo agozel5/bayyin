@@ -23,6 +23,7 @@ export const STATUS_COLORS = {
   haram: ["#E0423A", "#FDE8E6"],
   inconnu: ["#6C7771", "#EEF0EE"],
 };
+export const ALERT_COLORS = { no: ["#C0312A", "#FDECEA"], maybe: ["#B25E00", "#FFF4E5"] };
 export const SEV_COLORS = { haram: STATUS_COLORS.haram, mashbouh: STATUS_COLORS.mashbouh, info: ["#3F79B5", "#E6EFF8"] };
 export const RISK_COLORS = { eleve: ["#E0423A", "#FDE8E6"], modere: ["#C06B0C", "#FFF1E0"], limite: ["#8A7A12", "#F7F3D9"] };
 export const GRADE_COLORS = { excellent: "#169B57", bon: "#7DBE45", mediocre: "#EE8A1F", mauvais: "#E0423A" };

@@ -1,4 +1,4 @@
-import { createClient, OffError, present } from "./lib/off.js";
+import { createClient, OffError, present, classifyAny } from "./lib/off.js";
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
 import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS } from "./lib/settings.js";
@@ -47,7 +47,7 @@ const LEGEND_ORDER = ["halal_certifie", "halal_probable", "mashbouh", "haram", "
 const S = (st, part) => t(`status.${st}.${part}`);
 
 // Le verdict est recalculé à l'affichage : il suit toujours les réglages actuels.
-const verdictOf = (p) => (p.raw ? classify(p.raw, prefs()) : p.verdict);
+const verdictOf = (p) => (p.raw ? classifyAny(p.raw, prefs()) : p.verdict);
 const nameOf = (p) => {
   const n = p.names || {};
   return n[getLang()] || p.name || n.any || n.en || t("product.unnamed");

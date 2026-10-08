@@ -2,9 +2,9 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Image, Animated } from "react-native";
 import Icon from "./Icon";
-import { C, R, STATUS_COLORS, GRADE_COLORS, dir } from "../theme";
+import { C, R, STATUS_COLORS, GRADE_COLORS, ALERT_COLORS, dir } from "../theme";
 import { t } from "../i18n";
-import { S, nameOf, verdictOf, scoreOf } from "../view";
+import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf } from "../view";
 import { haptic, ms } from "../motion";
 
 // Les grandes polices du téléphone sont respectées, avec une limite pour garder la mise en page lisible.
@@ -99,9 +99,11 @@ export function Message({ title, text, children }) {
 }
 
 export function ProductRow({ p, onPress, fav = false, when = "" }) {
-  const meta = [p.brand, when].filter(Boolean).join(" · ");
+  const kind = kindOf(p);
+  const meta = [kind !== "food" ? t(`kind.${kind}`) : null, p.brand, when].filter(Boolean).join(" · ");
   const s = scoreOf(p);
-  const label = [nameOf(p), p.brand, `${t("detail.halal")} : ${S(verdictOf(p).status, "label")}`, s ? `${t("detail.health")} : ${s.score}/100` : null, fav ? t("history.f.fav") : null, when]
+  const alert = profileOf(p).alert;
+  const label = [nameOf(p), p.brand, `${t("detail.halal")} : ${S(verdictOf(p).status, "label")}`, s ? `${t("detail.health")} : ${s.score}/100` : null, alert ? t(`alert.${alert}`) : null, fav ? t("history.f.fav") : null, when]
     .filter(Boolean).join(", ");
   return (
     <Pressable
@@ -112,15 +114,16 @@ export function ProductRow({ p, onPress, fav = false, when = "" }) {
     >
       {p.image ? <Image source={{ uri: p.image }} style={styles.rowImg} resizeMode="contain" accessible={false} /> : (
         <View style={[styles.rowImg, { backgroundColor: C.tint, borderColor: C.tint, alignItems: "center", justifyContent: "center" }]}>
-          <Icon name={p.local ? "doc" : "box"} color={C.faint} size={22} />
+          <Icon name={p.local ? "doc" : kind === "medicine" ? "pill" : kind === "beauty" ? "drop" : "box"} color={C.faint} size={22} />
         </View>
       )}
       <View style={{ flex: 1, gap: 4 }}>
         <Txt style={{ fontWeight: "700", fontSize: 16, lineHeight: 21 }} numberOfLines={2}>{nameOf(p)}</Txt>
         {meta ? <Muted style={{ fontSize: 13, lineHeight: 18 }} numberOfLines={1}>{meta}</Muted> : null}
-        <Row gap={8}>
+        <Row gap={8} style={{ flexWrap: "wrap" }}>
           <StatusPill status={verdictOf(p).status} />
           <MiniScore p={p} />
+          {alert ? <Pill text={t(`alert.short.${alert}`)} colors={ALERT_COLORS[alert]} /> : null}
           {fav ? <Icon name="star" size={16} color="#E9A100" fill="#E9A100" /> : null}
         </Row>
       </View>

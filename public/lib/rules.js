@@ -19,20 +19,23 @@
 // ---------------------------------------------------------------------------
 // Sujets débattus et préréglages
 // ---------------------------------------------------------------------------
-export const TOPICS = ["insectes", "presure", "vinaigre", "arome_alcool", "traces_alcool", "gelatine", "viande", "derives"];
+export const TOPICS = ["insectes", "presure", "vinaigre", "arome_alcool", "traces_alcool", "gelatine", "viande", "derives", "alcool_cosmetique"];
 export const DECISIONS = ["permis", "douteux", "interdit"];
 
 const D = "douteux", P = "permis", X = "interdit";
 // Tendances générales des écoles, à confirmer auprès d'un savant de confiance.
 // Gélatine, viande et dérivés d'origine inconnue relèvent d'un manque d'information
 // sur l'origine, pas d'une divergence d'école : ils restent « douteux » partout.
+// alcool_cosmetique : alcool dans un produit appliqué sur la peau (parfum, lotion). La question
+// porte sur la pureté de l'alcool ; les hanafites ne considèrent impur que l'alcool de raisin ou
+// de datte, la plupart des conseils de fatwa contemporains l'autorisent en usage externe.
 export const SCHOOLS = {
-  standard: { insectes: D, presure: D, vinaigre: P, arome_alcool: D, traces_alcool: P, gelatine: D, viande: D, derives: D },
-  prudent:  { insectes: D, presure: D, vinaigre: D, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D },
-  hanafi:   { insectes: X, presure: P, vinaigre: P, arome_alcool: D, traces_alcool: P, gelatine: D, viande: D, derives: D },
-  maliki:   { insectes: P, presure: P, vinaigre: P, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D },
-  shafii:   { insectes: X, presure: D, vinaigre: D, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D },
-  hanbali:  { insectes: X, presure: D, vinaigre: D, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D },
+  standard: { insectes: D, presure: D, vinaigre: P, arome_alcool: D, traces_alcool: P, gelatine: D, viande: D, derives: D, alcool_cosmetique: P },
+  prudent:  { insectes: D, presure: D, vinaigre: D, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D, alcool_cosmetique: D },
+  hanafi:   { insectes: X, presure: P, vinaigre: P, arome_alcool: D, traces_alcool: P, gelatine: D, viande: D, derives: D, alcool_cosmetique: P },
+  maliki:   { insectes: P, presure: P, vinaigre: P, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D, alcool_cosmetique: D },
+  shafii:   { insectes: X, presure: D, vinaigre: D, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D, alcool_cosmetique: D },
+  hanbali:  { insectes: X, presure: D, vinaigre: D, arome_alcool: D, traces_alcool: D, gelatine: D, viande: D, derives: D, alcool_cosmetique: D },
 };
 export const DEFAULT_PREFS = { school: "standard", topics: { ...SCHOOLS.standard } };
 
@@ -48,6 +51,9 @@ export const TOPIC_OF = {
   gelatine: "gelatine", e441: "gelatine",
   viande: "viande", extrait_viande: "viande", enzymes_animales: "viande", e542: "viande",
   e920: "derives", e921: "derives", e631: "derives", e635: "derives",
+  // cosmétiques (beauty.js) et médicaments (medicine.js)
+  cosm_alcool: "alcool_cosmetique", cosm_gelatine: "gelatine", cosm_suif: "viande", cosm_carmin: "insectes", cosm_animal: "derives",
+  med_gelule: "gelatine", med_alcool: "traces_alcool",
 };
 
 // ---------------------------------------------------------------------------

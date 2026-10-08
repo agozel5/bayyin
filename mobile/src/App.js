@@ -117,7 +117,7 @@ function Main() {
   const [toastText, setToastText] = useState(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [homeStatus, setHomeStatus] = useState(null);
-  const [focusSchool, setFocusSchool] = useState(0);
+  const [focus, setFocus] = useState({ target: null, n: 0 });
   const toastTimer = useRef(null);
   const nonce = useRef(0);
 
@@ -180,11 +180,12 @@ function Main() {
     push({ type: "camera" }, { replace });
   };
   const openOcr = (code) => push({ type: "ocr", code: code || null }, { replace: !!top });
-  const gotoSettings = () => {
+  const gotoSettings = (target = "school") => {
     clearStack();
     setTab("settings");
-    setFocusSchool((n) => n + 1);
+    setFocus((f) => ({ target, n: f.n + 1 }));
   };
+  const gotoProfile = () => gotoSettings("profile");
 
   // Android : lecture du code-barres sur une photo
   const photoBarcode = async () => {
@@ -222,6 +223,8 @@ function Main() {
         onOcr={openOcr}
         onPhotoBarcode={photoBarcode}
         onGoto={changeTab}
+        onGotoSettings={() => gotoSettings()}
+        onGotoProfile={gotoProfile}
         manualOpen={manualOpen}
         setManualOpen={setManualOpen}
         status={homeStatus}
@@ -229,8 +232,8 @@ function Main() {
     );
   if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} />;
   if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
-  if (tab === "additives") page = <AdditivesScreen onGotoSettings={gotoSettings} />;
-  if (tab === "settings") page = <SettingsScreen focusSchool={focusSchool} />;
+  if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
+  if (tab === "settings") page = <SettingsScreen focus={focus} />;
 
   const renderScreen = (item) => {
     if (item.type === "camera")
@@ -255,7 +258,8 @@ function Main() {
           onOpen={(code) => push({ type: "sheet", code, fromScan: false }, { replace: code === item.code })}
           onScanAgain={() => openCamera({ replace: true })}
           onOcr={openOcr}
-          onGotoSettings={gotoSettings}
+          onGotoSettings={() => gotoSettings()}
+          onGotoProfile={gotoProfile}
           toast={toast}
         />
       );
