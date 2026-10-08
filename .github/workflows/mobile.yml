@@ -1,12 +1,10 @@
 name: App mobile
 
-# Compile l'application native à chaque modification de mobile/ ou du moteur partagé (public/lib).
+# Compile l'application native, uniquement à la demande (onglet Actions → App mobile → Run workflow),
+# une fois les modifications validées.
 #  - Android : fichier APK installable, publié dans la release « android-latest ».
 #  - iOS : vérification que l'app compile (l'installation sur iPhone passe par Expo Go ou EAS).
 on:
-  push:
-    branches: [main]
-    paths: ["mobile/**", "public/lib/**", ".github/workflows/mobile.yml"]
   workflow_dispatch:
 
 permissions:
