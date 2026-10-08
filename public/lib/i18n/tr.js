@@ -516,4 +516,12 @@ export default {
   "sources.k.law": "AB yönetmelikleri",
   "sources.k.study": "Çalışmalar ve sınıflandırmalar",
   "sources.k.text": "Dinî metinler",
+  "settings.tab_prefs": "Ayarlar",
+  "settings.tab_about": "Hakkında",
+  "history.g.today": "Bugün",
+  "history.g.yesterday": "Dün",
+  "history.g.week": "Bu hafta",
+  "history.g.older": "Daha eski",
+  "add.open_all": "Tümünü aç",
+  "add.close_all": "Tümünü kapat",
 };

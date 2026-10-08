@@ -156,18 +156,22 @@
   <!-- ================= RÉGLAGES ================= -->
   <section class="view" id="view-settings" data-view="settings" aria-labelledby="h-settings" hidden>
     <header class="view-head"><h1 id="h-settings" data-i18n="settings.title"></h1></header>
+    <div class="segmented" id="settingsPanes" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-pane="prefs" data-i18n="settings.tab_prefs"></button>
+      <button type="button" role="tab" aria-selected="false" data-pane="about" data-i18n="settings.tab_about"></button>
+    </div>
 
-    <div class="privacy-card">
+    <div data-pane-of="about" class="privacy-card">
       <span class="privacy-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12.5l2 2 3.5-4"/></svg></span>
       <div><strong data-i18n="privacy.t"></strong><p data-i18n="privacy.p"></p></div>
     </div>
 
-    <section class="set-block">
+    <section data-pane-of="prefs" class="set-block">
       <h2 data-i18n="settings.lang"></h2>
       <div class="lang-grid" id="langGrid" role="radiogroup"></div>
     </section>
 
-    <section class="set-block" id="profileBlock">
+    <section data-pane-of="prefs" class="set-block" id="profileBlock">
       <h2 data-i18n="settings.profile"></h2>
       <p class="muted" data-i18n="settings.profile_p"></p>
       <h3 class="sub-label" data-i18n="settings.diet"></h3>
@@ -175,7 +179,7 @@
       <h3 class="sub-label" data-i18n="settings.allergens"></h3>
       <div class="chips" id="allergenList"></div>
     </section>
-    <section class="set-block" id="schoolBlock">
+    <section data-pane-of="prefs" class="set-block" id="schoolBlock">
       <h2 data-i18n="settings.school"></h2>
       <p class="muted" data-i18n="settings.school_intro"></p>
       <div class="school-list" id="schoolList" role="radiogroup"></div>
@@ -184,20 +188,20 @@
       <p class="fineprint start" data-i18n="settings.disclaimer"></p>
     </section>
 
-    <section class="set-block">
+    <section data-pane-of="prefs" class="set-block">
       <h2 data-i18n="settings.offline"></h2>
       <p class="muted" data-i18n="settings.offline_p"></p>
       <button class="btn btn-soft" type="button" id="offlineBtn"></button>
       <p class="muted small" id="offlineStatus" aria-live="polite"></p>
     </section>
 
-    <section class="set-block why">
+    <section data-pane-of="about" class="set-block why">
       <h2 data-i18n="why.t"></h2>
       <blockquote><p data-i18n="why.quote"></p><cite data-i18n="why.cite"></cite></blockquote>
       <p class="muted" data-i18n="why.p"></p>
     </section>
 
-    <section class="set-block">
+    <section data-pane-of="about" class="set-block">
       <h2 data-i18n="settings.how"></h2>
       <ol class="steps">
         <li><strong data-i18n="how.1.t"></strong><span data-i18n="how.1.p"></span></li>
@@ -206,12 +210,12 @@
       </ol>
     </section>
 
-    <section class="set-block">
+    <section data-pane-of="about" class="set-block">
       <h2 data-i18n="settings.statuses"></h2>
       <div class="legend" id="legendHalal"></div>
     </section>
 
-    <section class="set-block">
+    <section data-pane-of="about" class="set-block">
       <h2 data-i18n="settings.health"></h2>
       <div class="score-explain">
         <div class="se-row"><span class="se-pts" data-pts="60"></span><p data-i18n-html="health.rule1_html"></p></div>
@@ -221,23 +225,23 @@
       <div class="legend" id="legendHealth"></div>
     </section>
 
-    <section class="set-block" id="sourcesBlock">
+    <section data-pane-of="about" class="set-block" id="sourcesBlock">
       <h2 data-i18n="settings.sources"></h2>
       <p class="muted" data-i18n="sources.intro"></p>
       <div id="sourceList" class="sources"></div>
     </section>
 
-    <section class="set-block">
+    <section data-pane-of="about" class="set-block">
       <h2 data-i18n="settings.limits"></h2>
       <div class="prose"><p data-i18n="limits.1"></p><p data-i18n="limits.2"></p><p data-i18n="limits.3"></p></div>
     </section>
 
-    <div class="links">
+    <div data-pane-of="about" class="links">
       <a class="link-row" href="https://fr.openfoodfacts.org" target="_blank" rel="noopener"><span><strong data-i18n="link.off.t"></strong><small data-i18n="link.off.d"></small></span><span aria-hidden="true">↗</span></a>
       <a class="link-row" href="https://github.com/agozel5/bayyin/issues" target="_blank" rel="noopener"><span><strong data-i18n="link.report.t"></strong><small data-i18n="link.report.d"></small></span><span aria-hidden="true">↗</span></a>
       <a class="link-row" id="demoLink" href="?demo#scan"><span><strong id="demoLinkT"></strong><small id="demoLinkD"></small></span><span aria-hidden="true" class="flip-text">→</span></a>
     </div>
-    <p class="fineprint"><span data-i18n="fine.data"></span> <a href="https://world.openfoodfacts.org/data" target="_blank" rel="noopener">Open Food Facts</a> (<span data-i18n="fine.license"></span>) · <a href="https://github.com/agozel5/bayyin" target="_blank" rel="noopener" data-i18n="fine.code"></a> · <span data-i18n="fine.reader"></span> : <span id="engineInfo">—</span></p>
+    <p data-pane-of="about" class="fineprint"><span data-i18n="fine.data"></span> <a href="https://world.openfoodfacts.org/data" target="_blank" rel="noopener">Open Food Facts</a> (<span data-i18n="fine.license"></span>) · <a href="https://github.com/agozel5/bayyin" target="_blank" rel="noopener" data-i18n="fine.code"></a> · <span data-i18n="fine.reader"></span> : <span id="engineInfo">—</span></p>
   </section>
 </main>
 

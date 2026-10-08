@@ -700,3 +700,30 @@ h2,.sub{font-weight:750}
 .src-group[open] .src-preview{display:inline}
 .src-kind{margin:4px 18px 6px;font-size:.82rem;font-weight:700;color:var(--muted)}
 .src-group .source-list{margin:0 10px 10px}
+
+/* ---------- historique par période ---------- */
+.hist-day{margin:14px 4px 6px;font-size:.88rem;font-weight:700;color:var(--muted)}
+.hist-day:first-child{margin-top:0}
+#historyList .list + .hist-day{margin-top:18px}
+
+/* ---------- additifs : groupes repliables ---------- */
+#addList{display:flex;flex-direction:column;gap:10px}
+.add-sec{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--lift);overflow:hidden}
+.add-sec > summary{list-style:none;display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer}
+.add-sec > summary::-webkit-details-marker{display:none}
+.add-sec-head{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.add-sec-head strong{font-size:1.05rem;font-weight:700}
+.add-sec-counts{display:flex;gap:6px;flex-wrap:wrap}
+.add-sec[open] .src-chev{transform:rotate(90deg)}
+[dir="rtl"] .add-sec:not([open]) .src-chev{transform:scaleX(-1)}
+.add-rows2{border-top:1px solid var(--line)}
+.add-entry{border-bottom:1px solid var(--line);padding:0 16px}
+.add-entry:last-child{border-bottom:none}
+.add-entry > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;cursor:pointer}
+.add-entry > summary::-webkit-details-marker{display:none}
+.add-entry[open] > summary .add-name{color:var(--brand-dark)}
+.add-entry .add-codes,.add-entry .add-why,.add-entry .add-setting{margin:0 0 10px}
+.add-entry .add-setting{font-size:.88rem;color:var(--muted)}
+#historyList{background:none;box-shadow:none;padding:0;border-radius:0}
+.row-img.ph{display:flex;align-items:center;justify-content:center;color:var(--faint)}
+.row-img.ph svg{width:24px;height:24px}

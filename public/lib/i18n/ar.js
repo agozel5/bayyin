@@ -516,4 +516,12 @@ export default {
   "sources.k.law": "اللوائح الأوروبية",
   "sources.k.study": "الدراسات والتصنيفات",
   "sources.k.text": "النصوص الدينية",
+  "settings.tab_prefs": "الإعدادات",
+  "settings.tab_about": "حول التطبيق",
+  "history.g.today": "اليوم",
+  "history.g.yesterday": "أمس",
+  "history.g.week": "هذا الأسبوع",
+  "history.g.older": "أقدم",
+  "add.open_all": "فتح الكل",
+  "add.close_all": "طي الكل",
 };

@@ -521,6 +521,7 @@ document.addEventListener("click", (e) => {
     e.preventDefault();
     closeSheet();
     const block = go.dataset.gotoSettings === "profile" ? "profileBlock" : "schoolBlock";
+    settingsPane = "prefs";
     setTimeout(() => {
       location.hash = "#settings";
       setTimeout(() => $(block).scrollIntoView({ block: "start", behavior: "smooth" }), 30);
@@ -832,6 +833,25 @@ const HISTORY_FILTERS = [
 ];
 const STATUS_COLOR = { halal_certifie: "var(--c-cert)", halal_probable: "var(--c-prob)", mashbouh: "var(--c-doubt)", haram: "var(--c-haram)", inconnu: "var(--c-none)" };
 
+// Historique rangé par période : aujourd'hui, hier, cette semaine, plus ancien
+function historyGroups(entries) {
+  const day = (ts) => new Date(ts).setHours(0, 0, 0, 0);
+  const today = day(Date.now());
+  const bucket = (ts) => {
+    const d = (today - day(ts)) / 864e5;
+    return d < 1 ? "today" : d < 2 ? "yesterday" : d < 7 ? "week" : "older";
+  };
+  const order = ["today", "yesterday", "week", "older"];
+  return order
+    .map((g) => {
+      const list = entries.filter((e) => bucket(e.at) === g);
+      return list.length
+        ? `<p class="hist-day">${t(`history.g.${g}`)}</p><div class="list">${list.map((e) => rowHtml(e.p, { fav: e.fav, when: relTime(e.at) })).join("")}</div>`
+        : "";
+    })
+    .join("");
+}
+
 function renderHistory() {
   const all = store.all();
   const counts = {};
@@ -858,7 +878,7 @@ function renderHistory() {
   $("historyList").innerHTML = !all.length
     ? ""
     : shown.length
-      ? shown.map((e) => rowHtml(e.p, { fav: e.fav, when: relTime(e.at) })).join("")
+      ? historyGroups(shown)
       : `<div class="empty">${emptyArt()}<p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`;
 
   $("historyClear").innerHTML = !all.length
@@ -892,6 +912,7 @@ store.subscribe(() => {
 // Additifs (deux listes : halal selon vos réglages, et santé)
 // ===========================================================================
 let addMode = "halal";
+const addOpen = new Set(); // groupes ouverts par l'utilisateur
 let addFilter = "all";
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
 
@@ -968,20 +989,33 @@ function renderAdditives() {
     .filter((it) => (addFilter === "all" || it.level === addFilter) && (!q || norm([it.name, it.codes.join(" "), it.reason].join(" ")).includes(q)))
     .sort((a, b) => m.order[a.level] - m.order[b.level]);
   const groups = [...new Set(items.map((i) => i.group))];
+  // Une recherche ou un filtre ouvre tout ; sinon les groupes restent repliés (sauf ceux ouverts à la main)
+  const forceOpen = !!q || addFilter !== "all" || groups.length === 1;
   $("addList").innerHTML = items.length
     ? groups
-        .map(
-          (g) => `<div class="add-group"><p class="label">${esc(g)}</p>${items
-            .filter((i) => i.group === g)
-            .map(
-              (it) => `<div class="add-item"><div class="add-head"><span class="add-name">${esc(it.name)}</span>${m.pill(it)}</div>
-                ${it.codes.length ? `<div class="add-codes" dir="ltr">${it.codes.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
-                <p class="add-why">${esc(it.reason)}</p>
-                ${it.topic ? `<p class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[it.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></p>` : ""}
-              </div>`
-            )
-            .join("")}</div>`
-        )
+        .map((g) => {
+          const list = items.filter((i) => i.group === g);
+          const counts = Object.keys(m.order)
+            .map((lv) => [lv, list.filter((i) => i.level === lv).length])
+            .filter(([, n]) => n);
+          const open = forceOpen || addOpen.has(addMode + "|" + g);
+          return `<details class="add-sec" data-g="${esc(addMode + "|" + g)}"${open ? " open" : ""}>
+            <summary>
+              <span class="add-sec-head"><strong>${esc(g)}</strong>
+                <span class="add-sec-counts">${counts.map(([lv, n]) => m.pill({ level: lv }).replace("</span>", ` · ${n}</span>`)).join("")}</span></span>
+              <span class="src-chev" aria-hidden="true">${svg(I.chev)}</span>
+            </summary>
+            <div class="add-rows2">${list
+              .map(
+                (it) => `<details class="add-entry"><summary><span class="add-name">${esc(it.name)}</span>${m.pill(it)}</summary>
+                  ${it.codes.length ? `<div class="add-codes" dir="ltr">${it.codes.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
+                  <p class="add-why">${esc(it.reason)}</p>
+                  ${it.topic ? `<p class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[it.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></p>` : ""}
+                </details>`
+              )
+              .join("")}</div>
+          </details>`;
+        })
         .join("")
     : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t(addMode === "halal" ? "add.empty_halal" : "add.empty_health")}</p></div>`;
 }
@@ -999,11 +1033,32 @@ $("addFilter").addEventListener("click", (e) => {
   renderAdditives();
 });
 $("addInput").addEventListener("input", renderAdditives);
+$("addList").addEventListener("toggle", (e) => {
+  const d = e.target;
+  if (!d.matches || !d.matches("details.add-sec")) return;
+  if (d.open) addOpen.add(d.dataset.g);
+  else addOpen.delete(d.dataset.g);
+}, true);
 
 // ===========================================================================
 // Réglages
 // ===========================================================================
+// Réglages : deux volets, ce qu'on modifie et ce qu'on lit
+let settingsPane = "prefs";
+function showPane(pane) {
+  settingsPane = pane;
+  document.querySelectorAll("#settingsPanes button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === pane)));
+  document.querySelectorAll("[data-pane-of]").forEach((el) => (el.hidden = el.dataset.paneOf !== pane));
+}
+$("settingsPanes").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pane]");
+  if (!b || b.dataset.pane === settingsPane) return;
+  showPane(b.dataset.pane);
+  window.scrollTo(0, 0);
+});
+
 function renderSettings() {
+  showPane(settingsPane);
   const st = prefs();
   $("langGrid").innerHTML = LANGS.map(
     (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`

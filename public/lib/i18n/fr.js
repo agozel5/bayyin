@@ -530,4 +530,12 @@ export default {
   "sources.k.law": "Règlements européens",
   "sources.k.study": "Études et classements",
   "sources.k.text": "Textes religieux",
+  "settings.tab_prefs": "Réglages",
+  "settings.tab_about": "À propos",
+  "history.g.today": "Aujourd'hui",
+  "history.g.yesterday": "Hier",
+  "history.g.week": "Cette semaine",
+  "history.g.older": "Plus ancien",
+  "add.open_all": "Tout déplier",
+  "add.close_all": "Tout replier",
 };
