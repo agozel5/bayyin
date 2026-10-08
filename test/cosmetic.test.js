@@ -121,3 +121,41 @@ test("cosmétiques : pas de faux positifs courants", () => {
   assert.equal(cosmeticRisks(prod("Propylparaben", ["en:shampoos"], "Shampooing bébé"))[0].level, "limite");
   assert.equal(cosmeticRisks(prod("Propylparaben", ["en:baby-lotions"], "Lait bébé"))[0].level, "eleve");
 });
+
+test("cosmétiques : base CosIng pour les ingrédients hors familles", async () => {
+  const { setCosmeticDb } = await import("../public/lib/cosmetic.js");
+  setCosmeticDb({
+    updated: "2026-10-08",
+    fn: ["SOLVENT", "PERFUMING", "COLORANT", "HAIR DYEING"],
+    i: {
+      aqua: [[0]],
+      glycerin: [[0]],
+      spironolactone: [[], "II"],
+      "ci 12490": [[2], "II,IV", "", 4],
+      "boric acid": [[], "III", "1B"],
+      "anise alcohol": [[1], "III", "", 1],
+      "hc blue no. 2": [[3], "III", "", 2],
+      limonene: [[1], "III", "", 1],
+      "musk xylene": [[1], "III", "2"],
+    },
+  });
+  try {
+    const a = analyzeCosmetic(prod("Water, Glycerin, Spironolactone, CI 12490, Limonene, Unknownium Extract", ["en:body-lotions"]));
+    const byName = Object.fromEntries(a.risks.map((r) => [r.name, r]));
+    assert.equal(byName.Spironolactone.key, "db_banned");
+    assert.equal(byName.Spironolactone.level, "eleve");
+    assert.ok(!byName["CI 12490"], "interdit seulement dans certains usages : pas signalé");
+    assert.equal(byName.Limonene.key, "fragrance_allergen", "la famille passe avant la base");
+    assert.deepEqual(a.coverage, { known: 5, total: 6, db: "2026-10-08" });
+    assert.equal(a.ingredients.find((x) => x.name === "Water").functions[0], "SOLVENT", "« Water » reconnu comme « Aqua »");
+    assert.equal(a.ingredients.find((x) => x.name === "Unknownium Extract").known, false);
+    // Un colorant capillaire n'est signalé que dans une coloration
+    assert.equal(cosmeticRisks(prod("Aqua, HC Blue No. 2", ["en:shower-gels"], "Gel douche")).length, 0);
+    const b = cosmeticRisks(prod("Aqua, Boric Acid, Anise Alcohol, HC Blue No. 2, Musk Xylene", ["en:hair-dyes"], "Coloration crème"));
+    assert.deepEqual(b.map((r) => [r.key, r.level]), [["db_cmr1_allowed", "modere"], ["fragrance_allergen", "limite"], ["db_hairdye", "limite"], ["db_cmr2", "limite"]]);
+    // « Parfum (Fragrance) » : un seul ingrédient dans la liste complète
+    assert.equal(analyzeCosmetic(prod("Aqua, Limonene (Limonene)")).ingredients.length, 2);
+  } finally {
+    setCosmeticDb(null);
+  }
+});

@@ -5,6 +5,7 @@ export const SOURCES = [
   // Données produits
   { id: "off", group: "data", kind: "database", name: "Open Food Facts", url: "https://world.openfoodfacts.org" },
   { id: "obf", group: "data", kind: "database", name: "Open Beauty Facts", url: "https://world.openbeautyfacts.org" },
+  { id: "cosing", group: "data", kind: "database", name: "CosIng (Commission européenne)", url: "https://ec.europa.eu/growth/tools-databases/cosing/" },
   { id: "bdpm", group: "data", kind: "database", name: "Base de données publique des médicaments", url: "https://base-donnees-publique.medicaments.gouv.fr" },
   // Santé et additifs
   { id: "efsa", group: "health", kind: "agency", name: "EFSA", url: "https://www.efsa.europa.eu" },

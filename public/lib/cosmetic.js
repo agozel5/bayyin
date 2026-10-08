@@ -145,6 +145,54 @@ export const COSMETIC_RULES = [
 ];
 const RULE_BY_KEY = Object.fromEntries(COSMETIC_RULES.map((r) => [r.key, r]));
 
+// ---------------------------------------------------------------------------
+// Base officielle CosIng (≈ 33 000 ingrédients), chargée par l'app : data/cosing.json
+// Elle sert aux ingrédients qu'aucune famille ci-dessus ne couvre, et donne le rôle de chaque ingrédient.
+// ---------------------------------------------------------------------------
+let DB = null;
+export function setCosmeticDb(data) {
+  DB = data && data.i ? { fn: data.fn || [], i: data.i, updated: data.updated, version: (DB ? DB.version : 0) + 1 } : null;
+}
+export const cosmeticDbVersion = () => (DB ? DB.version : 0);
+export const cosmeticDbInfo = () => (DB ? { updated: DB.updated, count: Object.keys(DB.i).length } : null);
+
+// Noms usuels qui ne sont pas le nom INCI exact
+const ALIASES = { water: "aqua", eau: "aqua", "aqua/water": "aqua", "water/aqua": "aqua", glycerine: "glycerin", glycerol: "glycerin",
+  fragrance: "parfum", perfume: "parfum", "parfum/fragrance": "parfum", "fragrance/parfum": "parfum", "alcohol denatured": "alcohol denat." };
+const dbKey = (seg) => seg.replace(/§/g, ",").replace(/¶/g, " ").replace(/\s*\*+$/, "").replace(/\s+/g, " ").trim();
+function dbLookup(seg) {
+  if (!DB) return null;
+  const k = dbKey(seg);
+  const tries = [k, ALIASES[k], k.replace(/\s*\(nano\)$/, ""), k.replace(/\.$/, ""), k + "."];
+  // « Aqua/Water », « Sodium Tallowate or Sodium Palmate » : chaque variante
+  for (const part of k.split(/\s*\/\s*|\s+(?:or|ou|and\/or|et\/ou)\s+/)) tries.push(part, ALIASES[part]);
+  for (const t of tries) if (t && DB.i[t]) return { name: t, rec: DB.i[t] };
+  return null;
+}
+const dbFunctions = (rec) => (rec[0] || []).map((i) => DB.fn[i]).filter(Boolean);
+
+// Risque déduit du statut réglementaire, pour un ingrédient hors familles
+function dbRisk(rec, ctx = {}) {
+  const annexes = (rec[1] || "").split(",").filter(Boolean);
+  const cmr = rec[2] || "";
+  const flags = rec[3] || 0;
+  if (annexes.includes("II") && !(flags & 4)) return "db_banned";
+  if (cmr === "1A" || cmr === "1B") return annexes.some((a) => a !== "II") ? "db_cmr1_allowed" : "db_banned";
+  if (cmr === "2") return "db_cmr2";
+  if (flags & 1) return "db_allergen";
+  if (flags & 2 && ctx.hairDye) return "db_hairdye"; // un colorant capillaire ne compte que dans une coloration
+  return null;
+}
+const DB_RULES = {
+  db_banned: { key: "db_banned", kinds: ["illegal"], level: L("eleve"), sources: ["cosing", "eu_cosmetics"] },
+  db_cmr1_allowed: { key: "db_cmr1_allowed", kinds: ["cmr"], level: L("modere", "limite"), child: "eleve", sources: ["cosing", "eu_cosmetics"] },
+  db_cmr2: { key: "db_cmr2", kinds: ["cmr"], level: L("limite"), sources: ["cosing", "eu_cosmetics"] },
+  db_allergen: { key: "db_allergen", kinds: ["allergen"], level: L("limite"), child: "modere", sources: ["cosing", "eu_cosmetics"] },
+  db_hairdye: { key: "db_hairdye", kinds: ["allergen"], level: L("limite"), sources: ["cosing", "sccs"] },
+};
+// Morceaux de liste qui ne sont pas des ingrédients (« peut contenir », numéros de formule…)
+const NOISE = /^(may contain|peut contenir|\+\/-|\[\+\/-|contient|ingredients?|ingredientes|f\.?i\.?l\.?|code|n°|\d+([.,]\d+)?\s*%?)$|^(may contain|peut contenir)\b/;
+
 // Conservateurs plafonnés à 1 % ou moins (annexe V) : tout ce qui suit est à 1 % au plus.
 const ONE_PERCENT_MARKERS = /\b(phenoxyethanol|\w*paraben|methylchloroisothiazolinone|methylisothiazolinone|potassium sorbate|dehydroacetic acid|sodium dehydroacetate|chlorphenesin|dmdm hydantoin|imidazolidinyl urea|diazolidinyl urea|sodium hydroxymethylglycinate|triclosan|bht|bha|methylparaben)\b/;
 
@@ -164,17 +212,19 @@ export function exposureContext(product) {
     aerosol: /\b(aerosols?|gaz propulseur|propellant)\b/.test(txt),
     powder: /\b(poudre libre|loose powders?|baby powders?|poudre pour bebe|talcum|poudre de talc)\b/.test(txt),
     lip: /\b(lips?|levres|lipsticks?|lip balms?|lip gloss|gloss|rouge a levres|baume a levres|stick levres)\b/.test(txt),
+    hairDye: /\b(colorations?|hair colou?rs?|hair dyes?|teintures?|colour cream|color cream|creme colorante)\b/.test(txt),
     child: /\b(bebes?|baby|babies|enfants?|kids?|junior|nourrissons?|toddlers?|infants?|naissance|liniment)\b/.test(txt),
   };
 }
 
 // Découpage de la liste : la virgule entre deux chiffres fait partie du nom chimique
 // (« Toluene-2,5-Diamine », « 2-Bromo-2-Nitropropane-1,3-Diol ») ; on la protège par « § ».
-const cosmeticSegments = (product) => segments(ingredientsText(product).replace(/(\d),(\d)/g, "$1§$2"));
+// De même, « HC Blue No. 2 » ne doit pas être coupé après « No. » (« ¶ » remplace l'espace).
+const cosmeticSegments = (product) => segments(ingredientsText(product).replace(/(\d),(\d)/g, "$1§$2").replace(/\b(no)\.\s+(\d)/gi, "$1.¶$2"));
 
 // Nom d'ingrédient lisible (« sodium lauryl sulfate » -> « Sodium Lauryl Sulfate »)
 function inciName(seg) {
-  return seg.replace(/§/g, ",").replace(/\s*\*+$/, "")
+  return seg.replace(/§/g, ",").replace(/¶/g, " ").replace(/\s*\*+$/, "")
     .replace(/(^|[\s/-])([a-z])/g, (m, a, b) => a + b.toUpperCase())
     .replace(/\b(Peg|Ppg|Bht|Bha|Dea|Mea|Tea|Dmdm|Ptfe|Phmb|Ci)\b/g, (m) => m.toUpperCase())
     .slice(0, 60);
@@ -203,13 +253,24 @@ export function cosmeticRisks(product, ctx = exposureContext(product)) {
   const seenSeg = new Set();
   segs.forEach((seg, i) => {
     if (seenSeg.has(seg)) return;
+    const dose = lineIdx < 0 ? null : i < lineIdx ? "major" : i > lineIdx ? "minor" : null;
+    let done = false;
     for (const rule of COSMETIC_RULES) {
       if (!rule.match.test(seg) || (rule.exclude && rule.exclude.test(seg))) continue;
       seenSeg.add(seg);
+      done = true;
       if (rule.key === "fragrance" && out.some((r) => r.key === "fragrance")) break; // « Parfum (Fragrance) »
-      const dose = lineIdx < 0 ? null : i < lineIdx ? "major" : i > lineIdx ? "minor" : "line";
-      out.push({ key: rule.key, level: levelFor(rule, ctx), kinds: rule.kinds, name: inciName(seg), sources: rule.sources, dose: dose === "line" ? null : dose, pos: i });
+      out.push({ key: rule.key, level: levelFor(rule, ctx), kinds: rule.kinds, name: inciName(seg), sources: rule.sources, dose, pos: i });
       break;
+    }
+    if (done) return;
+    // Hors familles : statut réglementaire de la base CosIng
+    const hit = dbLookup(seg);
+    const k = hit && dbRisk(hit.rec, ctx);
+    if (k) {
+      const rule = DB_RULES[k];
+      seenSeg.add(seg);
+      out.push({ key: k, level: levelFor(rule, ctx), kinds: rule.kinds, name: inciName(seg), sources: rule.sources, dose, pos: i, db: true });
     }
   });
   // Nanomatériaux inhalables : « Titanium Dioxide (nano) » dans un spray ou une poudre libre
@@ -256,14 +317,44 @@ export function cosmeticScore(product, risks = cosmeticRisks(product)) {
 }
 
 // Même forme que analyzeHealth (champ score) : listes, comparaison et alternatives en profitent sans rien changer.
+/** Tous les ingrédients de la liste, avec leur rôle (CosIng) et leur niveau de risque dans ce produit. */
+export function cosmeticIngredients(product, risks) {
+  const byPos = new Map(risks.filter((r) => r.pos >= 0).map((r) => [r.pos, r]));
+  const out = [];
+  const seen = new Set();
+  let prevDb = null;
+  cosmeticSegments(product).forEach((seg, i) => {
+    if (seen.has(seg) || NOISE.test(seg) || /[®™©]/.test(seg) || seg.length > 70 || !/[a-z]/.test(seg)) return; // marque déposée : pas un ingrédient
+    seen.add(seg);
+    const hit = dbLookup(seg);
+    // « Parfum (Fragrance) », « Aqua (Water) » : la traduction entre parenthèses n'est pas un autre ingrédient
+    if (hit && prevDb === hit.name) return;
+    prevDb = hit ? hit.name : null;
+    const r = byPos.get(i);
+    out.push({
+      name: inciName(seg),
+      functions: hit ? dbFunctions(hit.rec) : [],
+      known: !!hit || !!r,
+      level: r ? r.level : null,
+      flagged: !!r,
+    });
+  });
+  return out;
+}
+
+// Même forme que analyzeHealth (champ score) : listes, comparaison et alternatives en profitent sans rien changer.
 export function analyzeCosmetic(product) {
   const context = exposureContext(product);
   const risks = cosmeticRisks(product, context);
+  const ingredients = cosmeticIngredients(product, risks);
   return {
     cosmetic: true,
     context,
     score: cosmeticScore(product, risks),
     risks,
-    analyzed: cosmeticSegments(product).length,
+    ingredients,
+    analyzed: ingredients.length,
+    coverage: DB ? { known: ingredients.filter((x) => x.known).length, total: ingredients.length, db: DB.updated } : null,
+    dbVersion: cosmeticDbVersion(),
   };
 }

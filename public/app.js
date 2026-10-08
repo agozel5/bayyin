@@ -11,6 +11,7 @@ import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profil
 import { BEAUTY_RULES } from "./lib/beauty.js";
 import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
+import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
@@ -72,7 +73,14 @@ const alertPill = (p) => {
   return a ? `<span class="pill a-${a}">${t(`alert.short.${a}`)}</span>` : "";
 };
 const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${S(st, "short")}</span>`;
-const scoreOf = (p) => (p.health && p.health.score) || null;
+// Cosmétiques : la note est recalculée quand la base CosIng arrive (chargée après l'ouverture de l'app)
+function healthOf(p) {
+  if (p && p.raw && kindOf(p) === "beauty" && cosmeticDbVersion() && (!p.health || p.health.dbVersion !== cosmeticDbVersion())) {
+    p.health = analyzeCosmetic(p.raw);
+  }
+  return p && p.health;
+}
+const scoreOf = (p) => { const h = healthOf(p); return (h && h.score) || null; };
 const miniScore = (p) => {
   const s = scoreOf(p);
   return s ? `<span class="mini-score g-${s.grade}" dir="ltr"><span class="dot"></span>${s.score}/100</span>` : "";
@@ -271,7 +279,7 @@ function healthSection(p) {
 // Cosmétiques : la note croise le danger de chaque ingrédient et l'exposition (type de produit)
 const CTX_ORDER = ["rinse", "spray", "powder", "lip", "child"];
 function cosmeticSection(p) {
-  const h = p.health;
+  const h = healthOf(p);
   if (!h || !h.cosmetic) return "";
   const s = h.score;
   if (!s) return `<section class="sec"><div class="sec-head"><h3>${t("detail.cosmetic")}</h3></div><p class="notes">${t("detail.cosmetic_none")}</p></section>`;
@@ -300,6 +308,43 @@ function cosmeticSection(p) {
     ${risks.length ? `<p class="sub-label">${t("detail.cosmetic_watch")}</p><div class="risks">${rows}${safe}</div>` : `<div class="nut lv-bon"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.cosmetic_ok_t")}</strong><small>${t("detail.cosmetic_ok_p")}</small></span><span class="nut-val"><span class="dot"></span></span></div>${safe ? `<div class="risks">${safe}</div>` : ""}`}
     <p class="notes">${t("detail.cosmetic_method")}</p>
   </section>`;
+}
+
+// Liste complète des ingrédients d'un cosmétique : rôle (CosIng) et niveau de risque dans ce produit
+const fnLabel = (f) => {
+  const k = "fn." + f.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  const v = t(k);
+  return v === k ? f.charAt(0) + f.slice(1).toLowerCase() : v;
+};
+// Rôles les plus parlants d'abord (CosIng les liste sans ordre) ; rôles secondaires à la fin
+const FN_FIRST = ["PRESERVATIVE", "UV FILTER", "UV ABSORBER", "COLORANT", "HAIR DYEING", "SURFACTANT - CLEANSING", "SURFACTANT - EMULSIFYING",
+  "SKIN CONDITIONING - EMOLLIENT", "SKIN CONDITIONING - HUMECTANT", "HUMECTANT", "PERFUMING", "ANTIOXIDANT", "ANTIPERSPIRANT", "DEODORANT",
+  "EXFOLIATING", "SOLVENT", "VISCOSITY CONTROLLING", "FILM FORMING", "HAIR CONDITIONING", "SKIN CONDITIONING", "SKIN PROTECTING"];
+const FN_LAST = ["DENATURANT", "FRAGRANCE", "ANTIFOAMING", "BUFFERING", "ORAL CARE", "ANTISTATIC", "BINDING", "BULKING", "NOT REPORTED"];
+const fnRank = (f) => { const i = FN_FIRST.indexOf(f); return i >= 0 ? i : FN_LAST.includes(f) ? 900 + FN_LAST.indexOf(f) : 100; };
+const sortFunctions = (list) => {
+  const main = list.filter((f) => !FN_LAST.includes(f));
+  return [...(main.length ? main : list)].sort((a, b) => fnRank(a) - fnRank(b));
+};
+function ingredientListSection(p) {
+  const h = healthOf(p);
+  const list = (h && h.ingredients) || [];
+  if (!list.length || !h.coverage) return "";
+  const rows = list.map((x) => {
+    const cls = x.level ? `lv-${x.level}` : x.known ? "lv-ok" : "lv-unk";
+    const fns = [...new Set(sortFunctions(x.functions).map(fnLabel))].slice(0, 3).join(" · ");
+    const sub = fns || (x.known ? t("detail.ing_ok") : t("detail.ing_unknown"));
+    const pill = x.level ? `<span class="pill r-${x.level}">${t(`risk.short.${x.level}`)}</span>` : "";
+    return `<li class="ing ${cls}"><span class="ing-dot" aria-hidden="true"></span><span class="ing-text"><strong dir="ltr">${esc(x.name)}</strong><small>${esc(sub)}</small></span>${pill}</li>`;
+  }).join("");
+  const c = h.coverage;
+  const low = c.total >= 4 && c.known / c.total < 0.7;
+  return `<section class="sec"><details class="ingr-all"><summary><span>${t("detail.all_ingredients")}</span><small>${list.length}</small></summary>
+    <p class="notes">${esc(t("detail.coverage", { k: c.known, n: c.total }))}${low ? ` ${esc(t("detail.coverage_low"))}` : ""}</p>
+    <ul class="ing-list">${rows}</ul>
+    <p class="notes">${t("detail.ing_legend")} ${sourceLine(["cosing"])}</p>
+    ${p.ingredients ? `<details class="ingr ingr-raw"><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details>` : ""}
+  </details></section>`;
 }
 
 function additivesSection(p) {
@@ -363,9 +408,10 @@ function extraSection(p) {
 function productDetail(p) {
   const v = verdictOf(p);
   const kind = kindOf(p);
-  const ingr = p.ingredients
+  const ingrList = kind === "beauty" ? ingredientListSection(p) : "";
+  const ingr = ingrList || (p.ingredients
     ? `<section class="sec"><details class="ingr"${p.local ? " open" : ""}><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
-    : "";
+    : "");
   const isBarcode = /^\d+$/.test(p.code);
   const alt = p.local || kind === "medicine"
     ? ""
@@ -1704,7 +1750,7 @@ function showCompare(code) {
     return n ? n.value : null;
   };
   // Additifs à risque (aliments) ou ingrédients controversés (cosmétiques)
-  const watchCount = (p) => ((p.health && (p.health.additives || p.health.risks)) || []).length;
+  const watchCount = (p) => { const h = healthOf(p); return ((h && (h.additives || (h.risks || []).filter((r) => r.level))) || []).length; };
   const rank = { halal_certifie: 4, halal_probable: 3, inconnu: 2, mashbouh: 1, haram: 0 };
   const rows = [
     [t("detail.halal"), `<span class="pill s-${va.status}"><span class="dot"></span>${S(va.status, "short")}</span>`, `<span class="pill s-${vb.status}"><span class="dot"></span>${S(vb.status, "short")}</span>`, better(rank[va.status], rank[vb.status])],
@@ -1794,3 +1840,18 @@ if (!prefs().onboarded && !DEMO) openOnboard();
 // Prépare le lecteur en arrière-plan pour que le premier scan soit immédiat.
 const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
 idle(() => getDetector().then(() => ($("engineInfo").textContent = detectorEngine())).catch(() => {}));
+// Base des ingrédients cosmétiques (CosIng) : chargée une fois, puis gardée hors connexion
+let cosingLoading = null;
+function loadCosing() {
+  if (cosingLoading) return cosingLoading;
+  cosingLoading = fetch("data/cosing.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      if (!d || !d.i) return;
+      setCosmeticDb(d);
+      if (sheetProduct && kindOf(sheetProduct) === "beauty") { renderSheetProduct(sheetProduct); if (!sheetProduct.local) loadAlternatives(sheetProduct, sheetCode); }
+    })
+    .catch(() => { cosingLoading = null; });
+  return cosingLoading;
+}
+idle(loadCosing);

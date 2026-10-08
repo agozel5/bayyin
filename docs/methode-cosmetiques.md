@@ -60,6 +60,29 @@ Chaque famille d'ingrédients a un niveau qui dépend du contexte : produit non 
 
 Ces ingrédients sont listés sur la fiche, à part, pour la transparence.
 
+## 3 bis. Base officielle CosIng (tous les autres ingrédients)
+
+Les familles ci-dessus couvrent les ingrédients les plus étudiés. Pour tous les autres, l'app s'appuie sur **CosIng**, la base officielle des ingrédients cosmétiques de la Commission européenne : environ 33 000 ingrédients, avec leur rôle et leur statut dans le règlement.
+
+- **Mise à jour.** Le programme `scripts/build-cosing.mjs` la télécharge chaque mois (workflow `cosing.yml`) et la convertit en `public/data/cosing.json`. L'app charge ce fichier une fois, puis le garde hors connexion.
+- **Ce qui est importé.** L'inventaire des ingrédients (nom INCI, fonctions, références aux annexes) et les annexes II à VI du règlement (CE) 1223/2009 : interdits, restreints, colorants, conservateurs, filtres UV, avec la classification CMR et les conditions d'étiquetage.
+
+Niveau attribué à un ingrédient qu'aucune famille ne couvre :
+
+| Statut dans CosIng | Niveau |
+|---|---|
+| Annexe II (interdit), sauf interdiction limitée à certains usages | élevé |
+| CMR de catégorie 1, interdit | élevé |
+| CMR de catégorie 1, autorisé sous conditions | modéré (limité si rincé, élevé pour un enfant) |
+| CMR de catégorie 2 | limité |
+| Allergène de parfum à étiqueter (0,001 % / 0,01 %) | limité (modéré pour un enfant) |
+| Colorant capillaire encadré | limité |
+| Autre ingrédient connu | sans risque connu |
+
+La fiche affiche tous les ingrédients avec leur rôle et un point de couleur, ainsi que la part de la liste reconnue. Quand moins de 70 % des ingrédients sont reconnus, elle prévient que la note est moins fiable.
+
+**Différence avec Yuka.** Yuka note environ 12 500 ingrédients un par un, avec un toxicologue. Ici, la base couvre davantage d'ingrédients, mais leur niveau découle de leur statut réglementaire : c'est une évaluation officielle et vérifiable, pas un avis d'expert au cas par cas.
+
 ## 4. Calcul de la note
 
 Le calcul s'inspire de la méthode publiée par Yuka (help.yuka.io, « How are penalties calculated in the cosmetic product scores »).
@@ -88,6 +111,7 @@ Le calcul s'inspire de la méthode publiée par Yuka (help.yuka.io, « How are p
 
 ## 6. Sources principales
 
+- CosIng, base des ingrédients cosmétiques (Commission européenne) : https://ec.europa.eu/growth/tools-databases/cosing/
 - CSSC, *Notes of Guidance*, 12e révision (2023) : https://health.ec.europa.eu/publications/sccs-notes-guidance-testing-cosmetic-ingredients-and-their-safety-evaluation-12th-revision_en
 - Règlement (CE) 1223/2009 consolidé : https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:02009R1223-20250501
 - Règlements modificatifs :

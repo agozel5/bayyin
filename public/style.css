@@ -859,3 +859,24 @@ h2,.sub{font-weight:750}
 details.risk p.risk-dose{padding-top:0;font-weight:600;color:var(--fg)}
 details.risk-safe summary small{white-space:normal}
 details.risk-safe{opacity:.85}
+/* Liste complète des ingrédients (cosmétiques) */
+details.ingr-all > summary{cursor:pointer;font-weight:800;font-size:1.2rem;list-style:none;display:flex;align-items:center;gap:8px}
+details.ingr-all > summary::-webkit-details-marker{display:none}
+details.ingr-all > summary small{color:var(--muted);font-weight:700;font-size:.9rem}
+details.ingr-all > summary::after{content:"+";margin-inline-start:auto;font-size:1.4rem;color:var(--muted);font-weight:500}
+details.ingr-all[open] > summary::after{content:"–"}
+details.ingr-all > .notes{margin-top:10px}
+.ing-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ing{display:flex;align-items:center;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line)}
+.ing:last-child{border-bottom:0}
+.ing-dot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--faint)}
+.ing.lv-ok .ing-dot{background:var(--h-excellent)}
+.ing.lv-limite .ing-dot{background:#D9B51F}
+.ing.lv-modere .ing-dot{background:#E08A1E}
+.ing.lv-eleve .ing-dot{background:var(--c-haram)}
+.ing.lv-unk .ing-dot{background:transparent;border:2px solid var(--faint)}
+.ing-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.ing-text strong{font-size:.95rem;overflow-wrap:anywhere}
+.ing-text small{color:var(--muted);font-size:.8rem;font-weight:600}
+details.ingr-raw{margin-top:12px}
+details.ingr-raw summary{font-size:1rem}

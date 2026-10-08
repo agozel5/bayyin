@@ -6,11 +6,12 @@
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
 
-const VERSION = "2026-10-08-14";
+const VERSION = "2026-10-08-16";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
 const MED_CACHE = "hs-med-v1"; // base des médicaments : gardée d'une version à l'autre
+const COSING_CACHE = "hs-cosing-v1"; // base des ingrédients cosmétiques (≈ 2 Mo) : idem
 const MAX_PRODUCTS = 4000;
 
 const APP_FILES = [
@@ -88,6 +89,18 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
+  // Base des ingrédients : réponse immédiate depuis le cache, mise à jour en arrière-plan
+  if (url.origin === self.location.origin && url.pathname.endsWith("/data/cosing.json")) {
+    event.respondWith(
+      caches.open(COSING_CACHE).then(async (cache) => {
+        const hit = await cache.match(req, { ignoreSearch: true });
+        const update = fetch(req).then((res) => { if (res.ok) cache.put(req, res.clone()); return res; }).catch(() => null);
+        if (hit) { event.waitUntil(update); return hit; }
+        return (await update) || new Response("{}", { status: 503, headers: { "Content-Type": "application/json" } });
+      })
+    );
+    return;
+  }
   if (url.origin === self.location.origin && url.pathname.includes("/data/med/")) {
     event.respondWith(networkFirst(req, MED_CACHE, { wait: 3000 }));
     return;
