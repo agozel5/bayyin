@@ -677,3 +677,26 @@ h2,.sub{font-weight:750}
 .empty .empty-art{width:120px;height:96px;stroke-width:initial;color:inherit}
 .btn,a.btn{text-decoration:none}
 .scan-cta-text small{font-size:.86rem;line-height:1.35}
+
+/* ---------- Nos sources : groupes repliables ---------- */
+.src-group{border-radius:var(--r-lg);background:var(--tint);overflow:hidden}
+.src-group summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 14px 14px 16px;cursor:pointer}
+.src-group summary::-webkit-details-marker{display:none}
+.src-ico{width:40px;height:40px;border-radius:12px;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none}
+.src-head{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.src-head strong{font-weight:700}
+.src-head small{color:var(--muted);font-size:.85rem;line-height:1.35}
+.src-head .src-preview{color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-count{flex:none;font-size:.78rem;font-weight:700;color:var(--brand-dark);background:var(--brand-soft);padding:3px 9px;border-radius:999px}
+.src-chev{color:var(--faint);display:flex;transition:transform .2s ease}
+.src-group[open] .src-chev{transform:rotate(90deg)}
+[dir="rtl"] .src-group:not([open]) .src-chev{transform:scaleX(-1)}
+.src-group[open] .src-preview{display:none}
+.src-group .source-list{background:#fff;margin:0 10px 10px;border-radius:var(--r-md)}
+.sources{gap:10px}
+.src-meta{display:flex;align-items:center;gap:8px;min-width:0;margin-top:4px}
+.src-meta .src-count{flex:none}
+.src-meta .src-preview{color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.src-group[open] .src-preview{display:inline}
+.src-kind{margin:4px 18px 6px;font-size:.82rem;font-weight:700;color:var(--muted)}
+.src-group .source-list{margin:0 10px 10px}

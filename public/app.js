@@ -1049,10 +1049,27 @@ function renderSettings() {
   $("demoLink").href = DEMO ? location.pathname + "#scan" : "?demo#scan";
   $("demoLinkT").textContent = t(DEMO ? "link.demo_exit.t" : "link.demo.t");
   $("demoLinkD").textContent = t(DEMO ? "link.demo_exit.d" : "link.demo.d");
+  // Sources regroupées : on touche un groupe pour voir les organismes et textes qu'il contient
+  const GROUP_ICON = { data: I.box, health: I.flask, halal: I.shield };
   $("sourceList").innerHTML = ["data", "health", "halal"]
-    .map((g) => `<p class="label">${t(`sources.g.${g}`)}</p><div class="source-list">${SOURCES.filter((src) => src.group === g)
-      .map((src) => `<a class="source" href="${esc(src.url)}" target="_blank" rel="noopener"><span><strong>${esc(src.name)}</strong><small>${t(`src.${src.id}`)}</small></span><span aria-hidden="true">↗</span></a>`)
-      .join("")}</div>`)
+    .map((g) => {
+      const list = SOURCES.filter((src) => src.group === g);
+      const preview = list.slice(0, 3).map((src) => src.name.split(" (")[0]).join(", ") + (list.length > 3 ? "…" : "");
+      return `<details class="src-group">
+        <summary>
+          <span class="src-ico">${svg(GROUP_ICON[g])}</span>
+          <span class="src-head"><strong>${t(`sources.g.${g}`)}</strong><small>${t(`sources.gd.${g}`)}</small>
+            <small class="src-meta"><span class="src-count">${tn("sources.count", list.length)}</span><span class="src-preview">${esc(preview)}</span></small></span>
+          <span class="src-chev" aria-hidden="true">${svg(I.chev)}</span>
+        </summary>
+        ${[...new Set(list.map((src) => src.kind))]
+          .map((k) => `<p class="src-kind">${t(`sources.k.${k}`)}</p><div class="source-list">${list
+            .filter((src) => src.kind === k)
+            .map((src) => `<a class="source" href="${esc(src.url)}" target="_blank" rel="noopener"><span><strong>${esc(src.name)}</strong><small>${t(`src.${src.id}`)}</small></span><span aria-hidden="true">↗</span></a>`)
+            .join("")}</div>`)
+          .join("")}
+      </details>`;
+    })
     .join("");
 }
 
