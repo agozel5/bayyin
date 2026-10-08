@@ -3,30 +3,24 @@
 import { writeFile } from "node:fs/promises";
 const UA = { "User-Agent": "Mozilla/5.0 (Bayyin probe)", Accept: "*/*" };
 let out = "";
-const get = async (u) => {
-  const res = await fetch(u, { headers: UA, signal: AbortSignal.timeout(60000) });
+const get = async (u, opt = {}) => {
+  const res = await fetch(u, { headers: { ...UA, ...(opt.headers || {}) }, method: opt.method || "GET", body: opt.body, signal: AbortSignal.timeout(90000) });
   return { res, text: await res.text() };
 };
 const base = "https://ec.europa.eu/growth/tools-databases/cosing/";
-const { text: html } = await get(base);
-const scripts = [...html.matchAll(/src="([^"]+\.js)"/g)].map((m) => new URL(m[1], base).href);
-out += "SCRIPTS:\n" + scripts.join("\n") + "\n";
-for (const s of scripts) {
+const seen = new Set();
+const queue = ["main-ZZ2GRLSL.js"];
+while (queue.length && seen.size < 60) {
+  const f = queue.shift();
+  if (seen.has(f)) continue;
+  seen.add(f);
   try {
-    const { text } = await get(s);
-    const hits = [...new Set(text.match(/https?:\/\/[a-z.]*europa\.eu[^"'`\s]*|[a-zA-Z0-9_\/.-]*export[a-zA-Z0-9_\/.-]*|apiKey[^,;]{0,80}|"\/api\/[^"]+"|`[^`]*api[^`]*`/g) || [])].slice(0, 200);
-    out += `\n===== ${s} (${text.length})\n` + hits.join("\n") + "\n";
-  } catch (e) { out += `\n===== ${s} ERREUR ${e.message}\n`; }
+    const { text } = await get(base + f);
+    for (const m of text.matchAll(/["'`(]\.?\/?(chunk-[A-Z0-9]+\.js)/g)) if (!seen.has(m[1])) queue.push(m[1]);
+    const hits = [...new Set(text.match(/.{0,160}(cosing20|search-api|apiKey|export-csv|ingredients\/|\/api\/).{0,220}/g) || [])].slice(0, 40);
+    if (hits.length) out += `\n===== ${f}\n` + hits.join("\n---\n") + "\n";
+  } catch (e) { out += `\n===== ${f} ERREUR ${e.message}\n`; }
 }
-// Essais directs
-for (const u of [
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/IV/export-csv",
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/V/export-csv",
-  "https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/VI/export-csv",
-  "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02008R1272-20250801",
-]) {
-  try { const { res, text } = await get(u); out += `\n===== ${u}\nHTTP ${res.status} ${text.length}\n${text.slice(0, 800).replace(/\s+/g, " ")}\n`; }
-  catch (e) { out += `\n===== ${u} ERREUR ${e.message}\n`; }
-}
+out = "FICHIERS: " + [...seen].join(", ") + "\n" + out;
 await writeFile(new URL("../docs/probe-report.txt", import.meta.url), out);
-console.log(out.slice(0, 5000));
+console.log(out.slice(0, 3000));
