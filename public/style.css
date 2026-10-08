@@ -805,3 +805,45 @@ h2,.sub{font-weight:750}
 .cmp-note{margin-top:10px}
 .cert-note{margin:0;font-size:.85rem;color:var(--muted)}
 .cert-note a{font-weight:700;white-space:nowrap}
+
+/* ---------- mode rayon (réalité augmentée) ---------- */
+.aisle{position:fixed;inset:0;z-index:62;background:#000;color:#fff;overflow:hidden}
+.aisle video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.aisle-layer{position:absolute;inset:0;pointer-events:none}
+.aisle-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 0;z-index:2}
+.aisle-badge{padding:7px 14px;border-radius:999px;background:rgb(0 0 0 / .5);font-weight:700;font-size:.9rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.aisle-bottom{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(transparent,rgb(0 0 0 / .55))}
+.aisle-hint{margin:0;text-align:center;font-weight:600;text-shadow:0 1px 6px rgb(0 0 0 / .6);max-width:32ch}
+.aisle-stats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.aisle-stats:empty{display:none}
+.as-total{padding:6px 12px;border-radius:999px;background:rgb(0 0 0 / .55);font-weight:700;font-size:.88rem}
+.as-chip{padding:6px 11px;border-radius:999px;font-weight:800;font-size:.88rem;background:#5F6B65}
+.as-chip.v-halal_certifie,.as-chip.v-halal_probable{background:#128A4E}
+.as-chip.v-mashbouh{background:#BF650A}
+.as-chip.v-haram{background:#C3362D}
+.as-alert{background:#fff;color:#C0312A}
+.aisle-mark{position:absolute;left:0;top:0;pointer-events:auto;border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff;
+  transition:transform .14s linear,opacity .3s ease;will-change:transform}
+.aisle-mark.gone{opacity:.25}
+.am-dot{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:900;border:3px solid #fff;box-shadow:0 6px 16px rgb(0 0 0 / .45);background:#5F6B65}
+.am-dot .spinner{width:20px;height:20px;border-width:3px}
+.aisle-mark.v-halal_certifie .am-dot,.aisle-mark.v-halal_probable .am-dot{background:#128A4E}
+.aisle-mark.v-mashbouh .am-dot{background:#BF650A}
+.aisle-mark.v-haram .am-dot{background:#C3362D}
+.aisle-mark.v-loading .am-dot{background:rgb(0 0 0 / .55)}
+.am-name{max-width:120px;padding:3px 8px;border-radius:8px;background:rgb(0 0 0 / .62);font-size:.72rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am-alert{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#fff;color:#C0312A;font-weight:900;font-size:.85rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgb(0 0 0 / .4)}
+.aisle-mark.has-alert .am-dot{box-shadow:0 0 0 4px #FFB3AC,0 6px 16px rgb(0 0 0 / .45)}
+@media (prefers-reduced-motion:no-preference){
+  .aisle-mark:not(.v-loading) .am-dot{animation:pop .28s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes pop{from{transform:scale(.4)}to{transform:none}}
+}
+.aisle[data-state="starting"] .aisle-busy{display:flex}
+.aisle[data-state="error"] .aisle-error{display:flex}
+/* promo sur l'accueil */
+.aisle-promo{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border:none;border-radius:var(--r-lg);background:#14251C;color:#fff;text-align:start;position:relative;overflow:hidden;isolation:isolate}
+.aisle-promo::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--khatam);background-size:44px 44px;opacity:.28}
+.aisle-promo-ico{width:44px;height:44px;border-radius:12px;background:var(--gold);color:#14251C;display:flex;align-items:center;justify-content:center;flex:none}
+.aisle-promo-text{flex:1;display:flex;flex-direction:column;gap:2px}
+.aisle-promo-text small{opacity:.8;font-size:.86rem}
+.aisle-promo > svg{opacity:.7}

@@ -617,4 +617,9 @@ export default {
   "cert.unverified": "Label read from the product record. Certifiers don't publish their product lists, so Bayyin can't confirm it: check the logo on the packaging.",
   "cert.verify": "Check with {org}",
   "cert.verify_any": "Find the certifier",
+  "aisle.title": "Aisle mode",
+  "aisle.promo": "Point at a shelf: every product shows up green, orange or red",
+  "aisle.hint": "Slowly move the phone along the shelf barcodes, 30–50 cm away.",
+  "aisle.seen_one": "1 product",
+  "aisle.seen_other": "{n} products",
 };

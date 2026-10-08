@@ -11,6 +11,7 @@ import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profil
 import { BEAUTY_RULES } from "./lib/beauty.js";
 import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
+import { createAisle } from "./lib/aisle.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -452,7 +453,7 @@ function refreshFav() {
   $("sheetFav").setAttribute("aria-pressed", String(on));
   $("sheetFav").setAttribute("aria-label", t(on ? "sheet.fav_remove" : "sheet.fav_add"));
 }
-const lockScroll = () => document.body.classList.toggle("no-scroll", !sheet.hidden || !cameraEl.hidden);
+const lockScroll = () => document.body.classList.toggle("no-scroll", !sheet.hidden || !cameraEl.hidden || !$("aisle").hidden);
 
 function showSheet({ replace = false, fromScan = false } = {}) {
   $("sheetFoot").hidden = !fromScan;
@@ -1318,6 +1319,7 @@ function showTab(name) {
 }
 
 window.addEventListener("hashchange", () => {
+  closeAisle({ fromPop: true });
   closeCamera({ fromPop: true });
   closeSheet({ fromPop: true });
   showTab(location.hash.slice(1));
@@ -1325,15 +1327,18 @@ window.addEventListener("hashchange", () => {
 window.addEventListener("popstate", (e) => {
   const st = e.state || {};
   if (!st.cam) closeCamera({ fromPop: true });
+  if (!st.aisle) closeAisle({ fromPop: true });
   if (!st.sheet) closeSheet({ fromPop: true });
 });
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (!cameraEl.hidden) closeCamera();
+  if (!$("aisle").hidden) closeAisle();
+  else if (!cameraEl.hidden) closeCamera();
   else closeSheet();
 });
 // Caméra rendue au système quand l'app passe en arrière-plan ; relancée au retour.
 document.addEventListener("visibilitychange", () => {
+  if (!$("aisle").hidden) return document.hidden ? aisle.stop() : aisle.start();
   if (cameraEl.hidden) return;
   if (document.hidden) camera.stop();
   else camera.start();
@@ -1362,6 +1367,146 @@ function toast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => (el.hidden = true), 2200);
 }
+
+// ===========================================================================
+// Mode rayon : pastilles en surimpression sur tous les codes-barres visibles
+// ===========================================================================
+const aisleEl = $("aisle");
+const aisleInfo = new Map(); // code -> { status, alert, name, loading }
+const aisleMarks = new Map(); // code -> { el, last }
+let aisleQueue = [];
+let aisleBusy = 0;
+const AISLE_ICON = { halal_certifie: "✓", halal_probable: "✓", mashbouh: "?", haram: "✕", inconnu: "–" };
+
+function aisleLookup(code) {
+  if (aisleInfo.has(code)) return;
+  aisleInfo.set(code, { loading: true });
+  aisleQueue.push(code);
+  aislePump();
+}
+// Trois recherches à la fois au plus, pour rester rapide sans surcharger Open Food Facts
+function aislePump() {
+  while (aisleBusy < 3 && aisleQueue.length) {
+    const code = aisleQueue.shift();
+    aisleBusy++;
+    fetchProduct(code)
+      .then((p) => {
+        aisleInfo.set(code, p ? { status: verdictOf(p).status, alert: profileOf(p).alert, name: nameOf(p) } : { status: "inconnu", missing: true });
+      })
+      .catch(() => aisleInfo.delete(code)) // nouvel essai au prochain passage devant la caméra
+      .finally(() => {
+        aisleBusy--;
+        renderAisleMark(code);
+        renderAisleStats();
+        aislePump();
+      });
+  }
+}
+
+function renderAisleMark(code) {
+  const m = aisleMarks.get(code);
+  if (!m) return;
+  const info = aisleInfo.get(code) || { loading: true };
+  const st = info.loading ? "loading" : info.status;
+  m.el.className = `aisle-mark v-${st}${info.alert ? " has-alert" : ""}`;
+  m.el.innerHTML = `<span class="am-dot">${info.loading ? '<span class="spinner light"></span>' : AISLE_ICON[st] || "–"}</span>${
+    info.name ? `<span class="am-name">${esc(info.name)}</span>` : ""}${info.alert ? '<span class="am-alert">!</span>' : ""}`;
+  m.el.setAttribute("aria-label", info.loading ? t("msg.loading") : `${info.name || code} : ${S(info.status, "label")}${info.alert ? ", " + t(`alert.${info.alert}`) : ""}`);
+}
+
+function renderAisleStats() {
+  const counts = {};
+  let alerts = 0;
+  for (const [, info] of aisleInfo) {
+    if (info.loading || info.missing) continue;
+    counts[info.status] = (counts[info.status] || 0) + 1;
+    if (info.alert) alerts++;
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  $("aisleHint").hidden = total > 0;
+  $("aisleStats").innerHTML = total
+    ? `<span class="as-total">${esc(tn("aisle.seen", total))}</span>` +
+      // Certifié et probable : une seule pastille verte
+      [["halal_probable", (counts.halal_certifie || 0) + (counts.halal_probable || 0)], ["mashbouh", counts.mashbouh], ["haram", counts.haram], ["inconnu", counts.inconnu]]
+        .filter(([, n]) => n)
+        .map(([x, n]) => `<span class="as-chip v-${x}" aria-label="${n} ${esc(S(x, "short"))}">${AISLE_ICON[x]} ${n}</span>`)
+        .join("") +
+      (alerts ? `<span class="as-chip as-alert">! ${alerts}</span>` : "")
+    : "";
+}
+
+const aisle = createAisle({
+  video: $("aisleVideo"),
+  onState(state, detail) {
+    aisleEl.dataset.state = state;
+    if (state === "error") {
+      const kind = ["https", "unsupported", "denied", "nocamera", "decoder"].includes(detail.kind) ? detail.kind : "camera";
+      $("aisleErrTitle").textContent = t(`cam.err.${kind}.t`);
+      $("aisleErrText").textContent = t(`cam.err.${kind}.p`);
+    }
+  },
+  onFrame(found) {
+    const now = Date.now();
+    for (const { code, rect } of found) {
+      let m = aisleMarks.get(code);
+      if (!m) {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.dataset.aisleOpen = code;
+        $("aisleLayer").appendChild(el);
+        m = { el };
+        aisleMarks.set(code, m);
+        aisleLookup(code);
+        renderAisleMark(code);
+        if (navigator.vibrate) navigator.vibrate(12);
+      }
+      m.last = now;
+      // Pastille posée au-dessus du code-barres
+      m.el.style.transform = `translate(${Math.round(rect.x + rect.w / 2)}px, ${Math.round(rect.y)}px) translate(-50%, -100%)`;
+      m.el.classList.remove("gone");
+    }
+    // Un code qui n'est plus vu s'efface après un court délai (évite le clignotement)
+    for (const [code, m] of aisleMarks) {
+      if (now - m.last > 900) m.el.classList.add("gone");
+      if (now - m.last > 2500) {
+        m.el.remove();
+        aisleMarks.delete(code);
+      }
+    }
+  },
+});
+
+function openAisle({ replace = false } = {}) {
+  if (!cameraEl.hidden) closeCamera({ keepHistory: true });
+  aisleEl.hidden = false;
+  $("aisleLayer").innerHTML = "";
+  aisleMarks.clear();
+  aisleInfo.clear();
+  aisleQueue = [];
+  renderAisleStats();
+  if (replace) history.replaceState({ aisle: true }, "");
+  else history.pushState({ aisle: true }, "");
+  lockScroll();
+  aisle.start();
+}
+function closeAisle({ fromPop = false } = {}) {
+  if (aisleEl.hidden) return;
+  aisle.stop();
+  aisleEl.hidden = true;
+  lockScroll();
+  if (!fromPop && history.state && history.state.aisle) history.back();
+}
+$("openAisle").addEventListener("click", () => openAisle());
+$("camAisle").addEventListener("click", () => openAisle({ replace: true }));
+$("aisleClose").addEventListener("click", () => closeAisle());
+$("aisleLayer").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-aisle-open]");
+  if (!b) return;
+  const code = b.dataset.aisleOpen;
+  aisle.stop();
+  aisleEl.hidden = true;
+  openSheet(code, { fromScan: true, replace: true });
+});
 
 // ===========================================================================
 // Mode courses : scan en rafale, panier et bilan

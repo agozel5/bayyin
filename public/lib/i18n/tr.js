@@ -617,4 +617,9 @@ export default {
   "cert.unverified": "Etiket ürün kaydından okundu. Kurumlar ürün listelerini yayımlamaz, bu yüzden Bayyin doğrulayamaz: ambalajdaki logoyu kontrol edin.",
   "cert.verify": "{org} ile doğrula",
   "cert.verify_any": "Sertifika kurumunu bul",
+  "aisle.title": "Raf modu",
+  "aisle.promo": "Rafa doğrultun: her ürün yeşil, turuncu veya kırmızı görünür",
+  "aisle.hint": "Telefonu raftaki barkodların önünde 30-50 cm mesafeden yavaşça gezdirin.",
+  "aisle.seen_one": "1 ürün",
+  "aisle.seen_other": "{n} ürün",
 };

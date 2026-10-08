@@ -631,4 +631,9 @@ export default {
   "cert.unverified": "Label lu sur la fiche du produit. Les organismes ne publient pas la liste de leurs produits : Bayyin ne peut pas le confirmer, vérifiez le logo sur l'emballage.",
   "cert.verify": "Vérifier auprès de {org}",
   "cert.verify_any": "Rechercher l'organisme",
+  "aisle.title": "Mode rayon",
+  "aisle.promo": "Pointez un rayon : chaque produit s'affiche en vert, orange ou rouge",
+  "aisle.hint": "Passez lentement le téléphone devant les codes-barres du rayon, à 30-50 cm.",
+  "aisle.seen_one": "1 produit",
+  "aisle.seen_other": "{n} produits",
 };
