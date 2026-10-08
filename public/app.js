@@ -4,6 +4,7 @@ import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS } from "./lib/settings.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
+import { COSMETIC_PENALTY, COSMETIC_CAP } from "./lib/cosmetic.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
 import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
@@ -117,15 +118,17 @@ function productTop(p) {
 function verdictHero(p, v) {
   const s = scoreOf(p);
   const kind = kindOf(p);
-  const foot = kind !== "food"
+  // Aliments : note santé ; cosmétiques : note des ingrédients ; médicaments : forme pharmaceutique
+  const scoreLabel = t(kind === "beauty" ? "detail.cosmetic" : "detail.health");
+  const foot = kind === "medicine"
     ? `<span class="kind-ico">${svg(KIND_ICON[kind])}</span>
-       <span class="v-foot-text"><span>${t(`kind.${kind}`)}</span><strong>${esc(kind === "medicine" ? p.form || t("kind.medicine") : t("detail.beauty_note"))}</strong></span>`
+       <span class="v-foot-text"><span>${t(`kind.${kind}`)}</span><strong>${esc(p.form || t("kind.medicine"))}</strong></span>`
     : s
       ? `<span class="ring" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
-         <span class="v-foot-text"><span>${t("detail.health")}</span><strong>${t(`grade.${s.grade}`)}</strong></span>
+         <span class="v-foot-text"><span>${scoreLabel}</span><strong>${t(`grade.${s.grade}`)}</strong></span>
          <span class="grade-dot g-${s.grade}" aria-hidden="true"></span>`
       : `<span class="ring" style="--p:0"><span>?</span></span>
-         <span class="v-foot-text"><span>${t("detail.health")}</span><strong>${t("detail.not_rated")}</strong></span>`;
+         <span class="v-foot-text"><span>${scoreLabel}</span><strong>${t(kind === "beauty" ? "detail.cosmetic_none_short" : "detail.not_rated")}</strong></span>`;
   return `<div class="verdict v-${v.status}" role="status">
     <div class="v-main">
       <span class="v-ico">${svg(STATUS_ICON[v.status])}</span>
@@ -266,6 +269,26 @@ function healthSection(p) {
   </section>`;
 }
 
+// Cosmétiques : la note vient des ingrédients controversés, chacun expliqué avec ses sources
+function cosmeticSection(p) {
+  const h = p.health;
+  if (!h || !h.cosmetic) return "";
+  const s = h.score;
+  if (!s) return `<section class="sec"><div class="sec-head"><h3>${t("detail.cosmetic")}</h3></div><p class="notes">${t("detail.cosmetic_none")}</p></section>`;
+  const risks = h.risks || [];
+  const lead = risks.length
+    ? t("detail.cosmetic_lead", { n: s.score, k: h.analyzed, e: s.parts.eleve, m: s.parts.modere, l: s.parts.limite })
+    : t("detail.cosmetic_clean", { n: s.score, k: h.analyzed });
+  const rows = risks
+    .map((r) => `<details class="risk"><summary><span class="risk-name"><span dir="ltr">${esc(r.name)}</span>${r.name.toLowerCase() === t(`cosm.${r.key}.t`).toLowerCase() ? "" : `<small>${esc(t(`cosm.${r.key}.t`))}</small>`}</span><span class="pill r-${r.level}">${t(`risk.${r.level}`)}</span></summary><p>${esc(t(`cosm.${r.key}.p`))}</p><p class="risk-src">${sourceLine(r.sources)}</p></details>`)
+    .join("");
+  return `<section class="sec"><div class="sec-head"><h3>${t("detail.cosmetic")}</h3><small>${t("detail.cosmetic_sub")}</small></div>
+    <p class="lead">${esc(lead)}</p>
+    ${risks.length ? `<p class="sub-label">${t("detail.cosmetic_watch")}</p><div class="risks">${rows}</div>` : `<div class="nut lv-bon"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.cosmetic_ok_t")}</strong><small>${t("detail.cosmetic_ok_p")}</small></span><span class="nut-val"><span class="dot"></span></span></div>`}
+    <p class="notes">${t("detail.cosmetic_method", { e: COSMETIC_PENALTY.eleve, m: COSMETIC_PENALTY.modere, l: COSMETIC_PENALTY.limite, ce: COSMETIC_CAP.eleve, cm: COSMETIC_CAP.modere })}</p>
+  </section>`;
+}
+
 function additivesSection(p) {
   const h = p.health;
   if (!h || !h.additives.length) return "";
@@ -310,7 +333,7 @@ function reportLink(p, v) {
 
 function extraSection(p) {
   const h = p.health;
-  if (!h || p.local) return "";
+  if (!h || p.local || h.cosmetic) return "";
   const tags = h.allergenTags || [];
   const allergens = tags.length
     ? `<div class="tags">${tags.map((a) => `<span class="tag">${esc(t(`allergen.${a}`))}</span>`).join("")}</div>`
@@ -343,7 +366,7 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
       : `<section class="sec"></section>`;
   const food = kind === "food";
-  return `${productTop(p)}${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+  return `${productTop(p)}${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
 function altCard(a, { fav = false } = {}) {
@@ -538,13 +561,13 @@ $("sheetShare").addEventListener("click", async () => {
   if (!p) return;
   const v = verdictOf(p);
   const s = scoreOf(p);
-  const text = t("sheet.share_text", { name: nameOf(p), status: S(v.status, "label"), health: s ? t("sheet.share_health", { n: s.score }) : "" });
+  const text = t("sheet.share_text", { name: nameOf(p), status: S(v.status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
   const url = location.origin + location.pathname;
   try {
     const blob = await drawShareCard({
       name: nameOf(p), brand: p.brand, image: p.image, status: v.status, statusLabel: S(v.status, "label"),
       kicker: t("detail.halal"), lead: S(v.status, "lead"), score: s ? s.score : null, grade: s && s.grade,
-      gradeLabel: s ? t(`grade.${s.grade}`) : "", healthLabel: t("detail.health"), footer: t("share.footer"), rtl: getLang() === "ar",
+      gradeLabel: s ? t(`grade.${s.grade}`) : "", healthLabel: t(kindOf(p) === "beauty" ? "detail.cosmetic" : "detail.health"), footer: t("share.footer"), rtl: getLang() === "ar",
     });
     const file = new File([blob], `bayyin-${p.code}.png`, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1658,22 +1681,23 @@ function showCompare(code) {
   const sa = scoreOf(a), sb = scoreOf(b);
   const nut = (p, id) => {
     const h = p.health;
-    const n = h && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
+    const n = h && h.nutrition && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
     return n ? `<span class="lv-${n.level} cmp-nut">${fmt(n.value)} ${esc(n.unit)}<i class="dot"></i></span>` : "—";
   };
   const better = (x, y, lowIsBetter) => (x === null || y === null || x === y ? ["", ""] : (lowIsBetter ? x < y : x > y) ? ["win", ""] : ["", "win"]);
   const val = (p, id) => {
     const h = p.health;
-    const n = h && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
+    const n = h && h.nutrition && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
     return n ? n.value : null;
   };
+  // Additifs à risque (aliments) ou ingrédients controversés (cosmétiques)
+  const watchCount = (p) => ((p.health && (p.health.additives || p.health.risks)) || []).length;
   const rank = { halal_certifie: 4, halal_probable: 3, inconnu: 2, mashbouh: 1, haram: 0 };
   const rows = [
     [t("detail.halal"), `<span class="pill s-${va.status}"><span class="dot"></span>${S(va.status, "short")}</span>`, `<span class="pill s-${vb.status}"><span class="dot"></span>${S(vb.status, "short")}</span>`, better(rank[va.status], rank[vb.status])],
-    [t("detail.health"), sa ? `${sa.score}/100` : "—", sb ? `${sb.score}/100` : "—", better(sa && sa.score, sb && sb.score)],
+    [t(kindOf(a) === "beauty" ? "detail.cosmetic" : "detail.health"), sa ? `${sa.score}/100` : "—", sb ? `${sb.score}/100` : "—", better(sa && sa.score, sb && sb.score)],
     ...["sugars", "saturated-fat", "salt", "energy", "fiber", "proteins"].map((id) => [t(`nut.${id}`), nut(a, id), nut(b, id), better(val(a, id), val(b, id), !["fiber", "proteins"].includes(id))]),
-    [t("detail.watch"), String(((a.health && a.health.additives) || []).length), String(((b.health && b.health.additives) || []).length),
-      better(((a.health && a.health.additives) || []).length, ((b.health && b.health.additives) || []).length, true)],
+    [t(kindOf(a) === "beauty" ? "detail.cosmetic_watch" : "detail.watch"), String(watchCount(a)), String(watchCount(b)), better(watchCount(a), watchCount(b), true)],
     [t("detail.nova"), a.health && a.health.nova ? String(a.health.nova.group) : "—", b.health && b.health.nova ? String(b.health.nova.group) : "—",
       better(a.health && a.health.nova && a.health.nova.group, b.health && b.health.nova && b.health.nova.group, true)],
   ];

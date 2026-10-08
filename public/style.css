@@ -847,3 +847,5 @@ h2,.sub{font-weight:750}
 .aisle-promo-text{flex:1;display:flex;flex-direction:column;gap:2px}
 .aisle-promo-text small{opacity:.8;font-size:.86rem}
 .aisle-promo > svg{opacity:.7}
+.risk-name{min-width:0;overflow-wrap:anywhere}
+.se-pts.r-eleve,.se-pts.r-modere,.se-pts.r-limite{background:var(--cbg);color:var(--c)}

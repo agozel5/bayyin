@@ -6,6 +6,7 @@
 
 import { classify, ingredientsText, DEFAULT_PREFS } from "./rules.js";
 import { analyzeHealth } from "./health.js";
+import { analyzeCosmetic } from "./cosmetic.js";
 import { classifyBeauty } from "./beauty.js";
 import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
@@ -18,6 +19,7 @@ export const FIELDS = [
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
   "image_front_small_url", "image_front_url",
   "nutriscore_grade", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
+  "compared_to_category",
 ].join(",");
 
 export const productUrl = (code) => `${OFF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
@@ -59,9 +61,10 @@ export function present(p, prefs = DEFAULT_PREFS) {
     image: p.image_front_small_url || p.image_front_url || null,
     ingredients: ingredientsText(p),
     categories: p.categories_tags || [],
+    compared: p.compared_to_category || null, // catégorie de référence d'Open Food Facts (la plus précise)
     offUrl: kind === "beauty" ? `https://world.openbeautyfacts.org/product/${p.code}` : `https://world.openfoodfacts.org/product/${p.code}`,
     verdict: classifyAny(p, prefs),
-    health: kind === "beauty" ? null : analyzeHealth(p),
+    health: kind === "beauty" ? analyzeCosmetic(p) : analyzeHealth(p),
     raw,
     local: !!p.local, // ingrédients saisis ou photographiés par l'utilisateur
   };
@@ -74,11 +77,54 @@ export function reclassify(p, prefs) {
 
 const isHalal = (p) => p.verdict.status === "halal_certifie" || p.verdict.status === "halal_probable";
 
-// Choisit les meilleures alternatives : halal, mieux (ou aussi bien) notées pour la santé.
-export function pickAlternatives(product, candidates, limit = 6) {
+// ---------------------------------------------------------------------------
+// Produits semblables
+// Les catégories d'Open Food Facts vont de la plus générale à la plus précise
+// (« Snacks › Biscuits › Biscuits au chocolat »). Une alternative doit être du même type :
+// on cherche d'abord dans la catégorie la plus précise, puis dans la catégorie juste au-dessus,
+// en gardant seulement les produits qui partagent l'essentiel des catégories.
+// ---------------------------------------------------------------------------
+const GENERIC_CATS = /^[a-z]{2}:(foods?|plant-based-foods(-and-beverages)?|beverages(-and-beverages-preparations)?|snacks|groceries|dairies|meats?(-and-their-products)?|fermented-foods|fermented-milk-products|frozen-foods|non-food-products|open-beauty-facts|cosmetics?|hygiene|body|face|hair|beauty)$/;
+
+export function categoryPath(product) {
+  const all = (product.categories || product.categories_tags || []).filter(Boolean);
+  const en = all.filter((c) => c.startsWith("en:"));
+  const cats = en.length ? en : all;
+  // La catégorie de référence d'Open Food Facts est la plus précise ; à défaut, la dernière de la liste.
+  const ref = product.compared && cats.includes(product.compared) ? product.compared : cats[cats.length - 1] || null;
+  const specific = cats.filter((c) => !GENERIC_CATS.test(c));
+  const idx = ref ? specific.indexOf(ref) : -1;
+  // Catégorie parente : seulement si elle reste précise (pas « Snacks » ou « Hygiène »)
+  const parent = idx > 0 ? specific[idx - 1] : specific.length > 1 && specific[specific.length - 1] === ref ? specific[specific.length - 2] : null;
+  return { cats, ref, parent: parent && parent !== ref ? parent : null };
+}
+
+const NAME_STOP = new Set(["avec", "sans", "pour", "the", "and", "with", "from", "aux", "des", "les", "une", "100", "bio", "organic"]);
+const nameWords = (p) => {
+  const brand = new Set(String(p.brand || "").toLowerCase().split(/[^\p{L}\p{N}]+/u));
+  return new Set(String(p.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4 && !NAME_STOP.has(w) && !brand.has(w)));
+};
+
+/** Ressemblance entre deux produits (0 à 1) : catégories en commun, et un mot du nom en commun. */
+export function similarity(a, b) {
+  const A = new Set(categoryPath(a).cats.filter((c) => !GENERIC_CATS.test(c)));
+  const B = new Set(categoryPath(b).cats.filter((c) => !GENERIC_CATS.test(c)));
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  for (const c of A) if (B.has(c)) inter++;
+  const jaccard = inter / (A.size + B.size - inter);
+  const wa = nameWords(a), wb = nameWords(b);
+  const word = [...wa].some((w) => wb.has(w));
+  return Math.min(1, jaccard + (word ? 0.2 : 0));
+}
+
+// Choisit les meilleures alternatives : du même type, halal, mieux (ou aussi bien) notées.
+// minSim : ressemblance minimale exigée (plus élevée quand on élargit à la catégorie parente).
+export function pickAlternatives(product, candidates, limit = 6, { minSim = 0, need = null } = {}) {
   const base = product.health?.score?.score ?? -1;
   const seen = new Set([product.code]);
-  const names = new Set();
+  const names = new Set([(product.name + product.brand).toLowerCase()]);
   return candidates
     .filter((c) => {
       if (seen.has(c.code)) return false;
@@ -86,14 +132,31 @@ export function pickAlternatives(product, candidates, limit = 6) {
       const key = (c.name + c.brand).toLowerCase();
       if (names.has(key)) return false;
       names.add(key);
+      if ((c.kind || "food") !== (product.kind || "food")) return false; // un aliment pour un aliment
+      if (need && !(c.categories || []).includes(need)) return false;
+      c.similarity = similarity(product, c);
+      if (c.similarity < minSim) return false;
       const s = c.health?.score?.score;
       return isHalal(c) && s !== undefined && s !== null && s >= Math.max(base, 0) && (s > base || !isHalal(product));
     })
     .sort((a, b) =>
       b.health.score.score - a.health.score.score ||
+      b.similarity - a.similarity ||
       (b.verdict.status === "halal_certifie") - (a.verdict.status === "halal_certifie")
     )
     .slice(0, limit);
+}
+
+// Deux passes : catégorie la plus précise, puis (si trop peu de résultats) la catégorie parente,
+// avec une ressemblance exigée plus forte. Les produits de la première passe restent en tête.
+export async function similarAlternatives(product, fetchCategory, limit = 6) {
+  const { ref, parent } = categoryPath(product);
+  if (!ref) return [];
+  const first = pickAlternatives(product, await fetchCategory(ref), limit, { minSim: 0.25, need: ref });
+  if (first.length >= 3 || !parent) return first;
+  const more = pickAlternatives(product, await fetchCategory(parent), limit, { minSim: 0.5, need: parent })
+    .filter((c) => !first.some((f) => f.code === c.code));
+  return [...first, ...more].slice(0, limit);
 }
 
 // code : "network" (pas de réponse) ou "server" (erreur HTTP) ; message traduit par l'interface.
@@ -125,20 +188,13 @@ const rawCache = new Map(); // fiches brutes : le verdict est recalculé selon l
 
 export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBase = MED_DATA_BASE } = {}) {
   const show = (raw) => present(raw, prefs());
-  // Cosmétiques : pas de note santé ; on propose des produits certifiés ou sans ingrédient problématique
-  async function beautyAlternatives(product) {
-    if (demo) return [];
-    const cats = (product.categories || []).filter((c) => c.startsWith("en:"));
-    const found = [];
-    for (const cat of cats.slice(-2).reverse()) {
-      const data = await getJson(`${OBF_BASE}/api/v2/search?categories_tags=${encodeURIComponent(cat)}&countries_tags=en:france&sort_by=unique_scans_n&page_size=40&fields=${FIELDS}`);
-      for (const p of ((data && data.products) || []).filter((x) => x.code && x.code !== product.code)) {
-        const shown = show({ ...p, kind: "beauty" });
-        if (["halal_certifie", "halal_probable"].includes(shown.verdict.status) && !found.some((f) => f.code === shown.code || f.name === shown.name)) found.push(shown);
-      }
-      if (found.length >= 4) break;
-    }
-    return found.sort((a, b) => (b.verdict.status === "halal_certifie") - (a.verdict.status === "halal_certifie")).slice(0, 6);
+  // Recherche des produits d'une catégorie (aliments : Open Food Facts ; cosmétiques : Open Beauty Facts)
+  async function categoryProducts(cat, kind) {
+    const beauty = kind === "beauty";
+    const url = `${beauty ? OBF_BASE : OFF_BASE}/api/v2/search?categories_tags=${encodeURIComponent(cat)}&countries_tags=en:france` +
+      `${beauty ? "" : "&nutrition_grades_tags=a|b|c|d"}&sort_by=unique_scans_n&page_size=${beauty ? 60 : 80}&fields=${FIELDS}`;
+    const data = await getJson(url);
+    return ((data && data.products) || []).filter((p) => p.code).map((p) => show(beauty ? { ...p, kind: "beauty" } : p));
   }
   const medShards = new Map();
   // Médicament : un seul petit fichier de la base publique est téléchargé (≈ 1/100)
@@ -201,28 +257,14 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         });
     },
 
-    // -> alternatives halal mieux notées, dans la même catégorie (vendues en France)
+    // -> alternatives du même type de produit, halal et mieux notées (vendues en France)
     async alternatives(product) {
-      if (product.kind === "beauty") return beautyAlternatives(product);
-      const cats = (product.categories || []).filter((c) => c.startsWith("en:"));
+      const kind = product.kind === "beauty" ? "beauty" : "food";
       if (demo) {
-        const pool = Object.values(FIXTURES)
-          .filter((f) => (f.categories_tags || []).some((c) => cats.slice(-2).includes(c)))
-          .map(show);
-        return pickAlternatives(product, pool);
+        const pool = Object.values(FIXTURES).map(show).filter((f) => (f.kind || "food") === kind);
+        return similarAlternatives(product, async (cat) => pool.filter((f) => f.categories.includes(cat)));
       }
-      // Les catégories vont de la plus générale à la plus précise : on part de la plus précise.
-      const tried = [];
-      let found = [];
-      for (const cat of cats.slice(-3).reverse()) {
-        const url = `${OFF_BASE}/api/v2/search?categories_tags=${encodeURIComponent(cat)}` +
-          `&countries_tags=en:france&nutrition_grades_tags=a|b|c|d&sort_by=unique_scans_n&page_size=50&fields=${FIELDS}`;
-        const data = await getJson(url);
-        tried.push(...((data && data.products) || []).filter((p) => p.code).map(show));
-        found = pickAlternatives(product, tried);
-        if (found.length >= 4) break;
-      }
-      return found;
+      return similarAlternatives(product, (cat) => categoryProducts(cat, kind));
     },
 
     // Télécharge les produits les plus scannés en France pour les consulter hors connexion.

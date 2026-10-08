@@ -70,7 +70,8 @@ test("médicament : gélule douteuse, comprimé non déterminé, sirop en inform
 test("present garde le type cosmétique et recalcule avec classifyAny", () => {
   const p = present(beauty("Aqua, Hydrolyzed Collagen"));
   assert.equal(p.kind, "beauty");
-  assert.equal(p.health, null);
+  assert.equal(p.health.cosmetic, true); // note des ingrédients, pas de note nutritionnelle
+  assert.equal(p.health.score.score, 100);
   assert.equal(classifyAny(p.raw).status, "mashbouh");
 });
 

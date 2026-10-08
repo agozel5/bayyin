@@ -316,7 +316,7 @@ function AdditivesRow({ count }) {
 
 function HealthSection({ p }) {
   const h = p.health;
-  if (!h) return null;
+  if (!h || h.cosmetic) return null; // cosmétiques : note des ingrédients (portage à venir)
   const s = h.score;
   const risky = h.additives.length;
   const neg = h.nutrition.negatives;
@@ -454,7 +454,7 @@ function AllAdditivesSection({ p, v }) {
 
 function ExtraSections({ p }) {
   const h = p.health;
-  if (!h || p.local) return null;
+  if (!h || p.local || h.cosmetic) return null;
   const tags = h.allergenTags || [];
   const labels = tags.length ? tags.map((a) => t(`allergen.${a}`)) : h.allergens || [];
   return (

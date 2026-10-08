@@ -18,6 +18,12 @@ export const SOURCES = [
   { id: "fsa", group: "health", kind: "agency", name: "Food Standards Agency", url: "https://www.food.gov.uk" },
   { id: "nova", group: "health", kind: "study", name: "NOVA", url: "https://world.openfoodfacts.org/nova" },
   { id: "nutrinet", group: "health", kind: "study", name: "NutriNet-Santé", url: "https://etude-nutrinet-sante.fr" },
+  // Cosmétiques
+  { id: "sccs", group: "health", kind: "agency", name: "CSSC / SCCS (Commission européenne)", url: "https://health.ec.europa.eu/scientific-committees/scientific-committee-consumer-safety-sccs_en" },
+  { id: "echa", group: "health", kind: "agency", name: "ECHA", url: "https://echa.europa.eu/fr/candidate-list-table" },
+  { id: "ansm", group: "health", kind: "agency", name: "ANSM", url: "https://ansm.sante.fr" },
+  { id: "eu_cosmetics", group: "health", kind: "law", name: "Règlement (CE) 1223/2009", url: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:02009R1223-20250501" },
+  { id: "cir", group: "health", kind: "study", name: "Cosmetic Ingredient Review", url: "https://www.cir-safety.org" },
   // Halal
   { id: "quran", group: "halal", kind: "text", name: "Coran 2:173, 5:3, 5:90", url: "https://quran.com/5/3" },
   { id: "iifa", group: "halal", kind: "fatwa", name: "Académie internationale de fiqh (OCI)", url: "https://iifa-aifi.org/en/33099.html" },
