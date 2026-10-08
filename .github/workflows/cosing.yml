@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,8 +35,12 @@ jobs:
       - name: Enregistrer la base et le journal
         if: always()
         run: |
-          git add docs/cosing-build.log public/data/cosing.json 2>/dev/null || git add docs/cosing-build.log
+          git status --short
+          git add -A docs public/data
           if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
           git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Base CosIng mise à jour"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
