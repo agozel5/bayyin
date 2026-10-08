@@ -17,7 +17,7 @@ import { FIELDS, present } from "../public/lib/off.js";
 const ROOT = fileURLToPath(new URL("../public/", import.meta.url));
 const OFF_BASE = process.env.OFF_BASE || "https://world.openfoodfacts.org";
 // Open Food Facts demande un User-Agent identifiant l'application.
-const USER_AGENT = process.env.OFF_USER_AGENT || "Bayyin/0.1 (https://github.com/agozel5/halal-scan)";
+const USER_AGENT = process.env.OFF_USER_AGENT || "Bayyin/0.1 (https://github.com/agozel5/bayyin)";
 
 const CACHE_TTL_MS = 24 * 3600 * 1000;
 const CACHE_MAX = 2000;

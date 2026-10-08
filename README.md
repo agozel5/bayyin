@@ -34,7 +34,7 @@ aucun serveur n'est nécessaire en production.
 
 ## Mettre l'app en ligne (GitHub Pages, gratuit, HTTPS)
 
-Adresse : **https://agozel5.github.io/halal-scan/**
+Adresse : **https://agozel5.github.io/bayyin/**
 
 La caméra du téléphone n'est autorisée qu'en HTTPS, d'où l'hébergement sur
 GitHub Pages. Le workflow `.github/workflows/pages.yml` lance les tests puis

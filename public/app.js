@@ -218,7 +218,7 @@ function reportLink(p, v) {
   if (!/^\d+$/.test(p.code)) return "";
   const st = prefs();
   const vars = { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" };
-  const url = "https://github.com/agozel5/halal-scan/issues/new?title=" + encodeURIComponent(t("report.title", vars)) + "&body=" + encodeURIComponent(t("report.body", vars));
+  const url = "https://github.com/agozel5/bayyin/issues/new?title=" + encodeURIComponent(t("report.title", vars)) + "&body=" + encodeURIComponent(t("report.body", vars));
   return `<a class="off-link muted-link" href="${esc(url)}" target="_blank" rel="noopener">${t("detail.report")}</a>`;
 }
 
