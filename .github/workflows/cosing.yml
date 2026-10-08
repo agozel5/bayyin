@@ -31,7 +31,7 @@ jobs:
       - name: Télécharger et convertir CosIng
         run: |
           set -o pipefail
-          node scripts/build-cosing.mjs 2>&1 | tee docs/cosing-build.log
+          node scripts/build-cosing.mjs 2>&1 | tee docs/cosing-build.txt
       - name: Enregistrer la base et le journal
         if: always()
         run: |
