@@ -128,10 +128,33 @@ async function collectPrefix(p) {
 const TOTAL = await countOf([BASE_Q]);
 console.log("inventaire annoncé :", TOTAL);
 for (const d of "0123456789") await collectPrefix(d);
-// Identifiants non numériques éventuels
-const rest = [BASE_Q, { range: { substanceId: { gte: ":" } } }];
-const nr = await countOf(rest);
-if (nr && nr <= 9500) await pageAll(rest, nr, "autres identifiants");
+// Ingrédients sans identifiant numérique : requête à part, découpée par fonction si besoin
+async function countQ(q) { return (await searchPage(q, 1, 1)).totalResults || 0; }
+async function pageQ(q, n, label) {
+  let got = 0;
+  for (let page = 1; (page - 1) * 200 < n; page++) {
+    const j = await searchPage(q, page);
+    for (const r of j.results || []) { const m = r.metadata || {}; items.set((m.substanceId || [])[0] || r.reference, m); got++; }
+    await sleep(100);
+  }
+  console.log(`${label} : ${got} / ${n}`);
+}
+const NOID = { bool: { must: [BASE_Q], must_not: [{ range: { substanceId: { gte: "0", lt: ":" } } }] } };
+const nNoId = await countQ(NOID);
+console.log("sans identifiant numérique :", nNoId);
+if (nNoId && nNoId <= 9500) await pageQ(NOID, nNoId, "sans identifiant");
+else if (nNoId) {
+  const fns = new Set();
+  for (const m of items.values()) for (const f of m.functionName || []) fns.add(f);
+  for (const f of fns) {
+    const q = { bool: { must: [BASE_Q, { term: { functionName: f } }], must_not: NOID.bool.must_not } };
+    const n = await countQ(q);
+    if (n) await pageQ(q, Math.min(n, 10000), `sans identifiant, ${f}`);
+  }
+  const q = { bool: { must: [BASE_Q], must_not: [...NOID.bool.must_not, { exists: { field: "functionName" } }] } };
+  const n = await countQ(q);
+  if (n) await pageQ(q, Math.min(n, 10000), "sans identifiant ni fonction");
+}
 console.log("ingrédients récupérés :", items.size);
 if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
 
