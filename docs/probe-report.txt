@@ -1,0 +1,104 @@
+
+===== https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/II/export-csv
+HTTP 200 text/plain; charset=UTF-8 650518 octets
+DÉBUT :
+"File creation date: 08/10/2026" "ANNEX II","Last update: 06/10/2026" "LIST OF SUBSTANCES PROHIBITED IN COSMETIC PRODUCTS" "Substance identification" "Reference Number","Chemical name / INN","CAS Number","EC Number",Regulation,"Other Directives/Regulations","SCCS opinions","Chemical/IUPAC Name","Identified INGREDIENTS or substances e.g.",CMR,"Update Date" 1,N-(5-Chlorobenzoxazol-2-yl)acetamide,35783-57-4,-,"(EC) 2009/1223",,,,,,17/10/2010 2,"(2-Acetoxyethyl)trimethylammonium hydroxide (Acetylcholine) and its salts",51-84-3,200-128-9,"(EC) 2009/1223",,,,,,17/10/2010 3,"Deanol aceglumate (INN)",3342-61-8,222-085-5,"(EC) 2009/1223",,,,,,15/10/2010 4,"Spironolactone (INN)",52-01-7,200-133-6,"(EC) 2009/1223",,,,SPIRONOLACTONE,,15/10/2010 5,"[4-(4-Hydroxy-3-iodophenoxy)-3,5-diiodophenyl]acetic acid (Tiratricol (INN)) and its salts",51-24-1,200-086-1,"(EC) 2009/1223",,,"Triiodothyroacetic acid; (4-(4-Hydroxy-3-iodophenoxy)-3,5-diiodophenyl)acetic acid ",,,17/10/2010 6,"Methotrexate (INN)",59-05-2,200-413-8,"(EC) 2009/1223",,,,,,15/10/2010 7,"Aminocaproic acid (INN) and its salts",60-32-2,200-469-3,"(EC) 2009/1223",,,,"6-AMINOCAPROIC ACID",,17/10/2010 8,"Cinchophen (INN), its salts, derivatives and salts of these derivatives","132-60-5 / 5949-18-8","205-067-1 / 227-710-5","(EC) 2009/1223",,,,,,17/10/2010 9,"Thyropropic acid (INN) and its salts",51-26-3,-,"(EC) 2009/1223",,,"4-(4-Hydroxy-3-iodophenoxy)-3,5-diiodobenzenepropanoic acid ",,,17/10/2010 10,"Trichloroacetic acid",76-03-9,
+
+===== https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/III/export-csv
+HTTP 200 text/plain; charset=UTF-8 296566 octets
+DÉBUT :
+"File creation date: 08/10/2026" "ANNEX III","Last update: 06/10/2026" "LIST OF SUBSTANCES WHICH COSMETIC PRODUCTS MUST NOT CONTAIN EXCEPT SUBJECT TO THE RESTRICTIONS LAID DOWN" "Substance identification",Restrictions "Reference Number","Chemical name / INN","Name of Common Ingredients Glossary","CAS Number","EC Number","Product Type, body parts","Maximum concentration in ready for use preparation",Other,"Wording of conditions of use and warnings",Regulation,"Other Directives/Regulations","SCCS opinions","Chemical/IUPAC Name","Identified INGREDIENTS or substances e.g.",CMR,"Update Date" 2a,"Thioglycolic acid and its salts","THIOGLYCOLIC ACID",68-11-1,200-677-4,"(a) Hair products (b) Depilatories (c) Hair rinse-off products (d) Products intended for eyelash waving","(a) (i) 8% (ii) 11% (b) 5% (c) 2% (d) 11% The abovementioned percentages are calculated as thioglycollic acid","(a) (i) General use ready for use pH 7 to 9.5 (ii) Professional use ready for use pH 7 to 9.5 (b) ready for use pH 7 to 12.7 (c) ready for use pH 7 to 9.5 (d) ready for use pH 7 to 9,5 ","Conditions of use: (a) (b) (c) (d) Avoid contact with eyes Rinse eyes immediately if product comes into contact with them. (a) (c) (d) Wear suitable gloves Warnings to be printed on the label: (a)(i) (b) (c) Contains thioglycolate Follow the instructions Keep out of reach of children (a)(ii) (d) For professional use only Contains thioglycolate Follow the
+
+===== https://api.tech.ec.europa.eu/cosing20/1.0/api/ingredients/export-csv
+HTTP 404 application/json; charset=UTF-8 128 octets
+DÉBUT :
+{"code":"404","type":"Status report","message":"Runtime Error","description":"No matching resource found for given API Request"}
+
+===== https://api.tech.ec.europa.eu/cosing20/1.0/api/inventory/export-csv
+HTTP 404 application/json; charset=UTF-8 128 octets
+DÉBUT :
+{"code":"404","type":"Status report","message":"Runtime Error","description":"No matching resource found for given API Request"}
+
+===== https://api.tech.ec.europa.eu/cosing20/1.0/api/substances/export-csv
+HTTP 404 application/json; charset=UTF-8 128 octets
+DÉBUT :
+{"code":"404","type":"Status report","message":"Runtime Error","description":"No matching resource found for given API Request"}
+
+===== https://data.europa.eu/api/hub/search/datasets/cosmetic-ingredient-database-ingredients-and-fragrance-inventory
+HTTP 404 text/plain 82 octets
+DÉBUT :
+dataset cosmetic-ingredient-database-ingredients-and-fragrance-inventory not found
+
+===== https://data.europa.eu/api/hub/search/search?q=cosing&filter=dataset&limit=10
+HTTP 200 application/json 330377 octets
+LIENS :
+"access_url":["https://www.data.gouv.fr/api/1/datasets/r/bd25dafb-6cfe-415f-97fd-3d8397312ff5"
+"download_url":["https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetCapabilities"
+"access_url":["https://www.data.gouv.fr/api/1/datasets/r/6b4b735a-5892-4abb-8492-4ef169c97a8d"
+"access_url":["https://www.data.gouv.fr/api/1/datasets/r/9a3a4ac4-d56b-4f76-9f0c-69ef78195cd8"
+"download_url":["https://data.geopf.fr/wms-r/wms?service=wms&version=1.3.0&request=GetCapabilities"
+"access_url":["https://www.data.gouv.fr/api/1/datasets/r/2de02c69-d895-400d-81a6-3d384be2955f"
+"access_url":["https://www.data.gouv.fr/api/1/datasets/r/341f18ea-2e00-45bb-8e1d-d223d7c2b6b8"
+"access_url":["https://www.data.gouv.fr/api/1/datasets/r/26d7e090-ece5-43d0-9150-24ce0098cd75"
+"access_url":["https://wfs.cartografia.agenziaentrate.gov.it/inspire/wfs/owfs01.php?SERVICE=WFS&REQUEST=GetCapabilities&VERSION=2.0.0"
+"access_url":["https://wms.cartografia.agenziaentrate.gov.it/inspire/wms/ows01.php?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities"
+"access_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.rdf?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.rdf?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.csv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.csv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.json?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.json?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.xml?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.xml?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.tsv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/42av-x2km/rows.tsv?accessType=DOWNLOAD"
+"access_url":["https://analisi.transparenciacatalunya.cat/api/v3/views/w53p-kngc/query.json?accessType=DOWNLOAD"
+"access_url":["https://analisi.transparenciacatalunya.cat/api/v3/views/w53p-kngc/export.csv?accessType=DOWNLOAD"
+"access_url":["https://analisi.transparenciacatalunya.cat/api/v3/views/w53p-kngc/query.xml?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.rdf?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.rdf?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.xml?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.xml?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.json?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.json?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.csv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.csv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.tsv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/tszm-q5ic/rows.tsv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.rdf?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.rdf?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.tsv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.tsv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.xml?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.xml?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.json?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.json?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.csv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/5dvd-c6x5/rows.csv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.csv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.csv?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.json?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.json?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.xml?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.xml?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.rdf?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.rdf?accessType=DOWNLOAD"
+"access_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.tsv?accessType=DOWNLOAD"
+"download_url":["https://www.dati.lombardia.it/api/views/finr-wn3t/rows.tsv?accessType=DOWNLOAD"
+DÉBUT :
+{"result":{"index":"dataset","count":1540,"results":[{"identifier":["IGNF_COSIA"],"country":{"resource":"http://publications.europa.eu/resource/authority/country/FRA","label":"France","id":"fr"},"corporate-body-classification":{"label":{"title":{"de":"Nationale Behörden","sv":"Nationella myndigheter","fi":"Kansalliset viranomaiset","pt":"Autoridades nacionais","bg":"Национални органи","el":"Εθνικές αρχές","mt":"Awtoritajiet nazzjonali","lt":"Nacionalinės institucijos","en":"National Authorities","lv":"Valstu iestādes","hr":"Nacionalna tijela","it":"Autorità nazionali","fr":"Autorités nationales","hu":"Nemzeti hatóságok","es":"Autoridades nacionales","et":"Riiklikud asutused","cs":"Vnitrostátní orgány","sk":"Národné orgány","sl":"Nacionalni organi","ga":"Údaráis náisiúnta","pl":"Organy krajowe","ro":"Autorități naționale","da":"Nationale myndigheder","nl":"Nationale autoriteiten"}},"id":"_NATIONAL"},"keywords":[{"language":"fr","id":"naf","label":"naf"},{"language":"fr","id":"ia","label":"ia"},{"language":"fr","id":"inspire","label":"inspire"},{"language":"fr","id":"predictions","label":"predictions"},{"language":"fr","id":"biodiversite","label":"biodiversite"},{"language":"fr","id":"usage-des-sols","label":"usage-des-sols"},{"language":"fr","id":"climat","label":"climat"},{"language":"fr","id":"sols","label":"sols"},{"language":"fr","id":"vegetation","label":"vegetation"},{"language":"fr","id":"occupation-des-terres","label":"occupation-des-terres"},{"language":"fr","id":"zon
+
+===== https://ec.europa.eu/growth/tools-databases/cosing/
+HTTP 200 text/html 57136 octets
+DÉBUT :
+<!doctype html> <html data-beasties-container> <head> <meta charset="utf-8"> <title>CosIng - Cosmetics - GROWTH - European Commission</title> <base href="https://ec.europa.eu/growth/tools-databases/cosing/"> <meta name="viewport" content="width=device-width, initial-scale=1"> <script type="text/javascript" src="/growth/tools-databases/cosing/ruxitagentjs_ICANVfgqrux_10335260518104739.js" data-dtconfig="rid=RID_2418|rpid=1992500033|domain=europa.eu/growth/tools-databases/cosing|reportUrl=/growth/tools-databases/cosing/rb_39a3e95b-5423-482c-879b-99ef235dffeb|app=c82b08266f2e6ddd|agentId=5ef576f2a198e304|owasp=1|featureHash=ICANVfgqrux|rdnt=1|uxrgce=1|cuc=m097nmfl|mel=100000|mb=null|dpvc=1|iub=null|lastModification=1791444348784|tp=500,50,0|srbbv=2|agentUri=/growth/tools-databases/cosing/ruxitagentjs_ICANVfgqrux_10335260518104739.js"></script><link rel="icon" type="image/x-icon" href="favicon.ico"> <script defer src="https://webtools.europa.eu/load.js?globan=1010" type="text/javascript"></script> <style> @media screen { html { -webkit-text-size-adjust: 100%; line-height: 1.15; } body { margin: 0; overflow-x: hidden; } :root { --ecl-color-primary:#3860ed; --ecl-color-primary-180:#051036; --ecl-color-primary-160:#0a1f6c; --ecl-color-primary-140:#0f2fa2; --ecl-color-primary-120:#143fd9; --ecl-color-primary-100:#3860ed; --ecl-color-primary-80:#5577f0; --ecl-color-primary-60:#89a1f4; --ecl-color-primary-40:#b1
+
+===== https://echa.europa.eu/information-on-chemicals/annex-vi-to-clp
+HTTP 403 text/html 9345 octets
+DÉBUT :
+<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content="Azure WAF"/><title>Azure WAF</title><style>:root{--azwaf-brand-color-primary:#0f6cbd;--azwaf-background-color-primary:#ffffff;--azwaf-neutral-background-color:#545454;--azwaf-text-color-primary:#252525;--azwaf-text-color-secondary:#7a7a7a}@media (prefers-color-scheme:dark){:root{--azwaf-brand-color-primary:#0f6cbd;--azwaf-background-color-primary:#252525;--azwaf-neutral-background-color:#545454;--azwaf-text-color-primary:#ffffff;--azwaf-text-color-secondary:#7a7a7a}}.ms-logo-container{padding-top:17px}.ms-logo-svg{width:99px;height:22px}.challenge-error-div{height:100%;width:100%;display:flex;flex-direction:column;align-items:center}#main{display:flex;flex:1 1 auto;flex-direction:column;justify-content:flex-start}body{background-color:var(--azwaf-background-color-primary);color:var(--azwaf-text-color-primary)}button{background-color:var(--azwaf-brand-color-primary);color:var(--azwaf-text-color-primary);border-color:var(--azwaf-neutral-background-color)}footer{color:var(--azwaf-text-color-secondary)}</style><style>html *{font-family:"Segoe UI",SegoeUI,"Helvetica Neue",Helvetica,Arial,sans-serif}body{display:flex;flex-direction:column;font-size:1rem;line-height:1.5;height:100vh;width:100vw;margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}header{display:flex;height:12%}h2{font-size:clamp(14px, 2.5vw, 
+
+===== https://echa.europa.eu/fr/information-on-chemicals/annex-vi-to-clp
+HTTP 403 text/html 9367 octets
+DÉBUT :
+<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content="Azure WAF"/><title>Azure WAF</title><style>:root{--azwaf-brand-color-primary:#0f6cbd;--azwaf-background-color-primary:#ffffff;--azwaf-neutral-background-color:#545454;--azwaf-text-color-primary:#252525;--azwaf-text-color-secondary:#7a7a7a}@media (prefers-color-scheme:dark){:root{--azwaf-brand-color-primary:#0f6cbd;--azwaf-background-color-primary:#252525;--azwaf-neutral-background-color:#545454;--azwaf-text-color-primary:#ffffff;--azwaf-text-color-secondary:#7a7a7a}}.ms-logo-container{padding-top:17px}.ms-logo-svg{width:99px;height:22px}.challenge-error-div{height:100%;width:100%;display:flex;flex-direction:column;align-items:center}#main{display:flex;flex:1 1 auto;flex-direction:column;justify-content:flex-start}body{background-color:var(--azwaf-background-color-primary);color:var(--azwaf-text-color-primary)}button{background-color:var(--azwaf-brand-color-primary);color:var(--azwaf-text-color-primary);border-color:var(--azwaf-neutral-background-color)}footer{color:var(--azwaf-text-color-secondary)}</style><style>html *{font-family:"Segoe UI",SegoeUI,"Helvetica Neue",Helvetica,Arial,sans-serif}body{display:flex;flex-direction:column;font-size:1rem;line-height:1.5;height:100vh;width:100vw;margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}header{display:flex;height:12%}h2{font-size:clamp(14px, 2.5vw, 
