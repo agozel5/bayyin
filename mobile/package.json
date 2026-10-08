@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "setup": "npm install expo@latest && npx expo install react react-native expo-camera expo-haptics expo-localization expo-image-picker expo-status-bar expo-constants @react-native-async-storage/async-storage react-native-webview react-native-safe-area-context react-native-svg",
+    "setup": "npm install expo@latest && npx expo install react react-native expo-camera expo-haptics expo-localization expo-image-picker expo-status-bar expo-constants @react-native-async-storage/async-storage react-native-webview react-native-safe-area-context react-native-svg expo-updates",
     "start": "expo start",
     "tunnel": "expo start --tunnel",
     "android": "expo run:android",

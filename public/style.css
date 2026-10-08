@@ -1029,3 +1029,53 @@ html[data-text="xlarge"]{font-size:125%}
 .seg3 button[aria-checked="true"]{color:var(--fg)}
 :root[data-theme="dark"] .chip[aria-selected="true"],:root[data-theme="dark"] .toast{color:var(--bg)}
 #setMenu{display:flex;flex-direction:column;gap:26px}
+
+/* =====================================================================
+   Commerces halal autour de moi
+   ===================================================================== */
+.places-promo{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:var(--r-lg);background:var(--surface);color:var(--fg);text-decoration:none;box-shadow:var(--lift)}
+.places-promo-ico{width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;flex:none}
+.places-promo-ico svg,.places-promo > svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.places-promo > svg{color:var(--faint);width:20px;height:20px}
+.places-promo .aisle-promo-text small{color:var(--muted);opacity:1}
+#view-places .sub-head .icon-btn{color:var(--fg)}
+#view-places .sub-head .icon-btn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.places-search{display:flex;flex-direction:column;gap:10px}
+.places-search .btn-primary svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.places-city{display:flex;gap:8px}
+.places-city .field{flex:1;padding:12px 14px;font-size:1rem;letter-spacing:0}
+.places-filters{display:flex;flex-direction:column;gap:8px}
+.places-filters .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.places-filters .chip small{opacity:.7;font-weight:700}
+.places-status{margin:0;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.places-map{height:300px;border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--lift);background:var(--tint);z-index:0}
+.places-list{display:flex;flex-direction:column;gap:10px}
+.place{display:flex;gap:12px;padding:14px;border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--lift);border:1.5px solid transparent}
+.place.is-selected{border-color:var(--brand)}
+.place-ico{flex:none;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--brand-soft);color:var(--brand-dark)}
+.place-ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.pc-butcher{background:var(--c-haram-bg);color:var(--c-haram)}
+.pc-restaurant{background:#FFF3D6;color:#9A6A00}
+.pc-bakery{background:#F6EADB;color:#8A5A2B}
+:root[data-theme="dark"] .pc-restaurant{background:#3A2F14;color:#F1C564}
+:root[data-theme="dark"] .pc-bakery{background:#33261A;color:#E2B98C}
+.place-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.place-head{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:none;background:none;padding:0;text-align:start;color:var(--fg)}
+.place-head strong{font-size:1.02rem;font-weight:700}
+.place-head small{color:var(--muted);font-size:.85rem;font-weight:600}
+.place-tags{display:flex;flex-wrap:wrap;gap:6px}
+.place-line{margin:0;color:var(--muted);font-size:.88rem;line-height:1.4;overflow-wrap:anywhere}
+.place-hours{font-size:.82rem}
+.place-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:2px}
+.btn-sm{padding:8px 14px;font-size:.88rem;border-radius:10px;text-decoration:none}
+.place-osm{padding:6px 4px;font-size:.82rem}
+/* Repères sur la carte */
+.pm{background:none;border:none}
+.pm-pin{width:34px;height:34px;border-radius:50% 50% 50% 6px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;background:var(--c-prob);color:#fff;border:2.5px solid #fff;box-shadow:0 3px 8px rgb(0 0 0 / .3)}
+.pm-pin.pm-only{background:var(--c-cert)}
+.pm-pin.is-selected{background:var(--brand-dark);transform:rotate(-45deg) scale(1.15)}
+:root[data-theme="dark"] .pm-pin.is-selected{background:#0B5139}
+.pm-pin svg{width:17px;height:17px;transform:rotate(45deg);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pm-me i{display:block;width:18px;height:18px;border-radius:50%;background:#2F7BF5;border:3px solid #fff;box-shadow:0 0 0 6px rgb(47 123 245 / .25)}
+:root[data-theme="dark"] .places-map .leaflet-tile-pane{filter:brightness(.6) invert(1) contrast(3) hue-rotate(200deg) saturate(.3) brightness(.7)}
+.places-map .leaflet-control-attribution{font-size:.7rem}

@@ -13,6 +13,7 @@ import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
+import { fetchPlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -1552,7 +1553,7 @@ settings.subscribe((st, patch) => {
 // ===========================================================================
 // Navigation
 // ===========================================================================
-const TABS = ["scan", "search", "history", "additives", "settings"];
+const TABS = ["scan", "search", "history", "additives", "settings", "places"];
 let current = null;
 
 // Bouton central : depuis un autre onglet il ramène à l'accueil ; sur l'accueil il ouvre la caméra.
@@ -1580,6 +1581,7 @@ function showTab(name) {
     renderHistory();
   }
   if (name === "additives") renderAdditives();
+  if (name === "places") renderPlaces();
   if (name === "settings") {
     renderSettings();
     showSetPage(SET_PAGES.includes(sub) ? sub : "menu", { animate: wasSettings });
@@ -2013,6 +2015,205 @@ $("obBody").addEventListener("click", (e) => {
 });
 settings.subscribe(() => {
   if (!$("onboard").hidden) renderOnboard();
+});
+
+
+// ===========================================================================
+// Commerces halal autour de moi (OpenStreetMap)
+// ===========================================================================
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const PLACE_ICON = {
+  butcher: '<path d="M14.5 4.2c3 .6 5.3 3.4 4.9 6.6-.5 3.6-4 6.4-7.9 6.2l-3.1 3.1a1.6 1.6 0 1 1-2.3-2.3l3.1-3.1c-.4-3.4 1.4-7 4.4-8.9.3-.2.6-.4.9-.6z"/><circle cx="14.6" cy="10.4" r="1.6"/>',
+  restaurant: '<path d="M7 3v7a2 2 0 0 0 4 0V3M9 12v9M16.5 3C14.8 3 13.5 5 13.5 8s1.3 4 3 4v9"/>',
+  grocery: '<path d="M3.5 5.5h2.2l2 10.5h9.5l2.2-7.5H6.6"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="16.5" cy="19.5" r="1.3"/>',
+  bakery: '<path d="M4 15c0-4.4 3.6-8 8-8s8 3.6 8 8v2H4z"/><path d="M9 9.5l1 5M15 9.5l-1 5M12 8v6.5"/>',
+  other: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+};
+const placesState = { center: null, label: "", radius: 3000, cat: "all", list: [], loading: false, error: "", selected: null };
+let leafletReady = null;
+let placesMap = null;
+let placesLayer = null;
+
+function loadLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  if (leafletReady) return leafletReady;
+  leafletReady = new Promise((resolve, reject) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+    js.onload = () => resolve(window.L);
+    js.onerror = () => { leafletReady = null; reject(new Error("leaflet")); };
+    document.head.appendChild(js);
+  });
+  return leafletReady;
+}
+
+const fmtDistance = (m) =>
+  m < 950 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${(m / 1000).toLocaleString(locale(), { maximumFractionDigits: m < 9950 ? 1 : 0 })} km`;
+const placesVisible = () => placesState.list.filter((p) => placesState.cat === "all" || p.cat === placesState.cat);
+
+function placeCard(p) {
+  const title = p.name || t(`places.cat.${p.cat}`);
+  const tags = [
+    `<span class="pill ${p.halal === "only" ? "s-halal_certifie" : "s-halal_probable"}"><span class="dot"></span>${t(p.halal === "only" ? "places.only" : "places.yes")}</span>`,
+    p.cert ? `<span class="pill r-info">${esc(t("places.cert", { c: p.cert }))}</span>` : "",
+  ].join("");
+  return `<article class="place${placesState.selected === p.id ? " is-selected" : ""}" data-place="${esc(p.id)}">
+    <span class="place-ico pc-${p.cat}">${svg(PLACE_ICON[p.cat])}</span>
+    <div class="place-body">
+      <button type="button" class="place-head" data-focus="${esc(p.id)}"><strong>${esc(title)}</strong><small>${t(`places.cat.${p.cat}`)} · <span dir="ltr">${fmtDistance(p.distance)}</span></small></button>
+      <div class="place-tags">${tags}</div>
+      ${p.address ? `<p class="place-line">${esc(p.address)}</p>` : ""}
+      ${p.hours ? `<p class="place-line place-hours" dir="ltr">${esc(p.hours)}</p>` : ""}
+      <div class="place-actions">
+        <a class="btn btn-soft btn-sm" href="${esc(directionsUrl(p, IOS))}" target="_blank" rel="noopener">${t("places.directions")}</a>
+        ${p.phone ? `<a class="btn btn-soft btn-sm" href="tel:${esc(p.phone.replace(/[^\d+]/g, ""))}">${t("places.call")}</a>` : ""}
+        ${p.website ? `<a class="btn btn-soft btn-sm" href="${esc(/^https?:/.test(p.website) ? p.website : "https://" + p.website)}" target="_blank" rel="noopener">${t("places.website")}</a>` : ""}
+        <a class="link-btn place-osm" href="${esc(osmUrl(p))}" target="_blank" rel="noopener">${t("places.osm")}</a>
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderPlaces() {
+  const st = placesState;
+  $("placesRadius").innerHTML = RADII.map(
+    (r) => `<button type="button" role="radio" class="chip" aria-checked="${st.radius === r}" aria-selected="${st.radius === r}" data-radius="${r}">${r / 1000} km</button>`
+  ).join("");
+  const counts = Object.fromEntries(CATEGORIES.map((c) => [c, st.list.filter((p) => p.cat === c).length]));
+  $("placesCats").innerHTML = st.list.length
+    ? ["all", ...CATEGORIES.filter((c) => counts[c])]
+        .map((c) => `<button type="button" class="chip" aria-selected="${st.cat === c}" data-pcat="${c}">${t(c === "all" ? "places.all" : `places.cats.${c}`)} <small>${c === "all" ? st.list.length : counts[c]}</small></button>`)
+        .join("")
+    : "";
+  const vis = placesVisible();
+  $("placesStatus").innerHTML = st.loading
+    ? `<span class="spinner"></span> ${t("places.loading")}`
+    : st.error
+      ? esc(st.error)
+      : st.center
+        ? esc(tn("places.found", vis.length, { where: st.label, r: st.radius / 1000 }))
+        : esc(t("places.intro"));
+  $("placesList").innerHTML = st.center && !st.loading && !st.error && !vis.length
+    ? `<div class="empty"><strong>${t("places.empty_t")}</strong><p>${t("places.empty_p")}</p></div>`
+    : vis.map(placeCard).join("");
+  $("placesLocate").disabled = st.loading;
+  updatePlacesMap();
+}
+
+async function updatePlacesMap() {
+  const st = placesState;
+  if (!st.center) { $("placesMap").hidden = true; return; }
+  $("placesMap").hidden = false;
+  let L;
+  try { L = await loadLeaflet(); } catch { $("placesMap").hidden = true; return; }
+  if (!placesMap) {
+    placesMap = L.map("placesMap", { zoomControl: false, attributionControl: true }).setView([st.center.lat, st.center.lon], 14);
+    L.control.zoom({ position: "bottomright" }).addTo(placesMap);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+    }).addTo(placesMap);
+    placesLayer = L.layerGroup().addTo(placesMap);
+  }
+  placesLayer.clearLayers();
+  L.marker([st.center.lat, st.center.lon], { icon: L.divIcon({ className: "pm-me", html: "<i></i>", iconSize: [18, 18] }), interactive: false }).addTo(placesLayer);
+  const vis = placesVisible();
+  const pts = [[st.center.lat, st.center.lon]];
+  for (const p of vis) {
+    const m = L.marker([p.lat, p.lon], {
+      icon: L.divIcon({ className: "pm", html: `<span class="pm-pin pm-${p.halal}${st.selected === p.id ? " is-selected" : ""}">${svg(PLACE_ICON[p.cat])}</span>`, iconSize: [34, 34], iconAnchor: [17, 32] }),
+      title: p.name || t(`places.cat.${p.cat}`),
+    });
+    m.on("click", () => selectPlace(p.id, { fromMap: true }));
+    m.addTo(placesLayer);
+    pts.push([p.lat, p.lon]);
+  }
+  setTimeout(() => {
+    placesMap.invalidateSize();
+    if (!st.selected) {
+      if (pts.length > 1) placesMap.fitBounds(pts.slice(0, 40), { padding: [28, 28], maxZoom: 16 });
+      else placesMap.setView([st.center.lat, st.center.lon], 14);
+    }
+  }, 60);
+}
+
+function selectPlace(id, { fromMap = false } = {}) {
+  placesState.selected = id;
+  const p = placesState.list.find((x) => x.id === id);
+  renderPlaces();
+  if (p && placesMap) placesMap.setView([p.lat, p.lon], Math.max(placesMap.getZoom(), 16), { animate: true });
+  const card = document.querySelector(`.place[data-place="${CSS.escape(id)}"]`);
+  if (card && fromMap) card.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (!fromMap) $("placesMap").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function searchPlaces(lat, lon, label) {
+  Object.assign(placesState, { center: { lat, lon }, label, loading: true, error: "", selected: null, cat: "all" });
+  renderPlaces();
+  try {
+    placesState.list = await fetchPlaces(lat, lon, placesState.radius);
+  } catch {
+    placesState.list = [];
+    placesState.error = t("places.error");
+  }
+  placesState.loading = false;
+  renderPlaces();
+}
+
+$("placesLocate").addEventListener("click", () => {
+  if (!navigator.geolocation) { placesState.error = t("places.geo_unsupported"); return renderPlaces(); }
+  placesState.loading = true;
+  placesState.error = "";
+  renderPlaces();
+  navigator.geolocation.getCurrentPosition(
+    (pos) => searchPlaces(pos.coords.latitude, pos.coords.longitude, t("places.around_me")),
+    (err) => {
+      placesState.loading = false;
+      placesState.error = t(err && err.code === 1 ? "places.geo_denied" : "places.geo_error");
+      renderPlaces();
+    },
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+  );
+});
+$("placesCityForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = $("placesCity").value.trim();
+  if (!q) return;
+  $("placesCity").blur();
+  placesState.loading = true;
+  placesState.error = "";
+  renderPlaces();
+  try {
+    const g = await geocode(q, getLang());
+    if (!g) throw new Error("none");
+    await searchPlaces(g.lat, g.lon, q);
+  } catch {
+    placesState.loading = false;
+    placesState.error = t("places.city_error", { q });
+    renderPlaces();
+  }
+});
+$("placesRadius").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-radius]");
+  if (!b) return;
+  placesState.radius = Number(b.dataset.radius);
+  if (placesState.center) searchPlaces(placesState.center.lat, placesState.center.lon, placesState.label);
+  else renderPlaces();
+});
+$("placesCats").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pcat]");
+  if (!b) return;
+  placesState.cat = b.dataset.pcat;
+  placesState.selected = null;
+  renderPlaces();
+});
+$("placesList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-focus]");
+  if (b) selectPlace(b.dataset.focus);
 });
 
 // ===========================================================================

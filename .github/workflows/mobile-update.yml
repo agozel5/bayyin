@@ -1,0 +1,69 @@
+name: App mobile — mise à jour à distance (EAS Update)
+
+# Envoie les changements de code (textes, design, règles…) aux applications déjà installées,
+# sans repasser par l'App Store ni le Play Store. À lancer à la main :
+# onglet Actions → « App mobile — mise à jour à distance » → Run workflow.
+#
+# Préalable, une seule fois : créer un jeton sur expo.dev (Account settings → Access tokens)
+# et l'ajouter dans GitHub (Settings → Secrets and variables → Actions) sous le nom EXPO_TOKEN.
+# Au premier lancement, le projet Expo est créé et son identifiant est enregistré dans mobile/app.json.
+#
+# Seules les applications compilées avec la même version (champ « version » de mobile/app.json)
+# reçoivent la mise à jour ; un changement natif (nouvelle autorisation, module…) demande une
+# nouvelle version sur les stores.
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Ce qui change (visible dans le tableau de bord Expo)"
+        required: true
+        default: "Améliorations et corrections"
+      channel:
+        description: "Canal : production (stores) ou preview (tests)"
+        required: true
+        default: production
+        type: choice
+        options: [production, preview]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Jeton Expo présent ?
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Ajoutez le secret EXPO_TOKEN (voir l'en-tête de ce fichier)."
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dépendances
+        run: scripts/ci-run.sh "Installation des dépendances" npm run setup
+      - name: Projet Expo (premier lancement seulement)
+        run: |
+          if ! node -e "process.exit(require('./app.json').expo?.extra?.eas?.projectId ? 0 : 1)"; then
+            npx --yes eas-cli@latest init --non-interactive --force
+            npx --yes eas-cli@latest update:configure --platform all --non-interactive
+            cd .. && git add mobile/app.json mobile/eas.json
+            git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "App mobile : projet Expo configuré pour EAS Update" || true
+            git pull --rebase origin main && git push origin HEAD:main
+          fi
+      - name: Publier la mise à jour
+        run: npx --yes eas-cli@latest update --channel "${{ inputs.channel }}" --message "${{ inputs.message }}" --non-interactive

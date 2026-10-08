@@ -27,20 +27,42 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#14805A"
       },
-      "permissions": ["android.permission.CAMERA", "android.permission.VIBRATE"],
-      "blockedPermissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
-      ["expo-camera", {
-        "cameraPermission": "Bayyin utilise la caméra pour lire le code-barres des produits et photographier les listes d'ingrédients.",
-        "recordAudioAndroid": false
-      }],
-      ["expo-image-picker", {
-        "cameraPermission": "Bayyin utilise la caméra pour photographier les listes d'ingrédients.",
-        "photosPermission": false,
-        "microphonePermission": false
-      }],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Bayyin utilise la caméra pour lire le code-barres des produits et photographier les listes d'ingrédients.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Bayyin utilise la caméra pour photographier les listes d'ingrédients.",
+          "photosPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "expo-localization"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }

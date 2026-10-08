@@ -7,7 +7,8 @@
 
 import { normalize, SCHOOLS, DEFAULT_PREFS, TOPIC_OF, SEVERITY_OF } from "./rules.js";
 
-export const MED_DATA_BASE = "https://raw.githubusercontent.com/agozel5/bayyin/main/public/data/med/";
+// GitHub Pages : hébergement conçu pour un grand nombre de téléchargements (le site sert les mêmes fichiers)
+export const MED_DATA_BASE = "https://agozel5.github.io/bayyin/data/med/";
 export const isMedicineCode = (code) => /^34009\d{8}$/.test(String(code || ""));
 export const medShard = (code) => String(code).slice(-3, -1); // deux chiffres avant la clé de contrôle
 export const medShardUrl = (code) => `${MED_DATA_BASE}${medShard(code)}.json`;

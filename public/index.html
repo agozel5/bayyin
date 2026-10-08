@@ -75,6 +75,11 @@
       <span class="aisle-promo-text"><strong data-i18n="aisle.title"></strong><small data-i18n="aisle.promo"></small></span>
       <svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
     </button>
+    <a class="places-promo" href="#places">
+      <span class="places-promo-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
+      <span class="aisle-promo-text"><strong data-i18n="places.title"></strong><small data-i18n="places.promo"></small></span>
+      <svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
     <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
     <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden>
 
@@ -314,6 +319,7 @@
           <li data-i18n="privacy.2"></li>
           <li data-i18n="privacy.3"></li>
           <li data-i18n="privacy.4"></li>
+          <li data-i18n="privacy.5"></li>
         </ul>
       </section>
     </div>
@@ -324,6 +330,28 @@
         <div class="prose"><p data-i18n="limits.1"></p><p data-i18n="limits.2"></p><p data-i18n="limits.3"></p></div>
       </section>
     </div>
+  </section>
+  <!-- ================= COMMERCES HALAL ================= -->
+  <section class="view" id="view-places" data-view="places" aria-labelledby="h-places" hidden>
+    <header class="sub-head"><a class="icon-btn" href="#scan" data-i18n-aria="sheet.back"><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><h1 id="h-places" data-i18n="places.short"></h1></header>
+    <div class="places-search">
+      <button class="btn btn-primary" type="button" id="placesLocate">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+        <span data-i18n="places.locate"></span>
+      </button>
+      <form class="places-city" id="placesCityForm" autocomplete="off">
+        <input class="field" id="placesCity" type="search" enterkeyhint="search" data-i18n-ph="places.city_ph">
+        <button class="btn btn-soft" type="submit" data-i18n="places.city_go"></button>
+      </form>
+    </div>
+    <div class="places-filters">
+      <div class="chips" id="placesRadius" role="radiogroup"></div>
+      <div class="chips" id="placesCats"></div>
+    </div>
+    <p class="places-status" id="placesStatus" aria-live="polite"></p>
+    <div class="places-map" id="placesMap" hidden></div>
+    <div class="places-list" id="placesList"></div>
+    <p class="fineprint start" id="placesNote"><span data-i18n="places.note"></span> <a href="https://wiki.openstreetmap.org/wiki/FR:Key:diet:halal" target="_blank" rel="noopener" data-i18n="places.add"></a></p>
   </section>
 </main>
 
