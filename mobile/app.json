@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Bayyin",
+    "slug": "bayyin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFFFF",
+    "primaryColor": "#14805A",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#14805A"
+    },
+    "ios": {
+      "bundleIdentifier": "io.github.agozel5.bayyin",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Bayyin utilise la caméra pour lire le code-barres des produits et photographier les listes d'ingrédients.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "io.github.agozel5.bayyin",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#14805A"
+      },
+      "permissions": ["android.permission.CAMERA", "android.permission.VIBRATE"],
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"]
+    },
+    "plugins": [
+      ["expo-camera", {
+        "cameraPermission": "Bayyin utilise la caméra pour lire le code-barres des produits et photographier les listes d'ingrédients.",
+        "recordAudioAndroid": false
+      }],
+      ["expo-image-picker", {
+        "cameraPermission": "Bayyin utilise la caméra pour photographier les listes d'ingrédients.",
+        "photosPermission": false,
+        "microphonePermission": false
+      }],
+      "expo-localization"
+    ]
+  }
+}
