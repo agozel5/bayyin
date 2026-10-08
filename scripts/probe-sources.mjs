@@ -17,9 +17,12 @@ while (queue.length && seen.size < 60) {
   try {
     const { text } = await get(base + f);
     for (const m of text.matchAll(/["'`(]\.?\/?(chunk-[A-Z0-9]+\.js)/g)) if (!seen.has(m[1])) queue.push(m[1]);
-    const hits = [...new Set(text.match(/.{0,160}(cosing20|search-api|apiKey|export-csv|ingredients\/|\/api\/).{0,220}/g) || [])].slice(0, 40);
+    const hits = [...new Set(text.match(/.{0,300}(euSearchApiUrl|exportToFileUrl|euSearchApiKey|descrFileUrl|config\.json|assets\/[a-z\/]*\.json|exportFile|ingredientsSearch|itemType|getSubIngList).{0,600}/g) || [])].slice(0, 30);
     if (hits.length) out += `\n===== ${f}\n` + hits.join("\n---\n") + "\n";
   } catch (e) { out += `\n===== ${f} ERREUR ${e.message}\n`; }
+}
+for (const c of ["assets/config/env-json-config.json", "assets/env-json-config.json", "assets/config.json", "assets/config/config.json", "assets/env.json"]) {
+  try { const { res, text } = await get(base + c); out += `\n===== ${c} HTTP ${res.status}\n${text.slice(0, 2000)}\n`; } catch (e) { out += `\n${c} ERREUR\n`; }
 }
 out = "FICHIERS: " + [...seen].join(", ") + "\n" + out;
 await writeFile(new URL("../docs/probe-report.txt", import.meta.url), out);
