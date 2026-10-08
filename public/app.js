@@ -1,7 +1,7 @@
 import { createClient, OffError, present, classifyAny } from "./lib/off.js";
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
 import { store, localProducts } from "./lib/store.js";
-import { settings, LANGS } from "./lib/settings.js";
+import { settings, LANGS, THEMES, TEXT_SIZES } from "./lib/settings.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
@@ -1202,23 +1202,102 @@ $("addList").addEventListener("toggle", (e) => {
 // ===========================================================================
 // Réglages
 // ===========================================================================
-// Réglages : deux volets, ce qu'on modifie et ce qu'on lit
-let settingsPane = "prefs";
-function showPane(pane) {
-  settingsPane = pane;
-  document.querySelectorAll("#settingsPanes button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === pane)));
-  document.querySelectorAll("[data-pane-of]").forEach((el) => (el.hidden = el.dataset.paneOf !== pane));
+// Réglages : un menu court ; chaque ligne ouvre une sous-page (#settings/<page>)
+const SET_PAGES = ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"];
+let setPage = "menu";
+let setPrev = "menu";
+let setFromMenu = false;
+const SI = {
+  lang: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
+  profile: I.user,
+  religion: '<path d="M15.5 3.6A8.6 8.6 0 1 0 20.4 16a7 7 0 0 1-4.9-12.4z"/><path d="M17 7.5l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2z"/>',
+  appearance: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"/>',
+  offline: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>',
+  data: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+  notes: '<path d="M5 20V11M10.5 20V5M16 20v-6M3 20.5h18"/>',
+  how: I.bulb,
+  sources: I.doc,
+  privacy: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  limits: I.alert,
+  off: I.box,
+  report: '<path d="M5.5 21V4M5.5 4h11l-2.2 4 2.2 4h-11"/>',
+  demo: '<path d="M8 5.5v13l10.5-6.5z"/>',
+};
+const schoolName = (s) => t(`school.${s}`);
+const modifiedTopics = (st) => TOPICS.filter((x) => (SCHOOLS[st.baseSchool] || SCHOOLS.standard)[x] !== st.topics[x]);
+const religionValue = (st) =>
+  st.school === "custom" ? t("settings.custom_base", { s: schoolName(st.baseSchool) }) : schoolName(st.school);
+const profileValue = (st) => {
+  const parts = [];
+  if (st.profile.diet) parts.push(t(`diet.${st.profile.diet}`));
+  if (st.profile.allergens.length) parts.push(tn("settings.allergy_count", st.profile.allergens.length));
+  return parts.join(" · ") || t("settings.profile_none");
+};
+const offlineValue = (st) => (st.offlinePackAt ? t("settings.offline_ready", { n: st.offlinePackCount }) : t("settings.offline_not"));
+const appearanceValue = (st) => t(`theme.${st.theme}`) + (st.textSize !== "normal" ? " · " + t(`text.${st.textSize}`) : "");
+
+function setRow(page, value, { href, external = false } = {}) {
+  const url = href || `#settings/${page}`;
+  return `<a class="set-row" href="${esc(url)}"${external ? ' target="_blank" rel="noopener"' : ` data-go="${page}"`}>
+    <span class="set-ico si-${page}">${svg(SI[page])}</span>
+    <span class="set-text"><strong>${esc(t(page === "off" ? "link.off.t" : page === "report" ? "link.report.t" : page === "demo" ? (DEMO ? "link.demo_exit.t" : "link.demo.t") : `settings.menu.${page}`))}</strong>${value ? `<small>${esc(value)}</small>` : ""}</span>
+    <span class="set-chev" aria-hidden="true">${external ? "↗" : svg(I.chev, "flip")}</span>
+  </a>`;
 }
-$("settingsPanes").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-pane]");
-  if (!b || b.dataset.pane === settingsPane) return;
-  showPane(b.dataset.pane);
-  window.scrollTo(0, 0);
+function renderSettingsMenu() {
+  const st = prefs();
+  const nHist = store.all().length;
+  $("setSummary").innerHTML = `<div class="set-summary">
+      <p class="ss-kicker">${t("settings.summary_t")}</p>
+      <div class="ss-items">
+        <a class="ss-item" href="#settings/religion" data-go="religion"><small>${t("settings.summary_school")}</small><strong>${esc(religionValue(st))}</strong></a>
+        <a class="ss-item" href="#settings/profile" data-go="profile"><small>${t("settings.summary_profile")}</small><strong>${esc(profileValue(st))}</strong></a>
+        <a class="ss-item" href="#settings/offline" data-go="offline"><small>${t("settings.summary_offline")}</small><strong>${esc(offlineValue(st))}</strong></a>
+      </div>
+    </div>`;
+  const group = (title, rows) => `<p class="set-group-t">${t(title)}</p><div class="set-group">${rows.join("")}</div>`;
+  $("setMenu").innerHTML =
+    group("settings.g_prefs", [
+      setRow("lang", LANG_NAMES[st.lang]),
+      setRow("profile", profileValue(st)),
+      setRow("religion", religionValue(st)),
+      setRow("appearance", appearanceValue(st)),
+    ]) +
+    group("settings.g_data", [setRow("offline", offlineValue(st)), setRow("data", tn("settings.data_count", nHist))]) +
+    group("settings.g_about", [setRow("notes"), setRow("how"), setRow("sources"), setRow("privacy"), setRow("limits")]) +
+    group("settings.g_links", [
+      setRow("off", t("link.off.d"), { href: "https://fr.openfoodfacts.org", external: true }),
+      setRow("report", t("link.report.d"), { href: "https://github.com/agozel5/bayyin/issues", external: true }),
+      setRow("demo", t(DEMO ? "link.demo_exit.d" : "link.demo.d"), { href: DEMO ? location.pathname + "#scan" : "?demo#scan", external: false }).replace(` data-go="demo"`, ""),
+    ]);
+}
+function showSetPage(page, { animate = true } = {}) {
+  const changed = animate && page !== setPage;
+  setPrev = setPage;
+  setPage = page;
+  document.querySelectorAll("#view-settings .set-page").forEach((el) => {
+    const on = el.dataset.page === page;
+    el.hidden = !on;
+    if (on && changed) {
+      el.classList.remove("enter-fwd", "enter-back");
+      void el.offsetWidth; // relance l'animation
+      el.classList.add(page === "menu" ? "enter-back" : "enter-fwd");
+    }
+  });
+}
+$("view-settings").addEventListener("click", (e) => {
+  if (e.target.closest("[data-go]")) setFromMenu = true;
+  if (e.target.closest("[data-back]")) {
+    e.preventDefault();
+    if (setFromMenu && history.length > 1) history.back();
+    else location.hash = "#settings";
+    setFromMenu = false;
+  }
 });
 
 function renderSettings() {
-  showPane(settingsPane);
   const st = prefs();
+  renderSettingsMenu();
   $("langGrid").innerHTML = LANGS.map(
     (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`
   ).join("");
@@ -1231,28 +1310,24 @@ function renderSettings() {
     (a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${st.profile.allergens.includes(a)}" data-allergen="${a}">${esc(t(`allergen.${a}`))}</button>`
   ).join("");
 
-  const schools = [...Object.keys(SCHOOLS), ...(st.school === "custom" ? ["custom"] : [])];
-  $("schoolList").innerHTML = schools
-    .map(
-      (s) => `<button type="button" role="radio" class="school" aria-checked="${st.school === s}" data-school="${s}">
+  // Écoles : cartes compactes ; un réglage personnalisé rappelle l'école de départ
+  const schools = Object.keys(SCHOOLS);
+  $("schoolList").innerHTML =
+    (st.school === "custom"
+      ? `<div class="school custom" aria-checked="true" role="radio"><span class="radio" aria-hidden="true"></span><span class="school-text"><strong>${t("school.custom")}</strong><small>${esc(t("settings.custom_from", { s: schoolName(st.baseSchool) }))}</small></span></div>`
+      : "") +
+    schools
+      .map(
+        (s) => `<button type="button" role="radio" class="school" aria-checked="${st.school === s}" data-school="${s}">
         <span class="radio" aria-hidden="true"></span>
         <span class="school-text"><strong>${t(`school.${s}`)}</strong><small>${t(`school.${s}.d`)}</small></span>
       </button>`
-    )
-    .join("");
-
-  // Sujets regroupés : origine inconnue (une certification lève le doute) / divergences entre écoles
-  const topicRow = (topic) => `<div class="topic">
-      <span class="topic-name" id="tp-${topic}">${t(`topic.${topic}`)}</span>
-      <div class="seg3" role="radiogroup" aria-labelledby="tp-${topic}">${DECISIONS.map(
-        (d) => `<button type="button" role="radio" class="d-${d}" aria-checked="${st.topics[topic] === d}" data-topic="${topic}" data-decision="${d}">${t(`decision.${d}`)}</button>`
-      ).join("")}</div>
-    </div>`;
-  $("topicList").innerHTML =
-    `<p class="topic-group">${t("settings.topics_origin")}</p>` + TOPICS.filter((x) => !SCHOOL_TOPICS.includes(x)).map(topicRow).join("") +
-    `<p class="topic-group">${t("settings.topics_school")}</p>` + TOPICS.filter((x) => SCHOOL_TOPICS.includes(x)).map(topicRow).join("");
-
+      )
+      .join("");
+  renderTopics();
+  renderAppearance();
   renderOfflineStatus();
+  renderDataPage();
 
   $("legendHalal").innerHTML = LEGEND_ORDER.map(
     (s) => `<div class="legend-row"><span class="pill s-${s}"><span class="dot"></span>${S(s, "label")}</span><p>${S(s, "legend")}</p></div>`
@@ -1262,9 +1337,6 @@ function renderSettings() {
     return `<div class="legend-row"><span class="pill g-${g.id}" style="--cbg:var(--tint)"><span class="dot"></span>${t(`grade.${g.id}`)}</span><p>${t("health.range", { a: g.min, b: max })}</p></div>`;
   }).join("");
   document.querySelectorAll(".se-pts[data-pts]").forEach((el) => (el.textContent = t("health.pts", { n: el.dataset.pts })));
-  $("demoLink").href = DEMO ? location.pathname + "#scan" : "?demo#scan";
-  $("demoLinkT").textContent = t(DEMO ? "link.demo_exit.t" : "link.demo.t");
-  $("demoLinkD").textContent = t(DEMO ? "link.demo_exit.d" : "link.demo.d");
   // Sources regroupées : on touche un groupe pour voir les organismes et textes qu'il contient
   const GROUP_ICON = { data: I.box, health: I.flask, halal: I.shield };
   $("sourceList").innerHTML = ["data", "health", "halal"]
@@ -1287,7 +1359,157 @@ function renderSettings() {
       </details>`;
     })
     .join("");
+  showSetPage(setPage);
 }
+
+// Point par point : replié par défaut, avec recherche ; les points modifiés passent en tête
+function renderTopics() {
+  const st = prefs();
+  const base = SCHOOLS[st.baseSchool] ? st.baseSchool : "standard";
+  const modified = modifiedTopics(st);
+  $("topicSummary").textContent = modified.length
+    ? tn("settings.topics_modified", modified.length, { s: schoolName(base) })
+    : t("settings.topics_none", { s: schoolName(base) });
+  $("topicReset").hidden = !modified.length;
+  $("topicReset").textContent = t("settings.topics_reset", { s: schoolName(base) });
+  const q = normText($("topicSearch").value);
+  const match = (topic) => !q || normText(t(`topic.${topic}`)).includes(q);
+  const topicRow = (topic) => `<div class="topic${modified.includes(topic) ? " is-mod" : ""}">
+      <span class="topic-name" id="tp-${topic}">${t(`topic.${topic}`)}${modified.includes(topic) ? `<span class="mod-tag">${t("settings.topic_modified")}</span>` : ""}</span>
+      <div class="seg3 seg-sm" role="radiogroup" aria-labelledby="tp-${topic}">${DECISIONS.map(
+        (d) => `<button type="button" role="radio" class="d-${d}" aria-checked="${st.topics[topic] === d}" data-topic="${topic}" data-decision="${d}">${t(`decision.${d}`)}</button>`
+      ).join("")}</div>
+    </div>`;
+  const section = (title, list) => (list.length ? `<p class="topic-group">${title}</p>` + list.map(topicRow).join("") : "");
+  const mods = modified.filter(match);
+  const rest = TOPICS.filter((x) => match(x) && !modified.includes(x));
+  const html =
+    section(t("settings.topics_mod_group"), mods) +
+    section(t("settings.topics_origin"), rest.filter((x) => !SCHOOL_TOPICS.includes(x))) +
+    section(t("settings.topics_school"), rest.filter((x) => SCHOOL_TOPICS.includes(x)));
+  $("topicList").innerHTML = html || `<p class="notes">${t("settings.topics_empty")}</p>`;
+}
+const normText = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+$("topicSearch").addEventListener("input", () => {
+  $("topicDetails").open = true;
+  renderTopics();
+});
+$("topicReset").addEventListener("click", () => settings.setSchool(prefs().baseSchool || "standard"));
+
+// Apparence : thème et taille du texte
+const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function applyAppearance() {
+  const st = prefs();
+  const dark = st.theme === "dark" || (st.theme === "auto" && darkQuery && darkQuery.matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.documentElement.dataset.text = st.textSize;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? "#0F1512" : "#FFFFFF";
+}
+if (darkQuery) (darkQuery.addEventListener ? darkQuery.addEventListener("change", applyAppearance) : darkQuery.addListener(applyAppearance));
+function renderAppearance() {
+  const st = prefs();
+  $("themeList").innerHTML = THEMES.map(
+    (th) => `<button type="button" role="radio" class="theme-card th-${th}" aria-checked="${st.theme === th}" data-theme-choice="${th}">
+      <span class="th-art" aria-hidden="true"><i></i><i></i><i></i></span>
+      <strong>${t(`theme.${th}`)}</strong>${th === "auto" ? `<small>${t("theme.auto_d")}</small>` : ""}
+    </button>`
+  ).join("");
+  $("textSizeList").style.gridTemplateColumns = "repeat(3,1fr)";
+  $("textSizeList").innerHTML = TEXT_SIZES.map(
+    (z) => `<button type="button" role="radio" class="ts-${z}" aria-checked="${st.textSize === z}" data-text-size="${z}"><span class="ts-a" aria-hidden="true">A</span>${t(`text.${z}`)}</button>`
+  ).join("");
+}
+$("themeList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-theme-choice]");
+  if (b) settings.set({ theme: b.dataset.themeChoice });
+});
+$("textSizeList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-text-size]");
+  if (b) settings.set({ textSize: b.dataset.textSize });
+});
+
+// Mes données : chiffres, sauvegarde, effacement (confirmation par un second appui)
+let confirmData = null;
+function renderDataPage(msg) {
+  const all = store.all();
+  const stats = [
+    [all.length, "data.history"],
+    [all.filter((e) => e.fav).length, "data.favs"],
+    [basket.all().length, "data.basket"],
+    [Object.keys(localProductsAll()).length, "data.local"],
+  ];
+  $("dataStats").innerHTML = stats.map(([n, k]) => `<div class="data-stat"><strong>${n}</strong><small>${t(k)}</small></div>`).join("");
+  $("clearHistoryBtn").textContent = t(confirmData === "history" ? "data.confirm" : "data.clear_history");
+  $("resetBtn").textContent = t(confirmData === "reset" ? "data.confirm" : "data.reset");
+  $("clearHistoryBtn").classList.toggle("is-confirm", confirmData === "history");
+  $("resetBtn").classList.toggle("is-confirm", confirmData === "reset");
+  if (msg !== undefined) $("dataStatus").textContent = msg;
+}
+const LOCAL_KEY_APP = "halalscan_local_v1";
+function localProductsAll() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY_APP)) || {}; } catch { return {}; }
+}
+$("clearHistoryBtn").addEventListener("click", () => {
+  if (confirmData !== "history") { confirmData = "history"; return renderDataPage(""); }
+  confirmData = null;
+  store.clear({ keepFavs: true });
+  renderDataPage(t("data.cleared"));
+});
+$("resetBtn").addEventListener("click", () => {
+  if (confirmData !== "reset") { confirmData = "reset"; return renderDataPage(""); }
+  confirmData = null;
+  settings.reset();
+  renderDataPage(t("data.reset_done"));
+});
+$("exportBtn").addEventListener("click", () => {
+  const data = {
+    app: "bayyin",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    settings: prefs(),
+    history: store.all(),
+    basket: basket.all(),
+    local: localProductsAll(),
+  };
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `bayyin-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  renderDataPage(t("data.exported"));
+});
+$("importInput").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || data.app !== "bayyin") throw new Error("format");
+    store.merge(data.history || []);
+    if (Array.isArray(data.basket)) {
+      const have = new Set(basket.all().map((x) => x.code));
+      basket.save([...basket.all(), ...data.basket.filter((x) => x && x.code && !have.has(x.code))].slice(0, 80));
+    }
+    if (data.local && typeof data.local === "object") {
+      for (const [code, raw] of Object.entries(data.local)) if (!localProducts.get(code)) localProducts.set(code, raw);
+    }
+    if (data.settings) settings.import(data.settings);
+    renderDataPage(t("data.imported", { n: (data.history || []).length }));
+  } catch {
+    renderDataPage(t("data.import_error"));
+  }
+});
+
+// Comprendre les notes : un onglet par type de note
+$("notesTabs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-notes]");
+  if (!b) return;
+  document.querySelectorAll("#notesTabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll("[data-notes-of]").forEach((el) => (el.hidden = el.dataset.notesOf !== b.dataset.notes));
+});
 
 $("langGrid").addEventListener("click", (e) => {
   const b = e.target.closest("[data-lang]");
@@ -1349,6 +1571,7 @@ $("offlineBtn").addEventListener("click", async () => {
 
 // Changement de réglage : tout ce qui est affiché est recalculé
 settings.subscribe((st, patch) => {
+  if (patch.theme || patch.textSize || patch.reset || patch.imported) applyAppearance();
   if (patch.lang) {
     setLang(st.lang);
     applyStatic();
@@ -1382,8 +1605,11 @@ $("tabScan").addEventListener("click", (e) => {
 });
 
 function showTab(name) {
+  const [main, sub] = String(name || "").split("/");
+  name = main;
   if (name === "infos") name = "settings"; // ancienne adresse
   if (!TABS.includes(name)) name = "scan";
+  const wasSettings = current === "settings";
   current = name;
   document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
   document.querySelectorAll(".tab").forEach((tab) =>
@@ -1395,7 +1621,10 @@ function showTab(name) {
     renderHistory();
   }
   if (name === "additives") renderAdditives();
-  if (name === "settings") renderSettings();
+  if (name === "settings") {
+    renderSettings();
+    showSetPage(SET_PAGES.includes(sub) ? sub : "menu", { animate: wasSettings });
+  }
   $("tabScan").setAttribute("aria-label", t(name === "scan" ? "home.scan" : "tab.scan"));
   window.scrollTo(0, 0);
 }
@@ -1830,6 +2059,7 @@ settings.subscribe(() => {
 // ===========================================================================
 // Démarrage
 // ===========================================================================
+applyAppearance();
 setLang(prefs().lang);
 applyStatic();
 renderSuggestions();

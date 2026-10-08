@@ -4,6 +4,8 @@ import { PROFILE_ALLERGENS, DIETS } from "./profile.js";
 
 const KEY = "halalscan_settings_v1";
 export const LANGS = ["fr", "en", "ar", "tr"];
+export const THEMES = ["auto", "light", "dark"];
+export const TEXT_SIZES = ["normal", "large", "xlarge"];
 
 function detectLang() {
   const langs = (typeof navigator !== "undefined" && (navigator.languages || [navigator.language])) || [];
@@ -21,13 +23,23 @@ function load() {
   } catch {
     saved = {};
   }
+  return normalize(saved);
+}
+
+// Réglages lus (stockage ou fichier importé) : chaque valeur est vérifiée
+function normalize(saved) {
+  saved = saved && typeof saved === "object" ? saved : {};
   const school = SCHOOLS[saved.school] || saved.school === "custom" ? saved.school : DEFAULT_PREFS.school;
   const topics = { ...SCHOOLS.standard, ...(SCHOOLS[school] || {}), ...(saved.topics || {}) };
   for (const t of Object.keys(topics)) if (!TOPICS.includes(t)) delete topics[t];
   return {
     lang: LANGS.includes(saved.lang) ? saved.lang : detectLang(),
     school,
+    // École de départ d'un réglage personnalisé : sert à montrer les points modifiés
+    baseSchool: SCHOOLS[saved.baseSchool] ? saved.baseSchool : SCHOOLS[school] ? school : "standard",
     topics,
+    theme: THEMES.includes(saved.theme) ? saved.theme : "auto",
+    textSize: TEXT_SIZES.includes(saved.textSize) ? saved.textSize : "normal",
     offlinePackAt: saved.offlinePackAt || null,
     offlinePackCount: saved.offlinePackCount || 0,
     offlineMedCount: saved.offlineMedCount || 0,
@@ -63,7 +75,7 @@ export const settings = {
   // Choisir une école remplace tous les avis par ceux de l'école.
   setSchool(school) {
     if (!SCHOOLS[school]) return;
-    this.set({ school, topics: { ...SCHOOLS[school] } });
+    this.set({ school, baseSchool: school, topics: { ...SCHOOLS[school] } });
   },
   // Modifier un seul sujet fait passer en réglage personnalisé.
   setTopic(topic, decision) {
@@ -80,6 +92,20 @@ export const settings = {
   },
   setDiet(diet) {
     this.set({ profile: { ...current.profile, diet: DIETS.includes(diet) ? diet : null } });
+  },
+  // Fichier importé : remplace les réglages (valeurs vérifiées), garde l'accueil déjà vu
+  import(obj) {
+    const next = normalize({ ...obj, onboarded: true });
+    current = next;
+    save();
+    listeners.forEach((fn) => fn(current, { lang: next.lang, imported: true }));
+  },
+  // Revenir aux réglages d'origine, sans changer la langue ni revoir l'accueil
+  reset() {
+    const next = normalize({ lang: current.lang, onboarded: true });
+    current = next;
+    save();
+    listeners.forEach((fn) => fn(current, { reset: true }));
   },
   subscribe(fn) {
     listeners.add(fn);

@@ -55,6 +55,18 @@ export const store = {
     write(read().filter((e) => e.code !== code));
     emit();
   },
+  // Import d'une sauvegarde : fusion par code-barres, l'entrée la plus récente l'emporte
+  merge(entries) {
+    const byCode = new Map(read().map((e) => [e.code, e]));
+    for (const e of Array.isArray(entries) ? entries : []) {
+      if (!e || !e.code || !e.p) continue;
+      const prev = byCode.get(e.code);
+      if (!prev || (e.at || 0) > (prev.at || 0)) byCode.set(e.code, { code: e.code, at: e.at || Date.now(), fav: !!(e.fav || (prev && prev.fav)), p: e.p });
+      else if (e.fav) prev.fav = true;
+    }
+    write([...byCode.values()].sort((a, b) => b.at - a.at));
+    emit();
+  },
   clear({ keepFavs = true } = {}) {
     write(keepFavs ? read().filter((e) => e.fav) : []);
     emit();
