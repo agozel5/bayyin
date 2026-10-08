@@ -2,31 +2,24 @@
 // (CosIng, CLP) et écrit un rapport. À supprimer une fois l'import en place.
 import { writeFile } from "node:fs/promises";
 const UA = { "User-Agent": "Mozilla/5.0 (Bayyin probe)", Accept: "*/*" };
+const URL_ = "https://webgate.ec.europa.eu/es/search-api/rest/search", KEY = "285a77fd-1257-4271-8507-f0c6b2961203";
 let out = "";
-const base = "https://ec.europa.eu/growth/tools-databases/cosing/";
-const cfgRes = await fetch(base + "assets/env-json-config.json", { headers: UA });
-const cfgText = await cfgRes.text();
-out += "CONFIG " + cfgRes.status + "\n" + cfgText.slice(0, 3000) + "\n";
-let cfg = {};
-try { cfg = JSON.parse(cfgText); } catch {}
-const find = (o, k) => (o && typeof o === "object" ? (k in o ? o[k] : Object.values(o).map((v) => find(v, k)).find((v) => v !== undefined)) : undefined);
-const url = find(cfg, "euSearchApiUrl"), key = find(cfg, "euSearchApiKey");
-out += `\nURL=${url} KEY=${key}\n`;
-if (url && key) {
-  for (const [label, q, size] of [["ingredient", { bool: { must: [{ term: { itemType: "ingredient" } }] } }, 3], ["substance annexe II", { bool: { must: [{ term: { itemType: "substance" } }, { term: { annexNo: "II" } }] } }, 2]]) {
-    const fd = new FormData();
-    fd.append("query", new Blob([JSON.stringify(q)], { type: "application/json" }));
-    const t0 = Date.now();
-    const r = await fetch(`${url}?apiKey=${key}&text=*&pageSize=${size}&pageNumber=1`, { method: "POST", body: fd, headers: UA });
-    const tx = await r.text();
-    out += `\n===== ${label} HTTP ${r.status} ${Date.now() - t0} ms\n${tx.slice(0, 6000)}\n`;
-  }
-  // Taille de page maximale
+async function search(q, text = "*", size = 5) {
   const fd = new FormData();
-  fd.append("query", new Blob([JSON.stringify({ bool: { must: [{ term: { itemType: "ingredient" } }] } })], { type: "application/json" }));
-  const r = await fetch(`${url}?apiKey=${key}&text=*&pageSize=2000&pageNumber=1`, { method: "POST", body: fd, headers: UA });
-  const j = await r.json().catch(() => ({}));
-  out += `\n===== pageSize 2000 : HTTP ${r.status}, résultats ${j.results ? j.results.length : "?"}, total ${j.totalResults}\n`;
+  fd.append("query", new Blob([JSON.stringify(q)], { type: "application/json" }));
+  const r = await fetch(`${URL_}?apiKey=${KEY}&text=${encodeURIComponent(text)}&pageSize=${size}&pageNumber=1`, { method: "POST", body: fd, headers: UA });
+  return r.json();
+}
+const pick = (m) => Object.fromEntries(["itemType", "inciName", "casNo", "functionName", "cosmeticRestriction", "annexNo", "refNo", "perfuming", "status", "classificationInformation", "identifiedIngredient", "substanceId", "wordingOfConditions", "maximumConcentration", "productTypeBodyParts"].map((k) => [k, m[k]]));
+for (const name of ["PROPYLPARABEN", "LIMONENE", "TALC", "PHENOXYETHANOL", "RETINOL", "ZINC PYRITHIONE", "CI 77891", "AQUA", "SODIUM HYDROXIDE", "TRICLOSAN"]) {
+  const j = await search({ bool: { must: [{ terms: { itemType: ["ingredient", "substance"] } }, { text: { query: name, fields: ["inciName.exact"] } }] } }, "*", 6);
+  out += `\n===== ${name} (${j.totalResults})\n` + (j.results || []).map((r) => JSON.stringify(pick(r.metadata))).join("\n") + "\n";
+}
+// Lignes d'exemple des annexes II et III (CSV)
+for (const a of ["II", "III"]) {
+  const t = await (await fetch(`https://api.tech.ec.europa.eu/cosing20/1.0/api/annexes/${a}/export-csv`, { headers: UA })).text();
+  const lines = t.split("\n");
+  out += `\n===== ANNEXE ${a} (${lines.length} lignes)\n` + lines.slice(0, 12).join("\n") + "\n...\n" + lines.filter((l) => /CMR|Carc|Repr|Muta|1B|1A/.test(l)).slice(0, 6).join("\n") + "\n" + lines.filter((l) => /Limonene|LIMONENE|0[.,]001/.test(l)).slice(0, 4).join("\n") + "\n";
 }
 await writeFile(new URL("../docs/probe-report.txt", import.meta.url), out);
 console.log(out.slice(0, 3000));
