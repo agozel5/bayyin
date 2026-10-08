@@ -4,13 +4,20 @@ annexe IV : 154 lignes
 annexe V : 58 lignes
 annexe VI : 34 lignes
 inventaire annoncé : 33655
-tranche 0-2147483648 : 4723 / 4723
-ingrédients récupérés : 4707
-file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:131
+préfixe 1 : 4723 / 4723
+préfixe 3 : 4188 / 4188
+préfixe 4 : 1332 / 1332
+préfixe 5 : 5490 / 5490
+préfixe 6 : 305 / 305
+préfixe 7 : 2872 / 2872
+préfixe 8 : 6549 / 6549
+ingrédients récupérés : 25443
+file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:136
 if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
                                                       ^
 
-Error: Inventaire incomplet : 4707 sur 33655
-    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:131:55
+Error: Inventaire incomplet : 25443 sur 33655
+    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:136:55
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
 
 Node.js v22.23.3
