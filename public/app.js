@@ -10,6 +10,7 @@ import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources
 import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profile.js";
 import { BEAUTY_RULES } from "./lib/beauty.js";
 import { isMedicineCode } from "./lib/medicine.js";
+import { drawShareCard } from "./lib/sharecard.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -163,8 +164,15 @@ function medicineSection(p) {
 }
 
 function halalSection(p, v) {
+  // Label lu sur la fiche Open Food Facts : les organismes ne publient pas la liste de leurs produits,
+  // on ne peut donc pas le confirmer automatiquement. On le dit, et on donne un moyen de vérifier.
+  const org = v.certification && v.certification.organisme;
+  const verifyUrl = org
+    ? CERT_LINKS[org] || `https://duckduckgo.com/?q=${encodeURIComponent(`${org} halal ${p.brand || ""}`)}`
+    : `https://duckduckgo.com/?q=${encodeURIComponent(`${p.brand || nameOf(p)} halal certification organisme`)}`;
   const cert = v.certification
-    ? `<div class="cert">${svg(I.shield)}${t("detail.certified")}${v.certification.organisme ? " · " + esc(v.certification.organisme) : ""}</div>`
+    ? `<div class="cert">${svg(I.shield)}${t("detail.certified")}${org ? " · " + esc(org) : ""}</div>
+       <p class="cert-note">${t("cert.unverified")} <a href="${esc(verifyUrl)}" target="_blank" rel="noopener">${esc(org ? t("cert.verify", { org }) : t("cert.verify_any"))} ↗</a></p>`
     : "";
   const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
   const flags = v.flags.length
@@ -193,7 +201,34 @@ function halalSection(p, v) {
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
     ${cert}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
-    ${flags}${ocrCta}</section>`;
+    ${flags}${askBrand(p, v)}${ocrCta}</section>`;
+}
+
+// Pages des organismes où l'on peut vérifier un partenaire (seulement celles qui ont été vérifiées)
+const CERT_LINKS = { AVS: "https://avs.fr/en/suppliers/" };
+
+// « Demander à la marque » : un message prêt à envoyer sur les ingrédients douteux
+function askBrandMessage(p, v) {
+  const doubts = v.flags.filter((f) => f.severity === "mashbouh" || f.severity === "haram").map((f) => flagLabel(f));
+  return {
+    subject: t("ask.subject", { name: nameOf(p) }),
+    body: t("ask.body", { name: nameOf(p), brand: p.brand || "", code: p.code, list: doubts.map((d) => "- " + d).join("\n") }),
+  };
+}
+function askBrand(p, v) {
+  if (kindOf(p) === "medicine" || !/^\d+$/.test(p.code)) return "";
+  if (!v.flags.some((f) => f.severity === "mashbouh" && !f.covered)) return "";
+  const m = askBrandMessage(p, v);
+  const mail = `mailto:?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
+  const find = `https://duckduckgo.com/?q=${encodeURIComponent(`${p.brand || nameOf(p)} service consommateurs contact`)}`;
+  return `<div class="ask">
+    <strong>${t("ask.t")}</strong><p>${t("ask.p")}</p>
+    <div class="ask-actions">
+      <a class="btn btn-primary" href="${esc(mail)}">${svg('<path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/>')}${t("ask.write")}</a>
+      <button class="btn btn-soft" type="button" data-ask-copy>${t("ask.copy")}</button>
+      <a class="btn btn-soft" href="${esc(find)}" target="_blank" rel="noopener">${t("ask.find")}</a>
+    </div>
+  </div>`;
 }
 
 function nutRow(n) {
@@ -295,9 +330,9 @@ function productDetail(p) {
     ? `<section class="sec"><details class="ingr"${p.local ? " open" : ""}><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
     : "";
   const isBarcode = /^\d+$/.test(p.code);
-  const alt = p.local || kind !== "food"
+  const alt = p.local || kind === "medicine"
     ? ""
-    : `<section class="sec" id="altSection"><div class="sec-head"><h3>${t("detail.alternatives")}</h3><small>${t("detail.alt_sub")}</small></div>
+    : `<section class="sec" id="altSection"><div class="sec-head"><h3>${t("detail.alternatives")}</h3><small>${t(kind === "beauty" ? "detail.alt_sub_beauty" : "detail.alt_sub")}</small></div>
       <div id="altBox"><div class="loading"><span class="spinner"></span>${t("detail.alt_loading")}</div></div></section>`;
   const offLink = p.local
     ? isBarcode
@@ -432,6 +467,8 @@ function renderSheetProduct(p) {
   sheetProduct = p;
   $("sheetTitle").textContent = nameOf(p);
   $("sheetBody").innerHTML = productDetail(p);
+  $("sheetCompare").hidden = kindOf(p) === "medicine";
+  $("sheetShare").hidden = false;
   refreshFav();
 }
 
@@ -493,25 +530,59 @@ $("scanAgain").addEventListener("click", () => {
   sheetCode = null;
   openCamera({ replace: true });
 });
-if (navigator.share) {
-  $("sheetShare").hidden = false;
-  $("sheetShare").addEventListener("click", async () => {
-    const p = sheetProduct;
-    if (!p) return;
-    const s = scoreOf(p);
-    try {
-      await navigator.share({
-        title: nameOf(p),
-        text: t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t("sheet.share_health", { n: s.score }) : "" }),
-        url: location.origin + location.pathname,
-      });
-    } catch { /* partage annulé */ }
-  });
-}
+// Partage : une carte image du verdict (ou le texte si le partage d'image n'est pas possible)
+$("sheetShare").hidden = false;
+$("sheetShare").addEventListener("click", async () => {
+  const p = sheetProduct;
+  if (!p) return;
+  const v = verdictOf(p);
+  const s = scoreOf(p);
+  const text = t("sheet.share_text", { name: nameOf(p), status: S(v.status, "label"), health: s ? t("sheet.share_health", { n: s.score }) : "" });
+  const url = location.origin + location.pathname;
+  try {
+    const blob = await drawShareCard({
+      name: nameOf(p), brand: p.brand, image: p.image, status: v.status, statusLabel: S(v.status, "label"),
+      kicker: t("detail.halal"), lead: S(v.status, "lead"), score: s ? s.score : null, grade: s && s.grade,
+      gradeLabel: s ? t(`grade.${s.grade}`) : "", healthLabel: t("detail.health"), footer: t("share.footer"), rtl: getLang() === "ar",
+    });
+    const file = new File([blob], `bayyin-${p.code}.png`, { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: nameOf(p), text: `${text}\n${url}` });
+    } else if (navigator.share) {
+      await navigator.share({ title: nameOf(p), text, url });
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = file.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast(t("share.saved"));
+    }
+  } catch {
+    /* partage annulé */
+  }
+});
 
 // Délégation : ouvrir une fiche, aller aux réglages, préparer une photo d'ingrédients
 let pendingOcrCode = null;
 document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-ask-copy]") && sheetProduct) {
+    const m = askBrandMessage(sheetProduct, verdictOf(sheetProduct));
+    navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`).then(() => toast(t("ask.copied")), () => {});
+    return;
+  }
+  const cmp = e.target.closest("[data-compare]");
+  if (cmp) return showCompare(cmp.dataset.compare);
+  if (e.target.closest("[data-basket-clear]")) {
+    basket.clear();
+    toast(t("basket.cleared"));
+    return renderBasket();
+  }
+  if (e.target.closest("[data-basket-scan]")) {
+    basketMode = true;
+    closeSheet();
+    return setTimeout(() => openCamera(), 60);
+  }
   const open = e.target.closest("[data-open]");
   if (open) return openSheet(open.dataset.open, { replace: !sheet.hidden });
   const ocr = e.target.closest("[data-ocr-code], label[for=ocrInput]");
@@ -631,8 +702,9 @@ const camera = createCamera({
     }
   },
   onCode(code) {
-    // Confirmation : cadre vert un court instant, puis la fiche
     clearTimeout(slowTimer);
+    if (basketMode) return basketScan(code); // mode courses : on reste dans la caméra
+    // Confirmation : cadre vert un court instant, puis la fiche
     cameraEl.classList.add("found");
     setTimeout(() => {
       cameraEl.classList.remove("found");
@@ -644,6 +716,8 @@ const camera = createCamera({
 
 function openCamera({ replace = false } = {}) {
   cameraEl.hidden = false;
+  $("camFlash").hidden = true;
+  renderBasketButtons();
   cameraEl.dataset.state = "starting";
   torchOn = false;
   $("torchBtn").setAttribute("aria-pressed", "false");
@@ -655,6 +729,7 @@ function openCamera({ replace = false } = {}) {
 
 function closeCamera({ fromPop = false, keepHistory = false } = {}) {
   if (cameraEl.hidden) return;
+  basketMode = false; // le mode courses ne dure que le temps d'une session de caméra
   camera.stop();
   cameraEl.hidden = true;
   lockScroll();
@@ -729,6 +804,7 @@ $("manualForm").addEventListener("submit", (e) => {
 function renderHome() {
   const all = store.all();
   $("view-scan").classList.toggle("returning", all.length > 0); // accueil court pour qui revient
+  renderBasketButtons();
   const recent = all.slice(0, 10);
   const favs = all.filter((e) => e.fav).slice(0, 10);
   $("homeRecent").hidden = !recent.length;
@@ -1153,16 +1229,19 @@ $("topicList").addEventListener("click", (e) => {
 
 // Pack hors connexion
 let packing = false;
-function renderOfflineStatus(progress) {
+function renderOfflineStatus(progress, med) {
   const st = prefs();
   const btn = $("offlineBtn");
   btn.disabled = packing;
   btn.textContent = t(st.offlinePackAt ? "settings.offline_update" : "settings.offline_btn");
   $("offlineStatus").textContent =
     progress !== undefined
-      ? t("settings.offline_progress", { n: progress })
+      ? med !== undefined
+        ? t("settings.offline_progress_med", { n: med })
+        : t("settings.offline_progress", { n: progress })
       : st.offlinePackAt
-        ? t("settings.offline_done", { n: st.offlinePackCount, d: new Date(st.offlinePackAt).toLocaleDateString(locale(), { day: "numeric", month: "long" }) })
+        ? t("settings.offline_done", { n: st.offlinePackCount, d: new Date(st.offlinePackAt).toLocaleDateString(locale(), { day: "numeric", month: "long" }) }) +
+          (st.offlineMedCount ? " " + t("settings.offline_meds", { n: st.offlineMedCount.toLocaleString(locale()) }) : "")
         : "";
 }
 $("offlineBtn").addEventListener("click", async () => {
@@ -1175,9 +1254,9 @@ $("offlineBtn").addEventListener("click", async () => {
   renderOfflineStatus(0);
   try {
     getDetector().catch(() => {}); // garde aussi le lecteur de codes-barres en cache
-    const n = await off.offlinePack({ onProgress: (count) => renderOfflineStatus(count) });
+    const { count: n, medCount } = await off.offlinePack({ onProgress: (count, _t, med) => renderOfflineStatus(count, med) });
     packing = false;
-    settings.set({ offlinePackAt: Date.now(), offlinePackCount: n });
+    settings.set({ offlinePackAt: Date.now(), offlinePackCount: n, offlineMedCount: medCount });
   } catch {
     packing = false;
     renderOfflineStatus();
@@ -1285,6 +1364,242 @@ function toast(text) {
 }
 
 // ===========================================================================
+// Mode courses : scan en rafale, panier et bilan
+// ===========================================================================
+const BASKET_KEY = "bayyin_basket_v1";
+const basket = {
+  all() {
+    try {
+      return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
+    } catch {
+      return [];
+    }
+  },
+  save(list) {
+    try {
+      localStorage.setItem(BASKET_KEY, JSON.stringify(list));
+    } catch { /* stockage indisponible */ }
+  },
+  add(p) {
+    const list = this.all().filter((x) => x.code !== p.code);
+    list.unshift({ code: p.code, at: Date.now() });
+    this.save(list.slice(0, 80));
+  },
+  clear() {
+    this.save([]);
+  },
+};
+let basketMode = false;
+const basketProducts = () => basket.all().map((x) => (store.get(x.code) || {}).p || memo.get(x.code)).filter(Boolean);
+
+function renderBasketButtons() {
+  const n = basket.all().length;
+  $("camBasketMode").setAttribute("aria-pressed", String(basketMode));
+  $("camBasketMode").textContent = t(basketMode ? "basket.mode_on" : "basket.mode");
+  $("camBasketOpen").hidden = !basketMode || !n;
+  $("camBasketOpen").textContent = t("basket.open", { n });
+  const home = $("homeBasket");
+  home.hidden = !n;
+  if (n) home.innerHTML = `${svg('<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.5a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>')}<span><strong>${t("basket.title")}</strong><small>${esc(tn("basket.count", n))}</small></span>${svg(I.chev, "flip")}`;
+}
+
+async function basketScan(code) {
+  cameraEl.classList.add("found");
+  const flash = $("camFlash");
+  flash.hidden = false;
+  flash.className = "cam-flash";
+  flash.textContent = t("msg.loading");
+  try {
+    const p = await fetchProduct(code);
+    if (p) {
+      store.add(p);
+      basket.add(p);
+      const st = verdictOf(p).status;
+      const al = profileOf(p).alert;
+      flash.className = `cam-flash v-${st}`;
+      flash.innerHTML = `<strong>${esc(S(st, "label"))}</strong><span>${esc(nameOf(p))}</span>${al ? `<em>${esc(t(`alert.${al}`))}</em>` : ""}`;
+      if (navigator.vibrate) navigator.vibrate(st === "haram" || al === "no" ? [60, 60, 60] : 40);
+    } else {
+      flash.className = "cam-flash v-inconnu";
+      flash.textContent = t("msg.notfound.t") + " · " + code;
+    }
+  } catch {
+    flash.className = "cam-flash v-inconnu";
+    flash.textContent = t("msg.load_error.t");
+  }
+  renderBasketButtons();
+  // Reprise du scan après un court instant, pour laisser lire le résultat
+  setTimeout(() => {
+    cameraEl.classList.remove("found");
+    if (!cameraEl.hidden && basketMode) camera.start();
+  }, 1400);
+}
+
+$("camBasketMode").addEventListener("click", () => {
+  basketMode = !basketMode;
+  $("camFlash").hidden = true;
+  renderBasketButtons();
+  toast(t(basketMode ? "basket.on_toast" : "basket.off_toast"));
+});
+$("camBasketOpen").addEventListener("click", () => {
+  closeCamera({ keepHistory: true });
+  openBasket({ replace: true });
+});
+$("homeBasket").addEventListener("click", () => openBasket());
+
+function openBasket({ replace = false } = {}) {
+  sheetCode = "basket";
+  sheetProduct = null;
+  $("sheetTitle").textContent = t("basket.title");
+  $("sheetCompare").hidden = true;
+  $("sheetShare").hidden = true;
+  showSheet({ replace });
+  refreshFav();
+  renderBasket();
+}
+function renderBasket() {
+  const items = basketProducts();
+  if (!items.length) {
+    $("sheetBody").innerHTML = `<div class="empty">${emptyArt()}<strong>${t("basket.empty.t")}</strong><p>${t("basket.empty.p")}</p><button class="btn btn-primary" type="button" data-basket-scan>${t("basket.start")}</button></div>`;
+    return;
+  }
+  const counts = {};
+  items.forEach((p) => {
+    const st = verdictOf(p).status;
+    counts[st] = (counts[st] || 0) + 1;
+  });
+  const scores = items.map(scoreOf).filter(Boolean).map((x) => x.score);
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const alerts = items.filter((p) => profileOf(p).alert).length;
+  const seen = STATUS_ORDER.filter((x) => counts[x]);
+  $("sheetBody").innerHTML = `<div class="stats basket-stats">
+      <div class="stats-top"><span class="stats-num">${items.length}</span><span class="stats-unit">${esc(tn("basket.count", items.length).replace(/^\d+\s*/, ""))}</span></div>
+      <div class="bar">${seen.map((x) => `<i style="flex:${counts[x]};--c:${STATUS_COLOR[x]}"></i>`).join("")}</div>
+      <div class="bar-legend">${seen.map((x) => `<span><i class="dot" style="--c:${STATUS_COLOR[x]}"></i>${counts[x]} ${S(x, "label")}</span>`).join("")}</div>
+      ${avg !== null ? `<p class="basket-avg">${t("basket.avg", { n: avg })}</p>` : ""}
+      ${alerts ? `<p class="basket-alert">${esc(tn("basket.alerts", alerts))}</p>` : ""}
+    </div>
+    <div class="list">${items.map((p) => rowHtml(p)).join("")}</div>
+    <div class="basket-actions">
+      <button class="btn btn-primary" type="button" data-basket-scan>${t("basket.continue")}</button>
+      <button class="link-btn danger" type="button" data-basket-clear>${t("basket.clear")}</button>
+    </div>`;
+}
+
+// ===========================================================================
+// Comparer deux produits
+// ===========================================================================
+let compareBase = null;
+$("sheetCompare").addEventListener("click", () => {
+  if (!sheetProduct) return;
+  compareBase = sheetProduct;
+  const others = store.all().map((e) => e.p).filter((p) => p.code !== compareBase.code && kindOf(p) === kindOf(compareBase));
+  $("sheetTitle").textContent = t("cmp.title");
+  $("sheetCompare").hidden = true;
+  $("sheetBody").innerHTML = `<p class="lead cmp-intro">${esc(t("cmp.pick", { name: nameOf(compareBase) }))}</p>
+    ${others.length ? `<div class="list">${others.map((p) => rowHtml(p).replace('data-open="', 'data-compare="')).join("")}</div>` : `<div class="empty">${emptyArt()}<p>${t("cmp.none")}</p></div>`}`;
+  $("sheetBody").scrollTop = 0;
+});
+
+function showCompare(code) {
+  const a = compareBase;
+  const b = (store.get(code) || {}).p || memo.get(code);
+  if (!a || !b) return;
+  sheetCode = "compare";
+  sheetProduct = null;
+  refreshFav();
+  $("sheetShare").hidden = true;
+  const va = verdictOf(a), vb = verdictOf(b);
+  const sa = scoreOf(a), sb = scoreOf(b);
+  const nut = (p, id) => {
+    const h = p.health;
+    const n = h && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
+    return n ? `<span class="lv-${n.level} cmp-nut">${fmt(n.value)} ${esc(n.unit)}<i class="dot"></i></span>` : "—";
+  };
+  const better = (x, y, lowIsBetter) => (x === null || y === null || x === y ? ["", ""] : (lowIsBetter ? x < y : x > y) ? ["win", ""] : ["", "win"]);
+  const val = (p, id) => {
+    const h = p.health;
+    const n = h && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
+    return n ? n.value : null;
+  };
+  const rank = { halal_certifie: 4, halal_probable: 3, inconnu: 2, mashbouh: 1, haram: 0 };
+  const rows = [
+    [t("detail.halal"), `<span class="pill s-${va.status}"><span class="dot"></span>${S(va.status, "short")}</span>`, `<span class="pill s-${vb.status}"><span class="dot"></span>${S(vb.status, "short")}</span>`, better(rank[va.status], rank[vb.status])],
+    [t("detail.health"), sa ? `${sa.score}/100` : "—", sb ? `${sb.score}/100` : "—", better(sa && sa.score, sb && sb.score)],
+    ...["sugars", "saturated-fat", "salt", "energy", "fiber", "proteins"].map((id) => [t(`nut.${id}`), nut(a, id), nut(b, id), better(val(a, id), val(b, id), !["fiber", "proteins"].includes(id))]),
+    [t("detail.watch"), String(((a.health && a.health.additives) || []).length), String(((b.health && b.health.additives) || []).length),
+      better(((a.health && a.health.additives) || []).length, ((b.health && b.health.additives) || []).length, true)],
+    [t("detail.nova"), a.health && a.health.nova ? String(a.health.nova.group) : "—", b.health && b.health.nova ? String(b.health.nova.group) : "—",
+      better(a.health && a.health.nova && a.health.nova.group, b.health && b.health.nova && b.health.nova.group, true)],
+  ];
+  // Une ligne sans donnée des deux côtés n'apprend rien : on la retire
+  for (let i = rows.length - 1; i >= 0; i--) if (rows[i][1] === "—" && rows[i][2] === "—") rows.splice(i, 1);
+  const alA = profileOf(a).alert, alB = profileOf(b).alert;
+  if (alA || alB) rows.push([t("settings.profile"), alA ? `<span class="pill a-${alA}">${t(`alert.short.${alA}`)}</span>` : "✓", alB ? `<span class="pill a-${alB}">${t(`alert.short.${alB}`)}</span>` : "✓", better(alA ? 0 : 1, alB ? 0 : 1)]);
+  const head = (p) => `<button type="button" class="cmp-head" data-open="${esc(p.code)}">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : `<span class="ph">${svg(KIND_ICON[kindOf(p)])}</span>`}<strong>${esc(nameOf(p))}</strong><small>${esc(p.brand || "")}</small></button>`;
+  $("sheetTitle").textContent = t("cmp.title");
+  $("sheetBody").innerHTML = `<div class="cmp">
+    <div class="cmp-heads">${head(a)}${head(b)}</div>
+    <div class="cmp-table">${rows
+      .map(([label, x, y, [wa, wb]]) => `<div class="cmp-row"><span class="cmp-label">${esc(label)}</span><span class="cmp-cell ${wa}">${x}</span><span class="cmp-cell ${wb}">${y}</span></div>`)
+      .join("")}</div>
+    <p class="notes cmp-note">${t("cmp.note")}</p>
+  </div>`;
+  $("sheetBody").scrollTop = 0;
+}
+
+// ===========================================================================
+// Accueil guidé : langue, école, profil (une seule fois, au premier lancement)
+// ===========================================================================
+let obStep = 0;
+function renderOnboard() {
+  const st = prefs();
+  document.querySelectorAll("#obDots i").forEach((d, i) => d.classList.toggle("on", i === obStep));
+  const head = (title, text) => `<img src="icon.svg" alt="" width="52" height="52" class="ob-logo"><h2 id="obTitle">${title}</h2><p class="muted">${text}</p>`;
+  if (obStep === 0) {
+    $("obBody").innerHTML = head(t("ob.1.t"), t("ob.1.p")) +
+      `<div class="lang-grid" role="radiogroup">${LANGS.map((l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-ob-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`).join("")}</div>`;
+  } else if (obStep === 1) {
+    $("obBody").innerHTML = head(t("ob.2.t"), t("ob.2.p")) +
+      `<div class="school-list" role="radiogroup">${Object.keys(SCHOOLS).map((sc) => `<button type="button" role="radio" class="school" aria-checked="${st.school === sc}" data-ob-school="${sc}">
+        <span class="radio" aria-hidden="true"></span><span class="school-text"><strong>${t(`school.${sc}`)}</strong><small>${t(`school.${sc}.d`)}</small></span></button>`).join("")}</div>`;
+  } else {
+    $("obBody").innerHTML = head(t("ob.3.t"), t("ob.3.p")) +
+      `<h3 class="sub-label">${t("settings.diet")}</h3><div class="seg3" role="radiogroup">${[null, ...DIETS].map((d) => `<button type="button" role="radio" class="d-diet" aria-checked="${(st.profile.diet || null) === d}" data-ob-diet="${d || ""}">${t(d ? `diet.${d}` : "diet.none")}</button>`).join("")}</div>
+      <h3 class="sub-label">${t("settings.allergens")}</h3><div class="chips">${PROFILE_ALLERGENS.map((a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${st.profile.allergens.includes(a)}" data-ob-allergen="${a}">${esc(t(`allergen.${a}`))}</button>`).join("")}</div>`;
+  }
+  $("obNext").textContent = t(obStep === 2 ? "ob.start" : "ob.next");
+}
+function openOnboard() {
+  obStep = 0;
+  $("onboard").hidden = false;
+  renderOnboard();
+}
+function closeOnboard() {
+  $("onboard").hidden = true;
+  settings.set({ onboarded: true });
+}
+$("obNext").addEventListener("click", () => {
+  if (obStep < 2) {
+    obStep++;
+    renderOnboard();
+    $("obBody").scrollTop = 0;
+  } else closeOnboard();
+});
+$("obSkip").addEventListener("click", closeOnboard);
+$("obBody").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ob-lang],[data-ob-school],[data-ob-diet],[data-ob-allergen]");
+  if (!b) return;
+  if (b.dataset.obLang) settings.set({ lang: b.dataset.obLang });
+  else if (b.dataset.obSchool) settings.setSchool(b.dataset.obSchool);
+  else if (b.dataset.obAllergen) settings.toggleAllergen(b.dataset.obAllergen);
+  else settings.setDiet(b.dataset.obDiet || null);
+});
+settings.subscribe(() => {
+  if (!$("onboard").hidden) renderOnboard();
+});
+
+// ===========================================================================
 // Démarrage
 // ===========================================================================
 setLang(prefs().lang);
@@ -1293,6 +1608,7 @@ renderSuggestions();
 renderOnline();
 if (DEMO) $("demoBadge").hidden = false;
 showTab(location.hash.slice(1) || "scan");
+if (!prefs().onboarded && !DEMO) openOnboard();
 // Prépare le lecteur en arrière-plan pour que le premier scan soit immédiat.
 const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
 idle(() => getDetector().then(() => ($("engineInfo").textContent = detectorEngine())).catch(() => {}));

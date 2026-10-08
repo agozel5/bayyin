@@ -30,6 +30,8 @@ function load() {
     topics,
     offlinePackAt: saved.offlinePackAt || null,
     offlinePackCount: saved.offlinePackCount || 0,
+    offlineMedCount: saved.offlineMedCount || 0,
+    onboarded: !!saved.onboarded || Object.keys(saved).length > 0, // déjà utilisé avant l'accueil guidé
     // Profil personnel : allergies et régime
     profile: {
       allergens: ((saved.profile && saved.profile.allergens) || []).filter((a) => PROFILE_ALLERGENS.includes(a)),

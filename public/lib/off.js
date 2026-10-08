@@ -119,11 +119,27 @@ async function getJson(url, timeout = 12000) {
 
 // Cache partagé avec le service worker (sw.js) : fiches produits disponibles hors connexion.
 export const PRODUCT_CACHE = "hs-products-v1";
+export const MED_CACHE = "hs-med-v1"; // base des médicaments (voir sw.js)
 
 const rawCache = new Map(); // fiches brutes : le verdict est recalculé selon les réglages
 
 export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBase = MED_DATA_BASE } = {}) {
   const show = (raw) => present(raw, prefs());
+  // Cosmétiques : pas de note santé ; on propose des produits certifiés ou sans ingrédient problématique
+  async function beautyAlternatives(product) {
+    if (demo) return [];
+    const cats = (product.categories || []).filter((c) => c.startsWith("en:"));
+    const found = [];
+    for (const cat of cats.slice(-2).reverse()) {
+      const data = await getJson(`${OBF_BASE}/api/v2/search?categories_tags=${encodeURIComponent(cat)}&countries_tags=en:france&sort_by=unique_scans_n&page_size=40&fields=${FIELDS}`);
+      for (const p of ((data && data.products) || []).filter((x) => x.code && x.code !== product.code)) {
+        const shown = show({ ...p, kind: "beauty" });
+        if (["halal_certifie", "halal_probable"].includes(shown.verdict.status) && !found.some((f) => f.code === shown.code || f.name === shown.name)) found.push(shown);
+      }
+      if (found.length >= 4) break;
+    }
+    return found.sort((a, b) => (b.verdict.status === "halal_certifie") - (a.verdict.status === "halal_certifie")).slice(0, 6);
+  }
   const medShards = new Map();
   // Médicament : un seul petit fichier de la base publique est téléchargé (≈ 1/100)
   async function medicine(code) {
@@ -169,14 +185,25 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
           .filter((p) => [p.product_name_fr, p.brands].join(" ").toLowerCase().includes(n))
           .map(show);
       }
-      const url = `${OFF_BASE}/cgi/search.pl?search_terms=${encodeURIComponent(q)}` +
-        `&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
-      const data = await getJson(url);
-      return ((data && data.products) || []).filter((p) => p.code).map(show);
+      // Aliments et cosmétiques en parallèle ; une base qui ne répond pas n'empêche pas l'autre
+      const qs = `/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
+      const [food, beauty] = await Promise.allSettled([getJson(OFF_BASE + qs), getJson(OBF_BASE + qs.replace("page_size=20", "page_size=10"))]);
+      if (food.status === "rejected" && beauty.status === "rejected") throw food.reason;
+      const list = (r, kind) => (r.status === "fulfilled" && r.value && r.value.products ? r.value.products : [])
+        .filter((p) => p.code)
+        .map((p) => (kind ? { ...p, kind } : p));
+      const seen = new Set();
+      return [...list(food), ...list(beauty, "beauty")]
+        .filter((p) => (seen.has(p.code) ? false : seen.add(p.code)))
+        .map((p) => {
+          rawCache.set(p.code, p);
+          return show(p);
+        });
     },
 
     // -> alternatives halal mieux notées, dans la même catégorie (vendues en France)
     async alternatives(product) {
+      if (product.kind === "beauty") return beautyAlternatives(product);
       const cats = (product.categories || []).filter((c) => c.startsWith("en:"));
       if (demo) {
         const pool = Object.values(FIXTURES)
@@ -223,7 +250,28 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         onProgress && onProgress(count, pages * pageSize);
         if (products.length < pageSize) break;
       }
-      return count;
+      // Base des médicaments : les 100 petits fichiers, rangés dans un cache qui survit aux mises à jour de l'app
+      const med = await caches.open(MED_CACHE);
+      let medCount = 0;
+      const keys = Array.from({ length: 100 }, (_, i) => String(i).padStart(2, "0"));
+      for (let i = 0; i < keys.length; i += 10) {
+        await Promise.all(
+          keys.slice(i, i + 10).map(async (k) => {
+            const url = `${medBase}${k}.json`;
+            try {
+              const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+              if (!res.ok) return;
+              const copy = res.clone();
+              medCount += Object.keys(await res.json()).length;
+              await med.put(url, copy);
+            } catch {
+              /* fichier manquant : ignoré */
+            }
+          })
+        );
+        onProgress && onProgress(count, pages * pageSize, medCount);
+      }
+      return { count, medCount };
     },
   };
 }

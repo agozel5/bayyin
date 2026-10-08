@@ -6,10 +6,11 @@
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
 
-const VERSION = "2026-10-08-9";
+const VERSION = "2026-10-08-11";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
+const MED_CACHE = "hs-med-v1"; // base des médicaments : gardée d'une version à l'autre
 const MAX_PRODUCTS = 4000;
 
 const APP_FILES = [
@@ -17,7 +18,7 @@ const APP_FILES = [
   "icon.svg", "icon-180.png", "icon-192.png", "icon-512.png",
   "lib/off.js", "lib/rules.js", "lib/health.js", "lib/fixtures.js", "lib/camera.js", "lib/barcode.js",
   "lib/store.js", "lib/settings.js", "lib/i18n.js", "lib/ocr.js", "lib/sources.js",
-  "lib/beauty.js", "lib/medicine.js", "lib/profile.js",
+  "lib/beauty.js", "lib/medicine.js", "lib/profile.js", "lib/sharecard.js",
   "lib/i18n/fr.js", "lib/i18n/en.js", "lib/i18n/ar.js", "lib/i18n/tr.js",
 ];
 
@@ -87,11 +88,15 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
+  if (url.origin === self.location.origin && url.pathname.includes("/data/med/")) {
+    event.respondWith(networkFirst(req, MED_CACHE, { wait: 3000 }));
+    return;
+  }
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(req, APP_CACHE, { wait: 3500, ignoreSearch: req.mode === "navigate" }));
     return;
   }
-  if (url.hostname === "world.openfoodfacts.org" && url.pathname.startsWith("/api/v2/product/")) {
+  if ((url.hostname === "world.openfoodfacts.org" || url.hostname === "world.openbeautyfacts.org") && url.pathname.startsWith("/api/v2/product/")) {
     event.respondWith(networkFirst(req, PRODUCT_CACHE, { wait: 4000 }).finally(() => trimProducts().catch(() => {})));
     return;
   }
