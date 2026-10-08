@@ -125,7 +125,8 @@ async function collectRange(lo, hi) {
 }
 const TOTAL = await countOf([BASE_Q]);
 console.log("inventaire annoncé :", TOTAL);
-for (let lo = 0; lo < 1000000 && items.size < TOTAL; lo += 40000) await collectRange(lo, lo + 40000);
+// Les identifiants sont dispersés (jusqu'à plusieurs millions) : on part d'une très grande tranche
+await collectRange(0, 2 ** 31);
 console.log("ingrédients récupérés :", items.size);
 if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
 
