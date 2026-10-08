@@ -6,6 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
+import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -69,6 +70,12 @@ function flagReason(f) {
   if (f.group === "gras") return t("flag.fatty.reason");
   return t(`flag.${f.id}.reason`);
 }
+// « Source : EFSA, CIRC » avec liens
+function sourceLine(ids) {
+  const links = (ids || []).map((id) => SOURCE_BY_ID[id]).filter(Boolean)
+    .map((src) => `<a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.name)}</a>`);
+  return links.length ? `<span class="src-line">${t("detail.source")} : ${links.join(", ")}</span>` : "";
+}
 const noteText = (n) => (/\s/.test(n) ? n : t(`note.${n}`)); // anciennes entrées : texte déjà rédigé
 
 // ===========================================================================
@@ -124,6 +131,7 @@ function halalSection(p, v) {
             <span class="flag-why">${esc(flagReason(f))}</span>
             ${setting}
             ${f.source && !f.code ? `<span class="flag-src">${esc(t("detail.found_in", { s: f.source }))}</span>` : ""}
+            ${sourceLine(FLAG_SOURCES[f.id])}
           </div>`;
         })
         .join("")}</div>`
@@ -168,6 +176,7 @@ function healthSection(p) {
     ${neg.length || risky ? `<p class="sub-label">${t("detail.defects")}</p>${list(neg)}${risky ? addRow(true) : ""}` : ""}
     ${pos.length || !risky ? `<p class="sub-label">${t("detail.qualities")}</p>${list(pos)}${!risky ? addRow(false) : ""}` : ""}
     ${!hasNut ? `<p class="notes">${t("detail.nut_missing")}</p>` : ""}
+    ${s || hasNut ? sourceLine(["nutriscore", "fsa"]) : ""}
   </section>`;
 }
 
@@ -177,9 +186,40 @@ function additivesSection(p) {
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.watch")}</h3><small>${h.additives.length}</small></div>
     <div class="risks">${h.additives
       .map(
-        (a) => `<details class="risk"><summary><span>${esc(a.code)} · ${esc(t(`addname.${a.code.toLowerCase()}`))}</span><span class="pill r-${a.level}">${t(`risk.${a.level}`)}</span></summary><p>${esc(t(`risk.reason.${a.key}`))}</p></details>`
+        (a) => `<details class="risk"><summary><span>${esc(a.code)} · ${esc(t(`addname.${a.code.toLowerCase()}`))}</span><span class="pill r-${a.level}">${t(`risk.${a.level}`)}</span></summary><p>${esc(t(`risk.reason.${a.key}`))}</p><p class="risk-src">${sourceLine(RISK_SOURCES[a.key])}</p></details>`
       )
       .join("")}</div></section>`;
+}
+
+// Tous les additifs déclarés, avec leur statut halal (selon le réglage) et leur risque santé.
+function allAdditivesSection(p, v) {
+  if (!p.raw || p.local) return "";
+  const keys = [...new Set((p.raw.additives_tags || []).map((tag) => String(tag).replace(/^\w+:/, "").toLowerCase()))]
+    .filter((k) => /^e\d{3,4}[a-z]*$/.test(k));
+  if (!keys.length) return `<section class="sec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3></div><p class="notes">${t("detail.add_none")}</p></section>`;
+  const baseOf = (k) => k.match(/^e\d+/)[0];
+  // OFF donne aussi les sous-codes (E322 et E322i) : on garde le plus précis seulement s'il est seul
+  const shown = keys.filter((k) => !(k === baseOf(k) && keys.some((o) => o !== k && baseOf(o) === k)));
+  const rows = shown.map((k) => {
+    const flag = v.flags.find((f) => f.id === k || f.id === baseOf(k));
+    const risk = (p.health && p.health.additives || []).find((a) => a.code.toLowerCase() === k || a.code.toLowerCase() === baseOf(k));
+    const pills = [
+      flag ? `<span class="pill ${flag.severity === "haram" ? "s-haram" : flag.severity === "mashbouh" ? "s-mashbouh" : "r-info"}">${t("detail.halal")} · ${t(`sev.${flag.severity}`)}</span>` : "",
+      risk ? `<span class="pill r-${risk.level}">${t(`risk.short.${risk.level}`)}</span>` : "",
+    ].join("");
+    const name = risk ? t(`addname.${risk.code.toLowerCase()}`) : flag ? flagLabel(flag).replace(/^E\w+ · /, "") : "";
+    return `<div class="add-row"><span class="add-code" dir="ltr">${esc(k.toUpperCase())}</span><span class="add-row-name">${esc(name)}</span>${pills || `<span class="add-ok">${t("detail.add_ok")}</span>`}</div>`;
+  });
+  return `<section class="sec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3><small>${shown.length}</small></div><div class="add-rows">${rows.join("")}</div></section>`;
+}
+
+// Lien de signalement prérempli (ticket GitHub du projet)
+function reportLink(p, v) {
+  if (!/^\d+$/.test(p.code)) return "";
+  const st = prefs();
+  const vars = { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" };
+  const url = "https://github.com/agozel5/halal-scan/issues/new?title=" + encodeURIComponent(t("report.title", vars)) + "&body=" + encodeURIComponent(t("report.body", vars));
+  return `<a class="off-link muted-link" href="${esc(url)}" target="_blank" rel="noopener">${t("detail.report")}</a>`;
 }
 
 function extraSection(p) {
@@ -213,7 +253,7 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${esc(p.code)}" target="_blank" rel="noopener">${t("msg.add_off")}</a></section>`
       : ""
     : `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t("detail.off_link")}</a></section>`;
-  return `${productTop(p)}${scoreTiles(p, v)}${halalSection(p, v)}${healthSection(p)}${additivesSection(p)}${alt}${extraSection(p)}${ingr}${offLink}`;
+  return `${productTop(p)}${scoreTiles(p, v)}${halalSection(p, v)}${healthSection(p)}${additivesSection(p)}${alt}${allAdditivesSection(p, v)}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
 function altCard(a) {
@@ -887,6 +927,11 @@ function renderSettings() {
   $("demoLink").href = DEMO ? location.pathname + "#scan" : "?demo#scan";
   $("demoLinkT").textContent = t(DEMO ? "link.demo_exit.t" : "link.demo.t");
   $("demoLinkD").textContent = t(DEMO ? "link.demo_exit.d" : "link.demo.d");
+  $("sourceList").innerHTML = ["data", "health", "halal"]
+    .map((g) => `<p class="label">${t(`sources.g.${g}`)}</p><div class="source-list">${SOURCES.filter((src) => src.group === g)
+      .map((src) => `<a class="source" href="${esc(src.url)}" target="_blank" rel="noopener"><span><strong>${esc(src.name)}</strong><small>${t(`src.${src.id}`)}</small></span><span aria-hidden="true">↗</span></a>`)
+      .join("")}</div>`)
+    .join("");
 }
 
 $("langGrid").addEventListener("click", (e) => {

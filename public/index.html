@@ -61,6 +61,8 @@
       </button>
     </div>
 
+    <p class="privacy-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12.5l2 2 3.5-4"/></svg><span data-i18n="privacy.badge"></span></p>
+
     <form class="manual" id="manualForm" autocomplete="off" hidden>
       <label for="manualInput" data-i18n="home.manual_label"></label>
       <div class="field-row">
@@ -131,6 +133,11 @@
   <section class="view" id="view-settings" data-view="settings" aria-labelledby="h-settings" hidden>
     <header class="view-head"><h1 id="h-settings" data-i18n="settings.title"></h1></header>
 
+    <div class="privacy-card">
+      <span class="privacy-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12.5l2 2 3.5-4"/></svg></span>
+      <div><strong data-i18n="privacy.t"></strong><p data-i18n="privacy.p"></p></div>
+    </div>
+
     <section class="set-block">
       <h2 data-i18n="settings.lang"></h2>
       <div class="lang-grid" id="langGrid" role="radiogroup"></div>
@@ -174,6 +181,12 @@
         <div class="se-row"><span class="se-pts" data-pts="10"></span><p data-i18n-html="health.rule3_html"></p></div>
       </div>
       <div class="legend" id="legendHealth"></div>
+    </section>
+
+    <section class="set-block" id="sourcesBlock">
+      <h2 data-i18n="settings.sources"></h2>
+      <p class="muted" data-i18n="sources.intro"></p>
+      <div id="sourceList" class="sources"></div>
     </section>
 
     <section class="set-block">

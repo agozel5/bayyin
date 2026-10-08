@@ -12,6 +12,9 @@ Ce qui la distingue :
 - **verdict selon votre école** (hanafite, malékite, chaféite, hanbalite, prudent, ou point par point) pour les sujets débattus : insectes (carmin), présure, vinaigre de vin, alcool, etc. ;
 - **photo de la liste d'ingrédients** (OCR dans le navigateur) quand le produit n'est pas dans la base : texte corrigeable, analyse immédiate, mémorisée pour ce code-barres ;
 - **quatre langues** : français, anglais, arabe (de droite à gauche) et turc, avec détection des ingrédients sensibles dans ces langues ;
+- **sources citées** : chaque additif à risque, chaque interdit halal et la note santé renvoient vers leur source officielle (EFSA, ANSES, CIRC, JECFA, règlements européens, Nutri-Score, FSA, Coran) ; page « Nos sources » dans Réglages ;
+- **vie privée** : aucun compte, aucune publicité, aucun pistage ; tout reste sur le téléphone, seul le code-barres part vers Open Food Facts ;
+- **tous les additifs du produit** listés avec leur statut halal et santé, et un **signalement d'erreur** prérempli pour chaque produit ;
 - **hors connexion** : l'app et les fiches déjà vues restent disponibles sans réseau, plus un pack des 500 produits les plus scannés en France.
 
 Les données produits viennent d'[Open Food Facts](https://fr.openfoodfacts.org)
@@ -61,6 +64,7 @@ public/                 l'app (à héberger telle quelle)
   lib/settings.js       réglages (langue, école, avis par sujet), gardés sur l'appareil
   lib/i18n.js           traductions ; dictionnaires dans lib/i18n/{fr,en,ar,tr}.js
   lib/ocr.js            lecture d'étiquette (Tesseract.js chargé à la demande)
+  lib/sources.js        sources officielles et correspondance avec chaque explication
   sw.js                 service worker : mode hors connexion
   lib/store.js          historique et favoris (localStorage, consultables hors connexion)
   lib/rules.js          moteur de classification halal
