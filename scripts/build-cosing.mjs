@@ -98,33 +98,36 @@ async function searchPage(query, page, size = 200) {
   }
 }
 const items = new Map(); // substanceId -> metadata
-async function collect(query, label) {
-  let page = 1, total = Infinity, got = 0;
-  while ((page - 1) * 200 < total) {
-    let j;
-    try { j = await searchPage(query, page); } catch (e) { console.log(`${label} : arrêt page ${page} (${e.message})`); return false; }
-    total = j.totalResults || 0;
-    const res = j.results || [];
-    if (!res.length) { if ((page - 1) * 200 < total) { console.log(`${label} : page ${page} vide sur ${total}`); return false; } break; }
-    for (const r of res) { const m = r.metadata || {}; items.set((m.substanceId || [r.reference])[0], m); got++; }
-    page++;
-    await sleep(120);
-  }
-  console.log(`${label} : ${got} / ${total}`);
-  return true;
-}
 const BASE_Q = { term: { itemType: "ingredient" } };
-const full = await collect({ bool: { must: [BASE_Q] } }, "inventaire");
-if (!full) {
-  // L'API peut limiter la profondeur de pagination : on découpe par fonction, puis le reste par statut
-  console.log("découpage de la requête par fonction…");
-  const fnList = new Set();
-  for (const m of items.values()) for (const f of m.functionName || []) fnList.add(f);
-  for (const f of fnList) await collect({ bool: { must: [BASE_Q, { term: { functionName: f } }] } }, `fonction ${f}`);
-  await collect({ bool: { must: [BASE_Q], must_not: [{ exists: { field: "functionName" } }] } }, "sans fonction");
+// L'API ne renvoie pas plus de 10 000 résultats par requête : on découpe par tranches
+// d'identifiant (substanceId), en coupant en deux toute tranche trop grande.
+async function countOf(must) {
+  const j = await searchPage({ bool: { must } }, 1, 1);
+  return j.totalResults || 0;
 }
+async function collectRange(lo, hi) {
+  const must = [BASE_Q, { range: { substanceId: { gte: lo, lt: hi } } }];
+  const n = await countOf(must);
+  if (!n) return;
+  if (n > 9500 && hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    await collectRange(lo, mid);
+    await collectRange(mid, hi);
+    return;
+  }
+  let got = 0;
+  for (let page = 1; (page - 1) * 200 < n; page++) {
+    const j = await searchPage({ bool: { must } }, page);
+    for (const r of j.results || []) { const m = r.metadata || {}; items.set((m.substanceId || [r.reference])[0], m); got++; }
+    await sleep(100);
+  }
+  console.log(`tranche ${lo}-${hi} : ${got} / ${n}`);
+}
+const TOTAL = await countOf([BASE_Q]);
+console.log("inventaire annoncé :", TOTAL);
+for (let lo = 0; lo < 1000000 && items.size < TOTAL; lo += 40000) await collectRange(lo, lo + 40000);
 console.log("ingrédients récupérés :", items.size);
-if (items.size < 20000) throw new Error("Trop peu d'ingrédients : l'API a-t-elle changé ?");
+if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
 
 // --- 3. Fusion ---
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
