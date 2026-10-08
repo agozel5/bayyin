@@ -1,5 +1,5 @@
 {
-  "name": "halal-scan",
+  "name": "bayyin",
   "version": "0.1.0",
   "description": "Scanner de code-barres qui indique si un produit alimentaire est halal, douteux ou haram, à partir d'Open Food Facts.",
   "type": "module",

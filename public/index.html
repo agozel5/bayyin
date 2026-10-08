@@ -7,9 +7,9 @@
 <meta name="color-scheme" content="light only">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Halal Scan">
+<meta name="apple-mobile-web-app-title" content="Bayyin">
 <meta name="description" content="Scannez un produit alimentaire : halal, douteux ou haram selon votre école, note santé, additifs et meilleures alternatives.">
-<title>Halal Scan</title>
+<title>Bayyin — Halal & santé</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -27,10 +27,11 @@
   <section class="view" id="view-scan" data-view="scan" aria-labelledby="h-home">
     <header class="home-head">
       <div class="brand">
-        <img src="icon.svg" alt="" width="36" height="36"><span data-i18n="app.name">Halal Scan</span>
+        <img src="icon.svg" alt="" width="36" height="36"><span class="brand-name"><span data-i18n="app.name">Bayyin</span><span class="brand-ar" lang="ar" dir="rtl">بيّن</span></span>
         <span class="demo-badge" id="demoBadge" data-i18n="app.demo" hidden>Démo</span>
         <span class="offline-badge" id="offlineBadge" hidden><i></i><span data-i18n="app.offline">Hors connexion</span></span>
       </div>
+      <p class="eyebrow" data-i18n="app.tagline"></p>
       <h1 id="h-home" data-i18n-html="home.h1_html">Halal, santé, additifs.<br>Tout en un scan.</h1>
       <p data-i18n="home.lead"></p>
     </header>
@@ -157,6 +158,12 @@
       <p class="muted" data-i18n="settings.offline_p"></p>
       <button class="btn btn-soft" type="button" id="offlineBtn"></button>
       <p class="muted small" id="offlineStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="set-block why">
+      <h2 data-i18n="why.t"></h2>
+      <blockquote><p data-i18n="why.quote"></p><cite data-i18n="why.cite"></cite></blockquote>
+      <p class="muted" data-i18n="why.p"></p>
     </section>
 
     <section class="set-block">

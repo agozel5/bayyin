@@ -1,5 +1,5 @@
 export default {
-  "app.name": "Halal Scan",
+  "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
   "home.h1_html": "حلال، صحة، مضافات.<br>كل ذلك بمسحة واحدة.",
@@ -180,7 +180,7 @@ export default {
   "sheet.fav_added": "أضيف إلى المفضلة",
   "sheet.fav_removed": "أزيل من المفضلة",
   "sheet.scan_again": "امسح منتجاً آخر",
-  "sheet.share_text": "{name}: {status}{health} (Halal Scan)",
+  "sheet.share_text": "{name}: {status}{health} (Bayyin)",
   "sheet.share_health": "، الصحة {n}/100",
   "product.unnamed": "منتج بلا اسم",
   "detail.halal": "الحلال",
@@ -427,4 +427,10 @@ export default {
   "detail.report": "الإبلاغ عن خطأ في هذا المنتج ↗",
   "report.title": "حكم خاطئ: {name} ({code})",
   "report.body": "المنتج: {name}\nالرمز الشريطي: {code}\nالحكم المعروض: {status}\nالإعداد: {school}\nصفحة Open Food Facts: {url}\n\nما الخطأ:\n",
+  // ---------- nom ----------
+  "app.tagline": "ماسح الحلال والصحة",
+  "why.t": "لماذا «بيّن»؟",
+  "why.quote": "«إنّ الحلال بيّن، وإنّ الحرام بيّن، وبينهما مشتبهات لا يعلمهنّ كثير من الناس.»",
+  "why.cite": "حديث رواه البخاري (52) ومسلم (1599)",
+  "why.p": "«بيّن» تعني الواضح. والأحكام الثلاثة في التطبيق، حلال ومشبوه وحرام، مأخوذة من هذا الحديث: أن نوضّح ما هو واضح، وأن ننبّه بأمانة على ما ليس كذلك.",
 };

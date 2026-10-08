@@ -1,7 +1,7 @@
 {
-  "name": "Halal Scan",
-  "short_name": "Halal Scan",
-  "description": "Scannez un produit : halal ou non, note santé, additifs et meilleures alternatives.",
+  "name": "Bayyin — Halal & santé",
+  "short_name": "Bayyin",
+  "description": "Halal, douteux ou haram selon votre école, note santé, additifs et alternatives. Gratuit, sans pub, sans pistage.",
   "start_url": "./#scan",
   "display": "standalone",
   "background_color": "#FFFFFF",

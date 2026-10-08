@@ -1,7 +1,7 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
   // ---------- général ----------
-  "app.name": "Halal Scan",
+  "app.name": "Bayyin",
   "app.demo": "Démo",
   "app.offline": "Hors connexion",
   "home.h1_html": "Halal, santé, additifs.<br>Tout en un scan.",
@@ -188,7 +188,7 @@ export default {
   "sheet.fav_added": "Ajouté aux favoris",
   "sheet.fav_removed": "Retiré des favoris",
   "sheet.scan_again": "Scanner un autre produit",
-  "sheet.share_text": "{name} : {status}{health} (Halal Scan)",
+  "sheet.share_text": "{name} : {status}{health} (Bayyin)",
   "sheet.share_health": ", santé {n}/100",
   "product.unnamed": "Produit sans nom",
   "detail.halal": "Halal",
@@ -441,4 +441,10 @@ export default {
   "detail.report": "Signaler une erreur sur ce produit ↗",
   "report.title": "Erreur de classement : {name} ({code})",
   "report.body": "Produit : {name}\nCode-barres : {code}\nVerdict affiché : {status}\nRéglage : {school}\nFiche Open Food Facts : {url}\n\nCe qui ne va pas :\n",
+  // ---------- nom ----------
+  "app.tagline": "Scanner halal & santé",
+  "why.t": "Pourquoi « Bayyin » ?",
+  "why.quote": "« Le halal est clair (bayyin) et le haram est clair, et entre les deux se trouvent des choses douteuses que beaucoup de gens ne connaissent pas. »",
+  "why.cite": "Hadith rapporté par al-Bukhari (52) et Muslim (1599)",
+  "why.p": "Bayyin signifie « clair » en arabe. Les trois statuts de l'app, halal, douteux et haram, viennent de ce hadith : rendre clair ce qui l'est, et signaler honnêtement ce qui ne l'est pas.",
 };

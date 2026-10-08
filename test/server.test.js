@@ -38,7 +38,7 @@ test("GET /api/product/:code renvoie le verdict", async () => {
   assert.equal(body.product.verdict.status, "haram");
   assert.equal(body.product.name, "Saucisson sec pur porc");
   assert.match(calls.at(-1).url, /api\/v2\/product\/3019081100148\.json\?fields=/);
-  assert.match(calls.at(-1).ua, /HalalScan/);
+  assert.match(calls.at(-1).ua, /Bayyin/);
 });
 
 test("le cache évite un second appel à Open Food Facts", async () => {
@@ -66,10 +66,10 @@ test("recherche par nom", async () => {
 test("sert le frontend et bloque la sortie du dossier public", async () => {
   const home = await fetch(base + "/");
   assert.equal(home.status, 200);
-  assert.match(await home.text(), /<title>Halal Scan<\/title>/);
+  assert.match(await home.text(), /<title>Bayyin — Halal & santé<\/title>/);
   const escape = await fetch(base + "/..%2fpackage.json");
   assert.ok(escape.status >= 400);
-  assert.doesNotMatch(await escape.text(), /"halal-scan"/);
+  assert.doesNotMatch(await escape.text(), /"bayyin"/);
 });
 
 test("Open Food Facts en panne -> 502 avec message clair", async () => {

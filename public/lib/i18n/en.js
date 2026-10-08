@@ -1,5 +1,5 @@
 export default {
-  "app.name": "Halal Scan",
+  "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
   "home.h1_html": "Halal, health, additives.<br>All in one scan.",
@@ -180,7 +180,7 @@ export default {
   "sheet.fav_added": "Added to favourites",
   "sheet.fav_removed": "Removed from favourites",
   "sheet.scan_again": "Scan another product",
-  "sheet.share_text": "{name}: {status}{health} (Halal Scan)",
+  "sheet.share_text": "{name}: {status}{health} (Bayyin)",
   "sheet.share_health": ", health {n}/100",
   "product.unnamed": "Unnamed product",
   "detail.halal": "Halal",
@@ -427,4 +427,10 @@ export default {
   "detail.report": "Report a mistake on this product ↗",
   "report.title": "Wrong verdict: {name} ({code})",
   "report.body": "Product: {name}\nBarcode: {code}\nVerdict shown: {status}\nSetting: {school}\nOpen Food Facts page: {url}\n\nWhat is wrong:\n",
+  // ---------- nom ----------
+  "app.tagline": "Halal & health scanner",
+  "why.t": "Why “Bayyin”?",
+  "why.quote": "“The halal is clear (bayyin) and the haram is clear, and between them are doubtful matters that many people do not know.”",
+  "why.cite": "Hadith narrated by al-Bukhari (52) and Muslim (1599)",
+  "why.p": "Bayyin means “clear” in Arabic. The app's three statuses, halal, doubtful and haram, come from this hadith: make clear what is clear, and honestly flag what is not.",
 };

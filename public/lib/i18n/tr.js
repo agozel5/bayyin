@@ -1,5 +1,5 @@
 export default {
-  "app.name": "Halal Scan",
+  "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
   "home.h1_html": "Helal, sağlık, katkı maddeleri.<br>Tek taramada.",
@@ -180,7 +180,7 @@ export default {
   "sheet.fav_added": "Favorilere eklendi",
   "sheet.fav_removed": "Favorilerden çıkarıldı",
   "sheet.scan_again": "Başka ürün tara",
-  "sheet.share_text": "{name}: {status}{health} (Halal Scan)",
+  "sheet.share_text": "{name}: {status}{health} (Bayyin)",
   "sheet.share_health": ", sağlık {n}/100",
   "product.unnamed": "İsimsiz ürün",
   "detail.halal": "Helal",
@@ -427,4 +427,10 @@ export default {
   "detail.report": "Bu üründe hata bildir ↗",
   "report.title": "Hatalı karar: {name} ({code})",
   "report.body": "Ürün: {name}\nBarkod: {code}\nGösterilen karar: {status}\nAyar: {school}\nOpen Food Facts sayfası: {url}\n\nSorun nedir:\n",
+  // ---------- nom ----------
+  "app.tagline": "Helal ve sağlık tarayıcısı",
+  "why.t": "Neden “Bayyin”?",
+  "why.quote": "“Helal bellidir (beyyin), haram da bellidir. İkisinin arasında ise insanların çoğunun bilmediği şüpheli şeyler vardır.”",
+  "why.cite": "Buhârî (52) ve Müslim (1599) tarafından rivayet edilen hadis",
+  "why.p": "Bayyin, Arapçada “açık, belli” demektir. Uygulamanın üç durumu, helal, şüpheli ve haram, bu hadisten gelir: açık olanı açık kılmak, açık olmayanı dürüstçe belirtmek.",
 };

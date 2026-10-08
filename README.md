@@ -1,4 +1,12 @@
-# Halal Scan
+# Bayyin — بيّن
+
+**Scanner halal & santé.** Gratuit, sans publicité, sans pistage.
+
+> « Le halal est clair (*bayyin*) et le haram est clair, et entre les deux se trouvent des
+> choses douteuses. » — hadith rapporté par al-Bukhari (52) et Muslim (1599)
+
+*Bayyin* signifie « clair » en arabe : les trois statuts de l'app (halal, douteux, haram)
+viennent de ce hadith. L'icône reprend la lettre ب, initiale du mot.
 
 Web app qui scanne le code-barres d'un produit alimentaire et indique :
 
