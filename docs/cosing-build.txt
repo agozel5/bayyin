@@ -11,13 +11,95 @@ préfixe 5 : 5490 / 5490
 préfixe 6 : 305 / 305
 préfixe 7 : 2872 / 2872
 préfixe 8 : 6549 / 6549
-ingrédients récupérés : 25443
-file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:136
+sans identifiant numérique : 33655
+sans identifiant, EXFOLIATING : 156 / 156
+sans identifiant, FRAGRANCE : 1546 / 1546
+sans identifiant, DEODORANT : 230 / 230
+sans identifiant, BUFFERING : 218 / 218
+sans identifiant, ORAL CARE : 265 / 265
+sans identifiant, SKIN CONDITIONING - MISCELLANEOUS : 2982 / 2982
+sans identifiant, ANTIOXIDANT : 3336 / 3336
+sans identifiant, ANTI-SEBUM : 364 / 364
+sans identifiant, SKIN PROTECTING : 3285 / 3285
+sans identifiant, NOT REPORTED : 308 / 308
+sans identifiant, COLORANT : 326 / 326
+sans identifiant, SURFACTANT - EMULSIFYING : 2971 / 2971
+sans identifiant, SURFACTANT - FOAM BOOSTING : 484 / 484
+sans identifiant, SURFACTANT - HYDROTROPE : 218 / 218
+sans identifiant, SURFACTANT - CLEANSING : 3218 / 3218
+sans identifiant, ANTIMICROBIAL : 1162 / 1162
+sans identifiant, SKIN CONDITIONING - EMOLLIENT : 3981 / 3981
+sans identifiant, HAIR DYEING : 453 / 453
+sans identifiant, SKIN CONDITIONING - HUMECTANT : 1088 / 1088
+sans identifiant, HUMECTANT : 2350 / 2350
+sans identifiant, PERFUMING : 2799 / 2799
+sans identifiant, ABRASIVE : 388 / 388
+sans identifiant, ASTRINGENT : 590 / 590
+sans identifiant, HAIR CONDITIONING : 4029 / 4029
+sans identifiant, NAIL CONDITIONING : 218 / 218
+sans identifiant, BULKING : 217 / 217
+sans identifiant, DENATURANT : 42 / 42
+sans identifiant, SLIP MODIFIER : 51 / 51
+sans identifiant, EMULSION STABILISING : 726 / 726
+sans identifiant, VISCOSITY CONTROLLING : 1463 / 1463
+sans identifiant, BLEACHING : 365 / 365
+sans identifiant, SURFACTANT - DISPERSING : 19 / 19
+sans identifiant, SURFACTANT - SOLUBILIZING : 68 / 68
+sans identifiant, EPILATING : 2 / 2
+sans identifiant, SURFACE MODIFIER : 43 / 43
+sans identifiant, PLASTICISER : 179 / 179
+sans identifiant, PRESERVATIVE : 222 / 222
+sans identifiant, FILM FORMING : 1362 / 1362
+sans identifiant, HAIR FIXING : 251 / 251
+sans identifiant, HAIR WAVING OR STRAIGHTENING : 111 / 111
+sans identifiant, UV ABSORBER : 183 / 183
+sans identifiant, BINDING : 556 / 556
+sans identifiant, SOLVENT : 694 / 694
+sans identifiant, SKIN CONDITIONING - OCCLUSIVE : 123 / 123
+sans identifiant, LIGHT STABILIZER : 178 / 178
+sans identifiant, FLAVOURING : 197 / 197
+sans identifiant, OPACIFYING : 229 / 229
+sans identifiant, ANTISTATIC : 1079 / 1079
+sans identifiant, ABSORBENT : 192 / 192
+sans identifiant, UV FILTER : 96 / 96
+sans identifiant, ANTI-SEBORRHEIC : 150 / 150
+sans identifiant, SKIN CONDITIONING : 10000 / 10000
+sans identifiant, DISPERSING NON-SURFACTANT : 50 / 50
+sans identifiant, CHELATING : 194 / 194
+sans identifiant, EYELASH CONDITIONING : 29 / 29
+sans identifiant, pH ADJUSTERS : 27 / 27
+sans identifiant, DEPILATORY : 48 / 48
+sans identifiant, SURFACTANT : 31 / 31
+sans identifiant, OXIDISING : 39 / 39
+sans identifiant, ANTICAKING : 138 / 138
+sans identifiant, ADHESIVE : 20 / 20
+sans identifiant, CLEANSING : 1373 / 1373
+sans identifiant, ANTIFOAMING : 55 / 55
+sans identifiant, NAIL SCULPTING : 18 / 18
+sans identifiant, REDUCING : 81 / 81
+sans identifiant, ANTIPERSPIRANT : 40 / 40
+sans identifiant, ANTICORROSIVE : 28 / 28
+sans identifiant, SOOTHING : 126 / 126
+sans identifiant, FOAMING : 205 / 205
+sans identifiant, TONIC : 305 / 305
+sans identifiant, MOISTURISING : 72 / 72
+sans identifiant, ANTIPLAQUE : 82 / 82
+sans identifiant, PROPELLANT : 20 / 20
+sans identifiant, KERATOLYTIC : 20 / 20
+sans identifiant, REFATTING : 21 / 21
+sans identifiant, SMOOTHING : 41 / 41
+sans identifiant, GEL FORMING : 23 / 23
+sans identifiant, DETANGLING : 6 / 6
+sans identifiant, REFRESHING : 45 / 45
+sans identifiant, TANNING : 3 / 3
+sans identifiant, PEARLESCENT : 1 / 1
+sans identifiant ni fonction : 192 / 192
+ingrédients récupérés : 32581
+file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:159
 if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
                                                       ^
 
-Error: Inventaire incomplet : 25443 sur 33655
-    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:136:55
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Error: Inventaire incomplet : 32581 sur 33655
+    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:159:55
 
 Node.js v22.23.3
