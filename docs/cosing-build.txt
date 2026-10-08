@@ -1,0 +1,16 @@
+annexe II : 1758 lignes
+annexe III : 381 lignes
+annexe IV : 154 lignes
+annexe V : 58 lignes
+annexe VI : 34 lignes
+inventaire : 10000 / 0
+ingrédients récupérés : 9984
+file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:127
+if (items.size < 20000) throw new Error("Trop peu d'ingrédients : l'API a-t-elle changé ?");
+                              ^
+
+Error: Trop peu d'ingrédients : l'API a-t-elle changé ?
+    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:127:31
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+Node.js v22.23.3
