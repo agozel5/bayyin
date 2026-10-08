@@ -63,7 +63,7 @@ jobs:
             --notes "APK compilé automatiquement depuis le commit ${GITHUB_SHA::7}. Sur le téléphone Android : télécharger Bayyin.apk, l'ouvrir, puis autoriser l'installation depuis cette source."
 
   ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     defaults:
       run:
