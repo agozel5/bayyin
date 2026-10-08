@@ -26,10 +26,15 @@
   <!-- ================= ACCUEIL / SCANNER ================= -->
   <section class="view" id="view-scan" data-view="scan" aria-labelledby="h-home">
     <header class="home-head">
-      <div class="brand">
-        <img src="icon.svg" alt="" width="36" height="36"><span class="brand-name"><span data-i18n="app.name">Bayyin</span><span class="brand-ar" lang="ar" dir="rtl">بيّن</span></span>
-        <span class="demo-badge" id="demoBadge" data-i18n="app.demo" hidden>Démo</span>
-        <span class="offline-badge" id="offlineBadge" hidden><i></i><span data-i18n="app.offline">Hors connexion</span></span>
+      <div class="home-top">
+        <div class="brand">
+          <img src="icon.svg" alt="" width="36" height="36"><span class="brand-name"><span data-i18n="app.name">Bayyin</span><span class="brand-ar" lang="ar" dir="rtl">بيّن</span></span>
+          <span class="demo-badge" id="demoBadge" data-i18n="app.demo" hidden>Démo</span>
+          <span class="offline-badge" id="offlineBadge" hidden><i></i><span data-i18n="app.offline">Hors connexion</span></span>
+        </div>
+        <a class="round-btn" href="#settings" data-goto-settings="profile" data-i18n-aria="settings.profile" aria-label="Mon profil">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>
+        </a>
       </div>
       <p class="eyebrow" data-i18n="app.tagline"></p>
       <h1 id="h-home" data-i18n-html="home.h1_html">Halal, santé, additifs.<br>Tout en un scan.</h1>
@@ -41,28 +46,30 @@
         <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
         <b class="scan-cta-line"></b>
       </span>
-      <span class="scan-cta-text"><strong data-i18n="home.scan">Scanner un produit</strong><small data-i18n="home.scan_sub"></small></span>
+      <span class="scan-cta-text"><strong data-i18n="home.scan">Scanner un produit</strong><small data-i18n="home.kinds"></small></span>
       <svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
     </button>
 
-    <div class="alt-actions">
-      <label class="alt-btn" for="photoInput">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        <span data-i18n="home.photo_barcode"></span>
-      </label>
-      <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
-      <label class="alt-btn" for="ocrInput">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 12h6M9 15.5h6M9 19h4"/></svg>
+    <div class="quick">
+      <label class="quick-btn" for="ocrInput">
+        <span class="quick-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 12h6M9 15.5h6M9 19h4"/></svg></span>
         <span data-i18n="home.photo_ingredients"></span>
       </label>
-      <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden>
-      <button class="alt-btn wide" type="button" id="focusManual">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
+      <button class="quick-btn" type="button" id="focusManual">
+        <span class="quick-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></span>
         <span data-i18n="home.type_code"></span>
       </button>
+      <a class="quick-btn" href="#search">
+        <span class="quick-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span>
+        <span data-i18n="home.search"></span>
+      </a>
+      <label class="quick-btn" for="photoInput">
+        <span class="quick-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+        <span data-i18n="home.photo_barcode"></span>
+      </label>
     </div>
-
-    <p class="privacy-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12.5l2 2 3.5-4"/></svg><span data-i18n="privacy.badge"></span></p>
+    <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
+    <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden>
 
     <form class="manual" id="manualForm" autocomplete="off" hidden>
       <label for="manualInput" data-i18n="home.manual_label"></label>
@@ -72,22 +79,38 @@
       </div>
     </form>
 
+    <div class="setting-chips" id="homeChips"></div>
+
     <div id="homeStatus" aria-live="polite"></div>
 
-    <section class="home-recent" id="homeRecent" hidden>
+    <section class="shelf" id="homeRecent" hidden>
       <div class="section-head"><h2 data-i18n="home.recent"></h2><a href="#history" data-i18n="home.see_all"></a></div>
-      <div class="list" id="homeRecentList"></div>
+      <div class="alts" id="homeRecentList"></div>
     </section>
+
+    <section class="shelf" id="homeFavs" hidden>
+      <div class="section-head"><h2 data-i18n="home.favorites"></h2></div>
+      <div class="alts" id="homeFavList"></div>
+    </section>
+
+    <div class="tip">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>
+      <div><strong data-i18n="home.tip"></strong><p id="homeTip"></p></div>
+    </div>
 
     <section class="home-explain" id="homeExplain">
       <h2 data-i18n="home.know"></h2>
       <div class="feature-grid">
         <div class="feature"><span class="f-ico f-halal">✓</span><strong data-i18n="feat.halal.t"></strong><p data-i18n="feat.halal.p"></p></div>
         <div class="feature"><span class="f-ico f-health">72</span><strong data-i18n="feat.health.t"></strong><p data-i18n="feat.health.p"></p></div>
+        <div class="feature"><span class="f-ico f-beauty"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7zM7 10.5l6.5 6.5"/></svg></span><strong data-i18n="feat.beauty.t"></strong><p data-i18n="feat.beauty.p"></p></div>
+        <div class="feature"><span class="f-ico f-profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg></span><strong data-i18n="feat.profile.t"></strong><p data-i18n="feat.profile.p"></p></div>
         <div class="feature"><span class="f-ico f-add">E</span><strong data-i18n="feat.add.t"></strong><p data-i18n="feat.add.p"></p></div>
         <div class="feature"><span class="f-ico f-alt">↻</span><strong data-i18n="feat.alt.t"></strong><p data-i18n="feat.alt.p"></p></div>
       </div>
     </section>
+
+    <p class="privacy-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12.5l2 2 3.5-4"/></svg><span data-i18n="privacy.badge"></span></p>
   </section>
 
   <!-- ================= RECHERCHE ================= -->
@@ -144,6 +167,14 @@
       <div class="lang-grid" id="langGrid" role="radiogroup"></div>
     </section>
 
+    <section class="set-block" id="profileBlock">
+      <h2 data-i18n="settings.profile"></h2>
+      <p class="muted" data-i18n="settings.profile_p"></p>
+      <h3 class="sub-label" data-i18n="settings.diet"></h3>
+      <div class="seg3" id="dietList" role="radiogroup"></div>
+      <h3 class="sub-label" data-i18n="settings.allergens"></h3>
+      <div class="chips" id="allergenList"></div>
+    </section>
     <section class="set-block" id="schoolBlock">
       <h2 data-i18n="settings.school"></h2>
       <p class="muted" data-i18n="settings.school_intro"></p>

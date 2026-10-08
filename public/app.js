@@ -7,11 +7,15 @@ import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
 import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
+import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profile.js";
+import { BEAUTY_RULES } from "./lib/beauty.js";
+import { isMedicineCode } from "./lib/medicine.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
 const prefs = () => settings.get();
-const off = createClient({ demo: DEMO, prefs });
+// La base des médicaments est servie avec l'app (dossier data/med), donc aussi hors connexion.
+const off = createClient({ demo: DEMO, prefs, medBase: new URL("data/med/", location.href).href });
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) =>
@@ -40,6 +44,11 @@ const I = {
   proteins: '<path d="M12 4c3.3 0 6 3.4 6 8s-2.7 8-6 8-6-3.4-6-8 2.7-8 6-8z"/>',
   fiber: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7"/>',
   fruits: '<path d="M12 7c-4-2-8 1-7 6 .8 4 3.5 7 7 7s6.2-3 7-7c1-5-3-8-7-6zM12 7c0-2 1-3.5 3-4"/>',
+  pill: '<path d="M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7zM7 10.5l6.5 6.5"/>',
+  drop: '<path d="M12 3.5c3.3 4.2 6 7.5 6 10.8a6 6 0 0 1-12 0c0-3.3 2.7-6.6 6-10.8z"/><path d="M9.5 15a2.6 2.6 0 0 0 2.5 2.4"/>',
+  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>',
+  user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/>',
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
 };
 const STATUS_ICON = { halal_certifie: I.check, halal_probable: I.check, mashbouh: I.question, haram: I.cross, inconnu: I.dash };
 const STATUS_ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
@@ -51,6 +60,14 @@ const verdictOf = (p) => (p.raw ? classifyAny(p.raw, prefs()) : p.verdict);
 const nameOf = (p) => {
   const n = p.names || {};
   return n[getLang()] || p.name || n.any || n.en || t("product.unnamed");
+};
+// Type de produit et comparaison avec le profil (allergies, régime)
+const kindOf = (p) => p.kind || (p.raw && p.raw.kind) || "food";
+const KIND_ICON = { food: I.box, beauty: I.drop, medicine: I.pill };
+const profileOf = (p) => checkProfile(p.raw, verdictOf(p), prefs().profile);
+const alertPill = (p) => {
+  const a = profileOf(p).alert;
+  return a ? `<span class="pill a-${a}">${t(`alert.short.${a}`)}</span>` : "";
 };
 const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${S(st, "short")}</span>`;
 const scoreOf = (p) => (p.health && p.health.score) || null;
@@ -84,7 +101,7 @@ const noteText = (n) => (/\s/.test(n) ? n : t(`note.${n}`)); // anciennes entré
 function productTop(p) {
   const img = p.image
     ? `<img class="p-img" src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">`
-    : `<span class="p-img ph">${svg(p.local ? I.doc : I.box)}</span>`;
+    : `<span class="p-img ph">${svg(p.local ? I.doc : KIND_ICON[kindOf(p)])}</span>`;
   const meta = [p.brand, p.quantity].filter(Boolean).map(esc).join(" · ");
   const code = /^\d+$/.test(p.code) ? p.code : "";
   return `<div class="p-top">${img}<div class="p-text">
@@ -96,7 +113,13 @@ function productTop(p) {
 
 function scoreTiles(p, v) {
   const s = scoreOf(p);
-  const health = s
+  const kind = kindOf(p);
+  const health = kind !== "food"
+    ? `<div class="score-tile kind">
+         <span class="st-ico">${svg(KIND_ICON[kind])}</span>
+         <span class="st-text"><span class="st-kicker">${t(`kind.${kind}`)}</span><span class="st-value plain">${esc(kind === "medicine" ? p.form || t("kind.medicine") : t("detail.beauty_note"))}</span></span>
+       </div>`
+    : s
     ? `<div class="score-tile health g-${s.grade}">
          <span class="ring" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
          <span class="st-text"><span class="st-kicker">${t("detail.health")}</span><span class="st-value">${t(`grade.${s.grade}`)}</span></span>
@@ -110,6 +133,35 @@ function scoreTiles(p, v) {
       <span class="st-ico">${svg(STATUS_ICON[v.status])}</span>
       <span class="st-text"><span class="st-kicker">${t("detail.halal")}</span><span class="st-value">${S(v.status, "label")}</span></span>
     </div>${health}</div>`;
+}
+
+// Alerte personnelle en haut de la fiche
+function profileAlert(p) {
+  const r = profileOf(p);
+  if (!r.alert) return "";
+  const names = (tags) => tags.map((a) => t(`allergen.${a}`)).join(", ");
+  const lines = [
+    r.contains.length ? t("alert.contains", { list: names(r.contains) }) : null,
+    r.diet ? t(`alert.${r.diet.id}.${r.diet.level}`) : null,
+    r.traces.length ? t("alert.traces", { list: names(r.traces) }) : null,
+  ].filter(Boolean);
+  return `<div class="alert-card a-${r.alert}" role="alert">
+    <span class="alert-top">${svg(I.alert)}${t(`alert.${r.alert}`)}</span>
+    ${lines.map((l) => `<p>${esc(l)}</p>`).join("")}
+    <small>${t("alert.note")}</small>
+    <a href="#settings" data-goto-settings="profile">${t("alert.edit")}</a>
+  </div>`;
+}
+
+// Médicament : forme, laboratoire, conseil
+function medicineSection(p) {
+  return `<section class="sec"><div class="sec-head"><h3>${t("kind.medicine")}</h3></div>
+    <p class="lead">${t("detail.med_lead")}</p>
+    <div class="kv"><div><span>${t("detail.med_form")}</span><strong>${esc(p.form || "—")}</strong></div>
+    ${p.brand ? `<div><span>${t("detail.med_holder")}</span><strong>${esc(p.brand)}</strong></div>` : ""}</div>
+    <p class="advice">${svg(I.bulb)}<span>${t("detail.med_ask")}</span></p>
+    <p class="notes">${t("detail.med_source")}</p>
+  </section>`;
 }
 
 function halalSection(p, v) {
@@ -137,11 +189,11 @@ function halalSection(p, v) {
         .join("")}</div>`
     : "";
   const ocrCta =
-    v.status === "inconnu" && /^\d+$/.test(p.code)
+    v.status === "inconnu" && /^\d+$/.test(p.code) && kindOf(p) === "food"
       ? `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
       : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
-    <p class="lead">${S(v.status, "lead")}</p>${cert}
+    ${kindOf(p) === "medicine" && v.status === "inconnu" ? "" : `<p class="lead">${S(v.status, "lead")}</p>`}${cert}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
     ${flags}${ocrCta}</section>`;
 }
@@ -240,11 +292,12 @@ function extraSection(p) {
 
 function productDetail(p) {
   const v = verdictOf(p);
+  const kind = kindOf(p);
   const ingr = p.ingredients
     ? `<section class="sec"><details class="ingr"${p.local ? " open" : ""}><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
     : "";
   const isBarcode = /^\d+$/.test(p.code);
-  const alt = p.local
+  const alt = p.local || kind !== "food"
     ? ""
     : `<section class="sec" id="altSection"><div class="sec-head"><h3>${t("detail.alternatives")}</h3><small>${t("detail.alt_sub")}</small></div>
       <div id="altBox"><div class="loading"><span class="spinner"></span>${t("detail.alt_loading")}</div></div></section>`;
@@ -252,13 +305,20 @@ function productDetail(p) {
     ? isBarcode
       ? `<section class="sec"><a class="off-link" href="https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${esc(p.code)}" target="_blank" rel="noopener">${t("msg.add_off")}</a></section>`
       : ""
-    : `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t("detail.off_link")}</a></section>`;
-  return `${productTop(p)}${scoreTiles(p, v)}${halalSection(p, v)}${healthSection(p)}${additivesSection(p)}${alt}${allAdditivesSection(p, v)}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+    : p.offUrl
+      ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
+      : `<section class="sec"></section>`;
+  const food = kind === "food";
+  return `${productTop(p)}${profileAlert(p)}${scoreTiles(p, v)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
-function altCard(a) {
-  const img = a.image ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="ph"></span>`;
+function altCard(a, { fav = false } = {}) {
+  const img = a.image
+    ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+    : `<span class="ph">${svg(a.local ? I.doc : KIND_ICON[kindOf(a)])}</span>`;
+  const al = profileOf(a).alert;
   return `<button type="button" class="alt" data-open="${esc(a.code)}">${img}
+    ${al ? `<span class="alt-badge a-${al}" aria-label="${esc(t(`alert.${al}`))}">!</span>` : ""}${fav ? svg(I.star, "alt-fav") : ""}
     <strong>${esc(nameOf(a))}</strong><small>${esc(a.brand || "")}</small>
     <span class="alt-tags">${statusPill(verdictOf(a).status)}${miniScore(a)}</span></button>`;
 }
@@ -266,7 +326,7 @@ function altCard(a) {
 async function loadAlternatives(p, code) {
   if (!$("altBox")) return;
   try {
-    const alts = await off.alternatives(p);
+    const alts = (await off.alternatives(p)).filter((a) => !profileOf(a).alert); // respecte le profil
     if (sheetCode !== code || !$("altBox")) return;
     alts.forEach((a) => memo.set(a.code, a));
     $("altBox").innerHTML = alts.length
@@ -289,17 +349,20 @@ function errorText(err) {
 }
 const ocrButton = (code = "") =>
   `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`;
-const notFoundHtml = (code) => messageHtml(t("msg.notfound.t"), t("msg.notfound.p", { code }), ocrButton(code));
+const notFoundHtml = (code) =>
+  isMedicineCode(code)
+    ? messageHtml(t("msg.notfound.t"), t("msg.med_notfound", { code }))
+    : messageHtml(t("msg.notfound.t"), t("msg.notfound.p", { code }), ocrButton(code));
 
 function rowHtml(p, { fav = false, when = "" } = {}) {
   const img = p.image
     ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-    : `<span class="row-img ph">${p.local ? svg(I.doc) : ""}</span>`;
-  const meta = [p.brand, when].filter(Boolean).map(esc).join(" · ");
+    : `<span class="row-img ph">${svg(p.local ? I.doc : KIND_ICON[kindOf(p)])}</span>`;
+  const meta = [kindOf(p) !== "food" ? t(`kind.${kindOf(p)}`) : "", p.brand, when].filter(Boolean).map(esc).join(" · ");
   return `<button type="button" class="row" data-open="${esc(p.code)}">${img}
     <span class="row-text"><span class="row-name">${esc(nameOf(p))}</span>
       ${meta ? `<span class="row-meta">${meta}</span>` : ""}
-      <span class="row-tags">${statusPill(verdictOf(p).status)}${miniScore(p)}${fav ? svg(I.star, "row-fav") : ""}</span>
+      <span class="row-tags">${statusPill(verdictOf(p).status)}${miniScore(p)}${alertPill(p)}${fav ? svg(I.star, "row-fav") : ""}</span>
     </span>${svg(I.chev, "row-chev flip")}</button>`;
 }
 
@@ -441,12 +504,14 @@ document.addEventListener("click", (e) => {
   if (open) return openSheet(open.dataset.open, { replace: !sheet.hidden });
   const ocr = e.target.closest("[data-ocr-code], label[for=ocrInput]");
   if (ocr) pendingOcrCode = ocr.dataset.ocrCode || null;
-  if (e.target.closest("[data-goto-settings]")) {
+  const go = e.target.closest("[data-goto-settings]");
+  if (go) {
     e.preventDefault();
     closeSheet();
+    const block = go.dataset.gotoSettings === "profile" ? "profileBlock" : "schoolBlock";
     setTimeout(() => {
       location.hash = "#settings";
-      $("schoolBlock").scrollIntoView({ block: "start" });
+      setTimeout(() => $(block).scrollIntoView({ block: "start", behavior: "smooth" }), 30);
     }, 50);
   }
 });
@@ -634,10 +699,25 @@ $("manualForm").addEventListener("submit", (e) => {
 // Accueil
 // ===========================================================================
 function renderHome() {
-  const recent = store.all().slice(0, 4);
+  const all = store.all();
+  const recent = all.slice(0, 10);
+  const favs = all.filter((e) => e.fav).slice(0, 10);
   $("homeRecent").hidden = !recent.length;
-  $("homeExplain").hidden = recent.length >= 3;
-  $("homeRecentList").innerHTML = recent.map((e) => rowHtml(e.p, { fav: e.fav })).join("");
+  $("homeFavs").hidden = !favs.length;
+  $("homeExplain").hidden = all.length >= 3;
+  $("homeRecentList").innerHTML = recent.map((e) => altCard(e.p, { fav: e.fav })).join("");
+  $("homeFavList").innerHTML = favs.map((e) => altCard(e.p, { fav: true })).join("");
+  // Pastilles : école et profil, qui mènent aux Réglages
+  const st = prefs();
+  const prof = st.profile;
+  const profText = hasProfile(prof)
+    ? [prof.diet ? t(`diet.${prof.diet}`) : null, ...prof.allergens.slice(0, 2).map((x) => t(`allergen.${x}`)), prof.allergens.length > 2 ? `+${prof.allergens.length - 2}` : null]
+        .filter(Boolean).join(" · ")
+    : null;
+  $("homeChips").innerHTML =
+    `<a class="set-chip" href="#settings" data-goto-settings="school">${svg(I.shield)}<span>${esc(t("home.school_chip", { s: t(`school.${st.school}`) }))}</span></a>` +
+    `<a class="set-chip${profText ? "" : " accent"}" href="#settings" data-goto-settings="profile">${svg(I.user)}<span>${esc(profText ? t("home.profile_chip", { p: profText }) : t("home.profile_add"))}</span></a>`;
+  $("homeTip").textContent = t(`home.tip.${1 + (Math.floor(Date.now() / 864e5) % 4)}`); // une astuce par jour
 }
 
 // ===========================================================================
@@ -802,6 +882,12 @@ function halalItems() {
       reason: t(`flag.${code}.reason`), level: level(code, a.severity), topic: TOPIC_OF[code],
     });
   }
+  for (const r of BEAUTY_RULES) {
+    items.push({
+      group: t("kind.beauty"), name: t(`flag.${r.id}.label`), codes: [], reason: t(`flag.${r.id}.reason`),
+      level: level(r.id, r.severity), topic: TOPIC_OF[r.id],
+    });
+  }
   items.push({
     group: t("add.group_additives"), name: t("add.fatty"), codes: fattyCodes, reason: t("flag.fatty.reason"),
     level: SEVERITY_OF[topics.derives], topic: "derives",
@@ -895,6 +981,14 @@ function renderSettings() {
     (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`
   ).join("");
 
+  $("dietList").style.gridTemplateColumns = "repeat(3,1fr)";
+  $("dietList").innerHTML = [null, ...DIETS].map(
+    (d) => `<button type="button" role="radio" class="d-diet" aria-checked="${(st.profile.diet || null) === d}" data-diet="${d || ""}">${t(d ? `diet.${d}` : "diet.none")}</button>`
+  ).join("");
+  $("allergenList").innerHTML = PROFILE_ALLERGENS.map(
+    (a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${st.profile.allergens.includes(a)}" data-allergen="${a}">${esc(t(`allergen.${a}`))}</button>`
+  ).join("");
+
   const schools = [...Object.keys(SCHOOLS), ...(st.school === "custom" ? ["custom"] : [])];
   $("schoolList").innerHTML = schools
     .map(
@@ -937,6 +1031,14 @@ function renderSettings() {
 $("langGrid").addEventListener("click", (e) => {
   const b = e.target.closest("[data-lang]");
   if (b) settings.set({ lang: b.dataset.lang });
+});
+$("dietList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-diet]");
+  if (b) settings.setDiet(b.dataset.diet || null);
+});
+$("allergenList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-allergen]");
+  if (b) settings.toggleAllergen(b.dataset.allergen);
 });
 $("schoolList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-school]");

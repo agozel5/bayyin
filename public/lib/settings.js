@@ -1,5 +1,6 @@
 // Réglages de l'utilisateur, gardés sur l'appareil : langue, école, avis par sujet débattu.
 import { DEFAULT_PREFS, SCHOOLS, TOPICS } from "./rules.js";
+import { PROFILE_ALLERGENS, DIETS } from "./profile.js";
 
 const KEY = "halalscan_settings_v1";
 export const LANGS = ["fr", "en", "ar", "tr"];
@@ -29,6 +30,11 @@ function load() {
     topics,
     offlinePackAt: saved.offlinePackAt || null,
     offlinePackCount: saved.offlinePackCount || 0,
+    // Profil personnel : allergies et régime
+    profile: {
+      allergens: ((saved.profile && saved.profile.allergens) || []).filter((a) => PROFILE_ALLERGENS.includes(a)),
+      diet: saved.profile && DIETS.includes(saved.profile.diet) ? saved.profile.diet : null,
+    },
   };
 }
 
@@ -63,6 +69,15 @@ export const settings = {
     const topics = { ...current.topics, [topic]: decision };
     const match = Object.keys(SCHOOLS).find((s) => TOPICS.every((t) => SCHOOLS[s][t] === topics[t]));
     this.set({ topics, school: match || "custom" });
+  },
+  toggleAllergen(tag) {
+    if (!PROFILE_ALLERGENS.includes(tag)) return;
+    const list = current.profile.allergens;
+    const allergens = list.includes(tag) ? list.filter((a) => a !== tag) : [...list, tag];
+    this.set({ profile: { ...current.profile, allergens } });
+  },
+  setDiet(diet) {
+    this.set({ profile: { ...current.profile, diet: DIETS.includes(diet) ? diet : null } });
   },
   subscribe(fn) {
     listeners.add(fn);

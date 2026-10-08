@@ -4,6 +4,15 @@
 // différer de la composition actuelle du produit.
 
 export const FIXTURES = {
+  // Cosmétique (format Open Beauty Facts)
+  "3600523000012": {
+    code: "3600523000012",
+    kind: "beauty",
+    product_name_fr: "Savon de toilette au lait",
+    brands: "Exemple",
+    ingredients_text: "Sodium Tallowate, Sodium Palmate, Aqua, Glycerin, Parfum, Sodium Chloride, Cetearyl Alcohol, CI 77891",
+    labels_tags: [],
+  },
   "3017620422003": {
     code: "3017620422003",
     product_name_fr: "Nutella",
@@ -11,6 +20,7 @@ export const FIXTURES = {
     ingredients_text_fr: "Sucre, huile de palme, _noisettes_ 13%, _lait_ écrémé en poudre 8,7%, cacao maigre 7,4%, émulsifiants: lécithines [_soja_], vanilline.",
     additives_tags: ["en:e322", "en:e322i"],
     ingredients_analysis_tags: ["en:palm-oil", "en:non-vegan", "en:vegetarian"],
+    allergens_tags: ["en:milk", "en:nuts", "en:soybeans"],
     labels_tags: [],
   },
   "4001686301029": {

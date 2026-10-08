@@ -466,7 +466,7 @@ export default {
   "detail.med_source": "البيانات: قاعدة البيانات العامة للأدوية في فرنسا (ANSM، HAS).",
   "detail.med_holder": "المختبر",
   "detail.obf_link": "عرض المنتج على Open Beauty Facts ↗",
-  "detail.beauty_note": "منتج تجميل أو نظافة: لا يوجد تقييم غذائي.",
+  "detail.beauty_note": "بلا تقييم صحي",
   "settings.profile": "ملفي الشخصي",
   "settings.profile_p": "ينبّهك بيّن عندما يحتوي منتج على أحد مسببات الحساسية لديك أو لا يناسب نظامك الغذائي. تبقى هذه الاختيارات على هاتفك.",
   "settings.diet": "النظام الغذائي",

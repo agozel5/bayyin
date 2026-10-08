@@ -480,3 +480,56 @@ details.risk p.risk-src{padding-top:0}
 .muted-link{display:block;margin-top:10px;color:var(--muted);font-weight:500}
 .eyebrow{margin:10px 0 -8px;font-size:.8rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
 [dir="rtl"] .eyebrow{letter-spacing:0}
+
+/* ---------- accueil ---------- */
+.home-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.round-btn{width:42px;height:42px;border-radius:50%;background:var(--tint);display:flex;align-items:center;justify-content:center;color:var(--fg);flex:none}
+.round-btn:active{background:var(--tint-2)}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px;border-radius:var(--r-lg);background:var(--tint);border:none;font-weight:700;font-size:.8rem;line-height:1.2;text-align:center;color:var(--fg);text-decoration:none;cursor:pointer;transition:transform .12s ease}
+.quick-btn:active{background:var(--tint-2);transform:scale(.97)}
+.quick-ico{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--brand)}
+@media (max-width:340px){.quick{grid-template-columns:repeat(2,1fr)}}
+.setting-chips{display:flex;flex-wrap:wrap;gap:8px}
+.set-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;background:var(--tint);font-weight:700;font-size:.85rem;text-decoration:none;color:var(--fg);max-width:100%}
+.set-chip svg{width:16px;height:16px;color:var(--brand)}
+.set-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.set-chip.accent{background:var(--brand-soft);color:var(--brand-dark)}
+.shelf .section-head{margin-bottom:10px}
+.tip{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:var(--r-lg);background:#FFF8E6}
+.tip svg{color:#B98500;margin-top:2px}
+.tip strong{color:#8A6400}
+.tip p{margin:2px 0 0}
+.f-ico svg{width:20px;height:20px}
+.f-beauty{background:var(--c-info-bg);color:var(--c-info)}
+.f-profile{background:#F1EAFB;color:#8E5BD0}
+.alt{position:relative}
+.alt-badge{position:absolute;top:18px;inset-inline-end:18px;width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;font-weight:900;font-size:.8rem;display:flex;align-items:center;justify-content:center}
+.alt-fav{position:absolute;top:18px;inset-inline-start:18px;color:#E9A100;width:18px;height:18px}
+.alt-fav path{fill:currentColor}
+
+/* ---------- profil : alerte, réglages ---------- */
+.a-no{--c:#C0312A;--cbg:#FDECEA}
+.a-maybe{--c:#B25E00;--cbg:#FFF4E5}
+.alert-card{padding:14px 16px;border-radius:var(--r-lg);background:var(--cbg);border:1.5px solid var(--c);display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.alert-top{display:flex;align-items:center;gap:8px;color:var(--c);font-weight:800;font-size:1.05rem}
+.alert-card p{margin:0;font-weight:600}
+.alert-card small{color:var(--muted)}
+.alert-card a{color:var(--c);font-weight:700}
+.allergen-chip[aria-checked="true"]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-dark)}
+.seg3 .d-diet[aria-checked="true"]{color:var(--brand-dark)}
+
+/* ---------- cosmétiques et médicaments ---------- */
+.score-tile.kind{background:var(--tint)}
+.score-tile.kind .st-ico{background:#fff;color:var(--brand)}
+.score-tile.kind .st-ico svg{stroke-width:2}
+.st-value.plain{color:var(--fg);font-size:1rem}
+.kv{display:flex;flex-direction:column;border-radius:var(--r-md);background:var(--tint);padding:2px 14px}
+.kv div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.kv div:last-child{border-bottom:none}
+.kv span{color:var(--muted)}
+.kv strong{text-align:end}
+.advice{display:flex;gap:10px;align-items:flex-start}
+.advice svg{color:var(--brand)}
+.alt .ph{display:flex;align-items:center;justify-content:center;color:var(--faint)}
+.alt .ph svg{width:30px;height:30px}

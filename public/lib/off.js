@@ -7,7 +7,7 @@
 import { classify, ingredientsText, DEFAULT_PREFS } from "./rules.js";
 import { analyzeHealth } from "./health.js";
 import { classifyBeauty } from "./beauty.js";
-import { classifyMedicine, medNoticeUrl } from "./medicine.js";
+import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
 
 export const OFF_BASE = "https://world.openfoodfacts.org";
@@ -21,6 +21,8 @@ export const FIELDS = [
 ].join(",");
 
 export const productUrl = (code) => `${OFF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
+export const OBF_BASE = "https://world.openbeautyfacts.org";
+export const beautyUrl = (code) => `${OBF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
 
 // Champs nécessaires pour recalculer le verdict quand l'utilisateur change de réglage.
 const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
@@ -120,18 +122,41 @@ export const PRODUCT_CACHE = "hs-products-v1";
 
 const rawCache = new Map(); // fiches brutes : le verdict est recalculé selon les réglages
 
-export function createClient({ demo = false, prefs = () => DEFAULT_PREFS } = {}) {
+export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBase = MED_DATA_BASE } = {}) {
   const show = (raw) => present(raw, prefs());
+  const medShards = new Map();
+  // Médicament : un seul petit fichier de la base publique est téléchargé (≈ 1/100)
+  async function medicine(code) {
+    const url = `${medBase}${medShard(code)}.json`;
+    if (!medShards.has(url)) {
+      const p = getJson(url, 15000);
+      medShards.set(url, p);
+      p.catch(() => medShards.delete(url));
+    }
+    const shard = (await medShards.get(url)) || {};
+    return shard[code] ? medicineRaw(code, shard[code]) : null;
+  }
   return {
     demo,
 
     // -> produit présenté, ou null s'il n'existe pas
     async product(code) {
-      if (demo) return FIXTURES[code] ? show(FIXTURES[code]) : null;
       if (rawCache.has(code)) return show(rawCache.get(code));
-      const data = await getJson(productUrl(code));
-      if (!(data && data.status === 1 && data.product)) return null;
-      const raw = { code, ...data.product };
+      let raw = null;
+      if (isMedicineCode(code)) {
+        raw = await medicine(code); // fichiers servis avec l'app : disponibles aussi en démo
+      } else if (demo) {
+        raw = FIXTURES[code] || null;
+      } else {
+        const data = await getJson(productUrl(code));
+        if (data && data.status === 1 && data.product) raw = { code, ...data.product };
+        else {
+          // Pas un aliment : on cherche dans Open Beauty Facts (cosmétiques, hygiène)
+          const beauty = await getJson(beautyUrl(code)).catch(() => null);
+          if (beauty && beauty.status === 1 && beauty.product) raw = { code, kind: "beauty", ...beauty.product };
+        }
+      }
+      if (!raw) return null;
       rawCache.set(code, raw);
       return show(raw);
     },

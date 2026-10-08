@@ -466,7 +466,7 @@ export default {
   "detail.med_source": "Veri: Fransa kamu ilaç veritabanı (ANSM, HAS).",
   "detail.med_holder": "Laboratuvar",
   "detail.obf_link": "Ürünü Open Beauty Facts'te gör ↗",
-  "detail.beauty_note": "Kozmetik veya hijyen ürünü: beslenme puanı yok.",
+  "detail.beauty_note": "Sağlık puanı yok",
   "settings.profile": "Profilim",
   "settings.profile_p": "Bayyin, bir ürün alerjenlerinizden birini içerdiğinde veya beslenme tarzınıza uymadığında sizi uyarır. Bu seçimler telefonunuzda kalır.",
   "settings.diet": "Beslenme",

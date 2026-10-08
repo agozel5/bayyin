@@ -466,7 +466,7 @@ export default {
   "detail.med_source": "Data: French public medicines database (ANSM, HAS).",
   "detail.med_holder": "Laboratory",
   "detail.obf_link": "See the product on Open Beauty Facts ↗",
-  "detail.beauty_note": "Cosmetic or hygiene product: no nutrition score.",
+  "detail.beauty_note": "No health score",
   "settings.profile": "My profile",
   "settings.profile_p": "Bayyin warns you when a product contains one of your allergens or doesn't fit your diet. These choices stay on your phone.",
   "settings.diet": "Diet",

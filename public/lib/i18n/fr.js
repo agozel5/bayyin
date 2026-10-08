@@ -480,7 +480,7 @@ export default {
   "detail.med_source": "Données : Base de données publique des médicaments (ANSM, HAS).",
   "detail.med_holder": "Laboratoire",
   "detail.obf_link": "Voir la fiche sur Open Beauty Facts ↗",
-  "detail.beauty_note": "Produit cosmétique ou d'hygiène : pas de note nutritionnelle.",
+  "detail.beauty_note": "Pas de note santé",
   "settings.profile": "Mon profil",
   "settings.profile_p": "Bayyin vous alerte quand un produit contient l'un de vos allergènes ou ne correspond pas à votre régime. Ces choix restent sur votre téléphone.",
   "settings.diet": "Régime",
