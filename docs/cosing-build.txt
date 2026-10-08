@@ -3,14 +3,30 @@ annexe III : 381 lignes
 annexe IV : 154 lignes
 annexe V : 58 lignes
 annexe VI : 34 lignes
-inventaire : 10000 / 0
-ingrédients récupérés : 9984
-file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:127
-if (items.size < 20000) throw new Error("Trop peu d'ingrédients : l'API a-t-elle changé ?");
-                              ^
+inventaire annoncé : 33655
+tranche 0-40000 : 8911 / 8911
+tranche 40000-60000 : 6822 / 6822
+tranche 60000-80000 : 3177 / 3177
+tranche 280000-320000 : 305 / 305
+tranche 320000-360000 : 2103 / 2103
+tranche 360000-400000 : 1781 / 1781
+tranche 400000-440000 : 1331 / 1331
+tranche 520000-560000 : 1737 / 1737
+tranche 560000-600000 : 3754 / 3754
+tranche 600000-640000 : 304 / 304
+tranche 720000-760000 : 926 / 926
+tranche 760000-800000 : 1947 / 1947
+tranche 800000-840000 : 2189 / 2189
+tranche 840000-880000 : 2995 / 2995
+tranche 880000-920000 : 3064 / 3064
+tranche 920000-960000 : 3263 / 3263
+ingrédients récupérés : 30406
+file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:130
+if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
+                                                      ^
 
-Error: Trop peu d'ingrédients : l'API a-t-elle changé ?
-    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:127:31
+Error: Inventaire incomplet : 30406 sur 33655
+    at file:///home/runner/work/bayyin/bayyin/scripts/build-cosing.mjs:130:55
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
 
 Node.js v22.23.3
