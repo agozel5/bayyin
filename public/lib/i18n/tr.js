@@ -503,4 +503,5 @@ export default {
   "feat.profile.t": "Profiliniz",
   "feat.profile.p": "Alerji ve beslenme: Ürün size uygun değilse hemen uyarı.",
   "msg.med_notfound": "Bu ilaç ({code}) Fransa kamu ilaç veritabanında yok. Prospektüse bakın: \"… neler içerir\" bölümü.",
+  "cam.slow": "Barkoda yaklaşın ve telefonu düz tutun. Ya da rakamları yazın.",
 };

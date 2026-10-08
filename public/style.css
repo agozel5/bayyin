@@ -533,3 +533,147 @@ details.risk p.risk-src{padding-top:0}
 .advice svg{color:var(--brand)}
 .alt .ph{display:flex;align-items:center;justify-content:center;color:var(--faint)}
 .alt .ph svg{width:30px;height:30px}
+
+/* =====================================================================
+   Refonte visuelle (oct. 2026)
+   Fond vert sauge très clair, surfaces blanches, couleur réservée aux verdicts.
+   Signature : l'étoile à huit branches (khatam), en filigrane sur les surfaces vertes.
+   ===================================================================== */
+:root{
+  --bg:#F1F5F0;            /* fond de page : sauge très clair */
+  --surface:#FFFFFF;       /* cartes */
+  --tint:#F3F6F2;          /* fonds secondaires à l'intérieur des cartes */
+  --tint-2:#E7EDE5;
+  --fg:#15211A;
+  --brand:#12724F;
+  --brand-dark:#0B5139;
+  --gold:#E7B84E;
+  --lift:0 1px 2px rgb(21 33 26 / .04),0 6px 18px -8px rgb(21 33 26 / .14);
+  --khatam:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.42' stroke-width='1.1'%3E%3Crect x='17' y='17' width='22' height='22'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3Ccircle cx='28' cy='28' r='4.5'/%3E%3Cpath d='M0 0l9 9M56 0l-9 9M0 56l9-9M56 56l-9-9'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ---------- typographie : le très gras pour les titres et les verdicts seulement ---------- */
+body{font-weight:400}
+h2,.sub{font-weight:750}
+.view-head h1{font-weight:800}
+.row-name{font-weight:600}
+.feature strong,.add-name,.flag-term,.school-text strong{font-weight:650}
+.sec-head h3{font-weight:700}
+.pill{font-weight:700}
+.chip,.quick-btn,.set-chip{font-weight:600}
+.tab{font-weight:600}
+.alt strong{font-weight:600}
+.p-name{font-weight:750}
+.card-msg strong,.empty strong{font-weight:700}
+.muted,.notes,.flag-why,.add-why{font-weight:400}
+
+/* ---------- surfaces : cartes blanches sur fond sauge ---------- */
+.feature,.quick-btn,.tip,.stats,.add-item,.card-msg,.empty,.links,.steps li,.searchbar,.segmented,.round-btn,.set-chip{background:var(--surface);box-shadow:var(--lift)}
+.set-chip.accent{background:var(--brand-soft);box-shadow:none}
+.tip{background:#FFF8E4;box-shadow:none}
+.quick-ico{background:var(--brand-soft)}
+.alt{border:none;box-shadow:var(--lift)}
+.list{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--lift);padding:2px 14px}
+.row:active{background:transparent;opacity:.7}
+.chip{border-color:transparent;box-shadow:var(--lift)}
+.chip[aria-selected="true"],.allergen-chip[aria-checked="true"]{box-shadow:none}
+.lang-btn,.school{border-color:transparent;box-shadow:var(--lift)}
+.seg3,.segmented{background:var(--tint-2)}
+.field{border-color:var(--tint-2)}
+.set-block{background:var(--surface);border-radius:var(--r-lg);padding:18px;box-shadow:var(--lift)}
+.set-block .lang-btn,.set-block .school{box-shadow:none;border:1.5px solid var(--line)}
+.set-block .chip{box-shadow:none;border:1.5px solid var(--line)}
+.set-block .steps li{box-shadow:none;background:var(--tint)}
+.privacy-card{box-shadow:none}
+.tabbar{background:rgb(255 255 255 / .96)}
+
+/* ---------- signature : motif khatam sur le bouton de scan ---------- */
+.scan-cta{position:relative;overflow:hidden;background:var(--brand) var(--khatam);background-size:56px 56px;background-position:center;isolation:isolate}
+.scan-cta::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(100deg,var(--brand) 30%,rgb(18 114 79 / .55))}
+.scan-cta-art{background:rgb(255 255 255 / .16)}
+
+/* ---------- accueil : version courte pour qui revient ---------- */
+#view-scan.returning .home-head .eyebrow,
+#view-scan.returning .home-head h1,
+#view-scan.returning .home-head > p{display:none}
+#view-scan.returning .home-head{padding-bottom:0}
+
+/* ---------- barre d'onglets : pastille derrière l'onglet actif ---------- */
+.tab svg{box-sizing:content-box;padding:3px 16px;border-radius:999px;transition:background .2s ease}
+.tab[aria-current="page"] svg{background:var(--brand-soft)}
+
+/* ---------- fiche : verdict en grand ---------- */
+.sheet{background:var(--bg)}
+.sheet-bar{background:var(--bg)}
+.p-top{gap:16px;padding:8px 0 16px}
+.p-img{width:118px;height:118px;border:none;border-radius:22px;box-shadow:var(--lift);padding:8px}
+.p-img.ph{background:var(--surface)}
+.verdict{--vc:var(--c-none);position:relative;overflow:hidden;isolation:isolate;border-radius:28px;color:#fff;background:var(--vc) var(--khatam);background-size:56px 56px;margin-bottom:14px;box-shadow:0 18px 34px -20px var(--vc)}
+.verdict::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(160deg,var(--vc) 35%,color-mix(in srgb,var(--vc) 55%,transparent))}
+.v-halal_certifie{--vc:#128A4E}
+.v-halal_probable{--vc:#2E7F45}
+.v-mashbouh{--vc:#BF650A}
+.v-haram{--vc:#C3362D}
+.v-inconnu{--vc:#5F6B65}
+.v-main{display:flex;align-items:center;gap:16px;padding:20px 20px 18px}
+.v-ico{width:64px;height:64px;border-radius:50%;background:#fff;color:var(--vc);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 6px 16px -6px rgb(0 0 0 / .35)}
+.v-ico svg{width:36px;height:36px;stroke-width:3}
+.v-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.v-kicker{font-size:.85rem;font-weight:600;opacity:.85}
+.v-label{font-size:1.9rem;font-weight:800;line-height:1.05;letter-spacing:-.02em}
+.v-lead{font-size:.95rem;line-height:1.35;opacity:.92;margin-top:4px}
+.v-foot{display:flex;align-items:center;gap:12px;padding:12px 20px 14px;background:rgb(0 0 0 / .12)}
+.v-foot .ring{background:conic-gradient(#fff calc(var(--p)*1%),rgb(255 255 255 / .25) 0);width:46px;height:46px}
+.v-foot .ring span{background:var(--vc);color:#fff;width:37px;height:37px;font-size:.95rem}
+.v-foot .ring small{color:rgb(255 255 255 / .8)}
+.v-foot-text{display:flex;flex-direction:column;min-width:0}
+.v-foot-text span{font-size:.82rem;opacity:.85}
+.v-foot-text strong{font-size:1.05rem;font-weight:700}
+.v-foot .grade-dot{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px #fff;flex:none}
+.v-foot .kind-ico{width:46px;height:46px;border-radius:50%;background:rgb(255 255 255 / .2);display:flex;align-items:center;justify-content:center}
+@media (prefers-reduced-motion:no-preference){
+  .verdict{animation:verdict-in .45s cubic-bezier(.2,.8,.2,1)}
+  .v-ico{animation:verdict-ico .5s .1s cubic-bezier(.3,1.5,.5,1) both}
+  @keyframes verdict-in{from{transform:translateY(12px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+  @keyframes verdict-ico{from{transform:scale(.4)}to{transform:none}}
+}
+.sec{background:var(--surface);border-radius:var(--r-lg);padding:18px;margin-bottom:12px;border:none;box-shadow:var(--lift)}
+.sec:last-child{border:none}
+.sec:has(> .off-link:only-child),.sec:empty{background:transparent;box-shadow:none;padding:6px 4px}
+.flag,.kv{background:var(--tint)}
+.alert-card{margin-bottom:12px}
+
+/* ---------- chargement : blocs qui respirent ---------- */
+.skel{display:flex;flex-direction:column;gap:12px;padding-top:8px}
+.skel i{display:block;border-radius:12px;background:var(--tint-2)}
+.skel .sk-row{display:flex;gap:16px;align-items:center}
+@media (prefers-reduced-motion:no-preference){
+  .skel i{animation:breathe 1.3s ease-in-out infinite alternate}
+  @keyframes breathe{from{opacity:.55}to{opacity:1}}
+}
+
+/* ---------- caméra : coins animés, confirmation verte ---------- */
+.cam-frame{outline:none}
+.cam-frame .corner{position:absolute;width:38px;height:38px;border:4px solid #fff}
+.cam-frame .c1{top:-2px;left:-2px;border-right:0;border-bottom:0;border-top-left-radius:22px}
+.cam-frame .c2{top:-2px;right:-2px;border-left:0;border-bottom:0;border-top-right-radius:22px}
+.cam-frame .c3{bottom:-2px;left:-2px;border-right:0;border-top:0;border-bottom-left-radius:22px}
+.cam-frame .c4{bottom:-2px;right:-2px;border-left:0;border-top:0;border-bottom-right-radius:22px}
+@media (prefers-reduced-motion:no-preference){
+  .camera[data-state="scanning"] .corner{animation:corners 1.6s ease-in-out infinite alternate}
+  .camera[data-state="scanning"] .c1{--dx:-5px;--dy:-5px}
+  .camera[data-state="scanning"] .c2{--dx:5px;--dy:-5px}
+  .camera[data-state="scanning"] .c3{--dx:-5px;--dy:5px}
+  .camera[data-state="scanning"] .c4{--dx:5px;--dy:5px}
+  @keyframes corners{to{transform:translate(var(--dx),var(--dy))}}
+}
+.camera.found .corner{border-color:#3DDC84;animation:none}
+.camera.found .laser{opacity:0}
+.camera.found .cam-frame{box-shadow:0 0 0 200vmax rgb(0 0 0 / .55),inset 0 0 0 999px rgb(61 220 132 / .22)}
+.cam-hint.slow{background:rgb(0 0 0 / .55);padding:8px 14px;border-radius:12px;text-shadow:none}
+
+/* ---------- pages vides : petite illustration ---------- */
+.empty-art{width:120px;height:96px;display:block}
+.empty .empty-art{width:120px;height:96px;stroke-width:initial;color:inherit}
+.btn,a.btn{text-decoration:none}
+.scan-cta-text small{font-size:.86rem;line-height:1.35}

@@ -517,4 +517,5 @@ export default {
   "feat.profile.t": "Votre profil",
   "feat.profile.p": "Allergies et régime : une alerte dès qu'un produit ne vous convient pas.",
   "msg.med_notfound": "Ce médicament ({code}) n'est pas dans la base publique des médicaments français. Vérifiez la notice : rubrique « Que contient … ».",
+  "cam.slow": "Approchez le code-barres et tenez le téléphone bien droit. Sinon, tapez les chiffres.",
 };

@@ -111,28 +111,26 @@ function productTop(p) {
   </div></div>`;
 }
 
-function scoreTiles(p, v) {
+// Verdict en grand : la réponse se lit en une demi-seconde, la note santé juste en dessous.
+function verdictHero(p, v) {
   const s = scoreOf(p);
   const kind = kindOf(p);
-  const health = kind !== "food"
-    ? `<div class="score-tile kind">
-         <span class="st-ico">${svg(KIND_ICON[kind])}</span>
-         <span class="st-text"><span class="st-kicker">${t(`kind.${kind}`)}</span><span class="st-value plain">${esc(kind === "medicine" ? p.form || t("kind.medicine") : t("detail.beauty_note"))}</span></span>
-       </div>`
+  const foot = kind !== "food"
+    ? `<span class="kind-ico">${svg(KIND_ICON[kind])}</span>
+       <span class="v-foot-text"><span>${t(`kind.${kind}`)}</span><strong>${esc(kind === "medicine" ? p.form || t("kind.medicine") : t("detail.beauty_note"))}</strong></span>`
     : s
-    ? `<div class="score-tile health g-${s.grade}">
-         <span class="ring" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
-         <span class="st-text"><span class="st-kicker">${t("detail.health")}</span><span class="st-value">${t(`grade.${s.grade}`)}</span></span>
-       </div>`
-    : `<div class="score-tile health none">
-         <span class="ring" style="--p:0"><span>?</span></span>
-         <span class="st-text"><span class="st-kicker">${t("detail.health")}</span><span class="st-value">${t("detail.not_rated")}</span></span>
-       </div>`;
-  return `<div class="scores">
-    <div class="score-tile s-${v.status}">
-      <span class="st-ico">${svg(STATUS_ICON[v.status])}</span>
-      <span class="st-text"><span class="st-kicker">${t("detail.halal")}</span><span class="st-value">${S(v.status, "label")}</span></span>
-    </div>${health}</div>`;
+      ? `<span class="ring" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
+         <span class="v-foot-text"><span>${t("detail.health")}</span><strong>${t(`grade.${s.grade}`)}</strong></span>
+         <span class="grade-dot g-${s.grade}" aria-hidden="true"></span>`
+      : `<span class="ring" style="--p:0"><span>?</span></span>
+         <span class="v-foot-text"><span>${t("detail.health")}</span><strong>${t("detail.not_rated")}</strong></span>`;
+  return `<div class="verdict v-${v.status}" role="status">
+    <div class="v-main">
+      <span class="v-ico">${svg(STATUS_ICON[v.status])}</span>
+      <span class="v-text"><span class="v-kicker">${t("detail.halal")}</span><strong class="v-label">${S(v.status, "label")}</strong><span class="v-lead">${S(v.status, "lead")}</span></span>
+    </div>
+    <div class="v-foot">${foot}</div>
+  </div>`;
 }
 
 // Alerte personnelle en haut de la fiche
@@ -193,7 +191,7 @@ function halalSection(p, v) {
       ? `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
       : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
-    ${kindOf(p) === "medicine" && v.status === "inconnu" ? "" : `<p class="lead">${S(v.status, "lead")}</p>`}${cert}
+    ${cert}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
     ${flags}${ocrCta}</section>`;
 }
@@ -309,7 +307,7 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
       : `<section class="sec"></section>`;
   const food = kind === "food";
-  return `${productTop(p)}${profileAlert(p)}${scoreTiles(p, v)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+  return `${productTop(p)}${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
 function altCard(a, { fav = false } = {}) {
@@ -337,6 +335,20 @@ async function loadAlternatives(p, code) {
   }
 }
 
+// Squelette de fiche pendant le chargement
+const skeletonHtml = () => `<div class="skel" aria-busy="true" aria-label="${esc(t("msg.loading"))}">
+  <div class="sk-row"><i style="width:118px;height:118px;border-radius:22px"></i><div style="flex:1;display:flex;flex-direction:column;gap:10px"><i style="height:22px;width:85%"></i><i style="height:16px;width:50%"></i></div></div>
+  <i style="height:150px;border-radius:28px"></i>
+  <i style="height:18px;width:40%"></i><i style="height:14px"></i><i style="height:14px;width:90%"></i>
+  <i style="height:80px;border-radius:20px"></i></div>`;
+// Petite illustration pour les pages vides (panier + étoile de la marque)
+const emptyArt = () => `<svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true">
+  <circle cx="60" cy="50" r="40" fill="#E3F3EB" stroke="none"/>
+  <path d="M36 40h48l-5 30a6 6 0 0 1-6 5H47a6 6 0 0 1-6-5z" fill="#fff" stroke="#12724F" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M46 40l8-14M74 40l-8-14" stroke="#12724F" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M52 52v12M60 52v12M68 52v12" stroke="#9CC9B4" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <g transform="translate(88 22)" fill="none" stroke="#E7B84E" stroke-width="2"><rect x="-7" y="-7" width="14" height="14"/><rect x="-7" y="-7" width="14" height="14" transform="rotate(45)"/></g>
+</svg>`;
 const loadingHtml = (text) => `<div class="loading"><span class="spinner"></span>${esc(text)}</div>`;
 const messageHtml = (title, text, actions = "") =>
   `<div class="card-msg"><strong>${esc(title)}</strong><p>${esc(text)}</p>${actions ? `<div class="msg-actions">${actions}</div>` : ""}</div>`;
@@ -429,7 +441,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
   const cached = memo.get(code) || (store.get(code) && store.get(code).p);
   const fresh = cached && cached.health; // les très anciennes entrées n'ont pas de données santé
   $("sheetTitle").textContent = cached ? nameOf(cached) : t("sheet.title");
-  $("sheetBody").innerHTML = loadingHtml(t("msg.loading"));
+  $("sheetBody").innerHTML = skeletonHtml();
   showSheet({ replace, fromScan });
   refreshFav();
 
@@ -592,13 +604,22 @@ $("ocrInput").addEventListener("change", (e) => {
 // Caméra plein écran
 // ===========================================================================
 let torchOn = false;
+let slowTimer = null;
 const camera = createCamera({
   video: $("camVideo"),
   frame: $("camFrame"),
   onState(state, detail) {
     cameraEl.dataset.state = state;
     if (state === "starting") $("camBusyText").textContent = t("cam.opening");
+    clearTimeout(slowTimer);
+    $("camHint").classList.remove("slow");
+    $("camHint").textContent = t("cam.hint");
     if (state === "scanning") {
+      // Rien de lu au bout de 8 s : un conseil, et la saisie manuelle reste à portée de main
+      slowTimer = setTimeout(() => {
+        $("camHint").textContent = t("cam.slow");
+        $("camHint").classList.add("slow");
+      }, 8000);
       $("torchBtn").hidden = !detail.torch;
       $("engineInfo").textContent = detail.engine || detectorEngine() || "—";
     }
@@ -609,8 +630,14 @@ const camera = createCamera({
     }
   },
   onCode(code) {
-    closeCamera({ keepHistory: true });
-    openSheet(code, { fromScan: true, replace: true });
+    // Confirmation : cadre vert un court instant, puis la fiche
+    clearTimeout(slowTimer);
+    cameraEl.classList.add("found");
+    setTimeout(() => {
+      cameraEl.classList.remove("found");
+      closeCamera({ keepHistory: true });
+      openSheet(code, { fromScan: true, replace: true });
+    }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260);
   },
 });
 
@@ -700,6 +727,7 @@ $("manualForm").addEventListener("submit", (e) => {
 // ===========================================================================
 function renderHome() {
   const all = store.all();
+  $("view-scan").classList.toggle("returning", all.length > 0); // accueil court pour qui revient
   const recent = all.slice(0, 10);
   const favs = all.filter((e) => e.fav).slice(0, 10);
   $("homeRecent").hidden = !recent.length;
@@ -767,7 +795,7 @@ function renderResults(q) {
   if (!lastResults) return;
   $("searchResults").innerHTML = lastResults.length
     ? `<p class="label" style="margin-bottom:4px">${tn("search.results", lastResults.length)}</p><div class="list">${lastResults.map((p) => rowHtml(p)).join("")}</div>`
-    : messageHtml(t("search.none.t"), t("search.none.p", { q }));
+    : `<div class="empty">${emptyArt()}<strong>${esc(t("search.none.t"))}</strong><p>${esc(t("search.none.p", { q }))}</p></div>`;
 }
 $("searchForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -814,7 +842,7 @@ function renderHistory() {
   const seen = STATUS_ORDER.filter((s) => counts[s]);
 
   $("historyStats").innerHTML = !all.length
-    ? `<div class="empty">${svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>')}<strong>${t("history.empty.t")}</strong><p>${t("history.empty.p")}</p><a class="btn btn-primary" href="#scan">${t("home.scan")}</a></div>`
+    ? `<div class="empty">${emptyArt()}<strong>${t("history.empty.t")}</strong><p>${t("history.empty.p")}</p><a class="btn btn-primary" href="#scan">${t("home.scan")}</a></div>`
     : `<div class="stats">
       <div class="stats-top"><span class="stats-num">${all.length}</span><span class="stats-unit">${t(all.length === 1 ? "history.count_one" : "history.count_other")}</span></div>
       <div class="bar" role="img" aria-label="${seen.map((s) => `${counts[s]} ${S(s, "label")}`).join(", ")}">${seen.map((s) => `<i style="flex:${counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("")}</div>
@@ -831,7 +859,7 @@ function renderHistory() {
     ? ""
     : shown.length
       ? shown.map((e) => rowHtml(e.p, { fav: e.fav, when: relTime(e.at) })).join("")
-      : `<div class="empty"><p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`;
+      : `<div class="empty">${emptyArt()}<p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`;
 
   $("historyClear").innerHTML = !all.length
     ? ""
@@ -955,7 +983,7 @@ function renderAdditives() {
             .join("")}</div>`
         )
         .join("")
-    : `<div class="empty"><strong>${t("add.empty.t")}</strong><p>${t(addMode === "halal" ? "add.empty_halal" : "add.empty_health")}</p></div>`;
+    : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t(addMode === "halal" ? "add.empty_halal" : "add.empty_health")}</p></div>`;
 }
 $("addModes").addEventListener("click", (e) => {
   const b = e.target.closest("[data-mode]");

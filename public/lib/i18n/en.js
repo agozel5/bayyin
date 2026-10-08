@@ -503,4 +503,5 @@ export default {
   "feat.profile.t": "Your profile",
   "feat.profile.p": "Allergies and diet: an alert as soon as a product isn't right for you.",
   "msg.med_notfound": "This medicine ({code}) is not in the French public medicines database. Check the leaflet: section \"What … contains\".",
+  "cam.slow": "Move closer to the barcode and hold the phone straight. Or type the digits.",
 };
