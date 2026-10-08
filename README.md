@@ -17,6 +17,11 @@ Application **iOS et Android** (et version web) qui scanne le code-barres d'un p
 
 Ce qui la distingue :
 
+- **aliments, cosmétiques et médicaments** : savons, crèmes et parfums via Open Beauty Facts
+  (porc, gélatine, suif, carmin, alcool) ; médicaments vendus en France via la Base de données
+  publique des médicaments (gélule = gélatine, lien vers la notice) ;
+- **profil personnel** : régime (végétarien, végan) et allergies ; alerte en tête de fiche et
+  alternatives filtrées ;
 - **verdict selon votre école** (hanafite, malékite, chaféite, hanbalite, prudent, ou point par point) pour les sujets débattus : insectes (carmin), présure, vinaigre de vin, alcool, etc. ;
 - **photo de la liste d'ingrédients** (OCR dans le navigateur) quand le produit n'est pas dans la base : texte corrigeable, analyse immédiate, mémorisée pour ce code-barres ;
 - **quatre langues** : français, anglais, arabe (de droite à gauche) et turc, avec détection des ingrédients sensibles dans ces langues ;
@@ -117,6 +122,11 @@ public/                 la version web (à héberger telle quelle)
   lib/rules.js          moteur de classification halal
   lib/off.js            appels à Open Food Facts depuis le navigateur
   lib/fixtures.js       produits d'exemple (tests + mode démo)
+  lib/beauty.js         règles halal des cosmétiques (ingrédients INCI)
+  lib/medicine.js       médicaments : code CIP13, verdict selon la forme
+  lib/profile.js        profil allergies / régime comparé à chaque produit
+  data/med/NN.json      base des médicaments découpée en 100 fichiers (workflow medicaments.yml, chaque lundi)
+scripts/build-medicaments.mjs   construit data/med depuis la base publique
 src/server.js           serveur local optionnel : sert public/ + API JSON
 test/                   tests node:test
 ```
