@@ -81,7 +81,7 @@ for (const a of ["II", "III", "IV", "V", "VI"]) {
 
 // --- 2. Inventaire des ingrédients (API de recherche, 200 par page) ---
 let SORT = [{ field: "substanceId", order: "ASC" }]; // ordre stable entre les pages
-async function searchPage(query, page, size = 200) {
+async function searchPage(query, page, size = 200, order = "ASC") {
   const send = async (sort) => {
     const fd = new FormData();
     fd.append("query", new Blob([JSON.stringify(query)], { type: "application/json" }));
@@ -89,7 +89,7 @@ async function searchPage(query, page, size = 200) {
     const res = await fetchRetry(`${SEARCH}?apiKey=${KEY}&text=*&pageSize=${size}&pageNumber=${page}`, { method: "POST", body: fd }, 2);
     return res.json();
   };
-  try { return await send(SORT); }
+  try { return await send(SORT && SORT.map((x) => ({ ...x, order }))); }
   catch (e) {
     if (!SORT) throw e;
     console.log("tri refusé, requête sans tri :", e.message);
@@ -99,62 +99,36 @@ async function searchPage(query, page, size = 200) {
 }
 const items = new Map(); // substanceId -> metadata
 const BASE_Q = { term: { itemType: "ingredient" } };
-// L'API ne renvoie pas plus de 10 000 résultats par requête : on découpe par préfixe de
-// l'identifiant (substanceId, comparé comme du texte), en affinant tout préfixe trop fréquent.
-async function countOf(must) {
-  const j = await searchPage({ bool: { must } }, 1, 1);
-  return j.totalResults || 0;
-}
-const next = (p) => p.slice(0, -1) + String.fromCharCode(p.charCodeAt(p.length - 1) + 1); // "19" -> "1:"
-async function pageAll(must, n, label) {
-  let got = 0;
-  for (let page = 1; (page - 1) * 200 < n; page++) {
-    const j = await searchPage({ bool: { must } }, page);
-    for (const r of j.results || []) { const m = r.metadata || {}; items.set((m.substanceId || [r.reference])[0], m); got++; }
-    await sleep(100);
-  }
-  console.log(`${label} : ${got} / ${n}`);
-}
-async function collectPrefix(p) {
-  const must = [BASE_Q, { range: { substanceId: { gte: p, lt: next(p) } } }];
-  const n = await countOf(must);
-  if (!n) return;
-  if (n <= 9500) return pageAll(must, n, `préfixe ${p}`);
-  const exact = [BASE_Q, { term: { substanceId: p } }];
-  const e = await countOf(exact);
-  if (e) await pageAll(exact, e, `identifiant ${p}`);
-  for (const d of "0123456789") await collectPrefix(p + d);
-}
-const TOTAL = await countOf([BASE_Q]);
-console.log("inventaire annoncé :", TOTAL);
-for (const d of "0123456789") await collectPrefix(d);
-// Ingrédients sans identifiant numérique : requête à part, découpée par fonction si besoin
+// L'API ne renvoie pas plus de 10 000 résultats par requête. On découpe par fonction de
+// l'ingrédient (83 fonctions, plus les ingrédients sans fonction) ; pour une fonction plus
+// fréquente que cela, on lit les 10 000 premiers dans l'ordre croissant puis décroissant.
 async function countQ(q) { return (await searchPage(q, 1, 1)).totalResults || 0; }
-async function pageQ(q, n, label) {
+async function pageQ(q, n, label, order = "ASC") {
   let got = 0;
-  for (let page = 1; (page - 1) * 200 < n; page++) {
-    const j = await searchPage(q, page);
+  for (let page = 1; (page - 1) * 200 < Math.min(n, 10000); page++) {
+    const j = await searchPage(q, page, 200, order);
     for (const r of j.results || []) { const m = r.metadata || {}; items.set((m.substanceId || [])[0] || r.reference, m); got++; }
-    await sleep(100);
+    await sleep(80);
   }
-  console.log(`${label} : ${got} / ${n}`);
+  console.log(`${label} (${order}) : ${got} / ${n}`);
 }
-const NOID = { bool: { must: [BASE_Q], must_not: [{ range: { substanceId: { gte: "0", lt: ":" } } }] } };
-const nNoId = await countQ(NOID);
-console.log("sans identifiant numérique :", nNoId);
-if (nNoId && nNoId <= 9500) await pageQ(NOID, nNoId, "sans identifiant");
-else if (nNoId) {
-  const fns = new Set();
-  for (const m of items.values()) for (const f of m.functionName || []) fns.add(f);
-  for (const f of fns) {
-    const q = { bool: { must: [BASE_Q, { term: { functionName: f } }], must_not: NOID.bool.must_not } };
-    const n = await countQ(q);
-    if (n) await pageQ(q, Math.min(n, 10000), `sans identifiant, ${f}`);
-  }
-  const q = { bool: { must: [BASE_Q], must_not: [...NOID.bool.must_not, { exists: { field: "functionName" } }] } };
+const TOTAL = await countQ({ bool: { must: [BASE_Q] } });
+console.log("inventaire annoncé :", TOTAL);
+// Liste des fonctions : référentiel CosIng
+const fnRef = await searchPage({ bool: { must: [{ term: { itemType: "function" } }] } }, 1, 500);
+const FUNCTIONS = (fnRef.results || []).map((r) => ((r.metadata || {}).functionName || [])[0]).filter(Boolean);
+console.log("fonctions :", FUNCTIONS.length);
+for (const f of FUNCTIONS) {
+  const q = { bool: { must: [BASE_Q, { term: { functionName: f } }] } };
   const n = await countQ(q);
-  if (n) await pageQ(q, Math.min(n, 10000), "sans identifiant ni fonction");
+  if (!n) continue;
+  await pageQ(q, n, f);
+  if (n > 10000) await pageQ(q, n, f, "DESC");
+  if (n > 20000) console.log(`⚠ ${f} : plus de 20 000 ingrédients, couverture partielle`);
 }
+const noFn = { bool: { must: [BASE_Q], must_not: [{ exists: { field: "functionName" } }] } };
+const nNoFn = await countQ(noFn);
+if (nNoFn) await pageQ(noFn, nNoFn, "sans fonction");
 console.log("ingrédients récupérés :", items.size);
 if (items.size < Math.max(20000, TOTAL * 0.97)) throw new Error(`Inventaire incomplet : ${items.size} sur ${TOTAL}`);
 
