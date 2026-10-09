@@ -404,7 +404,6 @@ export default {
   "ocr.analyze": "Analyser les ingrédients",
   "ocr.retake": "Reprendre la photo",
   "ocr.empty.t": "Texte illisible",
-  "ocr.empty.p": "Aucun texte n'a pu être lu. Photographiez la liste d'ingrédients de près, bien éclairée et à plat.",
   "ocr.error.p": "Le module de lecture de texte n'a pas pu se charger. Vérifiez votre connexion.",
   "ocr.unnamed": "Produit photographié",
   "ocr.saved": "Analyse enregistrée : le prochain scan de ce code-barres l'utilisera.",
@@ -1006,4 +1005,10 @@ export default {
   "search.food_failed.p": "Open Food Facts est très sollicité et n'a pas répondu. Réessayez dans quelques secondes.",
   "search.idea_milk": "Lait",
   "search.idea_chicken": "Poulet",
+  // ---------- photo des ingrédients : cadre ----------
+  "ocr.crop_t": "Encadrez la liste d'ingrédients",
+  "ocr.crop_hint": "Faites glisser le cadre et ses coins pour ne garder que les ingrédients : le logo ou le tableau nutritionnel feraient apparaître des caractères parasites.",
+  "ocr.crop_read": "Lire le texte encadré",
+  "ocr.low_conf": "Lecture incertaine : certains mots peuvent être faux. Corrigez-les, ou reprenez la photo plus près et bien éclairée.",
+  "ocr.empty.p": "Aucun texte n'a pu être lu. Prenez la liste d'ingrédients de près (le texte doit être bien lisible), à plat et sans reflet.",
 };

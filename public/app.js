@@ -707,17 +707,75 @@ document.addEventListener("click", (e) => {
 // Photo de la liste d'ingrédients (OCR)
 // ===========================================================================
 let ocrTicket = 0;
-async function startOcr(file, code) {
-  const ticket = ++ocrTicket;
+// Étape 1 : la photo s'affiche avec un cadre à ajuster sur la liste d'ingrédients
+function startOcr(file, code) {
+  ++ocrTicket;
   sheetCode = code ? `ocr:${code}` : "ocr";
   sheetProduct = null;
   $("sheetTitle").textContent = t("ocr.title");
-  $("sheetBody").innerHTML = `<div class="ocr-progress"><span class="spinner"></span><p id="ocrStep">${t("ocr.loading")}</p><small>${t("ocr.loading_note")}</small><div class="progress"><i id="ocrBar"></i></div></div>`;
+  $("sheetShare").hidden = true;
+  $("sheetCompare").hidden = true;
+  const url = URL.createObjectURL(file);
+  $("sheetBody").innerHTML = `<div class="ocr-crop">
+      <h3>${t("ocr.crop_t")}</h3><p class="muted">${t("ocr.crop_hint")}</p>
+      <div class="crop-stage" id="cropStage">
+        <img id="cropImg" src="${url}" alt="">
+        <div class="crop-box" id="cropBox"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
+      </div>
+      <button class="btn btn-primary btn-block" type="button" id="ocrRead">${t("ocr.crop_read")}</button>
+      <label class="btn btn-soft btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
+    </div>`;
   showSheet({ replace: !sheet.hidden });
   refreshFav();
+  const box = { x: 0.06, y: 0.22, w: 0.88, h: 0.5 };
+  const el = $("cropBox");
+  const draw = () => Object.assign(el.style, { left: box.x * 100 + "%", top: box.y * 100 + "%", width: box.w * 100 + "%", height: box.h * 100 + "%" });
+  draw();
+  // Glisser le cadre, ou un de ses coins pour le redimensionner (doigt ou souris)
+  const stage = $("cropStage");
+  let drag = null;
+  stage.addEventListener("pointerdown", (e) => {
+    if (!e.target.closest("#cropBox")) return;
+    e.preventDefault();
+    const r = stage.getBoundingClientRect();
+    drag = { h: e.target.dataset.h || "move", x: e.clientX, y: e.clientY, w: r.width, hgt: r.height, start: { ...box } };
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const dx = (e.clientX - drag.x) / drag.w, dy = (e.clientY - drag.y) / drag.hgt;
+    const s0 = drag.start, MIN = 0.12;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    if (drag.h === "move") {
+      box.x = clamp(s0.x + dx, 0, 1 - s0.w);
+      box.y = clamp(s0.y + dy, 0, 1 - s0.h);
+    } else {
+      let x0 = s0.x, y0 = s0.y, x1 = s0.x + s0.w, y1 = s0.y + s0.h;
+      if (drag.h.includes("w")) x0 = clamp(x0 + dx, 0, x1 - MIN);
+      if (drag.h.includes("e")) x1 = clamp(x1 + dx, x0 + MIN, 1);
+      if (drag.h.includes("n")) y0 = clamp(y0 + dy, 0, y1 - MIN);
+      if (drag.h.includes("s")) y1 = clamp(y1 + dy, y0 + MIN, 1);
+      Object.assign(box, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+    }
+    draw();
+  });
+  const stop = () => (drag = null);
+  stage.addEventListener("pointerup", stop);
+  stage.addEventListener("pointercancel", stop);
+  $("ocrRead").addEventListener("click", () => {
+    URL.revokeObjectURL(url);
+    readOcr(file, code, { ...box });
+  });
+}
+
+// Étape 2 : lecture de la zone encadrée, puis texte à vérifier
+async function readOcr(file, code, crop) {
+  const ticket = ++ocrTicket;
+  $("sheetBody").innerHTML = `<div class="ocr-progress"><span class="spinner"></span><p id="ocrStep">${t("ocr.loading")}</p><small>${t("ocr.loading_note")}</small><div class="progress"><i id="ocrBar"></i></div></div>`;
   try {
-    const text = await readIngredients(file, {
+    const { text, confidence } = await readIngredients(file, {
       lang: getLang(),
+      crop,
       onProgress: (n) => {
         if (ticket !== ocrTicket || !$("ocrStep")) return;
         $("ocrStep").textContent = t("ocr.reading", { n });
@@ -732,6 +790,7 @@ async function startOcr(file, code) {
     }
     $("sheetBody").innerHTML = `<div class="ocr-review">
       <h3>${t("ocr.review")}</h3><p class="muted">${t("ocr.review_hint")}</p>
+      ${confidence < 70 ? `<p class="ocr-warn">${svg(I.alert)}<span>${t("ocr.low_conf")}</span></p>` : ""}
       <textarea id="ocrText" class="field area" rows="8" spellcheck="false">${esc(text)}</textarea>
       <label class="muted small" for="ocrName">${t("ocr.name")}</label>
       <input id="ocrName" class="field" type="text" autocomplete="off">

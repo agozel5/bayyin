@@ -390,7 +390,6 @@ export default {
   "ocr.analyze": "Analyse the ingredients",
   "ocr.retake": "Retake the photo",
   "ocr.empty.t": "Unreadable text",
-  "ocr.empty.p": "No text could be read. Photograph the ingredient list up close, well lit and flat.",
   "ocr.error.p": "The text reading module could not load. Check your connection.",
   "ocr.unnamed": "Photographed product",
   "ocr.saved": "Analysis saved: the next scan of this barcode will use it.",
@@ -992,4 +991,10 @@ export default {
   "search.food_failed.p": "Open Food Facts is very busy and did not answer. Try again in a few seconds.",
   "search.idea_milk": "Milk",
   "search.idea_chicken": "Chicken",
+  // ---------- photo des ingrédients : cadre ----------
+  "ocr.crop_t": "Frame the ingredient list",
+  "ocr.crop_hint": "Drag the frame and its corners to keep only the ingredients: the logo or nutrition table would add stray characters.",
+  "ocr.crop_read": "Read the framed text",
+  "ocr.low_conf": "Uncertain reading: some words may be wrong. Fix them, or retake the photo closer and well lit.",
+  "ocr.empty.p": "No text could be read. Photograph the ingredient list up close (the text must be clearly legible), flat and without glare.",
 };

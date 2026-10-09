@@ -390,7 +390,6 @@ export default {
   "ocr.analyze": "İçerikleri analiz et",
   "ocr.retake": "Fotoğrafı yeniden çek",
   "ocr.empty.t": "Metin okunamadı",
-  "ocr.empty.p": "Hiç metin okunamadı. İçindekiler listesini yakından, iyi ışıkta ve düz çekin.",
   "ocr.error.p": "Metin okuma modülü yüklenemedi. Bağlantınızı kontrol edin.",
   "ocr.unnamed": "Fotoğrafı çekilen ürün",
   "ocr.saved": "Analiz kaydedildi: bu barkodun bir sonraki taraması bunu kullanacak.",
@@ -992,4 +991,10 @@ export default {
   "search.food_failed.p": "Open Food Facts çok yoğun ve yanıt vermedi. Birkaç saniye sonra tekrar deneyin.",
   "search.idea_milk": "Süt",
   "search.idea_chicken": "Tavuk",
+  // ---------- photo des ingrédients : cadre ----------
+  "ocr.crop_t": "İçindekiler listesini çerçeveleyin",
+  "ocr.crop_hint": "Yalnızca içindekiler kalsın diye çerçeveyi ve köşelerini sürükleyin: logo veya besin tablosu tuhaf karakterler ekler.",
+  "ocr.crop_read": "Çerçevedeki metni oku",
+  "ocr.low_conf": "Okuma belirsiz: bazı kelimeler yanlış olabilir. Düzeltin ya da fotoğrafı daha yakından ve iyi ışıkta yeniden çekin.",
+  "ocr.empty.p": "Hiç metin okunamadı. İçindekiler listesini yakından (metin net okunmalı), düz ve parlama olmadan çekin.",
 };

@@ -1169,3 +1169,19 @@ html[data-text="xlarge"]{font-size:125%}
 .tool-badge{top:6px;inset-inline-end:6px}
 @media (max-width:350px){.tool-row{grid-template-columns:repeat(2,1fr)}}
 
+
+/* photo des ingrédients : cadre à ajuster sur la liste */
+.ocr-crop{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.ocr-crop h3{margin:0;font-size:1.25rem;font-weight:800}
+.ocr-crop .muted{margin:0}
+.crop-stage{position:relative;width:fit-content;max-width:100%;margin:4px auto;border-radius:16px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;background:#000}
+.crop-stage img{display:block;max-width:100%;max-height:56vh;pointer-events:none}
+.crop-box{position:absolute;border:2.5px solid #fff;border-radius:6px;box-shadow:0 0 0 9999px rgb(0 0 0 / .55);cursor:move}
+.crop-box i{position:absolute;width:30px;height:30px;border:4px solid var(--gold,#E7B84E);border-radius:4px}
+.crop-box i::after{content:"";position:absolute;inset:-14px}
+.crop-box i[data-h="nw"]{left:-5px;top:-5px;border-right:none;border-bottom:none;cursor:nwse-resize}
+.crop-box i[data-h="ne"]{right:-5px;top:-5px;border-left:none;border-bottom:none;cursor:nesw-resize}
+.crop-box i[data-h="sw"]{left:-5px;bottom:-5px;border-right:none;border-top:none;cursor:nesw-resize}
+.crop-box i[data-h="se"]{right:-5px;bottom:-5px;border-left:none;border-top:none;cursor:nwse-resize}
+.ocr-warn{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--r-md);background:var(--c-doubt-bg);color:var(--fg);font-size:.92rem}
+.ocr-warn svg{color:var(--c-doubt);width:20px;height:20px;flex:none;margin-top:1px}
