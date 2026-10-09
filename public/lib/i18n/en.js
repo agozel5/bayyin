@@ -983,4 +983,13 @@ export default {
   "home.tip.6": "Aisle mode: film a shelf and Bayyin reads several barcodes at once.",
   "home.tip.7": "No signal in the shop? Download common products in Settings › Offline.",
   "home.tip.8": "On a lipstick, “CI 75470” means carmine, made from insects.",
+  // ---------- recherche : pertinence et langues ----------
+  "search.in_history": "In your history",
+  "search.g_food": "Food",
+  "search.g_beauty": "Cosmetics and hygiene",
+  "search.alt": "also searched in French: “{q}”",
+  "search.food_failed.t": "Food results unavailable right now",
+  "search.food_failed.p": "Open Food Facts is very busy and did not answer. Try again in a few seconds.",
+  "search.idea_milk": "Milk",
+  "search.idea_chicken": "Chicken",
 };

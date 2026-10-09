@@ -983,4 +983,13 @@ export default {
   "home.tip.6": "Raf modu: bir rafı çekin, Bayyin aynı anda birkaç barkod okur.",
   "home.tip.7": "Mağazada çekmiyor mu? Yaygın ürünleri Ayarlar › Çevrimdışı bölümünden indirin.",
   "home.tip.8": "Rujda “CI 75470”, böceklerden elde edilen karmin anlamına gelir.",
+  // ---------- recherche : pertinence et langues ----------
+  "search.in_history": "Geçmişinizde",
+  "search.g_food": "Gıdalar",
+  "search.g_beauty": "Kozmetik ve hijyen",
+  "search.alt": "Fransızca da arandı: “{q}”",
+  "search.food_failed.t": "Gıda sonuçları şu an alınamadı",
+  "search.food_failed.p": "Open Food Facts çok yoğun ve yanıt vermedi. Birkaç saniye sonra tekrar deneyin.",
+  "search.idea_milk": "Süt",
+  "search.idea_chicken": "Tavuk",
 };

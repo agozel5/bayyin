@@ -14,6 +14,7 @@ import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
 import { fetchPlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
+import { rankByRelevance } from "./lib/search.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -980,9 +981,11 @@ function renderHome() {
 // ===========================================================================
 // Recherche
 // ===========================================================================
-const SUGGESTIONS = DEMO ? ["Haribo", "Nutella", "Saucisson", "Camembert", "Nuggets"] : ["Nutella", "Haribo", "Kinder", "Isla Délice", "Danone", "Oreo"];
+const SUGGESTIONS = DEMO ? ["Haribo", "Nutella", "Saucisson", "Camembert", "Nuggets"] : ["Nutella", "Haribo", "Isla Délice", "Kinder", "Danone"];
 function renderSuggestions() {
-  $("suggestChips").innerHTML = SUGGESTIONS.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
+  // Des marques, et deux mots courants dans la langue de l'app (la recherche les comprend dans les 4 langues)
+  const ideas = [...SUGGESTIONS.slice(0, 3), t("search.idea_milk"), t("search.idea_chicken"), ...SUGGESTIONS.slice(3)];
+  $("suggestChips").innerHTML = ideas.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
 }
 $("suggestChips").addEventListener("click", (e) => {
   const b = e.target.closest("[data-q]");
@@ -991,45 +994,85 @@ $("suggestChips").addEventListener("click", (e) => {
   runSearch(b.dataset.q);
 });
 
-let searchTicket = 0;
+let searchCtl = null;
+let searchRunning = ""; // recherche en cours : un deuxième appui ne la relance pas
 let lastResults = null;
-async function runSearch(raw) {
+async function runSearch(raw, { force = false } = {}) {
   const q = raw.trim();
   const out = $("searchResults");
   $("searchSuggest").hidden = !!q;
+  if (!q) {
+    searchCtl?.abort();
+    searchRunning = "";
+    lastResults = null;
+    return (out.innerHTML = "");
+  }
+  if (q === searchRunning && !force) return;
+  searchCtl?.abort();
+  const ctl = (searchCtl = new AbortController());
+  searchRunning = q;
   lastResults = null;
-  if (!q) return (out.innerHTML = "");
-  const ticket = ++searchTicket;
-  out.innerHTML = loadingHtml(t("search.searching"));
   const digits = q.replace(/\s+/g, "");
   try {
     if (/^\d{8,14}$/.test(digits)) {
+      out.innerHTML = loadingHtml(t("search.searching"));
       const p = await fetchProduct(digits);
-      if (ticket !== searchTicket) return;
-      lastResults = p ? [p] : [];
-      out.innerHTML = p ? `<div class="list">${rowHtml(p)}</div>` : notFoundHtml(digits);
+      if (ctl.signal.aborted) return;
+      lastResults = p ? { q, local: [], food: [p], beauty: [], single: true } : null;
+      if (!p) out.innerHTML = notFoundHtml(digits);
+      else renderResults(q);
       return;
     }
     if (q.length < 2) return (out.innerHTML = messageHtml(t("search.short.t"), t("search.short.p")));
-    const list = await off.search(q);
-    if (ticket !== searchTicket) return;
-    list.forEach((p) => memo.set(p.code, p));
-    lastResults = list;
+    // Tout de suite : les produits déjà scannés qui correspondent
+    const local = rankByRelevance(store.all().map((e) => e.p), q).slice(0, 3);
+    out.innerHTML = (local.length ? resultGroup(t("search.in_history"), local) : "") + loadingHtml(t("search.searching"));
+    const res = await off.search(q, { lang: getLang(), signal: ctl.signal });
+    if (ctl.signal.aborted) return;
+    const known = new Set(local.map((p) => p.code));
+    const fresh = (list) => list.filter((p) => !known.has(p.code));
+    [...res.food, ...res.beauty].forEach((p) => memo.set(p.code, p));
+    lastResults = { q, local, food: fresh(res.food), beauty: fresh(res.beauty), alt: res.alt, foodFailed: res.foodFailed };
     renderResults(q);
   } catch (err) {
-    if (ticket === searchTicket) out.innerHTML = messageHtml(t("msg.error.t"), errorText(err));
+    if (ctl.signal.aborted) return;
+    out.innerHTML = messageHtml(t("msg.error.t"), errorText(err), `<button class="btn btn-primary" type="button" data-search-retry>${esc(t("msg.retry"))}</button>`);
+  } finally {
+    if (searchCtl === ctl) searchRunning = "";
   }
 }
+const resultGroup = (title, list, count = false) =>
+  `<section class="result-group"><p class="label">${esc(title)}${count ? ` · ${list.length}` : ""}</p><div class="list">${list.map((p) => rowHtml(p)).join("")}</div></section>`;
 function renderResults(q) {
-  if (!lastResults) return;
-  $("searchResults").innerHTML = lastResults.length
-    ? `<p class="label" style="margin-bottom:4px">${tn("search.results", lastResults.length)}</p><div class="list">${lastResults.map((p) => rowHtml(p)).join("")}</div>`
-    : `<div class="empty">${emptyArt()}<strong>${esc(t("search.none.t"))}</strong><p>${esc(t("search.none.p", { q }))}</p></div>`;
+  const r = lastResults;
+  if (!r || r.q !== q) return;
+  const total = r.local.length + r.food.length + r.beauty.length;
+  let html = "";
+  if (r.single) html = `<div class="list">${r.food.map((p) => rowHtml(p)).join("")}</div>`;
+  else if (total) {
+    html += `<p class="search-count">${esc(tn("search.results", total))}${r.alt ? ` · <span>${esc(t("search.alt", { q: r.alt }))}</span>` : ""}</p>`;
+    if (r.local.length) html += resultGroup(t("search.in_history"), r.local);
+    const both = r.food.length && r.beauty.length;
+    if (r.food.length) html += both || r.local.length ? resultGroup(t("search.g_food"), r.food, true) : `<div class="list">${r.food.map((p) => rowHtml(p)).join("")}</div>`;
+    if (r.beauty.length) html += resultGroup(t("search.g_beauty"), r.beauty, true);
+  }
+  // Les aliments n'ont pas répondu : on le dit, au lieu d'afficher seulement des cosmétiques
+  if (r.foodFailed) html = messageHtml(t("search.food_failed.t"), t("search.food_failed.p"), `<button class="btn btn-primary" type="button" data-search-retry>${esc(t("msg.retry"))}</button>`) + html;
+  else if (!total) html = `<div class="empty">${emptyArt()}<strong>${esc(t("search.none.t"))}</strong><p>${esc(t("search.none.p", { q }))}</p></div>`;
+  $("searchResults").innerHTML = html;
 }
-$("searchForm").addEventListener("submit", (e) => {
-  e.preventDefault();
+$("searchResults").addEventListener("click", (e) => {
+  if (e.target.closest("[data-search-retry]")) runSearch($("searchInput").value, { force: true });
+});
+function submitSearch(e) {
+  e?.preventDefault();
   $("searchInput").blur();
   runSearch($("searchInput").value);
+}
+$("searchForm").addEventListener("submit", submitSearch);
+// Certains claviers de téléphone envoient seulement la touche « Rechercher » sans valider le formulaire
+$("searchInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.isComposing) submitSearch(e);
 });
 $("searchInput").addEventListener("input", (e) => {
   if (!e.target.value.trim()) runSearch("");
@@ -1610,6 +1653,7 @@ settings.subscribe((st, patch) => {
   if (current === "history") renderHistory();
   if (current === "additives") renderAdditives();
   if (current === "search") renderResults($("searchInput").value.trim());
+  if (patch.lang && current === "search" && !$("searchInput").value.trim()) renderSuggestions();
   if (!sheet.hidden && sheetProduct) {
     const top = $("sheetBody").scrollTop;
     renderSheetProduct(sheetProduct);

@@ -1125,3 +1125,10 @@ html[data-text="xlarge"]{font-size:125%}
 :root[data-theme="dark"] .tip-line strong,:root[data-theme="dark"] .tip-line > svg{color:#F1C564}
 @media (prefers-reduced-motion:reduce){.tool,.scan-link,.alt,.tip-line{transition:none}}
 
+
+/* recherche : résultats groupés par type, du plus pertinent au moins pertinent */
+#searchResults{display:flex;flex-direction:column;gap:18px}
+#searchResults:empty{display:none}
+.result-group{display:flex;flex-direction:column;gap:8px}
+.search-count{margin:0;color:var(--muted);font-size:.9rem;font-weight:600}
+.search-count span{font-weight:500}

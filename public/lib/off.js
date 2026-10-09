@@ -10,6 +10,7 @@ import { analyzeCosmetic } from "./cosmetic.js";
 import { classifyBeauty } from "./beauty.js";
 import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
+import { rankByRelevance, translateQuery } from "./search.js";
 
 export const OFF_BASE = "https://world.openfoodfacts.org";
 export const FIELDS = [
@@ -168,16 +169,30 @@ export class OffError extends Error {
   }
 }
 
-async function getJson(url, timeout = 12000) {
-  let res;
-  try {
-    res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
-  } catch {
-    throw new OffError("network");
+// Open Food Facts répond « 503 » ou « 429 » quand il est très sollicité (la recherche est limitée
+// à quelques requêtes par minute) : on réessaie après une courte pause plutôt que d'afficher une erreur.
+const RETRY_STATUS = new Set([429, 502, 503, 504]);
+const sleep = (ms, signal) => new Promise((resolve, reject) => {
+  const id = setTimeout(resolve, ms);
+  signal?.addEventListener("abort", () => { clearTimeout(id); reject(signal.reason); }, { once: true });
+});
+
+async function getJson(url, timeout = 12000, { tries = 1, signal } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    let res;
+    try {
+      const limit = AbortSignal.timeout(timeout);
+      res = await fetch(url, { signal: signal && AbortSignal.any ? AbortSignal.any([signal, limit]) : limit });
+    } catch (err) {
+      if (signal?.aborted) throw err; // recherche remplacée par une autre
+      if (attempt < tries) { await sleep(600 * attempt, signal); continue; }
+      throw new OffError("network");
+    }
+    if (res.status === 404) return null;
+    if (RETRY_STATUS.has(res.status) && attempt < tries) { await sleep(900 * attempt * attempt, signal); continue; }
+    if (!res.ok) throw new OffError("server", res.status);
+    return res.json();
   }
-  if (res.status === 404) return null;
-  if (!res.ok) throw new OffError("server", res.status);
-  return res.json();
 }
 
 // Cache partagé avec le service worker (sw.js) : fiches produits disponibles hors connexion.
@@ -185,6 +200,7 @@ export const PRODUCT_CACHE = "hs-products-v1";
 export const MED_CACHE = "hs-med-v1"; // base des médicaments (voir sw.js)
 
 const rawCache = new Map(); // fiches brutes : le verdict est recalculé selon les réglages
+const searchCache = new Map(); // réponses de recherche de la session (moins de requêtes vers Open Food Facts)
 
 export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBase = MED_DATA_BASE } = {}) {
   const show = (raw) => present(raw, prefs());
@@ -220,7 +236,7 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
       } else if (demo) {
         raw = FIXTURES[code] || null;
       } else {
-        const data = await getJson(productUrl(code));
+        const data = await getJson(productUrl(code), 12000, { tries: 2 });
         if (data && data.status === 1 && data.product) raw = { code, ...data.product };
         else {
           // Pas un aliment : on cherche dans Open Beauty Facts (cosmétiques, hygiène)
@@ -233,28 +249,54 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
       return show(raw);
     },
 
-    // -> liste de produits présentés
-    async search(q) {
+    // Recherche par nom -> { food, beauty, alt, foodFailed, beautyFailed }
+    // alt : la même recherche en français, lancée aussi quand elle a été tapée dans une autre langue.
+    // Les résultats sont triés par pertinence et ceux sans rapport avec la recherche sont écartés.
+    async search(q, { lang = "fr", signal } = {}) {
+      const alt = translateQuery(q, lang);
+      const queries = [q, alt].filter(Boolean);
       if (demo) {
-        const n = q.toLowerCase();
-        return Object.values(FIXTURES)
-          .filter((p) => [p.product_name_fr, p.brands].join(" ").toLowerCase().includes(n))
-          .map(show);
+        const all = Object.values(FIXTURES);
+        const ranked = rankByRelevance(all, queries);
+        const pick = (kind) => ranked.filter((p) => (p.kind || "food") === kind).map(show);
+        return { food: pick("food"), beauty: pick("beauty"), alt, foodFailed: false, beautyFailed: false };
       }
-      // Aliments et cosmétiques en parallèle ; une base qui ne répond pas n'empêche pas l'autre
-      const qs = `/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
-      const [food, beauty] = await Promise.allSettled([getJson(OFF_BASE + qs), getJson(OBF_BASE + qs.replace("page_size=20", "page_size=10"))]);
-      if (food.status === "rejected" && beauty.status === "rejected") throw food.reason;
-      const list = (r, kind) => (r.status === "fulfilled" && r.value && r.value.products ? r.value.products : [])
-        .filter((p) => p.code)
-        .map((p) => (kind ? { ...p, kind } : p));
+      const run = (base, term, size, kind) => {
+        const url = `${base}/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1` +
+          `&page_size=${size}&fields=${FIELDS},countries_tags`;
+        if (!searchCache.has(url)) {
+          // Sans le signal d'annulation : une recherche remplacée garde sa réponse en mémoire pour plus tard
+          const job = getJson(url, 20000, { tries: 3 }).then((d) => ((d && d.products) || []).filter((p) => p.code));
+          searchCache.set(url, job);
+          job.catch(() => searchCache.delete(url)); // une erreur n'est pas gardée en mémoire
+          if (searchCache.size > 40) searchCache.delete(searchCache.keys().next().value);
+        }
+        return searchCache.get(url).then((list) => (kind ? list.map((p) => ({ ...p, kind })) : list));
+      };
+      // Aliments : la recherche telle quelle, et sa traduction ; cosmétiques : une seule recherche.
+      const [f1, f2, b] = await Promise.allSettled([
+        run(OFF_BASE, q, 24),
+        alt ? run(OFF_BASE, alt, 24) : Promise.resolve([]),
+        run(OBF_BASE, alt || q, 12, "beauty"),
+      ]);
+      if (signal?.aborted) throw signal.reason;
+      const ok = (r) => (r.status === "fulfilled" ? r.value : []);
+      const foodFailed = f1.status === "rejected" && (!alt || f2.status === "rejected");
+      const beautyFailed = b.status === "rejected";
+      if (foodFailed && beautyFailed) throw f1.reason;
       const seen = new Set();
-      return [...list(food), ...list(beauty, "beauty")]
-        .filter((p) => (seen.has(p.code) ? false : seen.add(p.code)))
-        .map((p) => {
-          rawCache.set(p.code, p);
-          return show(p);
-        });
+      const unique = (list) => list.filter((p) => (seen.has(p.code) ? false : seen.add(p.code)));
+      const shown = (list) => list.map((p) => {
+        rawCache.set(p.code, p);
+        return show(p);
+      });
+      return {
+        food: shown(rankByRelevance(unique([...ok(f1), ...ok(f2)]), queries)),
+        beauty: shown(rankByRelevance(unique(ok(b)), queries)),
+        alt,
+        foodFailed,
+        beautyFailed,
+      };
     },
 
     // -> alternatives du même type de produit, halal et mieux notées (vendues en France)

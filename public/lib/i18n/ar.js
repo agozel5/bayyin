@@ -983,4 +983,13 @@ export default {
   "home.tip.6": "وضع الرف: صوّر رفًّا وسيقرأ Bayyin عدة رموز شريطية دفعة واحدة.",
   "home.tip.7": "لا توجد شبكة في المتجر؟ حمّل المنتجات الشائعة من الإعدادات › دون اتصال.",
   "home.tip.8": "في أحمر الشفاه، يشير «CI 75470» إلى الكارمين المستخرج من الحشرات.",
+  // ---------- recherche : pertinence et langues ----------
+  "search.in_history": "في سجلك",
+  "search.g_food": "أغذية",
+  "search.g_beauty": "مستحضرات التجميل والنظافة",
+  "search.alt": "بحثنا أيضًا بالفرنسية: «{q}»",
+  "search.food_failed.t": "نتائج الأغذية غير متاحة حاليًا",
+  "search.food_failed.p": "خدمة Open Food Facts مزدحمة جدًا ولم تستجب. أعد المحاولة بعد ثوانٍ.",
+  "search.idea_milk": "حليب",
+  "search.idea_chicken": "دجاج",
 };

@@ -997,4 +997,13 @@ export default {
   "home.tip.6": "Mode rayon : filmez une étagère, Bayyin lit plusieurs codes-barres à la fois.",
   "home.tip.7": "Pas de réseau en magasin ? Téléchargez les produits courants dans Réglages › Hors connexion.",
   "home.tip.8": "Sur un rouge à lèvres, « CI 75470 » désigne le carmin, tiré d'insectes.",
+  // ---------- recherche : pertinence et langues ----------
+  "search.in_history": "Dans votre historique",
+  "search.g_food": "Aliments",
+  "search.g_beauty": "Cosmétiques et hygiène",
+  "search.alt": "aussi cherché en français : « {q} »",
+  "search.food_failed.t": "Aliments indisponibles pour l'instant",
+  "search.food_failed.p": "Open Food Facts est très sollicité et n'a pas répondu. Réessayez dans quelques secondes.",
+  "search.idea_milk": "Lait",
+  "search.idea_chicken": "Poulet",
 };
