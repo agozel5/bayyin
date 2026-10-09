@@ -1,226 +1,293 @@
-=================== SAL nutella fr
-https://search.openfoodfacts.org/search?q=nutella&langs=fr&page_size=5
-HTTP 200 en 1.247072s
-access-control-allow-credentials: true
-{"hits":[{"last_indexed_datetime":"2024-10-25T22:28:00.071087","code":"80050698","brands":["ferrero","Nutella"],"brands_tags":["ferrero","nutella"],"lang":"fr","lc":"fr","quantity":"200g","categories_tags":["en:breakfasts","en:spreads","en:sweet-spreads","fr:pates-a-tartiner","en:hazelnut-spreads","en:chocolate-spreads","en:cocoa-and-hazelnuts-spreads"],"labels_tags":["en:sustainable","en:sustainable-palm-oil","en:made-in-the-eu","en:roundtable-on-sustainable-palm-oil"],"countries_tags":["en:france","en:germany","en:switzerland"],"states_tags":["en:to-be-completed","en:nutrition-facts-completed","en:ingredients-completed","en:expiration-date-to-be-completed","en:packaging-code-to-be-completed","en:characteristics-to-be-completed","en:origins-to-be-completed","en:categories-completed","en:brands-completed","en:packaging-completed","en:quantity-completed","en:product-name-completed","en:photos-to-be-validated","en:packaging-photo-to-be-selected","en:nutrition-photo-selected","en:ingredients-photo-selected","en:front-photo-selected","en:photos-uploaded"],"ingredients_tags":["en:sugar","en:added-sugar","en:disaccharide","en:palm-oil","en:oil-and-fat","en:vegetable-oil-and-fat","en:palm-oil-and-fat","en:hazelnut","en:nut","en:tree-nut","en:skimmed-milk-powder","en:dairy","en:milk-powder","en:fat-reduced-cocoa","en:plant","en:cocoa","en:emulsifier","en:vanillin","en:soya-lecithin","en:e322","en:e322i"],"unique_scans_n":2,"scans_n":2,"nutrition_grades":"e","ecoscore_grade":"d","nova
-
-total 692 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 80050698 | "Nutella" | Nutella | ['ferrero', 'Nutella'] | fr
- - 3017624047509 | "Nutella" | Nutella | ['Nutella', 'ferrero'] | fr
- - 8000500228876 | "Nutella pate a tartiner noisettes-cacao" | Nutella pate a tartiner noisettes-cacao | ['Nutella'] | fr
- - 80809180 | "deko Nutella" | Nutella pate a tartiner noisettes-cacao 25g | ['Ferrero', ' Nutella', ' Ferrero Nutella', ' Ferrero Nutella Ferrero Nutella', ' Ferrero Nutella Ferrero Nutella Ferrero Nutella Ferrero Nutella'] | en
- - 8000500392935 | "Nutella-Muffin" | Nutella-Muffin | ['Nutella', 'Ferrero'] | de
-=================== SAL nutella fields
-https://search.openfoodfacts.org/search?q=nutella&langs=fr&page_size=5&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.531216s
-access-control-allow-credentials: true
-{"hits":[{"code":"80050698","brands":["ferrero","Nutella"],"lang":"fr","lc":"fr","countries_tags":["en:france","en:germany","en:switzerland"],"product_name":"Nutella","product_name_en":"Ferrero)","product_name_fr":"Nutella"},{"code":"3017624047509","brands":["Nutella","ferrero"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Nutella","product_name_fr":"Nutella"},{"code":"8000500228876","brands":["Nutella"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Nutella pate a tartiner noisettes-cacao","product_name_fr":"Nutella pate a tartiner noisettes-cacao"},{"code":"80809180","brands":["Ferrero"," Nutella"," Ferrero Nutella"," Ferrero Nutella Ferrero Nutella"," Ferrero Nutella Ferrero Nutella Ferrero Nutella Ferrero Nutella"],"lang":"en","lc":"en","countries_tags":["en:belgium","en:france","en:germany"],"product_name":"deko Nutella","product_name_en":"deko Nutella","product_name_fr":"Nutella pate a tartiner noisettes-cacao 25g"},{"code":"8000500392935","brands":["Nutella","Ferrero"],"lang":"de","lc":"de","countries_tags":["en:france","en:germany"],"product_name":"Nutella-Muffin","product_name_en":"Nutella-Muffin","product_name_fr":"Nutella-Muffin"}],"aggregations":null,"facets":{},"charts":{},"page":1,"page_size":5,"page_count":139,"debug":{"query":{"query":{"bool":{"should":[{"match_phrase":{"product_name.fr":{"query":"nutella","boost":2.0}}},{"match_phrase":{"generic_name.fr":{"query":"nutella","boost":2.0}}},{"match_phrase":{"categori
-
-total 692 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 80050698 | "Nutella" | Nutella | ['ferrero', 'Nutella'] | fr
- - 3017624047509 | "Nutella" | Nutella | ['Nutella', 'ferrero'] | fr
- - 8000500228876 | "Nutella pate a tartiner noisettes-cacao" | Nutella pate a tartiner noisettes-cacao | ['Nutella'] | fr
- - 80809180 | "deko Nutella" | Nutella pate a tartiner noisettes-cacao 25g | ['Ferrero', ' Nutella', ' Ferrero Nutella', ' Ferrero Nutella Ferrero Nutella', ' Ferrero Nutella Ferrero Nutella Ferrero Nutella Ferrero Nutella'] | en
- - 8000500392935 | "Nutella-Muffin" | Nutella-Muffin | ['Nutella', 'Ferrero'] | de
-=================== SAL isla mondial poulet
-https://search.openfoodfacts.org/search?q=isla%20mondial%20poulet&langs=fr&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.563762s
-access-control-allow-credentials: true
-{"hits":[{"code":"0571360020002","lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Boulettes isla mondiale","product_name_fr":"Boulettes isla mondiale"},{"code":"3180280412971","brands":["Sahari"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Domaine de Sahari Guerrouane 2011","product_name_fr":"Domaine de Sahari Guerrouane 2011"},{"code":"3660989128590","brands":["Les Garrigues"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Corbières 2009","product_name_fr":"Corbières 2009"},{"code":"8437013183062","brands":["Mitos"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Utiel-Requena Roble 2012","product_name_fr":"Utiel-Requena Roble 2012"},{"code":"3700091902470","brands":["Isla Mondial"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Cordon bleu Isla Mondial","product_name_fr":"Cordon bleu Isla Mondial"},{"code":"3288841031811","brands":["Domaine du Tauch"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Domaine du Tauch - Fitou","product_name_fr":"Domaine du Tauch - Fitou"},{"code":"3459860001110","brands":["Isla Mondial"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Isla Mondial Roulade De Dinde Pistache","product_name_fr":"Isla Mondial Roulade De Dinde Pistache"},{"code":"3459860005163","brands":["Nour"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"goût cheesy  by Isla mondial","product_name_fr":"g
-
-total 10000 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 0571360020002 | "Boulettes isla mondiale" | Boulettes isla mondiale | None | fr
- - 3180280412971 | "Domaine de Sahari Guerrouane 2011" | Domaine de Sahari Guerrouane 2011 | ['Sahari'] | fr
- - 3660989128590 | "Corbières 2009" | Corbières 2009 | ['Les Garrigues'] | fr
- - 8437013183062 | "Utiel-Requena Roble 2012" | Utiel-Requena Roble 2012 | ['Mitos'] | fr
- - 3700091902470 | "Cordon bleu Isla Mondial" | Cordon bleu Isla Mondial | ['Isla Mondial'] | fr
- - 3288841031811 | "Domaine du Tauch - Fitou" | Domaine du Tauch - Fitou | ['Domaine du Tauch'] | fr
- - 3459860001110 | "Isla Mondial Roulade De Dinde Pistache" | Isla Mondial Roulade De Dinde Pistache | ['Isla Mondial'] | fr
- - 3459860005163 | "goût cheesy  by Isla mondial" | goût cheesy  by Isla mondial | ['Nour'] | fr
-=================== SAL chips paprika
-https://search.openfoodfacts.org/search?q=chips%20paprika&langs=fr&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.545708s
-access-control-allow-credentials: true
-{"hits":[{"code":"7622210734037","brands":["Belin"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Frenchips paprika","product_name_fr":"Frenchips paprika"},{"code":"27064443","brands":["pirato"],"lang":"fr","lc":"fr","countries_tags":["en:belgium","en:france"],"product_name":"Chips paprika","product_name_en":"Chips paprika","product_name_fr":"Chips paprika"},{"code":"5400141160536","brands":["Everyday"],"lang":"fr","lc":"fr","countries_tags":["en:belgium"],"product_name":"chips paprika","product_name_fr":"chips paprika"},{"code":"5400113673354","brands":["Delhaize"],"lang":"fr","lc":"fr","countries_tags":["en:belgium"],"product_name":"Chips paprika","product_name_fr":"Chips paprika"},{"code":"7611654221609","brands":["Coop naturaplan BIO"," Naturaplan"],"lang":"fr","lc":"fr","countries_tags":["en:switzerland"],"product_name":"Chips paprika","product_name_fr":"Chips paprika"},{"code":"5400141355420","brands":["Boni Selection"],"lang":"fr","lc":"fr","countries_tags":["en:belgium"],"product_name":"Chips paprika","product_name_fr":"Chips paprika"},{"code":"5400141880144","lang":"fr","lc":"fr","countries_tags":["en:belgium"],"product_name":"Chips paprika","product_name_fr":"Chips paprika"},{"code":"5400141214789","brands":["Everyday"],"lang":"fr","lc":"fr","countries_tags":["en:belgium"],"product_name":"Chips paprika","product_name_fr":"Chips paprika"}],"aggregations":null,"facets":{},"charts":{},"page":1,"page_size":8,"page_count":1250,"debug":{"query":{"qu
-
-total 10000 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 7622210734037 | "Frenchips paprika" | Frenchips paprika | ['Belin'] | fr
- - 27064443 | "Chips paprika" | Chips paprika | ['pirato'] | fr
- - 5400141160536 | "chips paprika" | chips paprika | ['Everyday'] | fr
- - 5400113673354 | "Chips paprika" | Chips paprika | ['Delhaize'] | fr
- - 7611654221609 | "Chips paprika" | Chips paprika | ['Coop naturaplan BIO', ' Naturaplan'] | fr
- - 5400141355420 | "Chips paprika" | Chips paprika | ['Boni Selection'] | fr
- - 5400141880144 | "Chips paprika" | Chips paprika | None | fr
- - 5400141214789 | "Chips paprika" | Chips paprika | ['Everyday'] | fr
-=================== SAL lait fr
-https://search.openfoodfacts.org/search?q=lait&langs=fr&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.545743s
-access-control-allow-credentials: true
-{"hits":[{"code":"3496080210137","brands":["Le lait d ici","Le Lait d'Ici"],"lang":"fr","lc":"fr","countries_tags":["en:belgium","en:france","en:switzerland"],"product_name":"J'aime le lait d'ici","product_name_fr":"J'aime le lait d'ici"},{"code":"3428271930050","brands":["Lait de France"," Lactalis Consommation Hors Foyer (L.C.H.F.)"],"lang":"fr","lc":"fr","countries_tags":["en:cote-d-ivoire","en:france","en:reunion"],"product_name":"Lait","product_name_fr":"Lait"},{"code":"3228020127492","brands":["Lait des Élevages Français"],"lang":"fr","lc":"fr","countries_tags":["en:france","en:guadeloupe","en:reunion"],"product_name":"Lait stérilisé U.H.T. demi-écrémé","product_name_fr":"Lait stérilisé U.H.T. demi-écrémé"},{"code":"3496080210199","brands":["Le lait d'ici","Orlait"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"J'♥ le lait d'ici demi-écrémé stérilisé UHT","product_name_fr":"J'♥ le lait d'ici demi-écrémé stérilisé UHT"},{"code":"3262970100235","brands":["Alsace Lait"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM","product_name_fr":"Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM"},{"code":"3329770071636","brands":["Perle de Lait","Yoplait","Perle de lait vegetal"],"lang":"fr","lc":"fr","countries_tags":["en:belgium","en:france"],"product_name":"Perle de lait vegetal coco","product_name_fr":"Perle de lait vegetal coco"},{"c
-
-total 10000 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 3496080210137 | "J'aime le lait d'ici" | J'aime le lait d'ici | ['Le lait d ici', "Le Lait d'Ici"] | fr
- - 3428271930050 | "Lait" | Lait | ['Lait de France', ' Lactalis Consommation Hors Foyer (L.C.H.F.)'] | fr
- - 3228020127492 | "Lait stérilisé U.H.T. demi-écrémé" | Lait stérilisé U.H.T. demi-écrémé | ['Lait des Élevages Français'] | fr
- - 3496080210199 | "J'♥ le lait d'ici demi-écrémé stérilisé UHT" | J'♥ le lait d'ici demi-écrémé stérilisé UHT | ["Le lait d'ici", 'Orlait'] | fr
- - 3262970100235 | "Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM" | Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM | ['Alsace Lait'] | fr
- - 3329770071636 | "Perle de lait vegetal coco" | Perle de lait vegetal coco | ['Perle de Lait', 'Yoplait', 'Perle de lait vegetal'] | fr
- - 3262970805222 | "Fromage blanc nature au lait entier" | Fromage blanc nature au lait entier | ['Alsace lait'] | fr
- - 3496080001025 | "Lait Entier UHT" | Lait Entier UHT | ['Le lait tout simplement'] | fr
-=================== SAL cikolata tr
-https://search.openfoodfacts.org/search?q=%C3%A7ikolata&langs=tr,fr,en&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.544566s
-access-control-allow-credentials: true
-{"hits":[{"code":"8683508142322","brands":["Ülker Geleneksel Türk Tatlıları Serisi"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Çikolata","product_name_fr":"Çikolata","product_name_tr":"Çikolata Gaziantep'ten ilhamla Şöbiyet"},{"code":"8683508151928","brands":["Ülker Geleneksel Türk Tatlıları Seri"],"lang":"tr","lc":"tr","countries_tags":["en:turkey"],"product_name":"Çikolata Diyarbakır'dan ilhamla Burma Kadayıf","product_name_fr":"Çikolata","product_name_tr":"Çikolata Diyarbakır'dan ilhamla Burma Kadayıf"},{"code":"8690504037637","brands":["Ülker"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Cikolata","product_name_fr":"Cikolata"},{"code":"8690504152989","lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Cikolata","product_name_fr":"Cikolata"},{"code":"4824024017358","lang":"uk","lc":"uk","countries_tags":["en:ukraine"],"product_name":"Çikolata","product_name_en":"Çikolata"},{"code":"8690632019994","lang":"en","lc":"en","countries_tags":["en:turkey"],"product_name":"Çikolata","product_name_en":"Çikolata"},{"code":"8690632245799","brands":["Nestle"],"lang":"en","lc":"en","countries_tags":["en:turkey"],"product_name":"Beyaz Çikolata","product_name_en":"Beyaz Çikolata"},{"code":"8691386512922","lang":"fr","lc":"fr","countries_tags":["en:belgium"],"product_name":"Sicak çikolata","product_name_fr":"Sicak çikolata"}],"aggregations":null,"facets":{},"charts":{},"page":1,"page_size":8,"
-
-total 86 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 8683508142322 | "Çikolata" | Çikolata | ['Ülker Geleneksel Türk Tatlıları Serisi'] | fr
- - 8683508151928 | "Çikolata Diyarbakır'dan ilhamla Burma Kadayıf" | Çikolata | ['Ülker Geleneksel Türk Tatlıları Seri'] | tr
- - 8690504037637 | "Cikolata" | Cikolata | ['Ülker'] | fr
- - 8690504152989 | "Cikolata" | Cikolata | None | fr
- - 4824024017358 | "Çikolata" | None | None | uk
- - 8690632019994 | "Çikolata" | None | None | en
- - 8690632245799 | "Beyaz Çikolata" | None | ['Nestle'] | en
- - 8691386512922 | "Sicak çikolata" | Sicak çikolata | None | fr
-=================== SAL ar chocolat
-https://search.openfoodfacts.org/search?q=%D8%B4%D9%88%D9%83%D9%88%D9%84%D8%A7%D8%AA%D8%A9&langs=ar,fr,en&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.375244s
-access-control-allow-credentials: true
-{"hits":[{"code":"8993470278647","brands":["يامي"],"lang":"ar","lc":"ar","countries_tags":["en:saudi-arabia"],"product_name":"شوكولاته شمسية","product_name_ar":"شوكولاته شمسية"},{"code":"5410126006353","brands":["Lotus"],"lang":"fr","lc":"fr","countries_tags":["en:czech-republic","en:germany","en:spain"],"product_name":"Biscoff lotus milk chocolat","product_name_ar":"لوتس رول شوكولاته","product_name_en":"Lotus cookies milk chocolate filing","product_name_fr":"Biscoff lotus milk chocolat"},{"code":"6223002380664","lang":"es","lc":"es","countries_tags":["en:argentina"],"product_name":"دانجو شوكولاتة","product_name_ar":"دانجو شوكولاتة"},{"code":"6191416500216","brands":["CAMPI Plus"],"lang":"fr","lc":"fr","countries_tags":["en:tunisia"],"product_name":"Super cookies","product_name_ar":"كوكيز بحبات الشوكولاتة","product_name_en":"Cookies with chocolate chips","product_name_fr":"Super cookies"},{"code":"6291003086199","lang":"es","lc":"es","countries_tags":["en:argentina"],"product_name":"شوكولاته ريكو","product_name_ar":"شوكولاته ريكو كبير"},{"code":"6281033415809","brands":["شركة امريكانا"],"lang":"ar","lc":"ar","countries_tags":["en:saudi-arabia"],"product_name":"كوكيز بقطع الشوكولاته","product_name_ar":"كوكيز بقطع الشوكولاته"},{"code":"9556296300856","brands":["malaysia"],"lang":"ar","lc":"ar","countries_tags":[
-
-total 16 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 8993470278647 | "شوكولاته شمسية" | None | ['يامي'] | ar
- - 5410126006353 | "Biscoff lotus milk chocolat" | Biscoff lotus milk chocolat | ['Lotus'] | fr
- - 6223002380664 | "دانجو شوكولاتة" | None | None | es
- - 6191416500216 | "Super cookies" | Super cookies | ['CAMPI Plus'] | fr
- - 6291003086199 | "شوكولاته ريكو" | None | None | es
- - 6281033415809 | "كوكيز بقطع الشوكولاته" | None | ['شركة امريكانا'] | ar
- - 9556296300856 | "فطيرة الشوكولاته بالمارشملو" | None | ['malaysia'] | ar
- - 8697439301703 | "شوكولاته ميو mio" | None | None | es
-=================== SAL chocolate en
-https://search.openfoodfacts.org/search?q=chocolate%20milk&langs=en&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.600527s
-access-control-allow-credentials: true
-{"hits":[{"code":"9310232959528","brands":["pura classic chocolate milk"],"lang":"en","lc":"en","countries_tags":["en:australia"],"product_name":"Chocolate milk","product_name_en":"Chocolate milk"},{"code":"0077890426081","brands":["Wegmans"],"lang":"en","lc":"en","countries_tags":["en:united-states"],"product_name":"Chocolate Milk","product_name_en":"Chocolate Milk"},{"code":"5400141125542","brands":["everyday"],"lang":"nl","lc":"nl","countries_tags":["en:belgium"],"product_name":"Chocomelk - Lait choco","product_name_en":"Chocolate milk"},{"code":"0034000830398","brands":["Hershey’s"],"lang":"en","lc":"en","countries_tags":["en:bolivia","en:united-states"],"product_name":"Hershey's Chocolate Milk","product_name_en":"Hershey's Chocolate Milk"},{"code":"5601226041386","brands":["UCAL"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"lait au chocolat","product_name_en":"chocolate milk","product_name_fr":"lait au chocolat"},{"code":"5410438036482","brands":["Yazoo"],"lang":"en","lc":"en","countries_tags":["en:france","en:united-kingdom"],"product_name":"Chocolate Milk Drink","product_name_en":"Chocolate Milk Drink","product_name_fr":"Yazoo Milk Drink Chocolate"},{"code":"4891028164425","brands":["VITA"],"lang":"en","lc":"en","countries_tags":["en:hong-kong"],"product_name":"Chocolate milk beverage","product_name_en":"Chocolate milk beverage"},{"code":"5410438036833","brands":["Yazoo"],"lang":"en","lc":"en","countries_tags":["en:france","en:united-kingdom"
-
-total 10000 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 9310232959528 | "Chocolate milk" | None | ['pura classic chocolate milk'] | en
- - 0077890426081 | "Chocolate Milk" | None | ['Wegmans'] | en
- - 5400141125542 | "Chocomelk - Lait choco" | None | ['everyday'] | nl
- - 0034000830398 | "Hershey's Chocolate Milk" | None | ['Hershey’s'] | en
- - 5601226041386 | "lait au chocolat" | lait au chocolat | ['UCAL'] | fr
- - 5410438036482 | "Chocolate Milk Drink" | Yazoo Milk Drink Chocolate | ['Yazoo'] | en
- - 4891028164425 | "Chocolate milk beverage" | None | ['VITA'] | en
- - 5410438036833 | "Chocolate milk drink" | Milk drink chocolate | ['Yazoo'] | en
-=================== SAL fr filtre pays
-https://search.openfoodfacts.org/search?q=lait%20countries_tags:%22en:france%22&langs=fr&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.454022s
-access-control-allow-credentials: true
-{"hits":[{"code":"3496080210137","brands":["Le lait d ici","Le Lait d'Ici"],"lang":"fr","lc":"fr","countries_tags":["en:belgium","en:france","en:switzerland"],"product_name":"J'aime le lait d'ici","product_name_fr":"J'aime le lait d'ici"},{"code":"3428271930050","brands":["Lait de France"," Lactalis Consommation Hors Foyer (L.C.H.F.)"],"lang":"fr","lc":"fr","countries_tags":["en:cote-d-ivoire","en:france","en:reunion"],"product_name":"Lait","product_name_fr":"Lait"},{"code":"3228020127492","brands":["Lait des Élevages Français"],"lang":"fr","lc":"fr","countries_tags":["en:france","en:guadeloupe","en:reunion"],"product_name":"Lait stérilisé U.H.T. demi-écrémé","product_name_fr":"Lait stérilisé U.H.T. demi-écrémé"},{"code":"3496080210199","brands":["Le lait d'ici","Orlait"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"J'♥ le lait d'ici demi-écrémé stérilisé UHT","product_name_fr":"J'♥ le lait d'ici demi-écrémé stérilisé UHT"},{"code":"3262970100235","brands":["Alsace Lait"],"lang":"fr","lc":"fr","countries_tags":["en:france"],"product_name":"Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM","product_name_fr":"Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM"},{"code":"3329770071636","brands":["Perle de Lait","Yoplait","Perle de lait vegetal"],"lang":"fr","lc":"fr","countries_tags":["en:belgium","en:france"],"product_name":"Perle de lait vegetal coco","product_name_fr":"Perle de lait vegetal coco"},{"c
-
-total 10000 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 3496080210137 | "J'aime le lait d'ici" | J'aime le lait d'ici | ['Le lait d ici', "Le Lait d'Ici"] | fr
- - 3428271930050 | "Lait" | Lait | ['Lait de France', ' Lactalis Consommation Hors Foyer (L.C.H.F.)'] | fr
- - 3228020127492 | "Lait stérilisé U.H.T. demi-écrémé" | Lait stérilisé U.H.T. demi-écrémé | ['Lait des Élevages Français'] | fr
- - 3496080210199 | "J'♥ le lait d'ici demi-écrémé stérilisé UHT" | J'♥ le lait d'ici demi-écrémé stérilisé UHT | ["Le lait d'ici", 'Orlait'] | fr
- - 3262970100235 | "Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM" | Lait Frais Entier Pasteurisé issu de vaches nourries sans OGM | ['Alsace Lait'] | fr
- - 3329770071636 | "Perle de lait vegetal coco" | Perle de lait vegetal coco | ['Perle de Lait', 'Yoplait', 'Perle de lait vegetal'] | fr
- - 3262970805222 | "Fromage blanc nature au lait entier" | Fromage blanc nature au lait entier | ['Alsace lait'] | fr
- - 3496080001025 | "Lait Entier UHT" | Lait Entier UHT | ['Le lait tout simplement'] | fr
-=================== SAL sort popularity
-https://search.openfoodfacts.org/search?q=lait&langs=fr&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags&sort_by=-unique_scans_n
-HTTP 200 en 0.556869s
-access-control-allow-credentials: true
-{"hits":[{"code":"5411188112709","brands":["Alpro"],"lang":"de","lc":"de","countries_tags":["en:albania","en:austria","en:belgium","en:croatia","en:finland","en:france","en:germany","en:greece","en:hungary","en:ireland","en:israel","en:luxembourg","en:netherlands","en:norway","en:poland","en:portugal","en:reunion","en:romania","en:spain","en:sweden","en:switzerland","en:united-kingdom"],"product_name":"Geröstete Mandel Ohne Zucker","product_name_en":"Almond Unsweetened","product_name_fr":"Amande Grillée Sans Sucres"},{"code":"7394376616228","brands":["Oatly"],"lang":"en","lc":"en","countries_tags":["en:france","en:germany","en:ireland","en:united-kingdom"],"product_name":"Oat Drink Barista Edition","product_name_en":"Oat Drink Barista Edition"},{"code":"3329770077003","brands":["Yoplait"],"lang":"fr","lc":"fr","countries_tags":["en:france","en:ireland","en:united-kingdom"],"product_name":"Skyr Nature","product_name_en":"Skyr Nature","product_name_fr":"Skyr Nature"},{"code":"3045140105502","brands":["Milka"],"lang":"hu","lc":"hu","countries_tags":["en:france","en:hungary"],"product_name":"Alpesi tejcsokoládé","product_name_en":"Chocolat au lait du Pays Alpin","product_name_fr":"Chocolat au lait du Pays Alpin"},{"code":"5411188124689","brands":["Alpro"],"lang":"de","lc":"de","countries_tags":["en:belgium","en:finland","en:france","en:germany","en:hungary","en:italy","en:netherlands","en:portugal","en:spain","en:switzerland","en:turkey","en:united-kingdom"],"product_name":"O
-
-total 10000 | keys ['hits', 'aggregations', 'facets', 'charts', 'page', 'page_size', 'page_count', 'debug', 'took', 'timed_out', 'count', 'is_count_exact']
- - 5411188112709 | "Geröstete Mandel Ohne Zucker" | Amande Grillée Sans Sucres | ['Alpro'] | de
- - 7394376616228 | "Oat Drink Barista Edition" | None | ['Oatly'] | en
- - 3329770077003 | "Skyr Nature" | Skyr Nature | ['Yoplait'] | fr
- - 3045140105502 | "Alpesi tejcsokoládé" | Chocolat au lait du Pays Alpin | ['Milka'] | hu
- - 5411188124689 | "Ohne Zucker Hafer" | Avoine Sans Sucres | ['Alpro'] | de
- - 7622210601988 | "Granola" | Granola | ['LU'] | fr
- - 3256540000698 | "Pains au lait x10" | Pains au lait x10 | ['Pasquier'] | fr
- - 3480341000674 | "Fresh Square 0% - Plain" | Carré Frais 0% - Nature | ['Elle & Vire', 'Savencia'] | en
-=================== LEGACY isla mondial
-https://world.openfoodfacts.org/cgi/search.pl?search_terms=isla%20mondial%20poulet&search_simple=1&action=process&json=1&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.855600s
-access-control-allow-origin: *
-access-control-allow-methods: HEAD, GET, PATCH, POST, PUT, OPTIONS
-access-control-allow-headers: DNT,User-Agent,X-User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,If-None-Match,Authorization
-access-control-expose-headers: Content-Length,Content-Range
-access-control-max-age: 1728000
-{"count":37,"page":1,"page_count":8,"page_size":8,"products":[{"brands":"Isla Mondial","code":"3459860005750","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Blanc de poulet","product_name_fr":"Blanc de poulet"},{"brands":"Isla Mondial","code":"3459860004760","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Blanc de poulet doré au four","product_name_fr":"Blanc de poulet doré au four"},{"brands":"Isla Mondial","code":"3459860005354","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Blanc de poulet","product_name_fr":"Blanc de poulet"},{"brands":"Isla Mondial","code":"3459860005439","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Allumettes de poulet","product_name_fr":"Allumettes de poulet"},{"brands":"Isla Mondial","code":"3700091902487","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Chicken Nuggets 100% filet Poulet","product_name_fr":"Chicken Nuggets 100% filet Poulet"},{"brands":"Isla Mondial","code":"3700091903040","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Gyoza Poulet","product_name_fr":"Gyoza Poulet"},{"brands":"Isla Mondial","code":"3700091902388","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Tenders de poulet","product_name_fr":"Tenders de poulet"},{"brands":"Isla Mondial","code":"3459860005040","countries_tags":["en:france"],"lang":"fr","lc":"fr","product_name":"Blanc de poulet","product_name_fr":"Blanc de poulet"
-
-total 37 | keys ['count', 'page', 'page_count', 'page_size', 'products', 'skip']
- - 3459860005750 | "Blanc de poulet" | Blanc de poulet | Isla Mondial | fr
- - 3459860004760 | "Blanc de poulet doré au four" | Blanc de poulet doré au four | Isla Mondial | fr
- - 3459860005354 | "Blanc de poulet" | Blanc de poulet | Isla Mondial | fr
- - 3459860005439 | "Allumettes de poulet" | Allumettes de poulet | Isla Mondial | fr
- - 3700091902487 | "Chicken Nuggets 100% filet Poulet" | Chicken Nuggets 100% filet Poulet | Isla Mondial | fr
- - 3700091903040 | "Gyoza Poulet" | Gyoza Poulet | Isla Mondial | fr
- - 3700091902388 | "Tenders de poulet" | Tenders de poulet | Isla Mondial | fr
- - 3459860005040 | "Blanc de poulet" | Blanc de poulet | Isla Mondial | fr
-=================== LEGACY lait
-https://world.openfoodfacts.org/cgi/search.pl?search_terms=lait&search_simple=1&action=process&json=1&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 1.271135s
-access-control-allow-origin: *
-access-control-allow-methods: HEAD, GET, PATCH, POST, PUT, OPTIONS
-access-control-allow-headers: DNT,User-Agent,X-User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,If-None-Match,Authorization
-access-control-expose-headers: Content-Length,Content-Range
-access-control-max-age: 1728000
-{"count":42568,"page":1,"page_count":8,"page_size":8,"products":[{"brands":"Jaouda","code":"6111266962187","countries_tags":["en:france","en:morocco","en:netherlands","en:united-states"],"lang":"fr","lc":"fr","product_name":"Lait frais naturel demi écrémé","product_name_ar":"حليب طري طبيعي نصف دسم","product_name_en":"","product_name_fr":"Lait frais naturel demi écrémé"},{"brands":"Jaouda","code":"6111242101180","countries_tags":["en:democratic-republic-of-the-congo","en:mauritania","en:morocco","en:united-states"],"lang":"fr","lc":"fr","product_name":"uht jaouda 1L","product_name_ar":"حليب جودة uht لتر","product_name_en":"uht jaouda 1L","product_name_fr":"uht jaouda 1L"},{"brands":"Yoplait","code":"3329770077003","countries_tags":["en:belgium","en:france","en:ireland","en:united-kingdom"],"lang":"fr","lc":"fr","product_name":"Skyr nature 0%","product_name_en":"Skyr nature 0%","product_name_fr":"Skyr nature 0%"},{"brands":"Jaouda","code":"6111242100206","countries_tags":["en:france","en:morocco","en:united-states"],"lang":"fr","lc":"fr","product_name":"Le nature","product_name_ar":"الطبيعي","product_name_en":"Le nature","product_name_fr":"Le nature"},{"brands":"Jaouda","code":"6111242100817","countries_tags":["en:france","en:morocco","en:united-states"],"lang":"en","lc":"en","product_name":"Le Lait demi écrémé","product_name_fr":"uht jaouda 1/2L"},{"brands":"Elle & Vire","code":"3480341000674","countries_tags":["en:france"],"lang":"
-
-total 42568 | keys ['count', 'page', 'page_count', 'page_size', 'products', 'skip']
- - 6111266962187 | "Lait frais naturel demi écrémé" | Lait frais naturel demi écrémé | Jaouda | fr
- - 6111242101180 | "uht jaouda 1L" | uht jaouda 1L | Jaouda | fr
- - 3329770077003 | "Skyr nature 0%" | Skyr nature 0% | Yoplait | fr
- - 6111242100206 | "Le nature" | Le nature | Jaouda | fr
- - 6111242100817 | "Le Lait demi écrémé" | uht jaouda 1/2L | Jaouda | en
- - 3480341000674 | "Carré frais 0% 1 portion 25g" | Carré frais 0% 1 portion 25g | Elle & Vire | fr
- - 3412290070101 | "Fromage à tartiner Nature fouetté MADAME LOIK - 180g" | Fromage à tartiner Nature fouetté MADAME LOIK - 180g | Le Fromage Fouetté Madame Loïk, Paysan breton | fr
- - 8420756010320 | "kéfir nature" | kéfir nature | Reina | fr
-=================== LEGACY OBF savon
-https://world.openbeautyfacts.org/cgi/search.pl?search_terms=savon&search_simple=1&action=process&json=1&page_size=8&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 200 en 0.901658s
-access-control-allow-origin: *
-access-control-allow-methods: HEAD, GET, PATCH, POST, PUT, OPTIONS
-access-control-allow-headers: DNT,User-Agent,X-User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,If-None-Match,Authorization
-access-control-expose-headers: Content-Length,Content-Range
-access-control-max-age: 1728000
-{"count":982,"page":1,"page_count":8,"page_size":8,"products":[{"brands":"Taous","code":"6111024004913","countries_tags":["en:morocco"],"lang":"fr","lc":"fr","product_name":"Taous","product_name_fr":"Taous"},{"brands":"El kef","code":"6111024009741","countries_tags":["en:morocco"],"lang":"fr","lc":"fr","product_name":"El Keef","product_name_ar":"الكف","product_name_fr":"El Keef"},{"brands":"doussy","code":"6111263790127","countries_tags":["en:morocco"],"ecoscore_tags":["unknown"],"lang":"fr","lc":"fr","product_name":"Savon Marseille","product_name_fr":"Savon Marseille"},{"brands":"Bioderma","code":"3401578653709","countries_tags":["en:france","en:morocco","en:saudi-arabia"],"lang":"fr","lc":"fr","product_name":"Sébium gel mousse","product_name_fr":"Sébium gel mousse"},{"brands":"Taous","code":"6111024008928","countries_tags":["en:morocco"],"lang":"fr","lc":"fr","product_name":"Savon Liquide au Lait d'Amande","product_name_ar":"Savon Liquide au Lait d'Amande","product_name_fr":"Savon Liquide au Lait d'Amande"},{"brands":"","code":"6111242912427","countries_tags":["en:morocco"],"lang":"fr","lc":"fr","product_name":"","product_name_en":"eliss","product_name_fr":""},{"brands":"Sanytol","code":"3045206502009","countries_tags":["en:france","en:morocco"],"lang":"fr","lc":"fr","product_name":"Mini gel mains désinfectant","product_name_fr":"Mini gel mains désinfectant"},{"brands":"","code":"6111024004708","countries_tags":["en:morocco"],"lang":"fr","lc":"fr","product_name":"Ta
-
-total 982 | keys ['count', 'page', 'page_count', 'page_size', 'products', 'skip']
- - 6111024004913 | "Taous" | Taous | Taous | fr
- - 6111024009741 | "El Keef" | El Keef | El kef | fr
- - 6111263790127 | "Savon Marseille" | Savon Marseille | doussy | fr
- - 3401578653709 | "Sébium gel mousse" | Sébium gel mousse | Bioderma | fr
- - 6111024008928 | "Savon Liquide au Lait d'Amande" | Savon Liquide au Lait d'Amande | Taous | fr
- - 6111242912427 | "" |  |  | fr
- - 3045206502009 | "Mini gel mains désinfectant" | Mini gel mains désinfectant | Sanytol | fr
- - 6111024004708 | "Taous" | Taous |  | fr
-=================== SAL OBF ?
-https://search.openbeautyfacts.org/search?q=savon&page_size=5
-HTTP 302 en 0.655618s
-access-control-allow-origin: *
-access-control-allow-methods: HEAD, GET, PATCH, POST, PUT, OPTIONS
-access-control-allow-headers: DNT,User-Agent,X-User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,If-None-Match,Authorization
-access-control-expose-headers: Content-Length,Content-Range
-access-control-max-age: 1728000
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><html><head><title>302 Found</title></head><body><h1>Found</h1><p>The document has moved <a href="https://world.openbeautyfacts.org/search?q=savon&amp;page_size=5">here</a>.</p><hr><address>Apache/2.4.61 (Debian) Server at search.openbeautyfacts.org Port 80</address></body></html>
-
+=================== حليب
+HTTP 200 en 0.939973s
+total 288
+ - -- 6111246950845 |  |  |  | Jibal | en:uht-milks,en:whole-milks
+ - -- 6111246953679 | None |  |  | Jibal | en:milks-liquid-and-powder,en:milks
+ - -- 6111018908999 | nido | nido |  | Nestlé | en:first-age-baby-milk-powder,en:growing-up-milk-powder
+ - FR 6111242070783 |  |  |  | سنطرال | en:whole-milks,en:whole-pasteurised-milks
+ - -- 6130433000019 | حليب كونديا 1 لتر |  |  | Candia | en:skimmed-milks,fr:Lait candia
+ - -- 6111242105287 | Ghilal Panaché |  |  | Jaouda Copag | en:yogurts,en:stirred-yogurts
+ - -- 6111126005344 | Lait Frais 15 jours Entier Pasteurisé | Lait Frais 15 jours Entier Pasteurisé |  | Chergui | en:milks,ar:مشتقات-الحليب
+ - -- 6111242103979 | حليب | حليب |  | بقال | en:milks-liquid-and-powder,en:milks
+ - -- 6111242040847 | Leader Chips saveur Sel |  |  | None | en:crisps,ar:حليب ساليم
+ - -- 6111243591591 | Lait demi-écrémé stérilisé UHT |  |  | Colaimo | en:semi-skimmed-milks,en:uht-milks
+ - -- 6111252990118 | None |  |  | تعاونية حليب الساقية الحمراء | en:milks-liquid-and-powder,en:milks
+ - -- 6111032003496 | Lben Pasteurisé | Lben Pasteurisé |  | Central Danone | en:milks,ar:Lben
+=================== شوكولاتة
+HTTP 200 en 0.546483s
+total 29
+ - -- 5711953026096 | ستار بوكس شوكولاتة |  |  | Starbucks | en:sweetened-beverages,en:Bevb
+ - -- 6281007038898 | المراعي حليب شوكولاتة صغي |  |  | Almarai | en:milks-liquid-and-powder,en:milks
+ - FR 5056357905579 | مارس شوكولاتة تريبل تريت ٤ بار |  |  | None | en:bars,en:candy-chocolate-bars
+ - -- 6291003083556 | شوكولاتة فيوري بالحليب 14جم | شوكولاتة فيوري بالحليب 14جم |  | None | en:sweet-snacks,en:confectioneries
+ - -- 6251100009309 | شوكولاتة &quot;تودي&quot; بالحليب واللوز خالية من السكر المضاف 60 غرام | شوكولاتة &quot;تودي&quot; بالحليب واللوز خالية من السكر المضاف 60 غرام |  |  | en:cocoa-and-its-products,en:chocolates
+ - -- 5352101363856 | خليط الكيك - شوكولاتة الحليب | خليط الكيك - شوكولاتة الحليب |  | None | 
+ - -- 6223002380664 | دانجو شوكولاتة ٢٠٠ ملل | دانجو شوكولاتة |  | None | 
+ - -- 6281057007004 | حليب نادك شوكولاتة |  |  |  | 
+ - -- 6281022134049 | يوبرو شوكولاتة |  |  | YOPRO | en:dairies,en:dairy-drinks
+ - -- 4100290056124 | ارلا شوكولاتة |  |  | Atlanta | en:Protein yogurt
+ - -- 6223000492130 | توينكز شوكولاتة |  |  | None | 
+ - -- 8698563046843 | شوكولاتة ميلودي |  |  | None | 
+=================== دجاج
+HTTP 200 en 0.615038s
+total 159
+ - -- 6281102685829 | None |  |  | None | en:poultries,en:chickens
+ - FR 6130586005503 | بلاط لانشون دجاج | بلاط لانشون دجاج |  | Bellat | en:prepared-chicken-meats,en:chicken-sausages
+ - -- 6281007045544 | فيليه صدور دجاج | فيليه صدور دجاج |  | اليوم | en:poultries,en:chickens
+ - FR 2006050195411 | Poulet Sauce BBQ Pizza |  |  | MAMA MANCINI | 
+ - -- 6251073000686 | كباب دجاج |  |  | None | 
+ - -- 9501101942431 | None |  |  | None | ar:طعام دجاج
+ - -- 5283000507242 | لانشون دجاج |  |  | None | 
+ - -- 6281051099951 | صدور دجاج دوکس 1 کيلو |  |  | None | 
+ - -- 7350106060068 | دجاج |  |  | None | 
+ - -- 5283002830126 | لحم دجاج |  |  | None | 
+ - -- 6221048810169 | مرقه دجاج كنور |  |  | كنور نارميتل | en:برج العرب
+ - -- 6084010990043 | كفته دجاج |  |  | زعيم كفته | 
+=================== süt
+HTTP 200 en 0.584429s
+total 101
+ - FR 86935241 | ayran |  | tavuk | Baktat | en:doogh-and-ayran,en:ayran
+ - -- 8692971413075 | İçim süt 1 litre yarım yağlı |  | İçim süt 1 litre yarım yağlı | İçim | en:milks,en:fruit-and-milk-beverages
+ - -- 8690767670053 | Sütaş süt 1 litre yarım yağlı |  | Sütaş süt 1 litre yarım yağlı | Sütaş | en:milks,en:fruit-and-milk-beverages
+ - -- 8690565022108 | Pınar kido süt 180 kakaolu |  | pınar kido süt | Pinar | en:milks,en:chocolates
+ - -- 8695077102034 | Sut |  | DOST SADE Süt | Dost | en:pasteurised-products,en:uht-milks
+ - -- 8690565005538 | Laktozsuz Yarım Yağlı UHT Süt |  | Pınar süt 1 litre denge laktozsuz | Pınar Denge | en:cow-milks,en:lactose-free-milk
+ - -- 4605627000882 | Йогурт кампила нежный |  |  | Campina | en:fermented-dairy-desserts,en:yogurts
+ - -- 86902618 | Danone çilekli süt |  |  | Danone | en:fermented-dairy-desserts,en:yogurts
+ - -- 86924962 | Süt burger |  | Eti Süt Burger Sütlü ve Ballı 35 G | Eti | en:cakes,en:filled-cakes
+ - -- 8690565151570 | Pınar süt 500 laktozsuz light |  |  | Pinar | 
+ - -- 8695077015181 | Dost doğal süt |  |  | Dost | 
+ - -- 8690931005896 | Süt |  |  | Yörükoğlu | en:yogurts,fr:Nourritures
+=================== tavuk
+HTTP 200 en 0.591017s
+total 253
+ - -- 4017979056002 | Tavuk Salam Dilimi |  |  | Arzum | en:prepared-chicken-meats,en:cooked-chicken-breast-slices
+ - FR 4027394007022 | Fulya Dilim Tavuk Salami |  | Fulya Dilim Tavuk Salami | Yayla | en:meals-with-meat,en:poultry-meals
+ - FR 4260001489754 | Tavuk Sosis |  |  | None | 
+ - -- 4251871700049 | Tavuk Ciger Ezmesi |  |  | Özörem | en:puff-pastry-appetizers,en:mini-sausage-rolls
+ - FR 3760383400329 | Tavuk Sosis |  |  | None | en:poultry-sausages,en:chicken-sausages
+ - FR 8690701002353 | Knorr Tavuk Bulyon |  | Tavuk Suyu Bulyon | Knorr | 
+ - -- 8684000185022 | Çıtır Tavuk Burger |  | Çıtır Tavuk Burger | Tommys | 
+ - -- 4017979052004 | dose hindi tavuk sosis |  |  | Efepasa | en:Kip,en:Vlees
+ - FR 4027394005332 | Tavuk göğsü |  | Tavuk göğsü | Yayla | en:prepared-chicken-meats,en:cooked-chicken-breast-slices
+ - FR 4027394007206 | Tavuk Salam Çesnili |  |  | None | 
+ - FR 4040328042043 | Tavuk sosis |  |  | Suntat | en:poultries,en:chickens
+ - FR 4040328076109 | Tavuk Salam |  |  | None | fr:charcuteries-cuites,en:mortadella
+=================== çikolata
+HTTP 503 en 0.627044s
 non JSON Expecting value: line 1 column 1 (char 0)
-=================== SAL OFF index beauty?
-https://search.openfoodfacts.org/search?q=savon%20karite&langs=fr&page_size=5&index_id=obf&fields=code,product_name,product_name_fr,product_name_en,product_name_ar,product_name_tr,brands,lang,lc,countries_tags
-HTTP 400 en 0.519739s
+=================== coca cola zero
+HTTP 503 en 0.370095s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== kinder bueno
+HTTP 200 en 1.353657s
+total 284
+ - -- 80052760 | Kinder bueno | كيندر بوينو كاكو بالحليب | Kinder Bueno | Kinder | en:bars,en:candy-chocolate-bars
+ - FR 80761761 | Kinder Bueno White 39g |  | Kinder Bueno Beyaz Çikolata 39 G | Kinder Bueno | en:bars,en:candy-chocolate-bars
+ - FR 8000500037560 | bueno |  |  | Kinder | en:chocolate-nuts-cookie-bars,fr:Snc
+ - FR 8000500290392 | Barre Chocolatée Kinder Bueno Chocolat au Lait |  |  | Kinder, Ferrero, Mixte | en:chocolate-biscuity-bars,en:chocolate-nuts-cookie-bars
+ - FR 8000500180709 | Kinder Bueno Mini |  | Bueno Mini | Kinder | en:chocolate-confectioneries-filled-with-wafer,en:chocolate-nuts-cookie-bars
+ - FR 8000500015803 | Barre Chocolatée Kinder Bueno Chocolat au Lait |  |  | Kinder, Ferrero | en:candy-chocolate-bars,en:chocolate-nuts-cookie-bars
+ - FR 8000500025857 | Barre Chocolatée Kinder Bueno Chocolat au Lait |  |  | Kinder | en:candy-chocolate-bars-filled-with-biscuit,en:chocolate-nuts-cookie-bars
+ - FR 8000500384664 | Bueno Cornet de glace Classic |  |  | Kinder, Ferrero Technical Services Srl | en:frozen-cones,en:ice-cream-cones
+ - FR 8000500290415 | Barre Chocolatée Kinder Bueno Chocolat au Lait x10 - 430g |  |  | Kinder | en:chocolate-biscuity-bars,en:chocolate-nuts-cookie-bars
+ - FR 4008400935225 | Kinder bueno |  |  | Kinder | en:candy-chocolate-bars,en:chocolate-nuts-cookie-bars
+ - FR 8000500290484 | Kinder Bueno White |  |  | Kinder, Ferrero, Mixte | en:candy-chocolate-bars,en:chocolate-nuts-cookie-bars
+ - FR 4008400320328 | Bueno |  |  | Kinder | nl:Chocolade,nl:Koeken/Chocolade/Snoep
+=================== danone yaourt
+HTTP 503 en 0.367877s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== merguez
+HTTP 503 en 0.379796s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== nutela
+HTTP 200 en 0.425225s
+total 12
+ - -- 8426758003018 | Triángulos Nutela |  |  | None | en:salty-snacks,en:appetizers
+ - -- 8436595150110 | Galleta de nutela |  |  | None | 
+ - -- 8426758003087 | Cañas caseras de nutela |  |  | None | 
+ - -- 15576727 | nutela |  |  | nutela | fr:pates-a-tartiner,en:chocolate-spreads
+ - FR 2834069022240 | muffin nutela |  |  | None | 
+ - -- 0010200310397 | nutela biscuits 166g |  |  | Nutella | 
+ - FR 25194548 | Nutela |  |  | None | 
+ - -- 6260201428971 | nutela farmand | nutela farmand |  | None | 
+ - FR 15557322 | nutela |  |  | None | 
+ - FR 0204882029450 | Beignets au nutela |  |  | None | 
+ - -- 3871071003910 | Duo cream |  |  | Duo cream | en:breads,hr:Nutela
+ - FR 05907557 | Nutela |  |  | None | 
+=================== shampoing
+HTTP 200 en 0.557488s
+total 2
+ - FR 3616826860840 | Neutraderm Shampoing Extra-Doux Dermo-Respect 500 ml |  |  | Neutraderm | en:personal-care-products
+ - FR 3282779446198 | Shampoing quotidien avoine |  |  | Klorane | en:personal-care-products
+=================== chocolat
+HTTP 200 en 1.495002s
+total 68764
+ - FR 7622210449283 | Prince | برنس |  | Mondelez Schweiz GmbH | en:biscuits,en:chocolate-biscuits
+ - -- 3046920029759 | Excellence Noir Prodigieux 90% Cacao |  |  | Lindt, Lindt & Sprüngli | en:Chocolates negros extra finos,en:Snacks dulces
+ - FR 3046920022651 | Noir Intense |  |  | LINDT SPRUNGLI SAS | en:dark-chocolate-bar,en:dark-chocolate-bar-with-more-than-70-cocoa
+ - FR 3046920022606 | Excellence 85% cacao |  |  | LINDT SPRUNGLI SAS | en:dark-chocolates,en:dark-chocolate-bar
+ - FR 8052575090254 | Rigoni di Asiago - Nocciolata bio |  |  | Rigoni di Asiago | en:hazelnut-spreads,en:cocoa-and-hazelnuts-spreads
+ - FR 3017620425035 | Nutella |  |  | Nutella, FERRERO FRANCE COMMERCIALE | en:produits-a-tartiner,en:produits-a-tartiner-sucres
+ - FR 6111031005064 | Tonik | Tonjik |  | tonik | en:chocolate-stuffed-wafers,en:filled-wafers
+ - FR 3229820100234 | Fourrés Chocolat Noir |  |  | Bjorg | en:dark-chocolate-biscuits,en:sandwich-biscuits
+ - FR 3229820160672 | Croustillant Chocolat |  |  | Bjorg | en:crunchy-cereal-clusters,en:cereal-clusters-with-chocolate
+ - FR 3608580065340 | Pâte à tartiner noisettes et cacao |  |  | Bonne Maman | en:chocolate-spreads,en:cocoa-and-hazelnuts-spreads
+ - FR 3017620429484 | Nutella |  |  | Nutella, Ferrero | en:cocoa-and-hazelnuts-spreads,en:confectionary-based-spreads
+ - FR 3387390123210 | Chocapic |  |  | Nestlé, Chocapic | en:chocolate-wheat-shells,en:unfilled-breakfast-chocolate-cereals-fortified-with-vitamins-and-chemical-elements
+=================== biscuit
+HTTP 200 en 1.826204s
+total 93739
+ - FR 7622210449283 | Prince | برنس |  | Mondelez Schweiz GmbH | en:biscuits,en:chocolate-biscuits
+ - FR 3175680011480 | Sésame |  |  | Gerblé | en:biscuits-and-crackers,en:biscuits
+ - FR 6111031005064 | Tonik | Tonjik |  | tonik | en:chocolate-stuffed-wafers,en:filled-wafers
+ - FR 3229820100234 | Fourrés Chocolat Noir |  |  | Bjorg | en:dark-chocolate-biscuits,en:sandwich-biscuits
+ - FR 3175681851849 | Pomme Noisette |  |  | Gerblé | en:biscuits,en:dry-biscuits
+ - FR 3251490332080 | figues et son |  |  | Gerblé | fr:Biscuits au son de blé,fr:Biscuits au son de blé et la figue
+ - FR 8410376009392 | gullon fibre zero sugar free |  |  | GALLETAS GULLON S.A. | en:biscuits,en:crackers-breakfast
+ - FR 3175681851856 | Biscuit raisins |  |  | Gerblé | en:fruit-biscuits,en:shortbread-biscuit-with-fruits
+ - FR 3362600011044 | Henry’s |  |  | Henry's | en:biscuits-and-crackers,en:biscuits
+ - -- 5410041001204 | Tuc Original |  |  | Mondelēz | en:biscuits-and-crackers,en:crackers-appetizers
+ - FR 3229820794525 | Avoine chocolat |  |  | Bjorg | en:chocolate-biscuits,en:oatmeal-biscuits
+ - FR 8000500310427 | Biscuits NUTELLA Biscuits Noisettes et Cacao x22 - 304g |  |  | Ferrero Technical Services Srl, Nutella biscuits | en:Biscotti,en:Snack dolci
+=================== jus d'orange
+HTTP 503 en 0.636027s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== chicken
+HTTP 200 en 1.294805s
+total 92997
+ - -- 8852018101024 | Yum Yum Chicken Flavour |  |  | YumYum | en:instant-noodles,en:instant-noodle-soups
+ - FR 13356194 | SPICY CHICKEN & 'NDUJA PIZZA |  |  |  | en:cereals-and-their-products,en:breads
+ - FR 3095757047108 | Blanc de Poulet |  |  | fleury Michon | en:prepared-chicken-meats,en:cooked-chicken-breast-slices
+ - -- 0089686120073 | Indomie instant noodles baladi chicken flavor |  |  | indomie | en:Aliments-et-boissons-a-base-de-vegetaux,en:Pates-alimentaires
+ - -- 8437010848230 | Pechuguita de Pollo Asada al Horno |  |  | CARLOTEÑA DE ASADOS S.L. | en:chickens,en:cooked-poultries
+ - -- 8410300349051 | Caldo casero de pollo |  |  | GALLINA BLANCA S.A.U. | en:liquid-broths,en:liquid-chicken-broths
+ - -- 8801073116467 | Buldak HOT Chicken Flavour Ramen Carbonara Flavour |  |  | Samyang | en:instant-noodle-soups,en:dehydrated-asian-style-soup-with-noodles
+ - FR 5013665112235 | Organic Chicken Stock Cubes -  8 Pack |  |  | Kallø | en:Organic-chicken-stock-cubes,en:Poultry-stock-for-sauce-and-cooking-dehydrated
+ - FR 3302740059186 | Blanc de Poulet Nature Sans Nitrite |  |  | Fleury Michon | en:prepared-chicken-meats,en:cooked-chicken-breast-slices
+ - FR 3154230801023 | HERTA Blanc Poulet Broche conservation sans nitrite x4 -140g |  |  | Herta | en:prepared-chicken-meats,en:cooked-chicken-breast-slices
+ - FR 3248832940539 | Poulet🐔 au Curry et Noix de Coco 🥥 |  |  | WW, Weight Watchers | en:licensed-products,en:low-fat-prepared-meals
+ - FR 3095758913013 | Emincés de Poulet - 100% Cuisse |  |  | Fleury Michon | en:chickens,fr:Emincés de poulet
+=================== fromage
+HTTP 503 en 0.480372s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== pain de mie
+HTTP 503 en 0.380130s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== lait lc=fr
+HTTP 503 en 0.378589s
+non JSON Expecting value: line 1 column 1 (char 0)
+=================== lait france filter
+HTTP 200 en 2.331461s
+total 35652
+ - FR 6111266962187 | Lait frais naturel demi écrémé | حليب طري طبيعي نصف دسم |  | Jaouda | en:homogenized-milks,en:semi-skimmed-milks
+ - FR 3329770077003 | Skyr nature 0% |  |  | Yoplait | en:skyrs,en:plain-skyrs
+ - FR 6111242100206 | Le nature | الطبيعي |  | Jaouda | en:plain-yogurts,en:plain-cow-milk-yogurts
+ - FR 6111242100817 | Le Lait demi écrémé |  |  | Jaouda | en:uht-milks,en:cow-milks
+ - FR 3480341000674 | Carré frais 0% 1 portion 25g |  |  | Elle & Vire | en:Produits-fermentés,en:Produits-laitiers-fermentés
+ - FR 3412290070101 | Fromage à tartiner Nature fouetté MADAME LOIK - 180g |  |  | Le Fromage Fouetté Madame Loïk, Paysan breton | en:cheeses-perishable,fr:Fromage fouetté
+ - FR 8420756010320 | kéfir nature |  |  | Reina | en:fermented-milk-drinks,en:kefir
+ - FR 6111018903161 | Nescafé Classic | Classic |  | Nescafé | en:instant-coffees,en:instant-powder-for-coffee-with-milk
+ - FR 3229820787015 | Amande sans sucres |  |  | Bjorg | en:almond-based-drinks,en:unsweetened-plain-almond-based-drinks
+ - FR 3229820792132 | Avoine |  |  | Bjorg | en:oat-based-drinks,en:unsweetened-beverages
+ - FR 3256540000698 | Pains au lait |  |  | Brioche Pasquier | en:viennoiseries,en:milk-bread-rolls
+ - FR 3480341000636 | Carré Frais |  |  | elle et vire | en:pasteurized-cheeses,en:cheese-spreads
+=================== chocolat france filter
+HTTP 200 en 0.542892s
+total 56968
+ - FR 7622210449283 | Prince | برنس |  | Mondelez Schweiz GmbH | en:biscuits,en:chocolate-biscuits
+ - FR 3046920022651 | Noir Intense |  |  | LINDT SPRUNGLI SAS | en:dark-chocolate-bar,en:dark-chocolate-bar-with-more-than-70-cocoa
+ - FR 3046920022606 | Excellence 85% cacao |  |  | LINDT SPRUNGLI SAS | en:dark-chocolates,en:dark-chocolate-bar
+ - FR 8052575090254 | Rigoni di Asiago - Nocciolata bio |  |  | Rigoni di Asiago | en:hazelnut-spreads,en:cocoa-and-hazelnuts-spreads
+ - FR 3017620425035 | Nutella |  |  | Nutella, FERRERO FRANCE COMMERCIALE | en:produits-a-tartiner,en:produits-a-tartiner-sucres
+ - FR 6111031005064 | Tonik | Tonjik |  | tonik | en:chocolate-stuffed-wafers,en:filled-wafers
+ - FR 3229820100234 | Fourrés Chocolat Noir |  |  | Bjorg | en:dark-chocolate-biscuits,en:sandwich-biscuits
+ - FR 3229820160672 | Croustillant Chocolat |  |  | Bjorg | en:crunchy-cereal-clusters,en:cereal-clusters-with-chocolate
+ - FR 3608580065340 | Pâte à tartiner noisettes et cacao |  |  | Bonne Maman | en:chocolate-spreads,en:cocoa-and-hazelnuts-spreads
+ - FR 3017620429484 | Nutella |  |  | Nutella, Ferrero | en:cocoa-and-hazelnuts-spreads,en:confectionary-based-spreads
+ - FR 3387390123210 | Chocapic |  |  | Nestlé, Chocapic | en:chocolate-wheat-shells,en:unfilled-breakfast-chocolate-cereals-fortified-with-vitamins-and-chemical-elements
+ - FR 3229820794525 | Avoine chocolat |  |  | Bjorg | en:chocolate-biscuits,en:oatmeal-biscuits
+=================== fr.openfoodfacts lait
+HTTP 200 en 1.235581s
+total 35652
+ - FR 6111266962187 | Lait frais naturel demi écrémé | حليب طري طبيعي نصف دسم |  | Jaouda | en:homogenized-milks,en:semi-skimmed-milks
+ - FR 3329770077003 | Skyr nature 0% |  |  | Yoplait | en:skyrs,en:plain-skyrs
+ - FR 6111242100206 | Le nature | الطبيعي |  | Jaouda | en:plain-yogurts,en:plain-cow-milk-yogurts
+ - FR 6111242100817 | Le Lait demi écrémé |  |  | Jaouda | en:uht-milks,en:cow-milks
+ - FR 3480341000674 | Carré frais 0% 1 portion 25g |  |  | Elle & Vire | en:Produits-fermentés,en:Produits-laitiers-fermentés
+ - FR 3412290070101 | Fromage à tartiner Nature fouetté MADAME LOIK - 180g |  |  | Le Fromage Fouetté Madame Loïk, Paysan breton | en:cheeses-perishable,fr:Fromage fouetté
+ - FR 8420756010320 | kéfir nature |  |  | Reina | en:fermented-milk-drinks,en:kefir
+ - FR 6111018903161 | Nescafé Classic | Classic |  | Nescafé | en:instant-coffees,en:instant-powder-for-coffee-with-milk
+ - FR 3229820787015 | Amande sans sucres |  |  | Bjorg | en:almond-based-drinks,en:unsweetened-plain-almond-based-drinks
+ - FR 3229820792132 | Avoine |  |  | Bjorg | en:oat-based-drinks,en:unsweetened-beverages
+ - FR 3256540000698 | Pains au lait |  |  | Brioche Pasquier | en:viennoiseries,en:milk-bread-rolls
+ - FR 3480341000636 | Carré Frais |  |  | elle et vire | en:pasteurized-cheeses,en:cheese-spreads
+=================== fr.openfoodfacts chocolat
+HTTP 200 en 0.730308s
+total 56968
+ - FR 7622210449283 | Prince | برنس |  | Mondelez Schweiz GmbH | en:biscuits,en:chocolate-biscuits
+ - FR 3046920022651 | Noir Intense |  |  | LINDT SPRUNGLI SAS | en:dark-chocolate-bar,en:dark-chocolate-bar-with-more-than-70-cocoa
+ - FR 3046920022606 | Excellence 85% cacao |  |  | LINDT SPRUNGLI SAS | en:dark-chocolates,en:dark-chocolate-bar
+ - FR 8052575090254 | Rigoni di Asiago - Nocciolata bio |  |  | Rigoni di Asiago | en:hazelnut-spreads,en:cocoa-and-hazelnuts-spreads
+ - FR 3017620425035 | Nutella |  |  | Nutella, FERRERO FRANCE COMMERCIALE | en:produits-a-tartiner,en:produits-a-tartiner-sucres
+ - FR 6111031005064 | Tonik | Tonjik |  | tonik | en:chocolate-stuffed-wafers,en:filled-wafers
+ - FR 3229820100234 | Fourrés Chocolat Noir |  |  | Bjorg | en:dark-chocolate-biscuits,en:sandwich-biscuits
+ - FR 3229820160672 | Croustillant Chocolat |  |  | Bjorg | en:crunchy-cereal-clusters,en:cereal-clusters-with-chocolate
+ - FR 3608580065340 | Pâte à tartiner noisettes et cacao |  |  | Bonne Maman | en:chocolate-spreads,en:cocoa-and-hazelnuts-spreads
+ - FR 3017620429484 | Nutella |  |  | Nutella, Ferrero | en:cocoa-and-hazelnuts-spreads,en:confectionary-based-spreads
+ - FR 3387390123210 | Chocapic |  |  | Nestlé, Chocapic | en:chocolate-wheat-shells,en:unfilled-breakfast-chocolate-cereals-fortified-with-vitamins-and-chemical-elements
+ - FR 3229820794525 | Avoine chocolat |  |  | Bjorg | en:chocolate-biscuits,en:oatmeal-biscuits
+=================== tr.openfoodfacts süt
+HTTP 200 en 1.178095s
+total 274
+ - FR 8695077102010 | Dost Tam Yağlı Süt |  | Dost Tam Yağlı Süt | Dost | en:plain-yogurts,en:cow-milks
+ - -- 8695077100092 | Dost Süt Yarım Yağlı |  | Dost Süt Yarım Yağlı | Dost, Yarım Yağlı Süt | en:semi-skimmed-milks,en:cow-milks
+ - FR 8690565100530 | Pinar Süt 1 lt |  |  | Pinar | en:milks-liquid-and-powder,en:milks
+ - -- 8692886310711 | Altınkılıç Kefir 1 L |  | Altınkılıç Kefir 1 L | Altınkılıç | en:fermented-milk-drinks,en:kefir
+ - -- 8690565041734 | Labne |  | Labne | Pınar | en:cream-cheeses,en:Labneh
+ - -- 8690526793184 | Nero |  | Nero | Eti | en:dehydrated-beverages,en:milk-powders
+ - -- 8692971434407 | Labne Peyniri |  | Labne Peyniri | İçim | en:cream-cheeses,en:Labneh
+ - -- 8695077092021 | Süt |  | Süt | Dost | en:milks-liquid-and-powder,en:milks
+ - -- 8690565017555 | Pınar Protein Kakaolu Süt |  | Pınar Protein Kakaolu Süt | Pinar | en:lactose-free-milk,en:High-protein milks
+ - -- 8695077044020 | Tam Yağlı Tost Peyniri |  | Tam Yağlı Tost Peyniri | Aknaz | en:semi-hard-cheeses-from-ewe-s-milk,en:Toast cheeses
+ - -- 8695077105011 | Doğal Yoğurt |  | Doğal Yoğurt | Dost | en:fermented-dairy-desserts,en:yogurts
+ - -- 8692886622517 | Kefir |  | Kefir | Altınkılıç | en:fermented-milk-drinks,en:kefir
+=================== OBF shampoing
+HTTP 200 en 5.961377s
+total 1035
+ - -- 6111056012986 | cadum | cadum |  | cadum | en:Non-food-products,en:Open-beauty-facts
+ - -- 6111056014522 |  | 6111056014522 |  |  | fr:Shampoing
+ - -- 3574669907842 | johnsons |  |  | shampo | en:Non-food-products,en:Open-beauty-facts
+ - -- 6223000659243 | Johnsons |  |  | Johnsons | en:open-beauty-facts,fr:Baby shampoo
+ - FR 3600551119816 | Shampoing très doux démêlant karité pur + huile de jojoba |  |  | Mixa Bébé, mixa | en:shampoos,en:shampoos-for-babies
+ - FR 3574661537436 |  |  |  | Le Petit Marseillais | en:hair,en:shampoos
+ - -- 6221155111838 | None |  |  | None | en:non-food-products,en:open-beauty-facts
+ - FR 3574661537429 |  |  |  | Le Petit Marseillais | en:hair,en:shampoos
+ - FR 3574661574561 | Shampooing crème nutrition miel de provence et karité bio |  |  | Le Petit Marseillais | fr:shampooings-au-miel,en:open-beauty-facts
+ - FR 0022796976116 | ogx  argan |  |  | OGX | en:shampoos,en:open-beauty-facts
+=================== OBF fr savon
+HTTP 200 en 1.837438s
+total 793
+ - FR 3401578653709 | Sébium gel mousse |  |  | Bioderma | en:soaps,fr:Gel purifiant
+ - FR 3045206502009 | Mini gel mains désinfectant |  |  | Sanytol | en:hydro-alcoholic-gels,en:open-beauty-facts
+ - FR 3549620005028 | Savonnettes extra douces Verveine Citron |  |  | Le Petit Olivier | en:hygiene,en:soaps
+ - FR 3250393212635 | savon doux végétale au lait d'ânesse |  |  | labell | en:soaps,en:Open-beauty-facts
+ - FR 3574661681108 | Savons soin surgras Beurre de karité |  |  | Le petit marseillais | en:open-beauty-facts
+ - FR 8717163607268 | Dove Savon Pain de Toilette Exfoliating Anti-Bactérien x1 |  |  | Dove | en:soaps,en:open-beauty-facts
+ - FR 3574661680996 | Savons soin surgras huile d'amande douce |  |  | le petit marseillais | en:open-beauty-facts
+ - FR 3574661680934 | savon extra doux lait, main & corps |  |  | Le petit marseillais | en:open-beauty-facts
+ - FR 3574661701028 | crème lavante main lait |  |  | le Petit Marseillais | en:soaps,en:marseille-soaps
+ - FR 3600551132211 | Gel Douche Sans Savon Bio Huile d'Amandes Douces |  |  | Cadum | en:showers-and-baths,en:shower-gels
+=================== OBF nutella (doit etre vide)
+HTTP 200 en 0.797231s
+total 0
+=== CORS fr.openfoodfacts
+HTTP/2 200 
+access-control-allow-origin: *
+=== CORS SAL preflight
+HTTP/2 400 
+access-control-allow-methods: DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
+access-control-max-age: 600
 access-control-allow-credentials: true
-{"detail":"1 validation error for SearchParameters\n  Value error, Index ID 'obf' not found, available indices: ['off'] [type=value_error, input_value={'q': 'savon karite', 'la...: 'obf', 'charts': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.7/v/value_error"}
-
-total None | keys ['detail']
-=================== SAL autocomplete brands
-https://search.openfoodfacts.org/autocomplete?q=isla&taxonomy_names=brand&lang=fr&size=5
-HTTP 200 en 0.389252s
+HTTP/2 200 
 access-control-allow-credentials: true
-{"took":1,"timed_out":false,"options":[],"debug":{"query":{"suggest":{"taxonomy_suggest":{"text":"isla","completion":{"field":"names.fr","size":5,"contexts":{"taxonomy_name":["brand"]}}}}}}}
-
-total None | keys ['took', 'timed_out', 'options', 'debug']
