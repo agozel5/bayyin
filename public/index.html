@@ -38,35 +38,33 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>
         </a>
       </div>
-      <p class="eyebrow" data-i18n="app.tagline"></p>
-      <h1 id="h-home" data-i18n-html="home.h1_html">Halal, santé, additifs.<br>Tout en un scan.</h1>
-      <p data-i18n="home.lead"></p>
-      <div class="home-hello" id="homeHello" hidden>
-        <strong id="homeGreet"></strong>
-        <p class="home-week" id="homeWeek"></p>
-      </div>
     </header>
 
-    <div class="scan-block">
-      <button class="scan-cta" id="openCamera" type="button">
-        <span class="scan-cta-art" aria-hidden="true">
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          <b class="scan-cta-line"></b>
+    <section class="hero" aria-labelledby="h-home">
+      <div class="hero-text">
+        <h1 id="h-home"></h1>
+        <p class="hero-lead" id="homeLead" data-i18n="home.lead"></p>
+        <div class="hero-week" id="homeWeek" hidden></div>
+      </div>
+      <button class="hero-scan" id="openCamera" type="button">
+        <span class="hero-scan-art" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <b></b>
         </span>
-        <span class="scan-cta-text"><strong data-i18n="home.scan">Scanner un produit</strong><small data-i18n="home.kinds"></small></span>
+        <span class="hero-scan-text"><strong data-i18n="home.scan">Scanner un produit</strong><small data-i18n="home.kinds"></small></span>
         <svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
-      <div class="scan-links">
-        <label class="scan-link" for="ocrInput">
+      <div class="hero-links">
+        <label class="hero-link" for="ocrInput">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 12h6M9 15.5h6M9 19h4"/></svg>
           <span data-i18n="home.photo_ingredients"></span>
         </label>
-        <button class="scan-link" type="button" id="focusManual" aria-controls="manualForm">
+        <button class="hero-link" type="button" id="focusManual" aria-controls="manualForm" aria-expanded="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
           <span data-i18n="home.type_code"></span>
         </button>
       </div>
-    </div>
+    </section>
     <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
     <input id="ocrInput" type="file" accept="image/*" capture="environment" hidden>
 
@@ -105,10 +103,6 @@
           <span class="tool-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h13M17 12l4 4-4 4M21 16H8"/></svg></span>
           <span class="tool-t" data-i18n="cmp.title"></span>
         </button>
-        <label class="tool t-photo" for="photoInput">
-          <span class="tool-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
-          <span class="tool-t" data-i18n="home.photo_barcode"></span>
-        </label>
       </div>
     </section>
 

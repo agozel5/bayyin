@@ -697,12 +697,9 @@ document.addEventListener("click", (e) => {
   if (go) {
     e.preventDefault();
     closeSheet();
-    const block = go.dataset.gotoSettings === "profile" ? "profileBlock" : "schoolBlock";
-    settingsPane = "prefs";
-    setTimeout(() => {
-      location.hash = "#settings";
-      setTimeout(() => $(block).scrollIntoView({ block: "start", behavior: "smooth" }), 30);
-    }, 50);
+    // Page des réglages concernée : profil (allergies, régime) ou avis religieux
+    const page = go.dataset.gotoSettings === "profile" ? "profile" : "religion";
+    setTimeout(() => (location.hash = `#settings/${page}`), 50);
   }
 });
 
@@ -932,29 +929,34 @@ $("homeTipClose").addEventListener("click", () => {
   setTimeout(() => ($("homeTipBox").hidden = true), 220);
 });
 
-// Petit bilan des 7 derniers jours
+// Petit bilan des 7 derniers jours : une barre proportionnelle et sa légende
 function weekSummary(all) {
   const week = all.filter((e) => e.at > Date.now() - 7 * 864e5);
-  if (!week.length) return esc(t("home.week_none"));
-  const c = { ok: 0, doubt: 0, bad: 0 };
+  if (!week.length) return `<p class="wk-title">${esc(t("home.week_none"))}</p>`;
+  const c = { ok: 0, doubt: 0, bad: 0, other: 0 };
   week.forEach((e) => {
     const st = verdictOf(e.p).status;
     if (st === "haram" || profileOf(e.p).alert === "no") c.bad++;
     else if (st === "mashbouh") c.doubt++;
     else if (st === "halal_certifie" || st === "halal_probable") c.ok++;
+    else c.other++;
   });
-  const part = (k, cls) => (c[k] ? `<span class="wk ${cls}"><i class="dot"></i>${esc(t(`home.wk_${k}`, { n: c[k] }))}</span>` : "");
-  return `<span>${esc(tn("home.week", week.length))}</span>${part("ok", "wk-ok")}${part("doubt", "wk-doubt")}${part("bad", "wk-bad")}`;
+  const seg = (k) => (c[k] ? `<i class="wk-${k}" style="flex:${c[k]}"></i>` : "");
+  const leg = (k) => (c[k] ? `<span class="wk-${k}"><i></i>${esc(t(`home.wk_${k}`, { n: c[k] }))}</span>` : "");
+  return `<p class="wk-title">${esc(tn("home.week", week.length))}</p>
+    <div class="wk-bar" aria-hidden="true">${seg("ok")}${seg("doubt")}${seg("bad")}${seg("other")}</div>
+    <p class="wk-legend">${leg("ok")}${leg("doubt")}${leg("bad")}</p>`;
 }
 
 function renderHome() {
   const all = store.all();
   $("view-scan").classList.toggle("returning", all.length > 0); // accueil court pour qui revient
-  $("homeHello").hidden = !all.length;
-  if (all.length) {
-    $("homeGreet").textContent = t("home.greet");
-    $("homeWeek").innerHTML = weekSummary(all);
-  }
+  // Premier passage : ce que fait l'app ; ensuite : bonjour et bilan de la semaine
+  if (all.length) $("h-home").textContent = t("home.greet");
+  else $("h-home").innerHTML = t("home.h1_html");
+  $("homeLead").hidden = !!all.length;
+  $("homeWeek").hidden = !all.length;
+  if (all.length) $("homeWeek").innerHTML = weekSummary(all);
   renderBasketButtons();
   const recent = all.slice(0, 10);
   const favs = all.filter((e) => e.fav).slice(0, 10);
