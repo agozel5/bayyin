@@ -76,15 +76,8 @@
       </div>
     </form>
 
-    <div id="homeStatus" aria-live="polite"></div>
-
-    <section class="shelf" id="homeRecent" hidden>
-      <div class="section-head"><h2 data-i18n="home.recent"></h2><a href="#history" data-i18n="home.see_all"></a></div>
-      <div class="alts" id="homeRecentList"></div>
-    </section>
-
     <section class="tools" aria-labelledby="h-tools">
-      <div class="section-head"><h2 id="h-tools" data-i18n="home.tools"></h2></div>
+      <h2 class="sr-only" id="h-tools" data-i18n="home.tools"></h2>
       <div class="tool-row">
         <button class="tool t-aisle" type="button" id="openAisle">
           <span class="tool-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="8.5" cy="10" r="2.2"/><circle cx="15.5" cy="10" r="2.2"/><circle cx="12" cy="16" r="2.2"/></svg></span>
@@ -105,6 +98,14 @@
         </button>
       </div>
     </section>
+
+    <div id="homeStatus" aria-live="polite"></div>
+
+    <section class="shelf" id="homeRecent" hidden>
+      <div class="section-head"><h2 data-i18n="home.recent"></h2><a href="#history" data-i18n="home.see_all"></a></div>
+      <div class="alts" id="homeRecentList"></div>
+    </section>
+
 
     <section class="shelf" id="homeFavs" hidden>
       <div class="section-head"><h2 data-i18n="home.favorites"></h2></div>

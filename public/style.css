@@ -1185,3 +1185,23 @@ html[data-text="xlarge"]{font-size:125%}
 .crop-box i[data-h="se"]{right:-5px;bottom:-5px;border-left:none;border-top:none;cursor:nwse-resize}
 .ocr-warn{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--r-md);background:var(--c-doubt-bg);color:var(--fg);font-size:.92rem}
 .ocr-warn svg{color:var(--c-doubt);width:20px;height:20px;flex:none;margin-top:1px}
+
+/* accueil compact : panneau, outils et derniers produits visibles sans défiler */
+#view-scan{gap:14px}
+.hero{gap:12px;padding:16px 16px 14px;border-radius:26px}
+.hero-text{gap:6px}
+#view-scan.returning .hero h1{font-size:1.55rem}
+.hero-week{gap:6px}
+.wk-title{font-size:.88rem}
+.wk-bar{height:7px}
+.wk-legend{font-size:.8rem;gap:2px 12px}
+.hero-scan{padding:10px 14px 10px 10px;border-radius:18px}
+.hero-scan-art{width:48px;height:48px;border-radius:13px}
+.hero-scan-art i{height:24px}
+.hero-scan-text strong{font-size:1.1rem}
+.hero-links{gap:8px}
+.hero-link{min-height:40px;font-size:.84rem}
+.tool{min-height:0;padding:10px 4px 9px;gap:6px}
+.tool-ico{width:36px;height:36px;border-radius:12px}
+.tool-ico svg{width:20px;height:20px}
+.tool-t{font-size:.74rem}
