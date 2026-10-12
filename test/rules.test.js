@@ -195,3 +195,15 @@ test("marque spécialisée halal : la fiche sans label est reconnue", () => {
   // Le porc reste interdit quelle que soit la marque
   assert.equal(classify({ ...p, ingredients_text_fr: "Viande de porc" }).status, "haram");
 });
+
+test("organisme non suivi : le label est ignoré, verdict sur les ingrédients", async () => {
+  const { classify, DEFAULT_PREFS } = await import("../public/lib/rules.js");
+  const p = { product_name: "Merguez", labels: "Halal AVS", ingredients_text_fr: "viande de bœuf, épices, sel" };
+  const trusted = classify(p, DEFAULT_PREFS);
+  assert.equal(trusted.status, "halal_certifie");
+  const off = classify(p, { ...DEFAULT_PREFS, distrust: ["avs"] });
+  assert.notEqual(off.status, "halal_certifie");
+  assert.equal(off.certification, null);
+  assert.equal(off.certIgnored.organismeId, "avs");
+  assert.ok(off.notes.includes("cert_untrusted"));
+});

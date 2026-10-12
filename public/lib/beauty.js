@@ -81,8 +81,14 @@ export function classifyBeauty(product, prefs = DEFAULT_PREFS) {
     flags.push({ id: "cosm_vernis", severity: "info", label: "Vernis à ongles", source: "" });
   }
 
-  const certification = detectCertification(product);
+  let certification = detectCertification(product);
   const notes = [];
+  let certIgnored = null;
+  if (certification && certification.organismeId && (prefs.distrust || []).includes(certification.organismeId)) {
+    certIgnored = certification;
+    certification = null;
+    notes.push("cert_untrusted");
+  }
   const isSchool = (f) => f.topic && SCHOOL_TOPICS.includes(f.topic);
   let status;
   if (flags.some((f) => f.severity === "haram")) {
@@ -107,5 +113,5 @@ export function classifyBeauty(product, prefs = DEFAULT_PREFS) {
   const final = flags
     .map((f) => (certification && f.severity === "mashbouh" && !isSchool(f) ? { ...f, severity: "info", covered: true } : f))
     .sort((a, b) => order[a.severity] - order[b.severity]);
-  return { status, certification, flags: final, notes, vegan, vegetarian: vegan };
+  return { status, certification, certIgnored, flags: final, notes, vegan, vegetarian: vegan };
 }

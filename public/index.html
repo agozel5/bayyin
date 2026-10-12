@@ -101,6 +101,8 @@
 
     <div id="homeStatus" aria-live="polite"></div>
 
+    <div class="recall-banner" id="homeRecall" role="alert" hidden></div>
+
     <section class="shelf" id="homeRecent" hidden>
       <div class="section-head"><h2 data-i18n="home.recent"></h2><a href="#history" data-i18n="home.see_all"></a></div>
       <div class="alts" id="homeRecentList"></div>
@@ -201,6 +203,15 @@
         <h3 class="sub-label" data-i18n="settings.allergens"></h3>
         <div class="chips" id="allergenList"></div>
       </section>
+      <section class="set-block" id="familyBlock">
+        <h3 class="sub-label fam-title"><span data-i18n="family.title"></span><span class="pm-badge" id="familyBadge">Premium</span></h3>
+        <p class="muted" data-i18n="family.intro"></p>
+        <div class="family-list" id="familyList"></div>
+        <form class="field-row" id="familyAdd" autocomplete="off">
+          <input class="field" id="familyName" type="text" maxlength="24" data-i18n-ph="family.name_ph">
+          <button class="btn btn-primary" type="submit" data-i18n="family.add"></button>
+        </form>
+      </section>
     </div>
 
     <div class="set-page" data-page="religion" hidden>
@@ -219,6 +230,11 @@
           <div class="topics" id="topicList"></div>
         </details>
         <p class="fineprint start" data-i18n="settings.disclaimer"></p>
+      </section>
+      <section class="set-block" id="certBlock">
+        <h3 class="sub-label" data-i18n="certs.title"></h3>
+        <p class="muted" data-i18n="certs.intro"></p>
+        <div class="cert-list" id="certList"></div>
       </section>
     </div>
 
@@ -293,6 +309,7 @@
 
     <div class="set-page" data-page="how" hidden>
       <header class="sub-head"><button class="icon-btn set-back" type="button" data-back data-i18n-aria="sheet.back"><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h1 data-i18n="settings.how"></h1></header>
+      <button class="tour-replay" type="button" id="tourReplay"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></svg><span><strong data-i18n="tour.replay"></strong><small data-i18n="tour.replay_p"></small></span></button>
       <section class="set-block why">
         <h2 data-i18n="why.t"></h2>
         <blockquote><p data-i18n="why.quote"></p><cite data-i18n="why.cite"></cite></blockquote>
@@ -371,6 +388,19 @@
     <div class="ob-actions">
       <button class="link-btn" type="button" id="obSkip" data-i18n="ob.skip"></button>
       <button class="btn btn-primary" type="button" id="obNext"></button>
+    </div>
+  </div>
+</div>
+
+<div class="tour" id="tour" hidden>
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" aria-describedby="tourText">
+    <div class="tour-dots" id="tourDots" aria-hidden="true"></div>
+    <h2 id="tourTitle"></h2>
+    <p id="tourText"></p>
+    <div class="tour-actions">
+      <button class="link-btn" type="button" id="tourSkip" data-i18n="tour.skip"></button>
+      <button class="btn btn-primary" type="button" id="tourNext"></button>
     </div>
   </div>
 </div>

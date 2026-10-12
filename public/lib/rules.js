@@ -308,21 +308,22 @@ function declaredVegetal(text, code) {
 // ---------------------------------------------------------------------------
 // Certification
 // ---------------------------------------------------------------------------
-const CERTIFIERS = [
-  { re: /\bavs\b|a votre service/, name: "AVS" },
-  { re: /achahada/, name: "Achahada" },
-  { re: /argml|mosquee de lyon/, name: "Mosquée de Lyon (ARGML)" },
-  { re: /mosquee de paris|grande mosquee/, name: "Grande Mosquée de Paris" },
-  { re: /mosquee d.?evry/, name: "Mosquée d'Évry" },
-  { re: /\bhmc\b|halal monitoring/, name: "HMC" },
-  { re: /\bhfa\b|halal food authority/, name: "HFA" },
-  { re: /jakim/, name: "JAKIM" },
-  { re: /\bmuis\b/, name: "MUIS" },
-  { re: /\bifanca\b/, name: "IFANCA" },
-  { re: /halal correct/, name: "Halal Correct" },
-  { re: /\bgimdes\b/, name: "GİMDES" },
-  { re: /\btse\b.*helal|helal.*\btse\b/, name: "TSE Helal" },
+export const CERTIFIERS = [
+  { id: "avs", re: /\bavs\b|a votre service/, name: "AVS" },
+  { id: "achahada", re: /achahada/, name: "Achahada" },
+  { id: "argml", re: /argml|mosquee de lyon/, name: "Mosquée de Lyon (ARGML)" },
+  { id: "paris", re: /mosquee de paris|grande mosquee|sfcvh/, name: "Grande Mosquée de Paris" },
+  { id: "evry", re: /mosquee d.?evry|acmif/, name: "Mosquée d'Évry" },
+  { id: "hmc", re: /\bhmc\b|halal monitoring/, name: "HMC" },
+  { id: "hfa", re: /\bhfa\b|halal food authority/, name: "HFA" },
+  { id: "jakim", re: /jakim/, name: "JAKIM" },
+  { id: "muis", re: /\bmuis\b/, name: "MUIS" },
+  { id: "ifanca", re: /\bifanca\b/, name: "IFANCA" },
+  { id: "halal_correct", re: /halal correct/, name: "Halal Correct" },
+  { id: "gimdes", re: /\bgimdes\b/, name: "GİMDES" },
+  { id: "tse", re: /\btse\b.*helal|helal.*\btse\b/, name: "TSE Helal" },
 ];
+export const CERTIFIER_IDS = CERTIFIERS.map((c) => c.id);
 
 // Marques spécialisées dont toute la gamme est vendue halal, avec une certification.
 // Leurs fiches Open Food Facts oublient souvent le label : la marque suffit alors à lever le doute,
@@ -347,7 +348,7 @@ export function detectCertification(product) {
     return brand ? { certified: true, organisme: null, byBrand: true, brand: brand.name } : null;
   }
   const org = CERTIFIERS.find((c) => c.re.test(all));
-  return { certified: true, organisme: org ? org.name : null };
+  return { certified: true, organisme: org ? org.name : null, organismeId: org ? org.id : null };
 }
 
 // ---------------------------------------------------------------------------
@@ -441,8 +442,15 @@ export function classify(product, prefs = DEFAULT_PREFS) {
     ? flags.filter((f) => !["viande", "extrait_viande", "porc", "sang", "gelatine", "e441", "e542", "enzymes_animales", "cheval", "ane", "plasma"].includes(f.id))
     : flags;
 
-  const certification = detectCertification(product);
+  let certification = detectCertification(product);
   const notes = []; // identifiants, traduits par l'interface
+  // Organisme que l'utilisateur ne suit pas : le label est ignoré, le verdict repose sur les ingrédients
+  let certIgnored = null;
+  if (certification && certification.organismeId && (prefs.distrust || []).includes(certification.organismeId)) {
+    certIgnored = certification;
+    certification = null;
+    notes.push("cert_untrusted");
+  }
   if (certification && certification.byBrand) notes.push("brand_halal");
 
   // Un label halal lève le doute sur l'origine (gélatine, viande, dérivés…), qui passe en simple information.
@@ -481,5 +489,5 @@ export function classify(product, prefs = DEFAULT_PREFS) {
   const order = { haram: 0, mashbouh: 1, info: 2 };
   finalFlags.sort((a, b) => order[a.severity] - order[b.severity]);
 
-  return { status, certification, flags: finalFlags, notes, vegan: isVegan, vegetarian: isVegetarian };
+  return { status, certification, certIgnored, flags: finalFlags, notes, vegan: isVegan, vegetarian: isVegetarian };
 }

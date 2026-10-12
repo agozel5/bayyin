@@ -15,6 +15,9 @@ import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmeti
 import { createAisle } from "./lib/aisle.js";
 import { fetchPlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
+import { recallsFor, recentRecalls, matchRecent, isActive } from "./lib/recalls.js";
+import { CERTIFIER_INFO, searchUrl } from "./lib/certifiers.js";
+import { isPremium, premiumEnabled, premiumConfig, premiumState, activate as activatePremium, refresh as refreshPremium, deactivate as deactivatePremium, onPremiumChange, maskKey, FREE_HISTORY } from "./lib/premium.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -54,6 +57,9 @@ const I = {
   alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>',
   user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/>',
   bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+  crown: '<path d="M3.5 8l4.2 3.6L12 5l4.3 6.6L20.5 8l-1.8 10H5.3z"/><path d="M5.5 21h13"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  family: '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M2.5 20c.6-3.6 2.8-5.5 5.5-5.5s4.9 1.9 5.5 5.5M13.6 14.6c.9-.6 1.8-.9 2.9-.9 2.3 0 4.1 1.6 4.6 4.8"/>',
 };
 const STATUS_ICON = { halal_certifie: I.check, halal_probable: I.check, mashbouh: I.question, haram: I.cross, inconnu: I.dash };
 const STATUS_ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
@@ -69,7 +75,18 @@ const nameOf = (p) => {
 // Type de produit et comparaison avec le profil (allergies, régime)
 const kindOf = (p) => p.kind || (p.raw && p.raw.kind) || "food";
 const KIND_ICON = { food: I.box, beauty: I.drop, medicine: I.pill };
-const profileOf = (p) => checkProfile(p.raw, verdictOf(p), prefs().profile);
+// Profil : le vôtre, et ceux de la famille (Premium). L'alerte la plus forte passe en premier,
+// avec le prénom de la personne concernée.
+const familyOn = () => prefs().members.length > 0 && isPremium();
+const profileOf = (p) => {
+  const v = verdictOf(p);
+  const mine = checkProfile(p.raw, v, prefs().profile);
+  if (!familyOn()) return mine;
+  const people = [{ name: null, r: mine }, ...prefs().members.map((m) => ({ name: m.name, r: checkProfile(p.raw, v, m) }))].filter((x) => x.r.alert);
+  if (!people.length) return mine;
+  people.sort((a, b) => (a.r.alert === "no" ? 0 : 1) - (b.r.alert === "no" ? 0 : 1));
+  return { ...people[0].r, who: people[0].name, people: people.map((x) => ({ name: x.name, ...x.r })) };
+};
 const alertPill = (p) => alertTag(p); // allergène ou régime en toutes lettres
 const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${S(st, "short")}</span>`;
 // Cosmétiques : la note est recalculée quand la base CosIng arrive (chargée après l'ouverture de l'app)
@@ -149,11 +166,14 @@ function profileAlert(p) {
   const r = profileOf(p);
   if (!r.alert) return "";
   const names = (tags) => tags.map((a) => t(`allergen.${a}`)).join(", ");
-  const lines = [
-    r.contains.length ? t("alert.contains", { list: names(r.contains) }) : null,
-    r.diet ? t(`alert.${r.diet.id}.${r.diet.level}`) : null,
-    r.traces.length ? t("alert.traces", { list: names(r.traces) }) : null,
+  const linesOf = (x) => [
+    x.contains.length ? t("alert.contains", { list: names(x.contains) }) : null,
+    x.diet ? t(`alert.${x.diet.id}.${x.diet.level}`) : null,
+    x.traces.length ? t("alert.traces", { list: names(x.traces) }) : null,
   ].filter(Boolean);
+  const lines = r.people
+    ? r.people.flatMap((x) => linesOf(x).map((l) => `${x.name || t("family.me")} : ${l}`))
+    : linesOf(r);
   return `<div class="alert-card a-${r.alert}" role="alert">
     <span class="alert-top">${svg(I.alert)}${t(`alert.${r.alert}`)}</span>
     ${lines.map((l) => `<p>${esc(l)}</p>`).join("")}
@@ -184,6 +204,9 @@ function halalSection(p, v) {
     ? `<div class="cert">${svg(I.shield)}${t("detail.certified")}${org ? " · " + esc(org) : ""}</div>
        <p class="cert-note">${t("cert.unverified")} <a href="${esc(verifyUrl)}" target="_blank" rel="noopener">${esc(org ? t("cert.verify", { org }) : t("cert.verify_any"))} ↗</a></p>`
     : "";
+  const ignored = v.certIgnored
+    ? `<div class="cert cert-off">${svg(I.shield)}${esc(t("certs.ignored", { org: v.certIgnored.organisme }))}</div>`
+    : "";
   const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
   const flags = v.flags.length
     ? `<div class="flags">${v.flags
@@ -209,7 +232,7 @@ function halalSection(p, v) {
       ? `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
       : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
-    ${cert}
+    ${cert}${ignored}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
     ${flags}${askBrand(p, v)}${ocrCta}</section>`;
 }
@@ -424,7 +447,7 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
       : `<section class="sec"></section>`;
   const food = kind === "food";
-  return `${productTop(p)}${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+  return `${productTop(p)}<div id="recallBox"></div>${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
 // Mot clair à la place d'un « ! » : l'allergène en cause, ou le régime non respecté
@@ -438,7 +461,8 @@ function alertTag(p) {
       ? t(`alert.tag.${pr.diet.id}.${pr.diet.level}`)
       : t("alert.tag.traces", { x: al(pr.traces[0]) });
   const full = pr.contains.length ? t("alert.contains", { list: pr.contains.map(al).join(", ") }) : t(`alert.${pr.alert}`);
-  return `<span class="alert-tag a-${pr.alert}" title="${esc(full)}">${svg(I.alert)}<span>${esc(word)}</span></span>`;
+  const who = pr.who ? ` · ${pr.who}` : "";
+  return `<span class="alert-tag a-${pr.alert}" title="${esc(full + who)}">${svg(I.alert)}<span>${esc(word + who)}</span></span>`;
 }
 
 function altCard(a, { fav = false } = {}) {
@@ -566,7 +590,81 @@ function renderSheetProduct(p) {
   $("sheetCompare").hidden = kindOf(p) === "medicine";
   $("sheetShare").hidden = false;
   refreshFav();
+  loadRecalls(p);
 }
+
+// ===========================================================================
+// Rappels de produits (RappelConso)
+// ===========================================================================
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+const longDate = (d) => new Date(d + "T12:00:00").toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" });
+function recallHtml(list) {
+  const f = list[0];
+  const on = isActive(f);
+  const row = (k, v) => (v ? `<div><dt>${t(k)}</dt><dd>${esc(cap(v))}</dd></div>` : "");
+  return `<section class="recall ${on ? "on" : "off"}" role="alert">
+    <div class="recall-top">${svg(I.alert)}<div><strong>${t(on ? "recall.t" : "recall.t_old")}</strong><small>${esc(t("recall.date", { d: longDate(f.d) }))}</small></div></div>
+    <p class="recall-name">${esc(cap(f.n))}${f.b ? ` · ${esc(cap(f.b))}` : ""}</p>
+    <dl>${row("recall.motif", f.m)}${row("recall.risk", f.r)}${row("recall.todo", f.a)}</dl>
+    <p class="recall-lot">${t("recall.lot")}</p>
+    ${f.u ? `<a class="recall-link" href="${esc(f.u)}" target="_blank" rel="noopener">${t("recall.link")} ↗</a>` : ""}
+    ${list.length > 1 ? `<p class="recall-more">${esc(tn("recall.more", list.length - 1))}</p>` : ""}
+  </section>`;
+}
+async function loadRecalls(p) {
+  if (kindOf(p) === "medicine" || !/^\d{8,14}$/.test(p.code)) return;
+  const list = await recallsFor(p.code);
+  if (!list.length || !sheetProduct || sheetProduct.code !== p.code || !$("recallBox")) return;
+  $("recallBox").innerHTML = recallHtml(list);
+  if (isActive(list[0]) && navigator.vibrate) navigator.vibrate([80, 60, 80]);
+}
+
+// Surveillance de l'historique : les rappels des 90 derniers jours comparés aux produits déjà scannés
+const RECALL_SEEN = "bayyin_recall_seen";
+const RECALL_CHECK = "bayyin_recall_check";
+let recallHits = [];
+const readJson = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const writeJson = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* stockage indisponible */ } };
+async function checkRecallWatch({ force = false } = {}) {
+  const codes = store.all().map((e) => e.code).filter((c) => /^\d{8,14}$/.test(c));
+  if (!codes.length) return;
+  // Au plus une vérification toutes les 6 heures ; entre deux, on garde le dernier résultat
+  const last = readJson(RECALL_CHECK, null);
+  let hits = last && last.hits;
+  if (force || !last || Date.now() - last.at > 6 * 3600e3 || last.n !== codes.length) {
+    try {
+      hits = matchRecent(await recentRecalls(), codes).map((h) => ({ code: h.code, fiche: h.fiche }));
+      writeJson(RECALL_CHECK, { at: Date.now(), n: codes.length, hits });
+    } catch { /* hors connexion : dernier résultat connu */ }
+  }
+  const seen = new Set(readJson(RECALL_SEEN, []));
+  // Un produit peut avoir plusieurs fiches de rappel : on garde la plus récente
+  const byCode = new Map();
+  for (const h of hits || []) if (isActive(h.fiche) && !seen.has(`${h.code}:${h.fiche.id}`) && !byCode.has(h.code)) byCode.set(h.code, h);
+  recallHits = [...byCode.values()];
+  renderRecallBanner();
+}
+function renderRecallBanner() {
+  const box = $("homeRecall");
+  if (!box) return;
+  box.hidden = !recallHits.length;
+  if (!recallHits.length) return;
+  const h = recallHits[0];
+  const e = store.get(h.code);
+  const name = e ? nameOf(e.p) : cap(h.fiche.n);
+  box.innerHTML = `<button type="button" class="recall-banner-main" data-open="${esc(h.code)}">${svg(I.alert)}
+      <span><strong>${esc(tn("recall.home", recallHits.length))}</strong><small>${esc(t("recall.home_p", { name, d: longDate(h.fiche.d) }))}</small></span>${svg(I.chev, "flip")}</button>
+    <button type="button" class="tip-close" data-recall-dismiss aria-label="${esc(t("recall.dismiss"))}">${svg(I.cross)}</button>`;
+}
+$("homeRecall").addEventListener("click", (e) => {
+  if (!e.target.closest("[data-recall-dismiss]")) return;
+  const seen = readJson(RECALL_SEEN, []);
+  const codes = new Set(recallHits.map((h) => h.code));
+  (readJson(RECALL_CHECK, {}).hits || []).filter((h) => codes.has(h.code)).forEach((h) => seen.push(`${h.code}:${h.fiche.id}`));
+  writeJson(RECALL_SEEN, seen.slice(-300));
+  recallHits = [];
+  renderRecallBanner();
+});
 
 async function openSheet(code, { fromScan = false, replace = false } = {}) {
   sheetCode = code;
@@ -667,6 +765,8 @@ document.addEventListener("click", (e) => {
     navigator.clipboard?.writeText(`${m.subject}\n\n${m.body}`).then(() => toast(t("ask.copied")), () => {});
     return;
   }
+  const prem = e.target.closest("[data-premium]");
+  if (prem) return openPremium(prem.dataset.premium || "");
   const base = e.target.closest("[data-compare-base]");
   if (base) {
     const p = (store.get(base.dataset.compareBase) || {}).p;
@@ -685,6 +785,7 @@ document.addEventListener("click", (e) => {
     return setTimeout(() => openCamera(), 60);
   }
   if (e.target.closest("[data-basket-scan]")) {
+    if (!requirePremium("basket")) return;
     basketMode = true;
     closeSheet();
     return setTimeout(() => openCamera(), 60);
@@ -1206,11 +1307,14 @@ function renderHistory() {
     (f) => `<button type="button" class="chip" role="tab" aria-selected="${f.id === historyFilter}" data-f="${f.id}">${t(`history.f.${f.id}`)}<span class="n">${all.filter(f.test).length}</span></button>`
   ).join("");
 
-  const shown = all.filter(HISTORY_FILTERS.find((f) => f.id === historyFilter).test);
+  const matching = all.filter(HISTORY_FILTERS.find((f) => f.id === historyFilter).test);
+  // Sans Premium : les plus récents seulement (rien n'est effacé, tout revient avec Premium)
+  const shown = isPremium() ? matching : matching.slice(0, FREE_HISTORY);
+  const hiddenN = matching.length - shown.length;
   $("historyList").innerHTML = !all.length
     ? ""
     : shown.length
-      ? historyGroups(shown)
+      ? historyGroups(shown) + (hiddenN ? `<button type="button" class="premium-more" data-premium="history">${svg(I.crown)}<span><strong>${esc(tn("premium.history_more", hiddenN))}</strong><small>${t("premium.history_more_p")}</small></span>${svg(I.chev, "flip")}</button>` : "")
       : `<div class="empty">${emptyArt()}<p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`;
 
   $("historyClear").innerHTML = !all.length
@@ -1430,6 +1534,7 @@ function renderSettingsMenu() {
     </div>`;
   const group = (title, rows) => `<section class="set-section"><h2 class="set-group-t">${t(title)}</h2><div class="set-group">${rows.join("")}</div></section>`;
   $("setMenu").innerHTML =
+    premiumCard() +
     group("settings.g_prefs", [
       setRow("lang", LANG_NAMES[st.lang]),
       setRow("profile", profileValue(st)),
@@ -1483,6 +1588,8 @@ function renderSettings() {
     (a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${st.profile.allergens.includes(a)}" data-allergen="${a}">${esc(t(`allergen.${a}`))}</button>`
   ).join("");
 
+  renderFamily();
+
   // Écoles : cartes compactes ; un réglage personnalisé rappelle l'école de départ
   const schools = Object.keys(SCHOOLS);
   $("schoolList").innerHTML =
@@ -1498,6 +1605,7 @@ function renderSettings() {
       )
       .join("");
   renderTopics();
+  renderCertifiers();
   renderAppearance();
   renderOfflineStatus();
   renderDataPage();
@@ -1568,6 +1676,20 @@ $("topicSearch").addEventListener("input", () => {
   renderTopics();
 });
 $("topicReset").addEventListener("click", () => settings.setSchool(prefs().baseSchool || "standard"));
+
+// Organismes de certification : l'utilisateur choisit ceux qu'il suit
+function renderCertifiers() {
+  const off = new Set(prefs().distrust);
+  $("certList").innerHTML = CERTIFIER_INFO.map((c) => `<div class="cert-row">
+      <div class="cert-text"><strong>${esc(c.name)} <span class="cert-country">${c.country}</span></strong><small>${esc(t(`cert.${c.id}.d`))}</small>
+        <a href="${esc(searchUrl(c))}" target="_blank" rel="noopener">${t("certs.more")} ↗</a></div>
+      <button type="button" class="switch" role="switch" aria-checked="${!off.has(c.id)}" data-trust="${c.id}" aria-label="${esc(t("certs.follow", { org: c.name }))}"><i></i></button>
+    </div>`).join("");
+}
+$("certList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-trust]");
+  if (b) settings.toggleTrust(b.dataset.trust);
+});
 
 // Apparence : thème et taille du texte
 const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
@@ -1655,6 +1777,51 @@ $("allergenList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-allergen]");
   if (b) settings.toggleAllergen(b.dataset.allergen);
 });
+// Profils de la famille
+let familyOpen = null;
+function renderFamily() {
+  const st = prefs();
+  $("familyBadge").hidden = !premiumEnabled() || isPremium();
+  $("familyList").innerHTML = st.members.map((m) => {
+    const sum = [m.diet ? t(`diet.${m.diet}`) : null, ...m.allergens.map((a) => t(`allergen.${a}`))].filter(Boolean).join(" · ") || t("family.none");
+    return `<details class="fam" data-member="${esc(m.id)}"${familyOpen === m.id ? " open" : ""}>
+      <summary><span class="fam-av" aria-hidden="true">${esc(m.name.charAt(0).toUpperCase())}</span><span class="fam-t"><strong>${esc(m.name)}</strong><small>${esc(sum)}</small></span><span class="src-chev" aria-hidden="true">${svg(I.chev)}</span></summary>
+      <div class="fam-body">
+        <h4 class="sub-label">${t("settings.diet")}</h4>
+        <div class="seg3" role="radiogroup" style="grid-template-columns:repeat(3,1fr)">${[null, ...DIETS].map((d) => `<button type="button" role="radio" class="d-diet" aria-checked="${(m.diet || null) === d}" data-mdiet="${d || ""}">${t(d ? `diet.${d}` : "diet.none")}</button>`).join("")}</div>
+        <h4 class="sub-label">${t("settings.allergens")}</h4>
+        <div class="chips">${PROFILE_ALLERGENS.map((a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${m.allergens.includes(a)}" data-mallergen="${a}">${esc(t(`allergen.${a}`))}</button>`).join("")}</div>
+        <button type="button" class="link-btn danger" data-mremove>${esc(t("family.remove", { name: m.name }))}</button>
+      </div>
+    </details>`;
+  }).join("");
+  $("familyAdd").hidden = st.members.length >= 8;
+}
+$("familyList").addEventListener("toggle", (e) => {
+  const d = e.target.closest("[data-member]");
+  if (d) familyOpen = d.open ? d.dataset.member : familyOpen === d.dataset.member ? null : familyOpen;
+}, true);
+$("familyList").addEventListener("click", (e) => {
+  const box = e.target.closest("[data-member]");
+  if (!box) return;
+  const id = box.dataset.member;
+  const d = e.target.closest("[data-mdiet]");
+  if (d) return settings.setMemberDiet(id, d.dataset.mdiet || null);
+  const a = e.target.closest("[data-mallergen]");
+  if (a) return settings.toggleMemberAllergen(id, a.dataset.mallergen);
+  if (e.target.closest("[data-mremove]")) settings.removeMember(id);
+});
+$("familyAdd").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!requirePremium("family")) return;
+  const id = settings.addMember($("familyName").value);
+  if (id) {
+    familyOpen = id;
+    $("familyName").value = "";
+    renderFamily();
+  }
+});
+
 $("schoolList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-school]");
   if (b && b.dataset.school !== "custom") settings.setSchool(b.dataset.school);
@@ -1683,6 +1850,7 @@ function renderOfflineStatus(progress, med) {
 }
 $("offlineBtn").addEventListener("click", async () => {
   if (packing) return;
+  if (!requirePremium("offline")) return;
   if (!("caches" in window) || !("serviceWorker" in navigator)) {
     $("offlineStatus").textContent = t("settings.offline_unsupported");
     return;
@@ -1922,6 +2090,7 @@ const aisle = createAisle({
 });
 
 function openAisle({ replace = false } = {}) {
+  if (!requirePremium("aisle")) return;
   if (!cameraEl.hidden) closeCamera({ keepHistory: true });
   aisleEl.hidden = false;
   $("aisleLayer").innerHTML = "";
@@ -2027,6 +2196,10 @@ async function basketScan(code) {
 }
 
 $("camBasketMode").addEventListener("click", () => {
+  if (!basketMode && !isPremium()) {
+    closeCamera({ keepHistory: true });
+    return openPremium("basket");
+  }
   basketMode = !basketMode;
   $("camFlash").hidden = true;
   renderBasketButtons();
@@ -2039,6 +2212,7 @@ $("camBasketOpen").addEventListener("click", () => {
 // Panier déjà commencé : on l'ouvre ; sinon on lance la caméra en mode courses
 $("toolBasket").addEventListener("click", () => {
   if (basket.all().length) return openBasket();
+  if (!requirePremium("basket")) return;
   basketMode = true;
   openCamera();
 });
@@ -2096,10 +2270,12 @@ function pickCompareSecond(base) {
   $("sheetBody").scrollTop = 0;
 }
 $("sheetCompare").addEventListener("click", () => {
+  if (!requirePremium("compare")) return;
   if (sheetProduct) pickCompareSecond(sheetProduct);
 });
 // Depuis l'accueil : choisir d'abord le premier produit dans l'historique
 $("toolCompare").addEventListener("click", () => {
+  if (!requirePremium("compare")) return;
   sheetCode = "compare";
   sheetProduct = null;
   compareBase = null;
@@ -2192,6 +2368,7 @@ function openOnboard() {
 function closeOnboard() {
   $("onboard").hidden = true;
   settings.set({ onboarded: true });
+  if (!prefs().tourDone) setTimeout(startTour, 350);
 }
 $("obNext").addEventListener("click", () => {
   if (obStep < 2) {
@@ -2413,6 +2590,236 @@ $("placesList").addEventListener("click", (e) => {
 });
 
 // ===========================================================================
+// Visite guidée : une bulle par élément important de l'écran d'accueil
+// ===========================================================================
+const TOUR = [
+  { id: "scan", el: () => $("openCamera") },
+  { id: "photo", el: () => document.querySelector(".hero-links") },
+  { id: "tools", el: () => document.querySelector(".tool-row") },
+  { id: "search", el: () => document.querySelector('.tab[data-tab="search"]') },
+  { id: "history", el: () => document.querySelector('.tab[data-tab="history"]') },
+  { id: "settings", el: () => document.querySelector(".home-top .round-btn") },
+  { id: "end", el: () => null },
+];
+let tourStep = -1;
+function startTour() {
+  if (current !== "scan") location.hash = "#scan";
+  closeSheet();
+  tourStep = 0;
+  $("tour").hidden = false;
+  document.body.classList.add("touring");
+  $("tourDots").innerHTML = TOUR.map(() => "<i></i>").join("");
+  setTimeout(renderTour, 60);
+}
+function endTour() {
+  tourStep = -1;
+  $("tour").hidden = true;
+  document.body.classList.remove("touring");
+  if (!prefs().tourDone) settings.set({ tourDone: true });
+}
+function renderTour() {
+  if (tourStep < 0) return;
+  const step = TOUR[tourStep];
+  const el = step.el();
+  const spot = $("tourSpot"), card = $("tourCard");
+  $("tourTitle").textContent = t(`tour.${step.id}.t`);
+  $("tourText").textContent = t(`tour.${step.id}.p`);
+  $("tourNext").textContent = t(tourStep === TOUR.length - 1 ? "tour.go" : "tour.next");
+  $("tourSkip").textContent = t(tourStep === TOUR.length - 1 ? "tour.close" : "tour.skip");
+  $("tourDots").querySelectorAll("i").forEach((d, i) => d.classList.toggle("on", i === tourStep));
+  card.classList.remove("center");
+  if (!el) {
+    spot.classList.add("none");
+    card.classList.add("center");
+    card.style.top = "";
+    return;
+  }
+  spot.classList.remove("none");
+  // L'élément visé reste visible : on fait défiler la page si besoin
+  const r0 = el.getBoundingClientRect();
+  if (r0.top < 70 || r0.bottom > innerHeight - 90) {
+    if (!el.closest(".tabbar")) window.scrollBy({ top: r0.top - innerHeight / 3, behavior: "instant" });
+  }
+  const r = el.getBoundingClientRect();
+  const pad = 8;
+  Object.assign(spot.style, { top: `${r.top - pad}px`, left: `${r.left - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+  // La bulle se place sous l'élément, ou au-dessus s'il n'y a pas la place
+  const h = card.offsetHeight;
+  const below = r.bottom + pad + 14;
+  card.style.top = below + h < innerHeight - 12 ? `${below}px` : `${Math.max(12, r.top - pad - 14 - h)}px`;
+}
+$("tourNext").addEventListener("click", () => {
+  if (tourStep >= TOUR.length - 1) {
+    endTour();
+    return openCamera();
+  }
+  tourStep++;
+  renderTour();
+});
+$("tourSkip").addEventListener("click", endTour);
+$("tour").addEventListener("click", (e) => {
+  if (e.target === $("tour") || e.target === $("tourSpot")) {
+    tourStep < TOUR.length - 1 ? (tourStep++, renderTour()) : endTour();
+  }
+});
+window.addEventListener("resize", () => renderTour());
+$("tourReplay").addEventListener("click", startTour);
+document.addEventListener("keydown", (e) => {
+  if (tourStep >= 0 && e.key === "Escape") endTour();
+});
+
+// ===========================================================================
+// Bayyin Premium : abonnement (Lemon Squeezy), fonctions réservées, page d'abonnement
+// ===========================================================================
+// L'essentiel reste gratuit pour tous : verdict halal, notes, rappels, allergies, photo des ingrédients.
+const PREMIUM_LIST = [
+  ["aisle", '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="8.5" cy="10" r="2.2"/><circle cx="15.5" cy="10" r="2.2"/><circle cx="12" cy="16" r="2.2"/>'],
+  ["basket", '<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.5a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>'],
+  ["compare", '<path d="M7 4L3 8l4 4M3 8h13M17 12l4 4-4 4M21 16H8"/>'],
+  ["family", I.family],
+  ["offline", '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>'],
+  ["history", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
+];
+let premiumPlan = "year";
+let premiumFocus = "";
+
+function requirePremium(feature) {
+  if (isPremium()) return true;
+  openPremium(feature);
+  return false;
+}
+function openPremium(feature = "") {
+  premiumFocus = feature;
+  if (!cameraEl.hidden) closeCamera({ keepHistory: true });
+  sheetCode = "premium";
+  sheetProduct = null;
+  $("sheetTitle").textContent = "Bayyin Premium";
+  $("sheetCompare").hidden = true;
+  $("sheetShare").hidden = true;
+  showSheet({ replace: !sheet.hidden });
+  refreshFav();
+  renderPremiumSheet();
+}
+function renderPremiumSheet(msg = "") {
+  if (sheetCode !== "premium") return;
+  const cfg = premiumConfig();
+  const st = premiumState();
+  const active = premiumEnabled() && isPremium() && st;
+  const features = `<ul class="pm-features">${PREMIUM_LIST.map(([id, ico]) => `<li class="${premiumFocus === id ? "focus" : ""}"><span class="pm-ico">${svg(ico)}</span><span><strong>${t(`premium.f.${id}`)}</strong><small>${t(`premium.f.${id}.d`)}</small></span></li>`).join("")}</ul>`;
+  const free = `<div class="pm-free">${svg(I.shield)}<p><strong>${t("premium.free_t")}</strong> ${t("premium.free_p")}</p></div>`;
+  const legal = [cfg.legal.cgv && `<a href="${esc(cfg.legal.cgv)}" target="_blank" rel="noopener">${t("premium.cgv")}</a>`, cfg.legal.mentions && `<a href="${esc(cfg.legal.mentions)}" target="_blank" rel="noopener">${t("premium.mentions")}</a>`].filter(Boolean).join(" · ");
+  const manage = cfg.portal ? `<a class="btn btn-soft btn-block" href="${esc(cfg.portal)}" target="_blank" rel="noopener">${t("premium.manage")}</a>` : "";
+  if (active) {
+    $("sheetBody").innerHTML = `<div class="pm">
+      <div class="pm-hero on">${svg(I.crown)}<h2>${t("premium.active_t")}</h2><p>${t("premium.thanks")}</p></div>
+      <dl class="pm-info"><div><dt>${t("premium.key")}</dt><dd dir="ltr">${esc(maskKey(st.key))}</dd></div>
+        ${st.email ? `<div><dt>${t("premium.account")}</dt><dd dir="ltr">${esc(st.email)}</dd></div>` : ""}
+        ${st.expiresAt ? `<div><dt>${t("premium.until")}</dt><dd>${esc(longDate(st.expiresAt.slice(0, 10)))}</dd></div>` : ""}</dl>
+      ${features}
+      ${manage}
+      <button class="link-btn danger" type="button" data-pm-deactivate>${t("premium.deactivate")}</button>
+      ${legal ? `<p class="fineprint">${legal}</p>` : ""}
+    </div>`;
+    return;
+  }
+  const can = !!(cfg.checkout.year || cfg.checkout.month);
+  const plan = (id, price, sub, badge = "") => (cfg.checkout[id] || !can)
+    ? `<button type="button" class="pm-plan" role="radio" aria-checked="${premiumPlan === id}" data-pm-plan="${id}">
+        <span class="radio" aria-hidden="true"></span><span class="pm-plan-t"><strong>${t(`premium.plan.${id}`)}</strong><small>${esc(sub)}</small></span>
+        <span class="pm-price">${esc(price)}</span>${badge ? `<em>${esc(badge)}</em>` : ""}</button>` : "";
+  $("sheetBody").innerHTML = `<div class="pm">
+    <div class="pm-hero">${svg(I.crown)}<h2>${t("premium.title")}</h2><p>${t("premium.lead")}</p></div>
+    ${premiumFocus ? `<p class="pm-focus">${svg(I.lock)}<span>${t(`premium.need.${premiumFocus}`)}</span></p>` : ""}
+    ${features}
+    <div class="pm-plans" role="radiogroup">
+      ${plan("year", cfg.prices.year + t("premium.per_year"), t("premium.year_sub", { p: cfg.prices.yearPerMonth }), t("premium.best"))}
+      ${plan("month", cfg.prices.month + t("premium.per_month"), t("premium.month_sub"))}
+    </div>
+    ${can
+      ? `<a class="btn btn-primary btn-block pm-cta" href="${esc(cfg.checkout[premiumPlan] || cfg.checkout.year || cfg.checkout.month)}" target="_blank" rel="noopener">${cfg.trialDays ? esc(t("premium.cta_trial", { n: cfg.trialDays })) : t("premium.cta")}</a>
+         <p class="pm-renew">${esc(t(premiumPlan === "month" ? "premium.renew_month" : "premium.renew_year"))}</p>`
+      : `<p class="pm-soon">${t("premium.soon")}</p>`}
+    <details class="pm-key"${msg ? " open" : ""}><summary>${t("premium.have_key")}</summary>
+      <p class="muted">${t("premium.key_hint")}</p>
+      <form class="field-row" id="pmKeyForm" autocomplete="off"><input class="field" id="pmKey" type="text" dir="ltr" spellcheck="false" autocapitalize="characters" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"><button class="btn btn-primary" type="submit">${t("premium.activate")}</button></form>
+      ${msg ? `<p class="pm-msg">${esc(msg)}</p>` : ""}
+    </details>
+    ${free}
+    ${manage}
+    ${legal ? `<p class="fineprint">${legal}</p>` : ""}
+  </div>`;
+}
+function premiumCard() {
+  if (!premiumEnabled()) return "";
+  const on = isPremium();
+  return `<button type="button" class="pm-card${on ? " on" : ""}" data-premium>${svg(I.crown)}<span><strong>${on ? t("premium.active_t") : t("premium.card_t")}</strong><small>${on ? t("premium.card_on") : t("premium.card_p")}</small></span>${svg(I.chev, "flip")}</button>`;
+}
+// Petites couronnes sur les outils réservés
+function renderPremiumLocks() {
+  const locked = premiumEnabled() && !isPremium();
+  [["openAisle", "aisle"], ["toolBasket", "basket"], ["toolCompare", "compare"]].forEach(([id]) => {
+    const el = $(id);
+    let b = el.querySelector(".tool-lock");
+    if (locked && !b) {
+      b = document.createElement("span");
+      b.className = "tool-lock";
+      b.innerHTML = svg(I.crown);
+      el.appendChild(b);
+    }
+    if (b) b.hidden = !locked;
+  });
+}
+$("sheetBody").addEventListener("click", async (e) => {
+  const planBtn = e.target.closest("[data-pm-plan]");
+  if (planBtn) {
+    premiumPlan = planBtn.dataset.pmPlan;
+    return renderPremiumSheet();
+  }
+  if (e.target.closest("[data-pm-deactivate]")) {
+    await deactivatePremium();
+    toast(t("premium.deactivated"));
+    renderPremiumSheet();
+  }
+});
+$("sheetBody").addEventListener("submit", async (e) => {
+  if (e.target.id !== "pmKeyForm") return;
+  e.preventDefault();
+  const btn = e.target.querySelector("button");
+  btn.disabled = true;
+  btn.textContent = t("premium.checking");
+  const r = await activatePremium($("pmKey").value);
+  if (r.ok) {
+    toast(t("premium.welcome"));
+    renderPremiumSheet();
+  } else renderPremiumSheet(t(`premium.err.${r.error}`));
+});
+const applyHistoryLimit = () => store.setMaxRecent(premiumEnabled() && isPremium() ? 200 : 60);
+applyHistoryLimit();
+onPremiumChange(() => {
+  applyHistoryLimit();
+  renderPremiumLocks();
+  if (current === "settings") renderSettingsMenu();
+  if (current === "history") renderHistory();
+});
+// Lien reçu après l'achat : #premium=CLÉ active directement l'abonnement
+function premiumFromHash() {
+  const m = location.hash.match(/^#premium(?:=([\w-]{8,}))?$/);
+  if (!m) return false;
+  history.replaceState(null, "", location.pathname + location.search + "#scan");
+  openPremium();
+  if (m[1]) {
+    setTimeout(() => {
+      if ($("pmKey")) {
+        $("pmKey").value = m[1];
+        $("pmKeyForm").requestSubmit();
+      }
+    }, 50);
+  }
+  return true;
+}
+window.addEventListener("hashchange", premiumFromHash);
+
+// ===========================================================================
 // Démarrage
 // ===========================================================================
 applyAppearance();
@@ -2423,6 +2830,10 @@ renderOnline();
 if (DEMO) $("demoBadge").hidden = false;
 showTab(location.hash.slice(1) || "scan");
 if (!prefs().onboarded && !DEMO) openOnboard();
+else if (!prefs().tourDone && !DEMO && current === "scan") setTimeout(startTour, 700);
+renderPremiumLocks();
+premiumFromHash();
+refreshPremium().catch(() => {});
 // Prépare le lecteur en arrière-plan pour que le premier scan soit immédiat.
 const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
 idle(() => getDetector().then(() => ($("engineInfo").textContent = detectorEngine())).catch(() => {}));
@@ -2441,3 +2852,8 @@ function loadCosing() {
   return cosingLoading;
 }
 idle(loadCosing);
+// Rappels : l'historique est comparé aux rappels récents au démarrage et au retour dans l'app
+idle(() => checkRecallWatch());
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) checkRecallWatch();
+});

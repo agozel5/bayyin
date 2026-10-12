@@ -6,12 +6,13 @@
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
 
-const VERSION = "2026-10-09-4";
+const VERSION = "2026-10-13-1";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
 const MED_CACHE = "hs-med-v1"; // base des médicaments : gardée d'une version à l'autre
 const COSING_CACHE = "hs-cosing-v1"; // base des ingrédients cosmétiques (≈ 2 Mo) : idem
+const RECALL_CACHE = "hs-recalls-v1"; // rappels de produits : mis à jour chaque nuit
 const MAX_PRODUCTS = 4000;
 
 const APP_FILES = [
@@ -19,7 +20,7 @@ const APP_FILES = [
   "icon.svg", "icon-180.png", "icon-192.png", "icon-512.png",
   "lib/off.js", "lib/rules.js", "lib/health.js", "lib/fixtures.js", "lib/camera.js", "lib/barcode.js",
   "lib/store.js", "lib/settings.js", "lib/i18n.js", "lib/ocr.js", "lib/sources.js",
-  "lib/beauty.js", "lib/medicine.js", "lib/profile.js", "lib/sharecard.js", "lib/aisle.js", "lib/cosmetic.js", "lib/places.js", "lib/search.js",
+  "lib/beauty.js", "lib/medicine.js", "lib/profile.js", "lib/sharecard.js", "lib/aisle.js", "lib/cosmetic.js", "lib/places.js", "lib/search.js", "lib/recalls.js", "lib/certifiers.js", "lib/premium.js", "premium-config.js",
   "lib/i18n/fr.js", "lib/i18n/en.js", "lib/i18n/ar.js", "lib/i18n/tr.js",
 ];
 
@@ -99,6 +100,10 @@ self.addEventListener("fetch", (event) => {
         return (await update) || new Response("{}", { status: 503, headers: { "Content-Type": "application/json" } });
       })
     );
+    return;
+  }
+  if (url.origin === self.location.origin && url.pathname.includes("/data/rappels/")) {
+    event.respondWith(networkFirst(req, RECALL_CACHE, { wait: 2500 }));
     return;
   }
   if (url.origin === self.location.origin && url.pathname.includes("/data/med/")) {

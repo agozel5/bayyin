@@ -2,7 +2,7 @@
 // La fiche produit complète est enregistrée : l'historique s'ouvre même hors connexion.
 
 const KEY = "halalscan_history_v2";
-const MAX_RECENT = 60; // les favoris ne sont jamais supprimés automatiquement
+let MAX_RECENT = 60; // les favoris ne sont jamais supprimés automatiquement (Premium : 200)
 
 function read() {
   try {
@@ -25,6 +25,9 @@ const listeners = new Set();
 const emit = () => listeners.forEach((fn) => fn());
 
 export const store = {
+  setMaxRecent(n) {
+    MAX_RECENT = Math.max(20, Math.min(400, n | 0));
+  },
   all() {
     return read();
   },
