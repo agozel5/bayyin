@@ -1,0 +1,46 @@
+name: Rappels de produits (RappelConso)
+
+# Met à jour public/data/rappels/ chaque nuit, à la demande, ou quand le script change.
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/build-rappels.mjs", ".github/workflows/rappels.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rappels
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Télécharger et ranger les rappels
+        run: |
+          set -o pipefail
+          node scripts/build-rappels.mjs 2>&1 | tee docs/rappels-build.txt
+      - name: Enregistrer si la base a changé
+        if: always()
+        run: |
+          git add -A public/data/rappels docs/rappels-build.txt
+          if git diff --cached --quiet -- public/data/rappels ':!public/data/rappels/meta.json' ':!public/data/rappels/recent.json'; then
+            if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
+          fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Rappels de produits mis à jour"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
