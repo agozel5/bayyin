@@ -24,7 +24,7 @@ test("cosmétiques : ingrédients reconnus (INCI)", () => {
   assert.equal(cosmeticRisks(p("Aluminum Starch Octenylsuccinate")).length, 0);
   assert.equal(cosmeticRisks(p("PEG-40 Hydrogenated Castor Oil"))[0].key, "ethoxylated");
   assert.equal(cosmeticRisks(p("Toluene-2,5-Diamine Sulfate"))[0].key, "hair_dye", "pas confondu avec le toluène");
-  assert.equal(cosmeticRisks(p("Benzyl Salicylate, Salicylic Acid")).map((r) => r.key).sort().join(), "fragrance_allergen,salicylic");
+  assert.equal(cosmeticRisks(p("Benzyl Salicylate, Salicylic Acid")).map((r) => r.key).sort().join(), "benzyl_salicylate,salicylic");
   assert.equal(cosmeticRisks(p("Ricinus Communis Seed Oil, PTFE"))[0].key, "pfas");
 });
 

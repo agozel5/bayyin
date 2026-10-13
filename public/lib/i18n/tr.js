@@ -1345,4 +1345,17 @@ export default {
   "health.why_html": "<strong>Neden bu yöntem?</strong> Bilinen üç ölçütü (besin, katkı maddeleri, organik) kullanır ve Nutri-Score'un ölçmediği işlenme derecesini ekler. Aynı reyondaki ürünleri daha iyi ayırmak için besin puanı puan puan hesaplanır. Her risk kaynağına bağlanır ve helal kararı sağlık puanından ayrı tutulur.",
   "detail.health_lead_html": "Puan <strong>{n}/100</strong>: Nutri-Score {g} ({a}/55), katkı maddeleri {b}/25, işlenme {d}/10, organik {c}/10.",
   "detail.health_lead_nonova_html": "Puan <strong>{n}/100</strong>: Nutri-Score {g} ({a}/55), katkı maddeleri {b}/25, işlenme bilinmiyor ({d}/10), organik {c}/10.",
+  // ---------- Méthode cosmétiques ----------
+  "cosmetic.kinds_t": "İçeriklerin olası etkileri",
+  "cosm.kind.illegal.d": "Avrupa'da (yönetmeliğin II. eki) veya Fransa'da kozmetikte yasak.",
+  "cosm.kind.cmr.d": "Kansere yol açabilir, DNA'ya zarar verebilir veya doğurganlığı etkileyebilir (AB CMR sınıflandırması, IARC).",
+  "cosm.kind.ed.d": "Bir hormonun etkisini engelleyebilir, değiştirebilir veya taklit edebilir.",
+  "cosm.kind.allergen.d": "Temas alerjisini tetikleyebilir veya sürdürebilir.",
+  "cosm.kind.irritant.d": "Özellikle hassas ciltte, cildi veya mukozayı tahriş edebilir.",
+  "cosm.kind.env.d": "Çevrede kalıcı veya su yaşamı için zehirli.",
+  "cosm.kind.contaminant.d": "Üretimden kaynaklanan safsızlıklar içerebilir (dioksan, aromatik hidrokarbonlar).",
+  "cosm.kind.precaution.d": "İzin verilen dozlarda kanıtlanmış tehlike yok; ihtiyaten belirtilir.",
+  "cosmetic.why_html": "<strong>Bizi farklı kılan.</strong> Resmi AB veritabanı sayesinde 33.000'den fazla içerik tanınır ve 1.200'den fazla riskli içerik otomatik olarak işaretlenir (yasaklı, CMR, düzenlenmiş alerjenler, incelenmiş aileler). En önemlisi, puan Avrupa toksikologları gibi maruziyeti hesaba katar: aynı içerik durulanan bir şampuanda, ciltte kalan bir kremde, spreyde veya bebek ürününde aynı ağırlıkta değildir.",
+  "cosm.benzyl_salicylate.t": "Benzil salisilat",
+  "cosm.benzyl_salicylate.p": "Parfüm alerjeni; olası endokrin bozucu olarak da inceleniyor: AB 2023'ten beri konsantrasyonunu sınırlıyor (SCCS görüşü). Çocuklar için ek dikkat.",
 };

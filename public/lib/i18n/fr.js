@@ -1359,4 +1359,17 @@ export default {
   "health.why_html": "<strong>Pourquoi cette méthode ?</strong> Elle reprend les trois critères reconnus (nutrition, additifs, bio) et ajoute le degré de transformation, que le Nutri-Score ne mesure pas. La nutrition est notée au point près, pour mieux départager les produits d'un même rayon. Chaque risque renvoie vers sa source, et le verdict halal reste séparé de la note santé.",
   "detail.health_lead_html": "Note de <strong>{n}/100</strong> : Nutri-Score {g} ({a}/55), additifs {b}/25, transformation {d}/10, bio {c}/10.",
   "detail.health_lead_nonova_html": "Note de <strong>{n}/100</strong> : Nutri-Score {g} ({a}/55), additifs {b}/25, transformation inconnue ({d}/10), bio {c}/10.",
+  // ---------- Méthode cosmétiques ----------
+  "cosmetic.kinds_t": "Effets possibles des ingrédients",
+  "cosm.kind.illegal.d": "Interdit dans les cosmétiques en Europe (annexe II du règlement) ou en France.",
+  "cosm.kind.cmr.d": "Peut favoriser un cancer, abîmer l'ADN ou nuire à la fertilité (classement CMR européen, CIRC).",
+  "cosm.kind.ed.d": "Peut bloquer, modifier ou imiter l'action d'une hormone.",
+  "cosm.kind.allergen.d": "Peut déclencher ou entretenir une allergie de contact.",
+  "cosm.kind.irritant.d": "Peut agresser la peau ou les muqueuses, surtout sur une peau fragile.",
+  "cosm.kind.env.d": "Persistant dans l'environnement ou toxique pour les milieux aquatiques.",
+  "cosm.kind.contaminant.d": "Peut contenir des impuretés issues de la fabrication (dioxane, hydrocarbures aromatiques).",
+  "cosm.kind.precaution.d": "Pas de danger avéré aux doses autorisées ; signalé par précaution.",
+  "cosmetic.why_html": "<strong>Ce qui nous distingue.</strong> Plus de 33 000 ingrédients sont reconnus grâce à la base officielle européenne, et plus de 1 200 ingrédients à risque sont repérés automatiquement (interdits, CMR, allergènes réglementés, familles étudiées). Surtout, la note tient compte de l'exposition, comme les toxicologues européens : un même ingrédient ne pèse pas autant dans un shampooing rincé que dans une crème laissée sur la peau, un spray ou un produit pour bébé.",
+  "cosm.benzyl_salicylate.t": "Salicylate de benzyle",
+  "cosm.benzyl_salicylate.p": "Allergène de parfum, aussi étudié comme perturbateur endocrinien possible : l'Europe plafonne sa concentration depuis 2023 (avis du CSSC). Prudence renforcée pour les enfants.",
 };

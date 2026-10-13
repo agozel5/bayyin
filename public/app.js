@@ -79,6 +79,17 @@ const nameOf = (p) => {
 };
 // Type de produit et comparaison avec le profil (allergies, régime)
 const kindOf = (p) => p.kind || (p.raw && p.raw.kind) || "food";
+// Effets des ingrédients cosmétiques (légende de la méthode)
+const KIND_ICONS = {
+  illegal: '<circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/>',
+  cmr: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  ed: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  allergen: '<circle cx="12" cy="9" r="4"/><path d="M12 13v8M12 5V3M8 9H6M18 9h-2M9.2 6.2L8 5M14.8 6.2L16 5"/>',
+  irritant: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+  env: '<path d="M4 14c3-4 6-4 9 0s6 4 7 0"/><path d="M4 19c3-4 6-4 9 0s6 4 7 0"/><path d="M12 9V3M9 6l3-3 3 3"/>',
+  contaminant: '<path d="M7 3h10M8 3v5l-3 11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1L16 8V3"/><circle cx="10" cy="15" r="1"/><circle cx="14" cy="13" r="1"/>',
+  precaution: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16h.01"/>',
+};
 const KIND_ICON = { food: I.box, beauty: I.drop, medicine: I.pill };
 // Profil : le vôtre, et ceux de la famille (Premium). L'alerte la plus forte passe en premier,
 // avec le prénom de la personne concernée.
@@ -2130,6 +2141,8 @@ function renderSettings() {
   $("legendHalal").innerHTML = LEGEND_ORDER.map(
     (s) => `<div class="legend-row"><span class="pill s-${s}"><span class="dot"></span>${S(s, "label")}</span><p>${S(s, "legend")}</p></div>`
   ).join("");
+  $("cosmKinds").innerHTML = Object.entries(KIND_ICONS).map(([k, ico]) =>
+    `<div class="kl-row"><span class="kl-ico k-${k}">${svg(ico)}</span><span><strong>${esc(t(`cosm.kind.${k}`))}</strong><small>${esc(t(`cosm.kind.${k}.d`))}</small></span></div>`).join("");
   $("legendHealth").innerHTML = HEALTH_GRADES.map((g, i) => {
     const max = i === 0 ? 100 : HEALTH_GRADES[i - 1].min - 1;
     return `<div class="legend-row"><span class="pill g-${g.id}" style="--cbg:var(--tint)"><span class="dot"></span>${t(`grade.${g.id}`)}</span><p>${t("health.range", { a: g.min, b: max })}</p></div>`;

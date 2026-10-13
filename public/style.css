@@ -1629,3 +1629,13 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 :root[data-theme="dark"] .rank-score b{color:color-mix(in srgb,var(--c) 75%,#fff)}
 .rank-score small{font-size:.7rem;color:var(--muted)}
 .rank-score i{font-style:normal;font-size:.72rem;font-weight:700;color:var(--muted)}
+.kinds-legend{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+.kl-row{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);background:var(--tint)}
+.kl-row > span:last-child{display:flex;flex-direction:column;gap:2px}
+.kl-row strong{font-weight:700}
+.kl-row small{color:var(--muted);font-size:.85rem;line-height:1.4}
+.kl-ico{flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--c-info-bg);color:var(--c-info)}
+.kl-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.kl-ico.k-illegal,.kl-ico.k-cmr{background:var(--c-haram-bg);color:var(--c-haram)}
+.kl-ico.k-ed,.kl-ico.k-allergen,.kl-ico.k-irritant{background:var(--c-doubt-bg);color:#B5600A}
+.kl-ico.k-env{background:var(--c-cert-bg);color:var(--c-cert)}

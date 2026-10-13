@@ -138,6 +138,10 @@ export const COSMETIC_RULES = [
     match: /\b(polyethylene|nylon-\d+|polymethyl methacrylate|polypropylene|polyethylene terephthalate)\b/, exclude: /\bglycol\b/ },
 
   // --- Parfum ---
+  // Salicylate de benzyle : allergène de parfum, et perturbateur endocrinien suspecté (avis du CSSC 2023,
+  // concentrations plafonnées par le règlement (UE) 2023/1490)
+  { key: "benzyl_salicylate", kinds: ["allergen", "ed"], level: L("limite"), child: "modere", sources: ["sccs", "eu_cosmetics"],
+    match: /\bbenzyl salicylate\b/ },
   { key: "fragrance_allergen", kinds: ["allergen"], level: L("limite"), child: "modere", sources: ["eu_cosmetics", "essca"],
     match: /\b(limonene|linalool|citronellol|geraniol|citral|coumarin|eugenol|isoeugenol|cinnamal|cinnamyl alcohol|hydroxycitronellal|amyl cinnamal|amylcinnamyl alcohol|hexyl cinnamal|benzyl salicylate|benzyl benzoate|benzyl cinnamate|benzyl alcohol|farnesol|anise alcohol|alpha-isomethyl ionone|evernia prunastri|evernia furfuracea|methyl 2-octynoate|myroxylon pereirae)\b/ },
   { key: "fragrance", kinds: ["allergen"], level: L("limite"), child: "modere", sources: ["sccs", "afssaps_baby"],

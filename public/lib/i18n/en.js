@@ -1345,4 +1345,17 @@ export default {
   "health.why_html": "<strong>Why this method?</strong> It uses the three recognised criteria (nutrition, additives, organic) and adds the degree of processing, which the Nutri-Score does not measure. Nutrition is scored point by point, to better separate products in the same aisle. Every risk links to its source, and the halal verdict stays separate from the health score.",
   "detail.health_lead_html": "Score <strong>{n}/100</strong>: Nutri-Score {g} ({a}/55), additives {b}/25, processing {d}/10, organic {c}/10.",
   "detail.health_lead_nonova_html": "Score <strong>{n}/100</strong>: Nutri-Score {g} ({a}/55), additives {b}/25, processing unknown ({d}/10), organic {c}/10.",
+  // ---------- Méthode cosmétiques ----------
+  "cosmetic.kinds_t": "Possible effects of ingredients",
+  "cosm.kind.illegal.d": "Banned in cosmetics in Europe (Annex II of the regulation) or in France.",
+  "cosm.kind.cmr.d": "May promote cancer, damage DNA or harm fertility (EU CMR classification, IARC).",
+  "cosm.kind.ed.d": "May block, alter or mimic the action of a hormone.",
+  "cosm.kind.allergen.d": "May trigger or sustain a contact allergy.",
+  "cosm.kind.irritant.d": "May irritate the skin or mucous membranes, especially sensitive skin.",
+  "cosm.kind.env.d": "Persistent in the environment or toxic to aquatic life.",
+  "cosm.kind.contaminant.d": "May contain manufacturing impurities (dioxane, aromatic hydrocarbons).",
+  "cosm.kind.precaution.d": "No proven danger at permitted levels; flagged as a precaution.",
+  "cosmetic.why_html": "<strong>What sets us apart.</strong> Over 33,000 ingredients are recognised through the official EU database, and over 1,200 risky ingredients are flagged automatically (banned, CMR, regulated allergens, studied families). Above all, the score takes exposure into account, as EU toxicologists do: the same ingredient does not weigh the same in a rinse-off shampoo as in a leave-on cream, a spray or a baby product.",
+  "cosm.benzyl_salicylate.t": "Benzyl salicylate",
+  "cosm.benzyl_salicylate.p": "Fragrance allergen, also studied as a possible endocrine disruptor: the EU has capped its concentration since 2023 (SCCS opinion). Extra caution for children.",
 };
