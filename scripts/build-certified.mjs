@@ -72,7 +72,7 @@ async function hmc() {
       if (p === 1) throw e;
       break; // page suivante absente : fin de la liste
     }
-    const found = [...html.matchAll(/<h2[^>]*>([\s\S]{1,200}?)<\/h2>/g)].map((m) => decode(m[1]));
+    const found = [...html.matchAll(/<h([2-4])[^>]*>([\s\S]{1,200}?)<\/h\1>/g)].map((m) => decode(m[2])).filter((n) => !/brands|where can|approved products/i.test(n));
     const fresh = found.filter((n) => !names.includes(n));
     if (!fresh.length) break;
     names.push(...fresh);
