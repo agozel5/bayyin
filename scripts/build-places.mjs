@@ -83,8 +83,11 @@ async function main() {
     const t0 = Date.now();
     const pbf = join(work, `${cc}.pbf`), geo = join(work, `${cc}.geojsonseq`);
     try {
-      // Téléchargement en flux, filtré à la volée : seuls les objets avec diet:halal ou cuisine sont gardés
-      execSync(`set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "${GEOFABRIK}${region}-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o ${pbf} --overwrite`,
+      // Téléchargement de l'extrait (osmium a besoin d'un fichier pour retrouver la position des bâtiments),
+      // puis on ne garde que les objets avec diet:halal ou cuisine, et l'extrait est supprimé aussitôt.
+      const src = join(work, `${cc}-src.pbf`);
+      execSync(`curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" -o ${src} "${GEOFABRIK}${region}-latest.osm.pbf"` +
+        ` && osmium tags-filter ${src} nwr/diet:halal nwr/cuisine -o ${pbf} --overwrite; status=$?; rm -f ${src}; exit $status`,
         { stdio: ["ignore", "inherit", "inherit"], shell: "/bin/bash", timeout: 40 * 60000 });
       execSync(`osmium export ${pbf} -f geojsonseq -a type,id --geometry-types=point,polygon -o ${geo} --overwrite`, { stdio: ["ignore", "inherit", "inherit"] });
       const list = parsePlaces({ elements: await readFeatures(geo) }, 0, 0);
