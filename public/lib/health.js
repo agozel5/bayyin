@@ -289,8 +289,11 @@ export function healthScore(product) {
   };
 }
 
+// Version de la méthode : une fiche calculée avec une ancienne version est recalculée
+export const HEALTH_VERSION = 2;
 export function analyzeHealth(product) {
   return {
+    v: HEALTH_VERSION,
     score: healthScore(product),
     nutrition: nutrition(product),
     additives: additiveRisks(product),

@@ -45,6 +45,15 @@ export const store = {
     write(merged);
     emit();
   },
+  // Remplace la fiche gardée sans changer sa place dans l'historique (mise à jour en arrière-plan)
+  refresh(product) {
+    const list = read();
+    const e = list.find((x) => x.code === product.code);
+    if (!e) return;
+    e.p = product;
+    write(list);
+    emit();
+  },
   toggleFav(code) {
     const list = read();
     const e = list.find((x) => x.code === code);

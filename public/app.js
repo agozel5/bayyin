@@ -3,7 +3,7 @@ import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./li
 import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS, THEMES, TEXT_SIZES } from "./lib/settings.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
-import { ADDITIVE_RISK, HEALTH_GRADES } from "./lib/health.js";
+import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
 import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
@@ -106,7 +106,10 @@ const profileOf = (p) => {
 const alertPill = (p) => alertTag(p); // allergène ou régime en toutes lettres
 const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>${S(st, "short")}</span>`;
 // Cosmétiques : la note est recalculée quand la base CosIng arrive (chargée après l'ouverture de l'app)
+// Aliments : une note calculée avec une ancienne méthode est recalculée (si la fiche gardée le permet)
+const healthStale = (p) => p && kindOf(p) === "food" && !p.local && p.health && p.health.v !== HEALTH_VERSION;
 function healthOf(p) {
+  if (healthStale(p) && p.raw && p.raw.nutriments) p.health = analyzeHealth(p.raw);
   if (p && p.raw && kindOf(p) === "beauty" && cosmeticDbVersion() && (!p.health || p.health.dbVersion !== cosmeticDbVersion())) {
     p.health = analyzeCosmetic(p.raw);
   }
@@ -435,7 +438,7 @@ function nutRow(n) {
 }
 
 function healthSection(p) {
-  const h = p.health;
+  const h = healthOf(p);
   if (!h) return "";
   const s = h.score;
   const risky = h.additives.length;
@@ -1047,12 +1050,28 @@ function verdictHaptic(p) {
   const al = profileOf(p).alert;
   navigator.vibrate(al === "no" ? HAPTIC.haram : HAPTIC[verdictOf(p).status] || [30]);
 }
+// Fiches de l'historique notées avec une ancienne méthode : rechargées discrètement, une par une
+async function refreshStaleHistory() {
+  if (navigator.onLine === false) return;
+  const stale = store.all().filter((e) => healthStale(e.p) && !(e.p.raw && e.p.raw.nutriments)).slice(0, 40);
+  for (const e of stale) {
+    try {
+      const p = await off.product(e.code);
+      if (p) { memo.set(p.code, p); store.refresh(p); }
+    } catch { return; } // réseau indisponible : on réessaiera au prochain lancement
+    await new Promise((r) => setTimeout(r, 700));
+  }
+}
+setTimeout(refreshStaleHistory, 4000);
+
 async function openSheet(code, { fromScan = false, replace = false } = {}) {
   if (fromScan) sheetTab = "halal";
   sheetCode = code;
   sheetProduct = null;
   const cached = memo.get(code) || (store.get(code) && store.get(code).p);
-  const fresh = cached && cached.health; // les très anciennes entrées n'ont pas de données santé
+  // Les très anciennes entrées n'ont pas de données santé ; une note d'une ancienne méthode est rechargée
+  if (cached) healthOf(cached); // recalcul sur place quand la fiche gardée le permet
+  const fresh = cached && cached.health && (!healthStale(cached) || navigator.onLine === false);
   $("sheetTitle").textContent = cached ? nameOf(cached) : t("sheet.title");
   $("sheetBody").innerHTML = skeletonHtml();
   showSheet({ replace, fromScan });
