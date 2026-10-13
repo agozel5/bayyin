@@ -19,7 +19,7 @@ export const RANK_CATEGORIES = [
   { id: "desserts", kind: "food", tags: ["en:dairy-desserts"] },
   { id: "cheeses", kind: "food", tags: ["en:cheeses"] },
   { id: "ice_creams", kind: "food", tags: ["en:ice-creams"] },
-  { id: "crisps", kind: "food", tags: ["en:crisps", "en:chips"] },
+  { id: "crisps", kind: "food", tags: ["en:potato-crisps", "en:tortilla-chips"] },
   { id: "sodas", kind: "food", tags: ["en:sodas"] },
   { id: "juices", kind: "food", tags: ["en:fruit-juices"] },
   { id: "breads", kind: "food", tags: ["en:sandwich-breads", "en:breads"] },
