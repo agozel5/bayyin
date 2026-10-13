@@ -27,26 +27,26 @@ export const COUNTRIES = {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Un essai par serveur (3 au total), chacun limité à 4 minutes : un pays bloqué ne bloque pas les autres
 async function overpass(query) {
   let last;
-  for (let round = 0; round < 3; round++) {
-    for (const url of SERVERS) {
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "User-Agent": "Bayyin/1.0 (github.com/agozel5/bayyin)" },
-          body: new URLSearchParams({ data: query }),
-          signal: AbortSignal.timeout(400000),
-        });
-        if (!res.ok) throw new Error(`${url} HTTP ${res.status}`);
-        const json = await res.json();
-        if (json.remark && /runtime error|timed out/i.test(json.remark)) throw new Error(`${url} ${json.remark}`);
-        return json;
-      } catch (e) {
-        last = e;
-        console.log("  essai échoué :", e.message);
-        await sleep(15000);
-      }
+  for (const url of SERVERS) {
+    const t0 = Date.now();
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "User-Agent": "Bayyin/1.0 (github.com/agozel5/bayyin)" },
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(240000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.remark && /runtime error|timed out|out of memory/i.test(json.remark)) throw new Error(json.remark.slice(0, 120));
+      return json;
+    } catch (e) {
+      last = e;
+      console.log(`  ${new URL(url).host} : échec après ${Math.round((Date.now() - t0) / 1000)} s (${e.message})`);
+      await sleep(8000);
     }
   }
   throw last;
@@ -61,14 +61,18 @@ async function main() {
   const all = new Map(); // id -> commerce
   const done = {};
   for (const [cc, bbox] of Object.entries(COUNTRIES)) {
-    const q = `[out:json][timeout:360];area["ISO3166-1"="${cc}"][admin_level=2]->.a;` +
-      `(nwr(area.a)["diet:halal"~"^(yes|only)$"];nwr(area.a)["cuisine"~"halal",i];);out tags center qt;`;
+    // Cadre du pays plutôt que sa frontière exacte (bien plus rapide pour Overpass) ;
+    // les doublons entre pays voisins sont fusionnés par identifiant.
+    const [south, west, north, east] = bbox;
+    const b = `(${south},${west},${north},${east})`;
+    const q = `[out:json][timeout:220];(nwr["diet:halal"~"^(yes|only)$"]${b};nwr["cuisine"~"halal"]${b};nwr["cuisine"~"Halal"]${b};);out tags center qt;`;
+    const t0 = Date.now();
     try {
       const json = await overpass(q);
       const list = parsePlaces(json, 0, 0);
       for (const p of list) all.set(p.id, p);
       done[cc] = { n: list.length, bbox };
-      console.log(`${cc} : ${list.length} commerces`);
+      console.log(`${cc} : ${list.length} commerces (${Math.round((Date.now() - t0) / 1000)} s)`);
     } catch (e) {
       console.log(`${cc} indisponible (${e.message})`);
     }
