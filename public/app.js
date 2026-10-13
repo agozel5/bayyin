@@ -689,6 +689,15 @@ const rowsSkeleton = (n = 4, label = t("msg.loading")) => `<div class="skel skel
   Array.from({ length: n }, () => `<div class="sk-row"><i style="width:56px;height:56px;border-radius:14px"></i><div style="flex:1;display:flex;flex-direction:column;gap:8px"><i style="height:15px;width:75%"></i><i style="height:12px;width:45%"></i></div></div>`).join("")}</div>`;
 const altsSkeleton = () => `<div class="alts skel-alts" aria-busy="true" aria-label="${esc(t("detail.alt_loading"))}">${
   Array.from({ length: 3 }, () => `<div class="alt skel"><i style="height:22px;border-radius:8px"></i><i style="height:84px;border-radius:12px"></i><i style="height:14px;width:85%"></i><i style="height:12px;width:55%"></i></div>`).join("")}</div>`;
+// Remplace le contenu d'un élément seulement s'il a changé ; la première fois, les lignes apparaissent
+// en cascade, ensuite elles restent immobiles (class « settled »).
+function setHtml(el, html) {
+  if (!el || el.dataset.html === html) return;
+  const first = el.dataset.html === undefined;
+  el.dataset.html = html;
+  el.innerHTML = html;
+  el.classList.toggle("settled", !first);
+}
 // Pages vides : la mascotte de Bayyin, dans l'attitude qui convient
 const emptyArt = (pose = "empty") => `<span class="empty-mascot">${mascot(pose, { size: 112 })}</span>`;
 const loadingHtml = (text) => `<div class="loading"><span class="spinner"></span>${esc(text)}</div>`;
@@ -1108,13 +1117,16 @@ function verdictHaptic(p) {
 async function refreshStaleHistory() {
   if (navigator.onLine === false) return;
   const stale = store.all().filter((e) => healthStale(e.p) && !(e.p.raw && e.p.raw.nutriments)).slice(0, 40);
+  const fresh = [];
   for (const e of stale) {
     try {
       const p = await off.product(e.code);
-      if (p) { memo.set(p.code, p); store.refresh(p); }
-    } catch { return; } // réseau indisponible : on réessaiera au prochain lancement
-    await new Promise((r) => setTimeout(r, 700));
+      if (p) { memo.set(p.code, p); fresh.push(p); }
+    } catch { break; } // réseau indisponible : on garde ce qui est déjà rechargé
+    await new Promise((r) => setTimeout(r, 400));
   }
+  // Une seule mise à jour de l'historique, donc un seul nouvel affichage
+  if (fresh.length) store.refreshMany(fresh);
 }
 setTimeout(refreshStaleHistory, 4000);
 
@@ -1647,8 +1659,9 @@ function renderHome() {
   $("homeRecent").hidden = !recent.length;
   $("homeFavs").hidden = !favs.length;
   $("homeExplain").hidden = all.length >= 3;
-  $("homeRecentList").innerHTML = recent.map((e) => altCard(e.p, { fav: e.fav })).join("");
-  $("homeFavList").innerHTML = favs.map((e) => altCard(e.p, { fav: true })).join("");
+  // Ne réécrit une liste que si son contenu a changé : pas de photos rechargées ni d'animation rejouée
+  setHtml($("homeRecentList"), recent.map((e) => altCard(e.p, { fav: e.fav })).join(""));
+  setHtml($("homeFavList"), favs.map((e) => altCard(e.p, { fav: true })).join(""));
   // Pastilles : école et profil, qui mènent aux Réglages
   const st = prefs();
   const prof = st.profile;

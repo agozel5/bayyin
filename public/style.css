@@ -1789,3 +1789,5 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 }
 .sheet.compact #sheetCompare{display:none}
 .pm-mascot{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,rgb(255 255 255 / .22),transparent 70%);display:flex;align-items:flex-end;justify-content:center}
+/* Liste réaffichée après une mise à jour : pas de nouvelle cascade */
+.settled > *{animation:none!important}

@@ -45,12 +45,15 @@ export const store = {
     write(merged);
     emit();
   },
-  // Remplace la fiche gardée sans changer sa place dans l'historique (mise à jour en arrière-plan)
-  refresh(product) {
+  // Remplace des fiches gardées sans changer leur place dans l'historique (mise à jour en arrière-plan)
+  refreshMany(products) {
     const list = read();
-    const e = list.find((x) => x.code === product.code);
-    if (!e) return;
-    e.p = product;
+    let n = 0;
+    for (const product of products) {
+      const e = list.find((x) => x.code === product.code);
+      if (e) { e.p = product; n++; }
+    }
+    if (!n) return;
     write(list);
     emit();
   },
