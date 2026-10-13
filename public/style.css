@@ -1433,3 +1433,70 @@ html[data-text="xlarge"]{font-size:125%}
 .certv-miss{background:var(--c-none-bg);border-color:var(--line)}
 .certv-miss > svg{background:var(--c-none)}
 .certv-miss strong{color:var(--fg)}
+
+/* =====================================================================
+   Fiche produit : onglets, certification unique, illustrations
+   ===================================================================== */
+.ptabs{position:sticky;top:-6px;z-index:3;display:flex;gap:4px;padding:5px;margin:4px auto 14px;border-radius:999px;background:var(--tint);box-shadow:0 0 0 6px var(--bg)}
+.ptab{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 8px;border:none;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.92rem;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s}
+.ptab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptab[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow-sm,0 1px 2px rgb(0 0 0 / .12))}
+.ptab:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.tab-dot{width:9px;height:9px;border-radius:50%;background:var(--c,var(--c-none));flex:none}
+.tab-score{font-style:normal;font-size:.72rem;font-weight:800;color:#fff;background:var(--c);border-radius:999px;padding:2px 6px;line-height:1.2}
+@media (prefers-reduced-motion:no-preference){
+  .ppanel:not([hidden]){animation:panel-in .25s ease}
+  @keyframes panel-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+
+.cert-card{border-radius:var(--r-md);background:var(--c-cert-bg);overflow:hidden}
+.cert-head{display:flex;align-items:center;gap:10px;padding:12px 14px;color:var(--c-cert)}
+.cert-head > svg{width:20px;height:20px;flex:none}
+.cert-head strong{flex:1;min-width:0;font-weight:800}
+.cert-badge{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:800;white-space:nowrap}
+.cert-badge:empty{display:none}
+.cert-badge svg{width:14px;height:14px;stroke-width:3}
+.cert-badge .spinner{width:14px;height:14px;border-width:2px}
+.cert-body{padding:0 14px 12px 44px}
+.cert-body .cert-note{color:var(--fg);opacity:.8}
+.cert-card[data-state="verified"] .cert-badge,.cert-card[data-state="listed"] .cert-badge{background:var(--c-cert);color:#fff;padding:4px 9px;border-radius:999px}
+.cert-card[data-state="verified"]{box-shadow:inset 0 0 0 1.5px var(--c-cert)}
+.cert-card[data-state="missing"] .cert-badge{background:var(--surface);color:var(--muted);padding:4px 9px;border-radius:999px}
+[dir="rtl"] .cert-body{padding:0 44px 12px 14px}
+
+.ph.cat{background:color-mix(in srgb,var(--cat) 13%,var(--surface)) !important;color:var(--cat) !important;display:flex;align-items:center;justify-content:center}
+.ph.cat svg{stroke-width:1.7}
+.p-img.ph.cat svg{width:48px;height:48px}
+.ph.cat-meat{--cat:#C4523F}.ph.cat-fish{--cat:#3F79B5}.ph.cat-dairy{--cat:#5A86B0}.ph.cat-drink{--cat:#2B8C99}.ph.cat-sweet{--cat:#B8507F}
+.ph.cat-bakery{--cat:#B9762A}.ph.cat-plant{--cat:#3E8E4A}.ph.cat-meal{--cat:#7559B0}.ph.cat-sauce{--cat:#A88316}
+.p-addphoto{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.84rem;font-weight:700;color:var(--brand);text-decoration:none}
+.p-addphoto svg{width:16px;height:16px}
+#pp-halal > .sec:first-child > .sec-head{display:none}
+
+:root[data-theme="dark"] .ptab[aria-selected="true"]{background:#33413A}
+
+/* ---------- chargement : reflet qui balaie les blocs ---------- */
+.skel i{position:relative;overflow:hidden}
+.skel-rows{gap:16px;padding-top:4px}
+.skel-alts .alt{pointer-events:none;box-shadow:var(--lift)}
+.skel-alts .alt i{display:block;background:var(--tint-2)}
+@media (prefers-reduced-motion:no-preference){
+  .skel i{animation:none;background:linear-gradient(100deg,var(--tint-2) 30%,color-mix(in srgb,var(--tint-2) 40%,var(--surface)) 50%,var(--tint-2) 70%) 0 0/300% 100%;animation:shimmer 1.4s linear infinite}
+  @keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
+}
+
+/* ---------- verdict : l'anneau se remplit, l'icône rebondit, un halo s'élargit ---------- */
+@property --p{syntax:"<number>";inherits:true;initial-value:0}
+@media (prefers-reduced-motion:no-preference){
+  .v-foot .ring{animation:ring-fill .9s .25s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes ring-fill{from{--p:0}}
+  .v-ico{position:relative}
+  .v-ico::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 0 rgb(255 255 255 / .55);animation:v-halo 1.1s .35s ease-out 1 both}
+  @keyframes v-halo{to{box-shadow:0 0 0 22px rgb(255 255 255 / 0)}}
+  .v-text > *{animation:v-text .5s cubic-bezier(.2,.8,.2,1) both}
+  .v-text > :nth-child(2){animation-delay:.08s}
+  .v-text > :nth-child(3){animation-delay:.16s}
+  @keyframes v-text{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .cert-card[data-state="verified"] .cert-badge,.cert-card[data-state="listed"] .cert-badge{animation:badge-in .4s cubic-bezier(.3,1.5,.5,1)}
+  @keyframes badge-in{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+}

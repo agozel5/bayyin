@@ -107,12 +107,18 @@ const miniScore = (p) => {
 };
 
 // Libellés des signalements (traduits à partir de leur identifiant)
+// Ingrédient couvert par la certification : on ne l'appelle plus « non certifié »
+const coveredText = (f, part) => {
+  const k = `flag.${f.id}.covered_${part}`;
+  return f.covered && t(k) !== k ? t(k) : null;
+};
 function flagLabel(f) {
   if (f.group === "gras") return `${f.code} · ${t("flag.fatty.label")}`;
-  const label = t(`flag.${f.id}.label`);
+  const label = coveredText(f, "label") || t(`flag.${f.id}.label`);
   return f.code ? `${f.code} · ${label}` : label;
 }
 function flagReason(f) {
+  if (coveredText(f, "reason")) return coveredText(f, "reason");
   if (f.variant) return t(`flag.variant.${f.variant}`);
   if (f.group === "gras") return t("flag.fatty.reason");
   return t(`flag.${f.id}.reason`);
@@ -128,16 +134,46 @@ const noteText = (n) => (/\s/.test(n) ? n : t(`note.${n}`)); // anciennes entré
 // ===========================================================================
 // Fiche produit
 // ===========================================================================
+// Produit sans photo : une illustration selon la catégorie plutôt qu'une boîte grise
+const CAT_ART = [
+  { id: "meat", re: /meats|sausages|poultr|charcuter|hams|beef|chicken|lamb|kebab|merguez/, path: '<path d="M15 3a6 6 0 0 1 0 12c-1 0-2-.2-2.8-.6L9 17.6a2.5 2.5 0 1 1-2.6 2.9 2.5 2.5 0 1 1-2.9-2.6l3.2-3.2A6 6 0 0 1 15 3z"/>' },
+  { id: "fish", re: /fish|seafood|tuna|salmon|sardine|shrimp|crustacean/, path: '<path d="M3 12c3.2-4.8 9.4-6 14-2l4-3v10l-4-3c-4.6 4-10.8 2.8-14-2z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>' },
+  { id: "dairy", re: /dair|chees|milk|yogurt|yoghurt|cream|butter/, path: '<path d="M8 3h8v3l2 3v12H6V9l2-3z"/><path d="M6 12h12M8 6h8"/>' },
+  { id: "drink", re: /beverage|drink|juice|water|soda|coffee|tea/, path: '<path d="M6 4h12l-1.6 16H7.6z"/><path d="M6.6 9h10.8"/><path d="M13 4l2-2"/>' },
+  { id: "sweet", re: /sweet|confection|chocolate|biscuit|candies|candy|dessert|cake|ice-cream/, path: '<circle cx="12" cy="12" r="4.5"/><path d="M8.2 9.5L4 7v10l4.2-2.5M15.8 9.5L20 7v10l-4.2-2.5"/>' },
+  { id: "bakery", re: /bread|viennoiser|bakery|cereal|pastr|pasta|rice/, path: '<path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4c0 1.2-.9 2-2 2v7H6v-7c-1.1 0-2-.8-2-2z"/><path d="M10 9.5l-1 2M14 9.5l-1 2"/>' },
+  { id: "plant", re: /fruit|vegetable|legume|nuts|plant-based/, path: '<path d="M12 7.5c-3-2-7.8-.2-7 5.6.7 4.9 4 8 7 7 3 1 6.3-2.1 7-7 .8-5.8-4-7.6-7-5.6z"/><path d="M12 7.5c0-2 1-3.3 3-4"/>' },
+  { id: "meal", re: /meal|pizza|sandwich|soup|prepared|frozen/, path: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.5"/>' },
+  { id: "sauce", re: /condiment|sauce|spice|oil|vinegar|honey|spread|jam/, path: '<path d="M8 8h8v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z"/><path d="M9 4h6v4H9z"/><path d="M8 13h8"/>' },
+];
+const catArt = (p) => {
+  if (!p || p.local || kindOf(p) !== "food") return null;
+  const tags = (p.categories || (p.raw && p.raw.categories_tags) || []).join(" ").toLowerCase();
+  const name = String(nameOf(p) || "").toLowerCase();
+  return tags ? CAT_ART.find((c) => c.re.test(tags)) : CAT_ART.find((c) => c.re.test(name));
+};
+// Vignette sans photo : illustration de catégorie (aliments), sinon icône du type de produit
+function phArt(p, cls) {
+  const art = catArt(p);
+  return art
+    ? `<span class="${cls} ph cat cat-${art.id}" aria-hidden="true">${svg(art.path)}</span>`
+    : `<span class="${cls} ph" aria-hidden="true">${svg(p.local ? I.doc : KIND_ICON[kindOf(p)])}</span>`;
+}
 function productTop(p) {
   const img = p.image
     ? `<img class="p-img" src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">`
-    : `<span class="p-img ph">${svg(p.local ? I.doc : KIND_ICON[kindOf(p)])}</span>`;
+    : phArt(p, "p-img");
   const meta = [p.brand, p.quantity].filter(Boolean).map(esc).join(" · ");
   const code = /^\d+$/.test(p.code) ? p.code : "";
+  // Fiche publique sans photo : lien direct pour en ajouter une sur Open Food Facts / Open Beauty Facts
+  const addPhoto = !p.image && !p.local && code && kindOf(p) !== "medicine"
+    ? `<a class="p-addphoto" href="${esc(`https://world.open${kindOf(p) === "beauty" ? "beauty" : "food"}facts.org/cgi/product.pl?type=edit&code=${code}`)}" target="_blank" rel="noopener">${svg('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>')}${t("detail.add_photo")}</a>`
+    : "";
   return `<div class="p-top">${img}<div class="p-text">
     <span class="p-name">${esc(nameOf(p))}</span>
     ${meta ? `<span class="p-meta">${meta}</span>` : ""}
     ${code ? `<span class="p-code" dir="ltr">${esc(code)}</span>` : ""}
+    ${addPhoto}
   </div></div>`;
 }
 
@@ -216,9 +252,13 @@ function halalSection(p, v) {
   const verifyUrl = org
     ? CERT_LINKS[org] || `https://duckduckgo.com/?q=${encodeURIComponent(`${org} halal ${p.brand || ""}`)}`
     : `https://duckduckgo.com/?q=${encodeURIComponent(`${p.brand || nameOf(p)} halal certification organisme`)}`;
+  // Un seul bloc : le label, puis (si l'organisme publie une liste) le résultat de la vérification
+  const checkable = v.certification && v.certification.organismeId && CERT_LISTED.includes(v.certification.organismeId);
   const cert = v.certification
-    ? `<div class="cert">${svg(I.shield)}${t("detail.certified")}${org ? " · " + esc(org) : ""}</div>
-       <div id="certCheck"><p class="cert-note">${t("cert.unverified")} <a href="${esc(verifyUrl)}" target="_blank" rel="noopener">${esc(org ? t("cert.verify", { org }) : t("cert.verify_any"))} ↗</a></p></div>`
+    ? `<div class="cert-card" id="certCard"${checkable ? ' data-state="checking"' : ""}>
+         <div class="cert-head">${svg(I.shield)}<strong>${t("detail.certified")}${org ? " · " + esc(org) : ""}</strong><span class="cert-badge" id="certBadge">${checkable ? `<span class="spinner"></span>` : ""}</span></div>
+         <div id="certCheck" class="cert-body"><p class="cert-note">${t(checkable ? "certv.checking" : "cert.unverified")} <a href="${esc(verifyUrl)}" target="_blank" rel="noopener">${esc(org ? t("cert.verify", { org }) : t("cert.verify_any"))} ↗</a></p></div>
+       </div>`
     : "";
   const ignored = v.certIgnored
     ? `<div class="cert cert-off">${svg(I.shield)}${esc(t("certs.ignored", { org: v.certIgnored.organisme }))}</div>`
@@ -254,7 +294,9 @@ function halalSection(p, v) {
 }
 
 // Pages des organismes où l'on peut vérifier un partenaire (seulement celles qui ont été vérifiées)
-const CERT_LINKS = { AVS: "https://avs.fr/en/suppliers/" };
+const CERT_LINKS = { AVS: "https://avs.fr/etablissements/index.html?category=fournisseurs" };
+// Organismes dont la liste est comparée automatiquement (data/certified.json)
+const CERT_LISTED = ["avs", "achahada", "hmc"];
 
 // « Demander à la marque » : un message prêt à envoyer sur les ingrédients douteux
 function askBrandMessage(p, v) {
@@ -454,7 +496,7 @@ function productDetail(p) {
   const alt = p.local || kind === "medicine"
     ? ""
     : `<section class="sec" id="altSection"><div class="sec-head"><h3>${t("detail.alternatives")}</h3><small>${t(kind === "beauty" ? "detail.alt_sub_beauty" : "detail.alt_sub")}</small></div>
-      <div id="altBox"><div class="loading"><span class="spinner"></span>${t("detail.alt_loading")}</div></div></section>`;
+      <div id="altBox">${altsSkeleton()}</div></section>`;
   const offLink = p.local
     ? isBarcode
       ? `<section class="sec"><a class="off-link" href="https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${esc(p.code)}" target="_blank" rel="noopener">${t("msg.add_off")}</a></section>`
@@ -463,8 +505,25 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
       : `<section class="sec"></section>`;
   const food = kind === "food";
-  return `${productTop(p)}${contributeCard(p)}<div id="recallBox"></div>${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+  const top = `${productTop(p)}${contributeCard(p)}<div id="recallBox"></div>${verdictHero(p, v)}${profileAlert(p)}`;
+  const foot = `${alt}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+  if (kind === "medicine") return `${top}${halalSection(p, v)}${medicineSection(p)}${foot}`;
+  // Le reste est rangé en onglets : on ne fait plus défiler toute la fiche pour trouver une information
+  const s = scoreOf(p);
+  const tabs = [
+    { id: "halal", label: t("detail.halal"), mark: `<i class="tab-dot s-${v.status}"></i>`, html: halalSection(p, v) },
+    { id: "health", label: t(food ? "detail.health" : "detail.cosmetic_tab"), mark: s ? `<i class="tab-score g-${s.grade}" dir="ltr">${s.score}</i>` : "",
+      html: food ? healthSection(p) + additivesSection(p) + extraSection(p) : cosmeticSection(p) },
+    { id: "compo", label: t("detail.compo_tab"), mark: "", html: (food ? allAdditivesSection(p, v) : "") + ingr },
+  ].filter((x) => x.html.trim());
+  const cur = tabs.some((x) => x.id === sheetTab) ? sheetTab : "halal";
+  const bar = `<div class="ptabs" role="tablist">${tabs.map((x) =>
+    `<button type="button" role="tab" class="ptab" data-ptab="${x.id}" aria-selected="${x.id === cur}" aria-controls="pp-${x.id}">${x.mark}<span>${esc(x.label)}</span></button>`).join("")}</div>`;
+  const panels = tabs.map((x) => `<div class="ppanel" id="pp-${x.id}" role="tabpanel"${x.id === cur ? "" : " hidden"}>${x.html}</div>`).join("");
+  return `${top}${bar}${panels}${foot}`;
 }
+// Onglet ouvert dans la fiche (gardé d'un produit à l'autre pendant la session)
+let sheetTab = "halal";
 
 // Mot clair à la place d'un « ! » : l'allergène en cause, ou le régime non respecté
 function alertTag(p) {
@@ -484,7 +543,7 @@ function alertTag(p) {
 function altCard(a, { fav = false } = {}) {
   const img = a.image
     ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-    : `<span class="ph">${svg(a.local ? I.doc : KIND_ICON[kindOf(a)])}</span>`;
+    : phArt(a, "alt-ph");
   const st = verdictOf(a).status;
   return `<button type="button" class="alt" data-open="${esc(a.code)}">
     <span class="alt-band s-${st}">${svg(STATUS_ICON[st])}<span>${esc(S(st, "label"))}</span>${fav ? svg(I.star, "alt-fav") : ""}</span>${img}
@@ -509,12 +568,17 @@ async function loadAlternatives(p, code) {
   }
 }
 
-// Squelette de fiche pendant le chargement
+// Squelettes pendant le chargement : la forme de ce qui arrive, plutôt qu'une roue qui tourne
 const skeletonHtml = () => `<div class="skel" aria-busy="true" aria-label="${esc(t("msg.loading"))}">
-  <div class="sk-row"><i style="width:118px;height:118px;border-radius:22px"></i><div style="flex:1;display:flex;flex-direction:column;gap:10px"><i style="height:22px;width:85%"></i><i style="height:16px;width:50%"></i></div></div>
-  <i style="height:150px;border-radius:28px"></i>
-  <i style="height:18px;width:40%"></i><i style="height:14px"></i><i style="height:14px;width:90%"></i>
-  <i style="height:80px;border-radius:20px"></i></div>`;
+  <div class="sk-row"><i style="width:118px;height:118px;border-radius:22px"></i><div style="flex:1;display:flex;flex-direction:column;gap:10px"><i style="height:22px;width:85%"></i><i style="height:16px;width:50%"></i><i style="height:12px;width:40%"></i></div></div>
+  <i style="height:190px;border-radius:28px"></i>
+  <i style="height:44px;border-radius:18px"></i>
+  <i style="height:52px;border-radius:999px"></i>
+  <i style="height:120px;border-radius:20px"></i></div>`;
+const rowsSkeleton = (n = 4, label = t("msg.loading")) => `<div class="skel skel-rows" aria-busy="true" aria-label="${esc(label)}">${
+  Array.from({ length: n }, () => `<div class="sk-row"><i style="width:56px;height:56px;border-radius:14px"></i><div style="flex:1;display:flex;flex-direction:column;gap:8px"><i style="height:15px;width:75%"></i><i style="height:12px;width:45%"></i></div></div>`).join("")}</div>`;
+const altsSkeleton = () => `<div class="alts skel-alts" aria-busy="true" aria-label="${esc(t("detail.alt_loading"))}">${
+  Array.from({ length: 3 }, () => `<div class="alt skel"><i style="height:22px;border-radius:8px"></i><i style="height:84px;border-radius:12px"></i><i style="height:14px;width:85%"></i><i style="height:12px;width:55%"></i></div>`).join("")}</div>`;
 // Petite illustration pour les pages vides (panier + étoile de la marque)
 const emptyArt = () => `<svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true">
   <circle cx="60" cy="50" r="40" fill="#E3F3EB" stroke="none"/>
@@ -544,7 +608,7 @@ const notFoundHtml = (code) =>
 function rowHtml(p, { fav = false, when = "" } = {}) {
   const img = p.image
     ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-    : `<span class="row-img ph">${svg(p.local ? I.doc : KIND_ICON[kindOf(p)])}</span>`;
+    : phArt(p, "row-img");
   const meta = [kindOf(p) !== "food" ? t(`kind.${kindOf(p)}`) : "", p.brand, when].filter(Boolean).map(esc).join(" · ");
   return `<button type="button" class="row" data-open="${esc(p.code)}">${img}
     <span class="row-text"><span class="row-name">${esc(nameOf(p))}</span>
@@ -635,16 +699,25 @@ function recallHtml(list) {
 // Certification vérifiée : le label est comparé à la liste publiée par l'organisme
 async function loadCertCheck(p) {
   const c = p.verdict && p.verdict.certification;
-  if (!c || !c.organismeId || p.verdict.certIgnored) return;
+  if (!c || !c.organismeId || p.verdict.certIgnored || !CERT_LISTED.includes(c.organismeId)) return;
   const db = await loadCertified();
+  if (!sheetProduct || sheetProduct.code !== p.code || !$("certCard")) return;
   const r = verifyCertification(p, db, c.organismeId);
-  if (!r || !sheetProduct || sheetProduct.code !== p.code || !$("certCheck")) return;
+  const card = $("certCard");
+  if (!r) { // liste indisponible (hors connexion) : on garde le lien de vérification manuelle
+    card.removeAttribute("data-state");
+    $("certBadge").innerHTML = "";
+    $("certCheck").querySelector(".cert-note").firstChild.textContent = t("cert.unverified") + " ";
+    return;
+  }
   const date = r.updated ? longDate(r.updated) : "";
-  const vars = { org: c.organisme, date, match: r.match || "" };
+  const vars = { org: c.organisme, date, match: r.match ? `\u2066${r.match}\u2069` : "" }; // isolé : lisible aussi en arabe
   const link = r.url ? ` <a href="${esc(r.url)}" target="_blank" rel="noopener">${t("certv.list", { org: c.organisme })} ↗</a>` : "";
-  $("certCheck").innerHTML = r.status === "missing"
-    ? `<div class="certv certv-miss">${svg(I.shield)}<div><strong>${esc(t("certv.missing_t", vars))}</strong><p>${esc(t("certv.missing", vars))}${link}</p></div></div>`
-    : `<div class="certv certv-ok">${svg(I.check)}<div><strong>${esc(t(r.status === "stamp" ? "certv.ok_t" : "certv.brand_t", vars))}</strong><p>${esc(t(r.status === "stamp" ? "certv.ok_stamp" : "certv.ok_brand", vars))}${link}</p></div></div>`;
+  const state = r.status === "stamp" ? "verified" : r.status === "brand" ? "listed" : "missing";
+  card.dataset.state = state;
+  $("certBadge").innerHTML = `${state === "missing" ? "" : svg(I.check)}${esc(t(`certv.badge.${state}`))}`;
+  const text = r.status === "missing" ? t("certv.missing", vars) : t(r.status === "stamp" ? "certv.ok_stamp" : "certv.ok_brand", vars);
+  $("certCheck").innerHTML = `<p class="cert-note">${esc(text)}${link}</p>`;
 }
 
 async function loadRecalls(p) {
@@ -702,7 +775,15 @@ $("homeRecall").addEventListener("click", (e) => {
   renderRecallBanner();
 });
 
+// Vibration différente selon le verdict : on « sent » la réponse avant de la lire
+const HAPTIC = { halal_certifie: [35], halal_probable: [35], mashbouh: [50, 70, 50], haram: [140, 70, 140], inconnu: [20] };
+function verdictHaptic(p) {
+  if (!navigator.vibrate) return;
+  const al = profileOf(p).alert;
+  navigator.vibrate(al === "no" ? HAPTIC.haram : HAPTIC[verdictOf(p).status] || [30]);
+}
 async function openSheet(code, { fromScan = false, replace = false } = {}) {
+  if (fromScan) sheetTab = "halal";
   sheetCode = code;
   sheetProduct = null;
   const cached = memo.get(code) || (store.get(code) && store.get(code).p);
@@ -714,6 +795,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
 
   if (fresh) {
     renderSheetProduct(cached);
+    if (fromScan) verdictHaptic(cached);
     if (fromScan || !store.get(code)) store.add(cached);
     refreshFav();
     if (!cached.local) loadAlternatives(cached, code);
@@ -728,6 +810,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
       return;
     }
     renderSheetProduct(p);
+    if (fromScan) verdictHaptic(p);
     store.add(p);
     refreshFav();
     if (!p.local) loadAlternatives(p, code);
@@ -747,6 +830,17 @@ function closeSheet({ fromPop = false } = {}) {
   if (!fromPop && history.state && history.state.sheet) history.back();
 }
 
+$("sheetBody").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ptab]");
+  if (!b) return;
+  sheetTab = b.dataset.ptab;
+  document.querySelectorAll("#sheetBody .ptab").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll("#sheetBody .ppanel").forEach((x) => (x.hidden = x.id !== `pp-${sheetTab}`));
+  // Garde la barre d'onglets visible en haut si on avait défilé plus bas
+  const body = $("sheetBody");
+  const barTop = b.parentElement.offsetTop - 8;
+  if (body.scrollTop > barTop) body.scrollTop = barTop;
+});
 $("sheetClose").addEventListener("click", () => closeSheet());
 $("sheetFav").addEventListener("click", () => {
   if (!sheetCode || !sheetProduct) return;
@@ -1248,7 +1342,7 @@ async function runSearch(raw, { force = false } = {}) {
   const digits = q.replace(/\s+/g, "");
   try {
     if (/^\d{8,14}$/.test(digits)) {
-      out.innerHTML = loadingHtml(t("search.searching"));
+      out.innerHTML = rowsSkeleton(5, t("search.searching"));
       const p = await fetchProduct(digits);
       if (ctl.signal.aborted) return;
       lastResults = p ? { q, local: [], food: [p], beauty: [], single: true } : null;
@@ -1259,7 +1353,7 @@ async function runSearch(raw, { force = false } = {}) {
     if (q.length < 2) return (out.innerHTML = messageHtml(t("search.short.t"), t("search.short.p")));
     // Tout de suite : les produits déjà scannés qui correspondent
     const local = rankByRelevance(store.all().map((e) => e.p), q).slice(0, 3);
-    out.innerHTML = (local.length ? resultGroup(t("search.in_history"), local) : "") + loadingHtml(t("search.searching"));
+    out.innerHTML = (local.length ? resultGroup(t("search.in_history"), local) : "") + rowsSkeleton(4, t("search.searching"));
     const res = await off.search(q, { lang: getLang(), signal: ctl.signal });
     if (ctl.signal.aborted) return;
     const known = new Set(local.map((p) => p.code));
@@ -1611,7 +1705,7 @@ function renderECodes() {
   if (!eDb) {
     $("addFilter").innerHTML = "";
     $("addFn").innerHTML = "";
-    $("addList").innerHTML = loadingHtml(t("msg.loading"));
+    $("addList").innerHTML = rowsSkeleton(6);
     loadEDb();
     return;
   }

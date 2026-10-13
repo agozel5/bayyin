@@ -33,6 +33,8 @@ Ce qui la distingue :
   bandeau quand un produit déjà scanné vient d'être rappelé ;
 - **organismes de certification** : fiches neutres (AVS, Achahada, mosquées habilitées, HMC…) et choix des
   labels que l'on suit, appliqué au verdict ;
+- **fiche produit en onglets** (Halal · Santé · Composition), illustrations par catégorie pour les produits sans photo,
+  chargements en squelette, vibration différente selon le verdict ;
 - **certification vérifiée** : le label AVS, Achahada ou HMC est comparé chaque semaine à la liste publiée par
   l'organisme (estampille sanitaire de l'emballage, puis marque) — « Certification vérifiée » ou « pas retrouvé dans la liste » ;
 - **recherche multilingue et triée par pertinence** (une recherche en arabe, turc ou anglais est aussi lancée en français) ;
@@ -259,3 +261,7 @@ Un médicament n'est jamais classé « haram » : toutes les instances consulté
 `lib/i18n/fr.js` est la référence. Un test vérifie que `en`, `ar` et `tr` ont exactement
 les mêmes clés et les mêmes variables `{x}`. Pour ajouter une langue : un nouveau fichier,
 puis l'ajouter à `DICTS` (`lib/i18n.js`) et à `LANGS` (`lib/settings.js`).
+
+## Stores
+
+Icônes, écrans de démarrage, captures et textes des stores : `docs/store/` (regénérés par `scripts/store-assets.py`).

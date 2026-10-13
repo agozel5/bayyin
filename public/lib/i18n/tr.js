@@ -1249,4 +1249,15 @@ export default {
   "src.hmc_list": "HMC tarafından onaylanan markaların resmi listesi (Birleşik Krallık).",
   // ---------- Certification vérifiée (marque) ----------
   "certv.brand_t": "Marka {org} listesinde",
+  // ---------- Design : fiche produit ----------
+  "detail.compo_tab": "İçindekiler",
+  "detail.cosmetic_tab": "Sağlık",
+  "detail.add_photo": "Fotoğraf ekle",
+  "certv.checking": "Resmi liste kontrol ediliyor…",
+  "certv.badge.verified": "Doğrulandı",
+  "certv.badge.listed": "Marka listede",
+  "certv.badge.missing": "Bulunamadı",
+  // ---------- Viande couverte par la certification ----------
+  "flag.viande.covered_label": "Et",
+  "flag.viande.covered_reason": "Etin kesimi, ürün üzerinde belirtilen sertifika kuruluşu tarafından denetlenir.",
 };

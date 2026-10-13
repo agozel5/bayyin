@@ -1263,4 +1263,15 @@ export default {
   "src.hmc_list": "Liste officielle des marques approuvées par HMC (Royaume-Uni).",
   // ---------- Certification vérifiée (marque) ----------
   "certv.brand_t": "Marque présente dans la liste {org}",
+  // ---------- Design : fiche produit ----------
+  "detail.compo_tab": "Composition",
+  "detail.cosmetic_tab": "Santé",
+  "detail.add_photo": "Ajouter une photo",
+  "certv.checking": "Vérification sur la liste officielle…",
+  "certv.badge.verified": "Vérifié",
+  "certv.badge.listed": "Marque listée",
+  "certv.badge.missing": "Non retrouvé",
+  // ---------- Viande couverte par la certification ----------
+  "flag.viande.covered_label": "Viande",
+  "flag.viande.covered_reason": "L'abattage de la viande est contrôlé par l'organisme de certification indiqué sur le produit.",
 };

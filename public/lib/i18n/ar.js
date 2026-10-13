@@ -1249,4 +1249,15 @@ export default {
   "src.hmc_list": "القائمة الرسمية للعلامات التجارية المعتمدة من HMC (المملكة المتحدة).",
   // ---------- Certification vérifiée (marque) ----------
   "certv.brand_t": "العلامة مدرجة في قائمة {org}",
+  // ---------- Design : fiche produit ----------
+  "detail.compo_tab": "المكونات",
+  "detail.cosmetic_tab": "الصحة",
+  "detail.add_photo": "أضف صورة",
+  "certv.checking": "جارٍ التحقق من القائمة الرسمية…",
+  "certv.badge.verified": "موثّق",
+  "certv.badge.listed": "علامة مدرجة",
+  "certv.badge.missing": "غير موجود",
+  // ---------- Viande couverte par la certification ----------
+  "flag.viande.covered_label": "لحم",
+  "flag.viande.covered_reason": "ذبح اللحم تراقبه جهة الاعتماد المذكورة على المنتج.",
 };
