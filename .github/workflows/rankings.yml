@@ -1,0 +1,46 @@
+name: Classements
+
+# Met à jour public/data/rankings/ chaque mercredi, à la demande, ou quand le script / les rayons changent.
+on:
+  schedule:
+    - cron: "37 3 * * 3"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/build-rankings.mjs", "public/lib/rankings.js", ".github/workflows/rankings.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rankings
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Préparer les classements
+        timeout-minutes: 50
+        run: |
+          set -o pipefail
+          node scripts/build-rankings.mjs 2>&1 | tee docs/rankings-build.txt
+      - name: Enregistrer
+        if: always()
+        run: |
+          git add -A docs/rankings-build.txt
+          if [ -d public/data/rankings ]; then git add -A public/data/rankings; fi
+          if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Classements mis à jour"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
