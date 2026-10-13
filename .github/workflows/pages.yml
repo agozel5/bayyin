@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Les robots de données poussent avec le jeton GitHub, ce qui ne relance pas ce workflow :
+  # on republie donc après chacun d'eux.
+  workflow_run:
+    workflows: ["Rappels de produits (RappelConso)", "Listes des organismes halal", "Encyclopédie des additifs", "Base des ingrédients cosmétiques (CosIng)", "Base des médicaments"]
+    types: [completed]
 
 permissions:
   contents: read
