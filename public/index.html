@@ -146,8 +146,13 @@
       <input id="searchInput" type="search" data-i18n-ph="search.placeholder" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </form>
     <div id="searchSuggest" class="suggest">
+      <div id="recentSearches"></div>
       <p class="label" data-i18n="search.ideas"></p>
       <div class="chips" id="suggestChips"></div>
+      <a class="search-tip" href="#scan" data-scan-tip>
+        <span class="search-tip-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></span>
+        <span><strong data-i18n="search.tip_t"></strong><small data-i18n="search.tip_p"></small></span>
+      </a>
     </div>
     <div id="searchResults" aria-live="polite"></div>
   </section>
@@ -165,8 +170,8 @@
   <section class="view" id="view-additives" data-view="additives" aria-labelledby="h-add" hidden>
     <header class="view-head"><h1 id="h-add" data-i18n="add.title"></h1><p data-i18n="add.sub"></p></header>
     <div class="segmented" id="addModes" role="tablist">
-      <button type="button" role="tab" aria-selected="true" data-mode="halal" data-i18n="add.mode_halal"></button>
-      <button type="button" role="tab" aria-selected="false" data-mode="sante" data-i18n="add.mode_health"></button>
+      <button type="button" role="tab" aria-selected="true" data-mode="ecodes" data-i18n="add.mode_e"></button>
+      <button type="button" role="tab" aria-selected="false" data-mode="halal" data-i18n="add.mode_ingr"></button>
     </div>
     <form class="searchbar" id="addForm" role="search" autocomplete="off" onsubmit="return false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -174,6 +179,7 @@
       <input id="addInput" type="search" data-i18n-ph="add.placeholder">
     </form>
     <div class="chips filter" id="addFilter" role="tablist"></div>
+    <div class="chips filter add-fn" id="addFn"></div>
     <div id="addList"></div>
   </section>
 

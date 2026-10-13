@@ -1385,3 +1385,41 @@ html[data-text="xlarge"]{font-size:125%}
 .fb-stars button.on{color:#E9A100}
 .fb-stars button.on path{fill:currentColor}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* encyclopédie des codes E */
+.add-fn{margin-top:-10px}
+.chip.mini{padding:6px 12px;font-size:.82rem}
+.ae-list{display:flex;flex-direction:column;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--lift);overflow:hidden}
+.ae{border-top:1px solid var(--line)}
+.ae:first-child{border-top:none}
+.ae summary{display:flex;align-items:center;gap:12px;padding:12px 14px;list-style:none;cursor:pointer}
+.ae summary::-webkit-details-marker{display:none}
+.ae-code{flex:none;min-width:58px;padding:5px 8px;border-radius:9px;background:var(--tint);font-weight:800;font-size:.86rem;text-align:center;font-variant-numeric:tabular-nums}
+.ae-name{flex:1;min-width:0;display:flex;flex-direction:column}
+.ae-name strong{font-weight:650;font-size:.96rem;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ae-name small{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ae-badges{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ae-badges .pill{font-size:.72rem;padding:3px 8px}
+.ae-ok{display:flex;width:26px;height:26px;border-radius:50%;align-items:center;justify-content:center;background:var(--c-cert-bg);color:var(--c-cert)}
+.ae-ok svg{width:15px;height:15px;stroke-width:2.6}
+.ae[open] summary{background:var(--tint)}
+.ae[open] .ae-code{background:var(--surface)}
+.ae-body{margin:0;padding:6px 14px 14px;display:flex;flex-direction:column;gap:10px;background:var(--tint)}
+.ae-body div{display:flex;flex-direction:column;gap:3px}
+.ae-body dt{font-size:.74rem;font-weight:800;color:var(--muted)}
+.ae-body dd{margin:0;font-size:.92rem;line-height:1.45}
+.ae-body .pill{font-size:.72rem;padding:2px 8px;margin-inline-end:4px}
+.ae-body .add-setting{display:block;margin-top:4px;font-size:.84rem;color:var(--muted)}
+.ae-src{display:inline-block;margin-top:4px;font-size:.84rem;font-weight:700;text-decoration:none}
+.ae-mine{margin:0;font-size:.86rem;font-weight:700;color:var(--brand-dark)}
+
+/* recherche : récentes, astuce, filtres */
+.suggest{display:flex;flex-direction:column;gap:10px}
+.label-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#recentSearches:not(:empty){display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.chip.recent{display:inline-flex;align-items:center;gap:6px}
+.chip.recent svg{width:15px;height:15px;color:var(--faint)}
+.search-tip{display:flex;align-items:center;gap:14px;margin-top:14px;padding:14px 16px;border-radius:var(--r-lg);background:var(--brand-soft);color:var(--fg);text-decoration:none}
+.search-tip-ico{flex:none;width:42px;height:42px;border-radius:12px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
+.search-tip span:last-child{display:flex;flex-direction:column;gap:2px}
+.search-tip small{color:var(--muted);line-height:1.35}

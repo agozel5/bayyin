@@ -1165,7 +1165,38 @@ function renderHome() {
 // Recherche
 // ===========================================================================
 const SUGGESTIONS = DEMO ? ["Haribo", "Nutella", "Saucisson", "Camembert", "Nuggets"] : ["Nutella", "Haribo", "Isla Délice", "Kinder", "Danone"];
+// Recherches récentes (sur l'appareil)
+const RECENT_Q = "bayyin_recent_searches";
+const recentQueries = () => readJson(RECENT_Q, []);
+function rememberQuery(q) {
+  writeJson(RECENT_Q, [q, ...recentQueries().filter((x) => x.toLowerCase() !== q.toLowerCase())].slice(0, 8));
+}
+function renderRecentSearches() {
+  const list = recentQueries();
+  $("recentSearches").innerHTML = list.length
+    ? `<div class="label-row"><p class="label">${t("search.recent")}</p><button type="button" class="link-btn" data-recent-clear>${t("search.recent_clear")}</button></div>
+       <div class="chips">${list.map((q) => `<button type="button" class="chip recent" data-q="${esc(q)}">${svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>')}${esc(q)}</button>`).join("")}</div>`
+    : "";
+}
+$("recentSearches").addEventListener("click", (e) => {
+  if (e.target.closest("[data-recent-clear]")) {
+    writeJson(RECENT_Q, []);
+    return renderRecentSearches();
+  }
+  const b = e.target.closest("[data-q]");
+  if (!b) return;
+  $("searchInput").value = b.dataset.q;
+  runSearch(b.dataset.q);
+});
+$("searchSuggest").addEventListener("click", (e) => {
+  if (!e.target.closest("[data-scan-tip]")) return;
+  e.preventDefault();
+  location.hash = "#scan";
+  setTimeout(() => openCamera(), 80);
+});
+
 function renderSuggestions() {
+  renderRecentSearches();
   // Des marques, et deux mots courants dans la langue de l'app (la recherche les comprend dans les 4 langues)
   const ideas = [...SUGGESTIONS.slice(0, 3), t("search.idea_milk"), t("search.idea_chicken"), ...SUGGESTIONS.slice(3)];
   $("suggestChips").innerHTML = ideas.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
@@ -1188,9 +1219,11 @@ async function runSearch(raw, { force = false } = {}) {
     searchCtl?.abort();
     searchRunning = "";
     lastResults = null;
+    renderRecentSearches();
     return (out.innerHTML = "");
   }
   if (q === searchRunning && !force) return;
+  if (!lastResults || lastResults.q !== q) resultFilter = "all";
   searchCtl?.abort();
   const ctl = (searchCtl = new AbortController());
   searchRunning = q;
@@ -1216,6 +1249,7 @@ async function runSearch(raw, { force = false } = {}) {
     const fresh = (list) => list.filter((p) => !known.has(p.code));
     [...res.food, ...res.beauty].forEach((p) => memo.set(p.code, p));
     lastResults = { q, local, food: fresh(res.food), beauty: fresh(res.beauty), alt: res.alt, foodFailed: res.foodFailed };
+    rememberQuery(q);
     renderResults(q);
   } catch (err) {
     if (ctl.signal.aborted) return;
@@ -1226,9 +1260,24 @@ async function runSearch(raw, { force = false } = {}) {
 }
 const resultGroup = (title, list, count = false) =>
   `<section class="result-group"><p class="label">${esc(title)}${count ? ` · ${list.length}` : ""}</p><div class="list">${list.map((p) => rowHtml(p)).join("")}</div></section>`;
+let resultFilter = "all";
+const RESULT_FILTERS = {
+  all: () => true,
+  halal: (p) => ["halal_certifie", "halal_probable"].includes(verdictOf(p).status),
+  safe: (p) => !profileOf(p).alert,
+};
 function renderResults(q) {
-  const r = lastResults;
-  if (!r || r.q !== q) return;
+  const r0 = lastResults;
+  if (!r0 || r0.q !== q) return;
+  const withProfile = hasProfile(prefs().profile) || prefs().members.length > 0;
+  if (resultFilter === "safe" && !withProfile) resultFilter = "all";
+  const keep = RESULT_FILTERS[resultFilter];
+  const r = { ...r0, local: r0.local.filter(keep), food: r0.food.filter(keep), beauty: r0.beauty.filter(keep) };
+  const all0 = [...r0.local, ...r0.food, ...r0.beauty];
+  const chips = !r0.single && all0.length > 1
+    ? `<div class="chips filter" role="tablist">${Object.keys(RESULT_FILTERS).filter((id) => id !== "safe" || withProfile)
+        .map((id) => `<button type="button" class="chip" role="tab" aria-selected="${id === resultFilter}" data-rf="${id}">${t(`search.f.${id}`)}<span class="n">${all0.filter(RESULT_FILTERS[id]).length}</span></button>`).join("")}</div>`
+    : "";
   const total = r.local.length + r.food.length + r.beauty.length;
   let html = "";
   if (r.single) html = `<div class="list">${r.food.map((p) => rowHtml(p)).join("")}</div>`;
@@ -1241,10 +1290,16 @@ function renderResults(q) {
   }
   // Les aliments n'ont pas répondu : on le dit, au lieu d'afficher seulement des cosmétiques
   if (r.foodFailed) html = messageHtml(t("search.food_failed.t"), t("search.food_failed.p"), `<button class="btn btn-primary" type="button" data-search-retry>${esc(t("msg.retry"))}</button>`) + html;
+  else if (!total && all0.length) html = `<div class="empty"><p>${esc(t("search.f.none"))}</p></div>`;
   else if (!total) html = `<div class="empty">${emptyArt()}<strong>${esc(t("search.none.t"))}</strong><p>${esc(t("search.none.p", { q }))}</p></div>`;
-  $("searchResults").innerHTML = html;
+  $("searchResults").innerHTML = chips + html;
 }
 $("searchResults").addEventListener("click", (e) => {
+  const f = e.target.closest("[data-rf]");
+  if (f) {
+    resultFilter = f.dataset.rf;
+    return renderResults($("searchInput").value.trim());
+  }
   if (e.target.closest("[data-search-retry]")) runSearch($("searchInput").value, { force: true });
 });
 function submitSearch(e) {
@@ -1368,7 +1423,7 @@ store.subscribe(() => {
 // ===========================================================================
 // Additifs (deux listes : halal selon vos réglages, et santé)
 // ===========================================================================
-let addMode = "halal";
+let addMode = "ecodes";
 const addOpen = new Set(); // groupes ouverts par l'utilisateur
 let addFilter = "all";
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
@@ -1418,7 +1473,8 @@ function healthItems() {
 
 const ADD_MODES = {
   halal: {
-    items: halalItems,
+    // Ingrédients sensibles : les codes E ont leur propre encyclopédie
+    items: () => halalItems().filter((i) => i.group !== t("add.group_additives")),
     filters: [["all", "add.f.all"], ["haram", "sev.haram"], ["mashbouh", "sev.mashbouh"], ["info", "sev.info"]],
     pill: (it) => `<span class="pill ${it.level === "haram" ? "s-haram" : it.level === "mashbouh" ? "s-mashbouh" : "r-info"}">${t(`sev.${it.level}`)}</span>`,
     order: { haram: 0, mashbouh: 1, info: 2 },
@@ -1432,6 +1488,9 @@ const ADD_MODES = {
 };
 
 function renderAdditives() {
+  document.querySelectorAll("#addModes button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === addMode)));
+  $("addFn").hidden = addMode !== "ecodes";
+  if (addMode === "ecodes") return renderECodes();
   const m = ADD_MODES[addMode];
   const all = m.items();
   const q = norm($("addInput").value || "");
@@ -1476,6 +1535,146 @@ function renderAdditives() {
         .join("")
     : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t(addMode === "halal" ? "add.empty_halal" : "add.empty_health")}</p></div>`;
 }
+// ---------------------------------------------------------------------------
+// Encyclopédie des codes E : nom, fonction, origine (Open Food Facts), verdict halal (vos réglages)
+// et risque santé (règles de Bayyin + évaluation de l'EFSA)
+// ---------------------------------------------------------------------------
+let eDb = null;
+let eDbLoading = null;
+let eFn = "";
+let eShown = 80;
+function loadEDb() {
+  if (eDb || eDbLoading) return eDbLoading;
+  eDbLoading = fetch("data/additives.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      eDb = d;
+      if (current === "additives") renderAdditives();
+    })
+    .catch(() => { eDbLoading = null; });
+  return eDbLoading;
+}
+function eHalal(code) {
+  const a = ADDITIVES[code];
+  if (!a) return { level: "ok" };
+  const topics = prefs().topics;
+  if (a.group === "gras") return { level: SEVERITY_OF[topics.derives], reason: t("flag.fatty.reason"), topic: "derives" };
+  return { level: TOPIC_OF[code] ? SEVERITY_OF[topics[TOPIC_OF[code]]] : a.severity, reason: t(`flag.${code}.reason`), topic: TOPIC_OF[code] };
+}
+function eHealth(code, it) {
+  const r = ADDITIVE_RISK[code];
+  if (r) return { level: r.level, reason: t(`risk.reason.${r.key}`) };
+  if (it.r === "high" || it.r === "moderate") return { level: "modere", reason: t("add.efsa_over") };
+  return { level: null };
+}
+// Fonction absente de la fiche : déduite de la numérotation européenne des additifs
+function eFunctions(it) {
+  if (it.k.length) return it.k;
+  const n = parseInt(it.e.slice(1), 10);
+  if (n >= 100 && n < 200) return ["colour"];
+  if (n >= 200 && n < 300) return ["preservative"];
+  if (n >= 300 && n < 400) return ["antioxidant"];
+  if (n >= 400 && n < 500) return ["thickener"];
+  if (n >= 500 && n < 600) return ["acidity-regulator"];
+  if (n >= 600 && n < 700) return ["flavour-enhancer"];
+  if (n >= 950 && n < 970) return ["sweetener"];
+  if (n >= 900 && n < 950) return ["glazing-agent"];
+  return ["other"];
+}
+const eOrigin = (it) => (it.g === "n" ? "animal" : it.v === "n" ? "animal_product" : it.v === "m" || it.g === "m" ? "maybe" : it.v === "y" ? "plant" : "unknown");
+function myAdditiveCounts() {
+  const counts = new Map();
+  for (const e of store.all()) for (const tag of (e.p.raw && e.p.raw.additives_tags) || []) {
+    const c = String(tag).replace(/^en:/, "").toLowerCase();
+    counts.set(c, (counts.get(c) || 0) + 1);
+  }
+  return counts;
+}
+function renderECodes() {
+  if (!eDb) {
+    $("addFilter").innerHTML = "";
+    $("addFn").innerHTML = "";
+    $("addList").innerHTML = loadingHtml(t("msg.loading"));
+    loadEDb();
+    return;
+  }
+  const lang = getLang();
+  const mine = myAdditiveCounts();
+  const rows = eDb.items.map((it) => {
+    const code = it.e.toLowerCase();
+    const raw = it.n[lang] || it.n.fr || it.n.en || "";
+    it.k = eFunctions(it);
+    return { it, code, label: it.e.replace(/[A-F]$/, (l) => l.toLowerCase()), name: raw.charAt(0).toUpperCase() + raw.slice(1),
+      halal: eHalal(code), health: eHealth(code, it), origin: eOrigin(it), mine: mine.get(code) || 0 };
+  });
+  const FILTERS = {
+    all: () => true,
+    mine: (r) => r.mine > 0,
+    halal: (r) => r.halal.level === "haram" || r.halal.level === "mashbouh",
+    health: (r) => !!r.health.level,
+    animal: (r) => r.origin === "animal" || r.origin === "animal_product" || r.origin === "maybe",
+  };
+  if (!FILTERS[addFilter]) addFilter = "all";
+  $("addFilter").innerHTML = Object.keys(FILTERS)
+    .filter((id) => id !== "mine" || mine.size)
+    .map((id) => `<button type="button" class="chip" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${t(`add.ef.${id}`)}<span class="n">${rows.filter(FILTERS[id]).length}</span></button>`)
+    .join("");
+  // Fonctions les plus courantes d'abord
+  const fnCount = new Map();
+  rows.forEach((r) => r.it.k.forEach((k) => fnCount.set(k, (fnCount.get(k) || 0) + 1)));
+  const fns = [...fnCount].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const fnName = (k) => t(`fn.${k}`);
+  $("addFn").innerHTML = [`<button type="button" class="chip mini" aria-selected="${!eFn}" data-fn="">${t("add.fn_all")}</button>`,
+    ...fns.map((k) => `<button type="button" class="chip mini" aria-selected="${eFn === k}" data-fn="${esc(k)}">${esc(fnName(k))}</button>`)].join("");
+  const q = norm($("addInput").value || "");
+  const qCode = q.replace(/^e-?/, "");
+  const list = rows.filter((r) => FILTERS[addFilter](r) && (!eFn || r.it.k.includes(eFn)) &&
+    (!q || r.code === "e" + qCode || r.code.startsWith("e" + qCode) && /^\d/.test(qCode) || norm(r.name + " " + Object.values(r.it.n).join(" ")).includes(q)));
+  if (addFilter === "mine") list.sort((a, b) => b.mine - a.mine);
+  // Recherche par nom : le nom qui commence par les lettres tapées d'abord
+  else if (q && !/^\d/.test(qCode)) {
+    const rank = (r) => (norm(r.name) === q ? 2 : norm(r.name).startsWith(q) ? 1 : 0);
+    list.sort((a, b) => rank(b) - rank(a));
+  }
+  const halalPill = (h) => (h.level === "haram" || h.level === "mashbouh" ? `<span class="pill ${h.level === "haram" ? "s-haram" : "s-mashbouh"}">${t(`sev.${h.level}`)}</span>` : "");
+  const healthPill = (h) => (h.level ? `<span class="pill r-${h.level}">${t(`risk.short.${h.level}`)}</span>` : "");
+  const row = (r) => {
+    const fn = r.it.k.map(fnName).join(", ");
+    const okAll = !halalPill(r.halal) && !healthPill(r.health);
+    return `<details class="ae">
+      <summary><span class="ae-code" dir="ltr">${esc(r.label)}</span><span class="ae-name"><strong dir="auto">${esc(r.name || r.label)}</strong>${fn ? `<small>${esc(fn)}</small>` : ""}</span>
+        <span class="ae-badges">${halalPill(r.halal)}${healthPill(r.health)}${okAll ? `<span class="ae-ok" aria-label="${esc(t("add.no_concern"))}">${svg(I.check)}</span>` : ""}</span></summary>
+      <dl class="ae-body">
+        ${fn ? `<div><dt>${t("add.e_fn")}</dt><dd>${esc(fn)}</dd></div>` : ""}
+        <div><dt>${t("add.e_origin")}</dt><dd>${t(`add.origin.${r.origin}`)}</dd></div>
+        <div><dt>${t("add.e_halal")}</dt><dd>${r.halal.reason ? `${halalPill(r.halal) || `<span class="pill r-info">${t("sev.info")}</span>`} ${esc(r.halal.reason)}` : esc(t("add.halal_ok"))}
+          ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
+        <div><dt>${t("add.e_health")}</dt><dd>${r.health.level ? `${healthPill(r.health)} ${esc(r.health.reason)}` : esc(t("add.health_ok"))}
+          ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
+          ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
+        ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}
+      </dl>
+    </details>`;
+  };
+  $("addList").innerHTML = list.length
+    ? `<p class="search-count">${esc(tn("add.count", list.length))}</p><div class="ae-list">${list.slice(0, eShown).map(row).join("")}</div>` +
+      (list.length > eShown ? `<button class="btn btn-soft btn-block" type="button" data-e-more>${esc(t("add.more", { n: list.length - eShown }))}</button>` : "") +
+      `<p class="fineprint">${t("add.e_source")}</p>`
+    : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t("add.e_none")}</p></div>`;
+}
+$("addFn").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-fn]");
+  if (!b) return;
+  eFn = b.dataset.fn;
+  eShown = 80;
+  renderAdditives();
+});
+$("addList").addEventListener("click", (e) => {
+  if (!e.target.closest("[data-e-more]")) return;
+  eShown += 120;
+  renderAdditives();
+});
+
 $("addModes").addEventListener("click", (e) => {
   const b = e.target.closest("[data-mode]");
   if (!b) return;
@@ -1489,7 +1688,10 @@ $("addFilter").addEventListener("click", (e) => {
   addFilter = b.dataset.f;
   renderAdditives();
 });
-$("addInput").addEventListener("input", renderAdditives);
+$("addInput").addEventListener("input", () => {
+  eShown = 80;
+  renderAdditives();
+});
 $("addList").addEventListener("toggle", (e) => {
   const d = e.target;
   if (!d.matches || !d.matches("details.add-sec")) return;
