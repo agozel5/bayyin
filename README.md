@@ -33,6 +33,8 @@ Ce qui la distingue :
   bandeau quand un produit déjà scanné vient d'être rappelé ;
 - **organismes de certification** : fiches neutres (AVS, Achahada, mosquées habilitées, HMC…) et choix des
   labels que l'on suit, appliqué au verdict ;
+- **certification vérifiée** : le label AVS, Achahada ou HMC est comparé chaque semaine à la liste publiée par
+  l'organisme (estampille sanitaire de l'emballage, puis marque) — « Certification vérifiée » ou « pas retrouvé dans la liste » ;
 - **recherche multilingue et triée par pertinence** (une recherche en arabe, turc ou anglais est aussi lancée en français) ;
 - **visite guidée** au premier lancement, relançable depuis les réglages ;
 - **mode rayon** (plusieurs codes-barres d'un coup), **mode courses**, **comparaison**, **carte des commerces halal**

@@ -9,6 +9,9 @@ export const SOURCES = [
   { id: "bdpm", group: "data", kind: "database", name: "Base de données publique des médicaments", url: "https://base-donnees-publique.medicaments.gouv.fr" },
   { id: "rappelconso", group: "data", kind: "database", name: "RappelConso (DGCCRF, DGAL)", url: "https://rappel.conso.gouv.fr" },
   { id: "osm", group: "data", kind: "database", name: "OpenStreetMap", url: "https://www.openstreetmap.org" },
+  { id: "avs_list", group: "data", kind: "database", name: "AVS — annuaire des fournisseurs", url: "https://avs.fr/etablissements/index.html?category=fournisseurs" },
+  { id: "achahada_list", group: "data", kind: "database", name: "Achahada — établissements et marques", url: "https://achahada.com/marques/" },
+  { id: "hmc_list", group: "data", kind: "database", name: "HMC — approved brands", url: "https://halalhmc.org/brands/" },
   // Santé et additifs
   { id: "efsa", group: "health", kind: "agency", name: "EFSA", url: "https://www.efsa.europa.eu" },
   { id: "anses", group: "health", kind: "agency", name: "ANSES", url: "https://www.anses.fr" },

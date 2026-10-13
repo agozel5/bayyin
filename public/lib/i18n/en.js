@@ -1236,4 +1236,17 @@ export default {
   "fn.acidity-regulator": "Acidity regulator, anti-caking agent",
   "fn.glazing-agent": "Glazing agent, gas",
   "fn.other": "Other",
+  // ---------- Certification vérifiée ----------
+  "certv.ok_t": "Certification verified",
+  "certv.ok_stamp": "The health mark on the pack ({match}) belongs to a site on the official {org} list (updated {date}).",
+  "certv.ok_brand": "“{match}” is on the official {org} list (updated {date}).",
+  "certv.missing_t": "Not found on the {org} list",
+  "certv.missing": "This product's brand and health mark are not on the list published by {org} (updated {date}). These lists are incomplete: it does not prove the label is false, check the logo on the pack.",
+  "certv.list": "{org} list",
+  // ---------- Sources : listes des organismes ----------
+  "src.avs_list": "Official list of AVS-certified suppliers, matched against the product's health mark and brand.",
+  "src.achahada_list": "Official list of sites and brands audited by Achahada.",
+  "src.hmc_list": "Official list of HMC-approved brands (UK).",
+  // ---------- Certification vérifiée (marque) ----------
+  "certv.brand_t": "Brand on the {org} list",
 };

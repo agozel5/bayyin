@@ -1423,3 +1423,13 @@ html[data-text="xlarge"]{font-size:125%}
 .search-tip-ico{flex:none;width:42px;height:42px;border-radius:12px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
 .search-tip span:last-child{display:flex;flex-direction:column;gap:2px}
 .search-tip small{color:var(--muted);line-height:1.35}
+
+/* Certification vérifiée */
+.certv{display:flex;gap:10px;align-items:flex-start;margin:6px 0 0;padding:12px 14px;border-radius:var(--r-md);background:var(--c-cert-bg);border:1px solid var(--c-cert)}
+.certv > svg{flex:none;width:18px;height:18px;padding:5px;border-radius:50%;background:var(--c-cert);color:#fff;box-sizing:content-box;fill:none;stroke:currentColor;stroke-width:2.4}
+.certv strong{display:block;font-weight:800;color:var(--c-cert)}
+.certv p{margin:2px 0 0;font-size:.85rem;color:var(--muted)}
+.certv a{font-weight:700;white-space:nowrap}
+.certv-miss{background:var(--c-none-bg);border-color:var(--line)}
+.certv-miss > svg{background:var(--c-none)}
+.certv-miss strong{color:var(--fg)}

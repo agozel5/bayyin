@@ -1236,4 +1236,17 @@ export default {
   "fn.acidity-regulator": "Asitlik düzenleyici, topaklanma önleyici",
   "fn.glazing-agent": "Parlatıcı, gaz",
   "fn.other": "Diğer",
+  // ---------- Certification vérifiée ----------
+  "certv.ok_t": "Sertifika doğrulandı",
+  "certv.ok_stamp": "Ambalajdaki sağlık damgası ({match}), resmi {org} listesindeki bir tesise ait ({date} tarihli güncelleme).",
+  "certv.ok_brand": "“{match}”, resmi {org} listesinde yer alıyor ({date} tarihli güncelleme).",
+  "certv.missing_t": "{org} listesinde bulunamadı",
+  "certv.missing": "Bu ürünün markası ve sağlık damgası {org} tarafından yayımlanan listede yok ({date} tarihli güncelleme). Bu listeler eksiktir: etiketin sahte olduğunu kanıtlamaz, ambalajdaki logoyu kontrol edin.",
+  "certv.list": "{org} listesi",
+  // ---------- Sources : listes des organismes ----------
+  "src.avs_list": "AVS sertifikalı tedarikçilerin resmi listesi; ürünün sağlık damgası ve markasıyla karşılaştırılır.",
+  "src.achahada_list": "Achahada tarafından denetlenen tesis ve markaların resmi listesi.",
+  "src.hmc_list": "HMC tarafından onaylanan markaların resmi listesi (Birleşik Krallık).",
+  // ---------- Certification vérifiée (marque) ----------
+  "certv.brand_t": "Marka {org} listesinde",
 };

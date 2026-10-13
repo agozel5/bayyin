@@ -1250,4 +1250,17 @@ export default {
   "fn.acidity-regulator": "Correcteur d'acidité, anti-agglomérant",
   "fn.glazing-agent": "Agent d'enrobage, gaz",
   "fn.other": "Autre",
+  // ---------- Certification vérifiée ----------
+  "certv.ok_t": "Certification vérifiée",
+  "certv.ok_stamp": "L'estampille sanitaire de l'emballage ({match}) est celle d'un établissement de la liste officielle {org} (mise à jour du {date}).",
+  "certv.ok_brand": "« {match} » figure sur la liste officielle {org} (mise à jour du {date}).",
+  "certv.missing_t": "Pas retrouvé dans la liste {org}",
+  "certv.missing": "La marque et l'estampille de ce produit ne figurent pas dans la liste publiée par {org} (mise à jour du {date}). Ces listes sont incomplètes : cela ne prouve pas que le label est faux, vérifiez le logo sur l'emballage.",
+  "certv.list": "Liste {org}",
+  // ---------- Sources : listes des organismes ----------
+  "src.avs_list": "Liste officielle des fournisseurs certifiés AVS, comparée à l'estampille et à la marque du produit.",
+  "src.achahada_list": "Liste officielle des établissements et marques contrôlés par Achahada.",
+  "src.hmc_list": "Liste officielle des marques approuvées par HMC (Royaume-Uni).",
+  // ---------- Certification vérifiée (marque) ----------
+  "certv.brand_t": "Marque présente dans la liste {org}",
 };

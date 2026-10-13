@@ -16,6 +16,7 @@ import { createAisle } from "./lib/aisle.js";
 import { fetchPlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
 import { recallsFor, recentRecalls, matchRecent, isActive } from "./lib/recalls.js";
+import { loadCertified, verifyCertification } from "./lib/certcheck.js";
 import { CERTIFIER_INFO, searchUrl } from "./lib/certifiers.js";
 import { verdictConfidence } from "./lib/confidence.js";
 import { contribute, contributed, offAccountReady, addUrl } from "./lib/contribute.js";
@@ -209,15 +210,15 @@ function medicineSection(p) {
 }
 
 function halalSection(p, v) {
-  // Label lu sur la fiche Open Food Facts : les organismes ne publient pas la liste de leurs produits,
-  // on ne peut donc pas le confirmer automatiquement. On le dit, et on donne un moyen de vérifier.
+  // Label lu sur la fiche Open Food Facts. Quand l'organisme publie une liste (AVS, Achahada, HMC),
+  // loadCertCheck remplace la note par le résultat de la vérification ; sinon on donne un moyen de vérifier.
   const org = v.certification && v.certification.organisme;
   const verifyUrl = org
     ? CERT_LINKS[org] || `https://duckduckgo.com/?q=${encodeURIComponent(`${org} halal ${p.brand || ""}`)}`
     : `https://duckduckgo.com/?q=${encodeURIComponent(`${p.brand || nameOf(p)} halal certification organisme`)}`;
   const cert = v.certification
     ? `<div class="cert">${svg(I.shield)}${t("detail.certified")}${org ? " · " + esc(org) : ""}</div>
-       <p class="cert-note">${t("cert.unverified")} <a href="${esc(verifyUrl)}" target="_blank" rel="noopener">${esc(org ? t("cert.verify", { org }) : t("cert.verify_any"))} ↗</a></p>`
+       <div id="certCheck"><p class="cert-note">${t("cert.unverified")} <a href="${esc(verifyUrl)}" target="_blank" rel="noopener">${esc(org ? t("cert.verify", { org }) : t("cert.verify_any"))} ↗</a></p></div>`
     : "";
   const ignored = v.certIgnored
     ? `<div class="cert cert-off">${svg(I.shield)}${esc(t("certs.ignored", { org: v.certIgnored.organisme }))}</div>`
@@ -610,6 +611,7 @@ function renderSheetProduct(p) {
   $("sheetShare").hidden = false;
   refreshFav();
   loadRecalls(p);
+  loadCertCheck(p);
 }
 
 // ===========================================================================
@@ -630,6 +632,21 @@ function recallHtml(list) {
     ${list.length > 1 ? `<p class="recall-more">${esc(tn("recall.more", list.length - 1))}</p>` : ""}
   </section>`;
 }
+// Certification vérifiée : le label est comparé à la liste publiée par l'organisme
+async function loadCertCheck(p) {
+  const c = p.verdict && p.verdict.certification;
+  if (!c || !c.organismeId || p.verdict.certIgnored) return;
+  const db = await loadCertified();
+  const r = verifyCertification(p, db, c.organismeId);
+  if (!r || !sheetProduct || sheetProduct.code !== p.code || !$("certCheck")) return;
+  const date = r.updated ? longDate(r.updated) : "";
+  const vars = { org: c.organisme, date, match: r.match || "" };
+  const link = r.url ? ` <a href="${esc(r.url)}" target="_blank" rel="noopener">${t("certv.list", { org: c.organisme })} ↗</a>` : "";
+  $("certCheck").innerHTML = r.status === "missing"
+    ? `<div class="certv certv-miss">${svg(I.shield)}<div><strong>${esc(t("certv.missing_t", vars))}</strong><p>${esc(t("certv.missing", vars))}${link}</p></div></div>`
+    : `<div class="certv certv-ok">${svg(I.check)}<div><strong>${esc(t(r.status === "stamp" ? "certv.ok_t" : "certv.brand_t", vars))}</strong><p>${esc(t(r.status === "stamp" ? "certv.ok_stamp" : "certv.ok_brand", vars))}${link}</p></div></div>`;
+}
+
 async function loadRecalls(p) {
   if (kindOf(p) === "medicine" || !/^\d{8,14}$/.test(p.code)) return;
   const list = await recallsFor(p.code);
