@@ -1260,4 +1260,13 @@ export default {
   // ---------- Viande couverte par la certification ----------
   "flag.viande.covered_label": "Meat",
   "flag.viande.covered_reason": "The slaughter of the meat is audited by the certification body shown on the product.",
+  // ---------- Visionneuse de photos ----------
+  "zoom.open": "Enlarge photo",
+  "zoom.close": "Close",
+  "zoom.prev": "Previous photo",
+  "zoom.next": "Next photo",
+  "zoom.front": "Product",
+  "zoom.ingredients": "Ingredients",
+  "zoom.nutrition": "Nutrition facts",
+  "zoom.hint": "Pinch or double-tap to zoom · swipe down to close",
 };

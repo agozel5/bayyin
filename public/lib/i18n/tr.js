@@ -1260,4 +1260,13 @@ export default {
   // ---------- Viande couverte par la certification ----------
   "flag.viande.covered_label": "Et",
   "flag.viande.covered_reason": "Etin kesimi, ürün üzerinde belirtilen sertifika kuruluşu tarafından denetlenir.",
+  // ---------- Visionneuse de photos ----------
+  "zoom.open": "Fotoğrafı büyüt",
+  "zoom.close": "Kapat",
+  "zoom.prev": "Önceki fotoğraf",
+  "zoom.next": "Sonraki fotoğraf",
+  "zoom.front": "Ürün",
+  "zoom.ingredients": "İçindekiler",
+  "zoom.nutrition": "Besin değerleri",
+  "zoom.hint": "Yakınlaştırmak için iki parmakla açın veya çift dokunun · kapatmak için aşağı kaydırın",
 };

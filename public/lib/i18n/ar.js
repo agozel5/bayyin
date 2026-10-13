@@ -1260,4 +1260,13 @@ export default {
   // ---------- Viande couverte par la certification ----------
   "flag.viande.covered_label": "لحم",
   "flag.viande.covered_reason": "ذبح اللحم تراقبه جهة الاعتماد المذكورة على المنتج.",
+  // ---------- Visionneuse de photos ----------
+  "zoom.open": "تكبير الصورة",
+  "zoom.close": "إغلاق",
+  "zoom.prev": "الصورة السابقة",
+  "zoom.next": "الصورة التالية",
+  "zoom.front": "المنتج",
+  "zoom.ingredients": "المكونات",
+  "zoom.nutrition": "القيم الغذائية",
+  "zoom.hint": "قرّب بإصبعين أو انقر مرتين للتكبير · اسحب للأسفل للإغلاق",
 };

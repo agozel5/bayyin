@@ -1500,3 +1500,41 @@ html[data-text="xlarge"]{font-size:125%}
   .cert-card[data-state="verified"] .cert-badge,.cert-card[data-state="listed"] .cert-badge{animation:badge-in .4s cubic-bezier(.3,1.5,.5,1)}
   @keyframes badge-in{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 }
+
+/* ---------- photo du produit : bouton pour l'agrandir ---------- */
+.p-img-btn{position:relative;flex:none;padding:0;border:none;background:none;border-radius:22px;cursor:zoom-in;-webkit-tap-highlight-color:transparent}
+.p-img-btn:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.p-img-btn:active .p-img{transform:scale(.97)}
+.p-img-btn .p-img{display:block;transition:transform .15s ease}
+.p-img-zoom,.p-img-count{position:absolute;inset-block-end:6px;inset-inline-end:6px;display:inline-flex;align-items:center;gap:3px;padding:4px;border-radius:999px;background:rgb(16 24 20 / .62);color:#fff;font-size:.72rem;font-weight:800;backdrop-filter:blur(4px)}
+.p-img-count{padding:3px 7px 3px 5px}
+.p-img-zoom svg,.p-img-count svg{width:15px;height:15px;stroke-width:2.2}
+
+/* ---------- visionneuse ---------- */
+.lightbox{--lb-fade:1;position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:rgba(6,10,8,var(--lb-fade));color:#fff;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.lightbox[hidden]{display:none}
+.lb-top{display:flex;align-items:center;gap:12px;padding:10px 12px 6px 20px}
+.lb-title{flex:1;font-weight:700;font-size:1rem}
+.lb-close{width:44px;height:44px;border:none;border-radius:50%;background:rgb(255 255 255 / .12);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lb-close svg{width:22px;height:22px}
+.lb-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:zoom-in;user-select:none;-webkit-user-select:none}
+.lightbox.zoomed .lb-stage{cursor:grab}
+.lb-stage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;will-change:transform;-webkit-user-drag:none}
+.lb-spin{position:absolute;inset-block-end:16px;inset-inline-end:16px;border-color:rgb(255 255 255 / .25);border-top-color:#fff}
+.lb-spin[hidden]{display:none}
+.lb-nav{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;border:none;border-radius:50%;background:rgb(255 255 255 / .14);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lb-nav[hidden]{display:none}
+.lb-nav svg{width:22px;height:22px}
+.lb-prev{inset-inline-start:10px}.lb-next{inset-inline-end:10px}
+.lightbox.zoomed .lb-nav,.lightbox.zoomed .lb-foot{opacity:0;pointer-events:none}
+.lb-foot{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 20px 14px;transition:opacity .2s}
+.lb-dots{display:flex;gap:8px}
+.lb-dots button{width:8px;height:8px;padding:0;border:none;border-radius:50%;background:rgb(255 255 255 / .35);cursor:pointer}
+.lb-dots button.on{background:#fff;width:22px;border-radius:999px}
+.lb-hint{margin:0;font-size:.8rem;opacity:.6;text-align:center}
+@media (hover:hover){.lb-nav:hover,.lb-close:hover{background:rgb(255 255 255 / .22)}}
+@media (prefers-reduced-motion:no-preference){
+  .lightbox:not([hidden]){animation:lb-in .2s ease}
+  @keyframes lb-in{from{opacity:0}to{opacity:1}}
+}

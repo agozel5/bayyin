@@ -18,7 +18,7 @@ export const FIELDS = [
   "brands", "quantity",
   "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
-  "image_front_small_url", "image_front_url",
+  "image_front_small_url", "image_front_url", "image_ingredients_url", "image_nutrition_url",
   "nutriscore_grade", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
   "compared_to_category", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags",
 ].join(",");
@@ -60,6 +60,9 @@ export function present(p, prefs = DEFAULT_PREFS) {
     brand: (p.brands || "").split(",")[0].trim(),
     quantity: p.quantity || null,
     image: p.image_front_small_url || p.image_front_url || null,
+    // Photos en grand (visionneuse) : face avant, ingrédients, valeurs nutritionnelles
+    photos: [["front", p.image_front_url || p.image_front_small_url], ["ingredients", p.image_ingredients_url], ["nutrition", p.image_nutrition_url]]
+      .filter(([, u]) => u).map(([k, u]) => ({ k, u })),
     ingredients: ingredientsText(p),
     categories: p.categories_tags || [],
     compared: p.compared_to_category || null, // catégorie de référence d'Open Food Facts (la plus précise)

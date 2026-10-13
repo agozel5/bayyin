@@ -1274,4 +1274,13 @@ export default {
   // ---------- Viande couverte par la certification ----------
   "flag.viande.covered_label": "Viande",
   "flag.viande.covered_reason": "L'abattage de la viande est contrôlé par l'organisme de certification indiqué sur le produit.",
+  // ---------- Visionneuse de photos ----------
+  "zoom.open": "Agrandir la photo",
+  "zoom.close": "Fermer",
+  "zoom.prev": "Photo précédente",
+  "zoom.next": "Photo suivante",
+  "zoom.front": "Le produit",
+  "zoom.ingredients": "Ingrédients",
+  "zoom.nutrition": "Valeurs nutritionnelles",
+  "zoom.hint": "Pincez ou touchez deux fois pour zoomer · glissez vers le bas pour fermer",
 };
