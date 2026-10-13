@@ -952,7 +952,6 @@ export default {
   "places.city_error": "Place not found: “{q}”.",
   "places.note": "Collaborative OpenStreetMap data: check the shop's certification on site.",
   "places.add": "Add a shop",
-  "privacy.5": "For the halal shop map, your location, rounded to about 100 m, is sent to OpenStreetMap only when you tap “Around me”.",
   "places.short": "Halal shops",
   "note.brand_halal": "Specialist halal brand: its whole range is sold with a certification, even if the Open Food Facts record does not say so. Check the halal logo on the packaging.",
   // ---------- accueil : outils et bilan ----------
@@ -1279,4 +1278,6 @@ export default {
   "tour.got_it": "Got it",
   // ---------- Comparaison : voir la fiche ----------
   "cmp.see": "View details",
+  // ---------- Vie privée : commerces ----------
+  "privacy.5": "Halal shops: in France and neighbouring countries, the list is already downloaded and your location stays on your phone. Elsewhere, it is sent to OpenStreetMap, rounded to about 100 m, only when you tap “Around me”.",
 };

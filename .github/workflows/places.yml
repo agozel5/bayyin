@@ -1,0 +1,46 @@
+name: Commerces halal (OpenStreetMap)
+
+# Met à jour public/data/places/ chaque dimanche, à la demande, ou quand le script change.
+on:
+  schedule:
+    - cron: "17 2 * * 0"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/build-places.mjs", ".github/workflows/places.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: places
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Télécharger les commerces halal
+        run: |
+          set -o pipefail
+          node scripts/build-places.mjs 2>&1 | tee docs/places-build.txt
+      - name: Enregistrer si les données ont changé
+        if: always()
+        run: |
+          git add -A public/data/places docs/places-build.txt
+          if git diff --cached --quiet -- public/data/places ':!public/data/places/index.json'; then
+            if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
+          fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Commerces halal mis à jour"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

@@ -1,10 +1,11 @@
 // Commerces halal autour de soi, d'après OpenStreetMap (carte collaborative, licence ODbL).
 // Les commerces sont repérés par l'étiquette diet:halal=only (100 % halal) ou diet:halal=yes
 // (propose du halal), et par cuisine=halal sur les restaurants.
-// Requêtes : API Overpass (lecture d'OpenStreetMap) ; recherche de ville : Nominatim.
+// Données : pré-téléchargées chaque semaine (data/places/, pays couverts), sinon API Overpass en direct ;
+// recherche de ville : Nominatim.
 // La position est arrondie à environ 100 m avant d'être envoyée.
 
-export const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+export const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"];
 export const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 export const RADII = [1000, 3000, 10000];
 export const CATEGORIES = ["butcher", "restaurant", "grocery", "bakery", "other"];
@@ -77,24 +78,81 @@ export function parsePlaces(json, lat, lon) {
   return out.sort((a, b) => a.distance - b.distance);
 }
 
-async function post(url, body, timeout) {
-  const res = await fetch(url, { method: "POST", body: new URLSearchParams({ data: body }), signal: AbortSignal.timeout(timeout) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+// ---------------------------------------------------------------------------
+// 1) Données pré-téléchargées (data/places/, mises à jour chaque semaine) : instantané
+// ---------------------------------------------------------------------------
+const ABS = "https://agozel5.github.io/bayyin/data/places/";
+export const PLACES_BASE =
+  typeof location !== "undefined" && /^https?:/.test(location.protocol) ? new URL("data/places/", location.href).href : ABS;
+const cache = new Map();
+function getJson(url, timeout = 8000) {
+  if (!cache.has(url)) {
+    const job = fetch(url, { signal: AbortSignal.timeout(timeout) })
+      .then((r) => (r.ok ? r.json() : r.status === 404 ? null : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .catch((e) => { cache.delete(url); throw e; });
+    cache.set(url, job);
+  }
+  return cache.get(url);
+}
+/** Le point est-il dans un pays dont les commerces sont pré-téléchargés ? */
+export function coveredBy(index, lat, lon) {
+  if (!index || !index.countries) return false;
+  return Object.values(index.countries).some(({ bbox }) => bbox && lat >= bbox[0] && lat <= bbox[2] && lon >= bbox[1] && lon <= bbox[3]);
+}
+/** Carreaux de 1° qui touchent le cercle de recherche */
+export function tilesAround(lat, lon, radius) {
+  const dLat = radius / 111000, dLon = radius / (111000 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  const out = [];
+  for (let a = Math.floor(lat - dLat); a <= Math.floor(lat + dLat); a++)
+    for (let o = Math.floor(lon - dLon); o <= Math.floor(lon + dLon); o++) out.push(`${a}_${o}`);
+  return out;
+}
+export async function localPlaces(lat, lon, radius, base = PLACES_BASE) {
+  const index = await getJson(`${base}index.json`);
+  if (!coveredBy(index, lat, lon)) return null;
+  const have = new Set(index.tiles || []);
+  const tiles = await Promise.all(tilesAround(lat, lon, radius).filter((k) => have.has(k)).map((k) => getJson(`${base}${k}.json`)));
+  const list = tiles.flat().filter(Boolean)
+    .map((p) => ({ address: "", hours: "", phone: "", website: "", cert: null, ...p, distance: distance(lat, lon, p.lat, p.lon) }))
+    .filter((p) => p.distance <= radius)
+    .sort((a, b) => a.distance - b.distance);
+  return { list, source: "local", updated: index.updated };
 }
 
-/** Commerces halal dans un rayon donné (en mètres) */
-export async function fetchPlaces(lat, lon, radius = 3000) {
+// ---------------------------------------------------------------------------
+// 2) En direct (Overpass), hors des pays couverts : les serveurs sont interrogés en même temps,
+//    le premier qui répond l'emporte (au lieu d'attendre 30 s qu'un serveur lent abandonne).
+// ---------------------------------------------------------------------------
+const live = new Map();
+export async function livePlaces(lat, lon, radius) {
   const q = buildQuery(lat, lon, radius);
-  let lastErr;
-  for (const url of OVERPASS) {
-    try {
-      return parsePlaces(await post(url, q, 30000), lat, lon);
-    } catch (e) {
-      lastErr = e;
-    }
+  if (live.has(q)) return live.get(q);
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 25000);
+  try {
+    const json = await Promise.any(OVERPASS.map(async (url) => {
+      const res = await fetch(url, { method: "POST", body: new URLSearchParams({ data: q }), signal: ctl.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }));
+    const out = { list: parsePlaces(json, lat, lon), source: "live" };
+    live.set(q, out);
+    return out;
+  } catch {
+    throw new Error("overpass");
+  } finally {
+    clearTimeout(timer);
+    ctl.abort(); // arrête les requêtes encore en cours
   }
-  throw lastErr || new Error("overpass");
+}
+
+/** Commerces halal dans un rayon donné (en mètres) : données locales si possible, sinon en direct */
+export async function fetchPlaces(lat, lon, radius = 3000) {
+  try {
+    const local = await localPlaces(lat, lon, radius);
+    if (local) return local;
+  } catch { /* données locales indisponibles : en direct */ }
+  return livePlaces(lat, lon, radius);
 }
 
 /** Ville ou adresse -> coordonnées (premier résultat) */

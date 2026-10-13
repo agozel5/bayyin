@@ -13,7 +13,7 @@ import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
-import { fetchPlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
+import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
 import { recallsFor, recentRecalls, matchRecent, isActive } from "./lib/recalls.js";
 import { loadCertified, verifyCertification } from "./lib/certcheck.js";
@@ -3048,17 +3048,31 @@ function selectPlace(id, { fromMap = false } = {}) {
   if (!fromMap) $("placesMap").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+let placesJob = 0;
 async function searchPlaces(lat, lon, label) {
+  const job = ++placesJob;
+  const radius = placesState.radius;
   Object.assign(placesState, { center: { lat, lon }, label, loading: true, error: "", selected: null, cat: "all" });
   renderPlaces();
+  let res = null;
   try {
-    placesState.list = await fetchPlaces(lat, lon, placesState.radius);
+    res = await fetchPlaces(lat, lon, radius);
+    if (job !== placesJob) return;
+    placesState.list = res.list;
   } catch {
+    if (job !== placesJob) return;
     placesState.list = [];
     placesState.error = t("places.error");
   }
   placesState.loading = false;
   renderPlaces();
+  // Rien dans les données de la semaine : on vérifie quand même en direct, sans bloquer l'écran
+  if (res && res.source === "local" && !res.list.length) {
+    try {
+      const fresh = await livePlaces(lat, lon, radius);
+      if (job === placesJob && fresh.list.length) { placesState.list = fresh.list; renderPlaces(); }
+    } catch { /* on garde le résultat local */ }
+  }
 }
 
 $("placesLocate").addEventListener("click", () => {
@@ -3073,7 +3087,7 @@ $("placesLocate").addEventListener("click", () => {
       placesState.error = t(err && err.code === 1 ? "places.geo_denied" : "places.geo_error");
       renderPlaces();
     },
-    { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
   );
 });
 $("placesCityForm").addEventListener("submit", async (e) => {

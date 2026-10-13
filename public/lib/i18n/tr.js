@@ -952,7 +952,6 @@ export default {
   "places.city_error": "Yer bulunamadı: “{q}”.",
   "places.note": "OpenStreetMap ortak verileri: işletmenin sertifikasını yerinde kontrol edin.",
   "places.add": "İşletme ekle",
-  "privacy.5": "Helal işletme haritası için konumunuz, yaklaşık 100 m'ye yuvarlanarak, yalnızca “Çevremde”ye dokunduğunuzda OpenStreetMap'e gönderilir.",
   "places.short": "Helal işletmeler",
   "note.brand_halal": "Helal uzmanı marka: Open Food Facts kaydında belirtilmese de tüm ürün yelpazesi sertifikalı olarak satılır. Ambalajdaki helal logosunu kontrol edin.",
   // ---------- accueil : outils et bilan ----------
@@ -1279,4 +1278,6 @@ export default {
   "tour.got_it": "Anladım",
   // ---------- Comparaison : voir la fiche ----------
   "cmp.see": "Ayrıntıları gör",
+  // ---------- Vie privée : commerces ----------
+  "privacy.5": "Helal mekânlar: Fransa ve komşu ülkelerde liste önceden indirilmiştir ve konumunuz telefonunuzda kalır. Başka yerlerde, yalnızca “Yakınımda”ya dokunduğunuzda yaklaşık 100 m'ye yuvarlanarak OpenStreetMap'e gönderilir.",
 };

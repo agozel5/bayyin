@@ -966,7 +966,6 @@ export default {
   "places.city_error": "Lieu introuvable : « {q} ».",
   "places.note": "Données collaboratives OpenStreetMap : vérifiez sur place la certification du commerce.",
   "places.add": "Ajouter un commerce",
-  "privacy.5": "Pour la carte des commerces halal, votre position, arrondie à 100 m environ, est envoyée à OpenStreetMap seulement quand vous touchez « Autour de moi ».",
   "places.short": "Commerces halal",
   "note.brand_halal": "Marque spécialisée halal : toute sa gamme est vendue avec une certification, même si la fiche Open Food Facts ne l'indique pas. Vérifiez le logo halal sur l'emballage.",
   // ---------- accueil : outils et bilan ----------
@@ -1293,4 +1292,6 @@ export default {
   "tour.got_it": "Compris",
   // ---------- Comparaison : voir la fiche ----------
   "cmp.see": "Voir la fiche",
+  // ---------- Vie privée : commerces ----------
+  "privacy.5": "Commerces halal : en France et dans les pays voisins, la liste est déjà téléchargée et votre position reste sur votre téléphone. Ailleurs, elle est envoyée à OpenStreetMap, arrondie à 100 m environ, seulement quand vous touchez « Autour de moi ».",
 };
