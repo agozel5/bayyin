@@ -1,0 +1,32 @@
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+FR indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/france-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/FR.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+BE indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/belgium-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/BE.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+LU indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/LU.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+CH indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/CH.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+NL indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/netherlands-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/NL.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+DE indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/germany-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/DE.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+GB indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/great-britain-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/GB.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+ES indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/spain-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/ES.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+IT indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/italy-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/IT.pbf --overwrite
+Can not read OSM input from STDIN (unless --omit-referenced/-R option is used).
+curl: (23) Failure writing output to destination
+AT indisponible : Command failed: set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://download.geofabrik.de/europe/austria-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/AT.pbf --overwrite
+Error: Trop peu de commerces (0) : rien n'est écrit.
+    at main (file:///home/runner/work/bayyin/bayyin/scripts/build-places.mjs:114:29)
