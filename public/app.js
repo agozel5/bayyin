@@ -310,6 +310,65 @@ function halalSection(p, v) {
     ${flags}${askBrand(p, v)}${ocrCta}${twins}</section>`;
 }
 
+// ---------------------------------------------------------------------------
+// Environnement (Green-Score d'Open Food Facts)
+// ---------------------------------------------------------------------------
+const GS_GRADES = ["a-plus", "a", "b", "c", "d", "e", "f"];
+const envCache = new Map();
+function envRow(ico, title, sub, right, extra = "") {
+  return `<div class="env-row"><span class="nut-ico">${svg(ico)}</span><span class="nut-text"><strong>${esc(title)}</strong><small>${sub}</small></span><span class="env-right">${right}</span>${extra}</div>`;
+}
+const ENV_ICO = {
+  prod: '<path d="M4 20h16"/><path d="M6 20v-6l4-3 4 3v6"/><path d="M14 11l3-2 3 2v9"/><circle cx="8" cy="6" r="2"/>',
+  bio: '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l8-8"/>',
+  palm: '<path d="M12 21V11"/><path d="M12 11c-3-3-7-3-9-1M12 11c3-3 7-3 9-1M12 11c-1-4-4-6-7-6M12 11c1-4 4-6 7-6"/>',
+  origin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  pack: '<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>',
+};
+// Matériaux et formes d'emballage (étiquettes Open Food Facts) : traduits quand on les connaît
+const envWord = (kind, w) => {
+  if (!w) return "";
+  const base = w.replace(/^(pp|pet|pe|hdpe|ldpe|ps|pvc)-/, "$1:").split(":")[0];
+  for (const k of [w, base]) { const key = `env.${kind}.${k}`; if (t(key) !== key) return t(key); }
+  return w.replace(/-/g, " ");
+};
+const okIco = (ok) => ok === null ? `<span class="env-na">—</span>` : `<span class="env-ok ${ok ? "yes" : "no"}">${svg(ok ? I.check : I.cross)}</span>`;
+async function loadEnv(p) {
+  const box = $("envBox");
+  if (!box || box.dataset.done) return;
+  box.dataset.done = "1";
+  let e = envCache.get(p.code);
+  if (!e) {
+    try { e = await off.environment(p.code); } catch { e = undefined; }
+    if (e) envCache.set(p.code, e);
+  }
+  if (!sheetProduct || sheetProduct.code !== p.code || !$("envBox")) return;
+  if (e === undefined) { box.dataset.done = ""; box.innerHTML = `<p class="notes">${esc(t("env.error"))}</p>`; return; }
+  if (!e || (!e.known && e.production === null)) { box.innerHTML = `<p class="notes">${esc(t("env.none"))}</p>`; return; }
+  const g = e.grade;
+  const head = e.known
+    ? `<div class="gs-head"><span class="gs-badge gs-${g}">${g === "a-plus" ? "A+" : g.toUpperCase()}</span>
+        <span><strong>Green-Score</strong><small>${esc(t(`env.grade.${g}`))}${e.score !== null ? ` · <span dir="ltr">${e.score}/100</span>` : ""}</small></span></div>`
+    : "";
+  const prodGauge = e.production !== null
+    ? `<div class="gauge env-gauge" dir="ltr"><div class="gauge-bar">${[20, 20, 20, 20, 20].map((w, i) => `<i class="eg-${i}" style="width:${w}%"></i>`).join("")}<b class="gauge-mark" style="left:${e.production}%"></b></div>
+       <div class="gauge-labels">${[0, 20, 40, 60, 80, 100].map((x) => `<span style="left:${x}%">${x}</span>`).join("")}</div></div>` : "";
+  const origins = e.origins.length ? e.origins.map((o) => `${esc(t(`env.origin.${o.origin}`) === `env.origin.${o.origin}` ? o.origin.replace(/-/g, " ") : t(`env.origin.${o.origin}`))} (${o.percent} %)`).join(", ") : esc(t("env.unknown"));
+  const pack = e.packaging.length
+    ? e.packaging.map((x) => esc([envWord("shape", x.shape), envWord("mat", x.material)].filter(Boolean).join(" · "))).join(", ")
+    : esc(t("env.unknown"));
+  box.innerHTML = `${head}
+    <div class="env-rows">
+      ${e.production !== null ? `<details class="nut-d" open><summary>${envRow(ENV_ICO.prod, t("env.production"), esc(t(e.production >= 60 ? "env.prod.low" : e.production >= 40 ? "env.prod.mid" : "env.prod.high")), `<span dir="ltr">${e.production}/100</span>`)}</summary>${prodGauge}
+        <p class="env-note">${esc(t("env.prod_note", { co2: fmt(e.co2 ?? 0), ref: e.reference || "—" }))}</p></details>` : ""}
+      ${envRow(ENV_ICO.bio, t("env.organic"), esc(t(e.organic ? "env.organic.yes" : "env.organic.no")), okIco(e.organic))}
+      ${envRow(ENV_ICO.palm, t("env.palm"), esc(t(`env.palm.${e.palm || "unknown"}`)), okIco(e.palm === "free" ? true : e.palm === "yes" ? false : null))}
+      ${envRow(ENV_ICO.origin, t("env.origins"), origins, "")}
+      ${envRow(ENV_ICO.pack, t("env.packaging"), pack + (e.nonRecyclable ? ` · ${esc(t("env.non_recyclable"))}` : ""), e.packaging.length ? okIco(!e.nonRecyclable) : okIco(null))}
+    </div>
+    <p class="notes">${esc(t("env.source"))}</p>`;
+}
+
 async function loadTwins(p) {
   const box = $("twinBox");
   if (!box) return;
@@ -352,15 +411,27 @@ function askBrand(p, v) {
   </div>`;
 }
 
+// Jauge d'un nutriment : seuils officiels (feux tricolores de la FSA) et position du produit
+function gaugeHtml(n) {
+  if (!n.t) return "";
+  const [a, b] = n.t;
+  const top = Math.max(n.kind === "neg" ? b * 1.6 : b * 1.5, n.value * 1.05);
+  const pct = (x) => Math.max(0, Math.min(100, (x / top) * 100));
+  const segs = n.kind === "neg" ? ["g-good", "g-mid", "g-bad"] : ["g-low", "g-good", "g-best"];
+  const r = (x) => fmt(x < 10 ? Math.round(x * 10) / 10 : Math.round(x));
+  return `<div class="gauge" dir="ltr" role="img" aria-label="${esc(`${fmt(n.value)} ${n.unit} · ${r(a)} / ${r(b)}`)}">
+    <div class="gauge-bar"><i class="${segs[0]}" style="width:${pct(a)}%"></i><i class="${segs[1]}" style="width:${pct(b) - pct(a)}%"></i><i class="${segs[2]}" style="width:${100 - pct(b)}%"></i>
+      <b class="gauge-mark" style="left:${pct(n.value)}%"></b></div>
+    <div class="gauge-labels"><span style="left:0">0</span><span style="left:${pct(a)}%">${r(a)}</span><span style="left:${pct(b)}%">${r(b)}</span><span style="left:100%">${r(top)}</span></div>
+  </div>`;
+}
 function nutRow(n) {
-  const pct = Math.max(4, Math.min(100, (n.value / n.max) * 100));
   const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
-  return `<div class="nut lv-${n.level}">
+  return `<details class="nut-d lv-${n.level}"><summary class="nut lv-${n.level}">
     <span class="nut-ico">${svg(I[n.id] || I.box)}</span>
     <span class="nut-text"><strong>${t(`nut.${n.id}`)}</strong><small>${t(`nut.${n.id}.${textKey}`)}</small></span>
-    <span class="nut-val" dir="ltr">${fmt(n.value)} ${esc(n.unit)}<span class="dot"></span></span>
-    <span class="nut-bar"><i style="width:${pct}%"></i></span>
-  </div>`;
+    <span class="nut-val" dir="ltr">${fmt(n.value)} ${esc(n.unit)}<span class="dot"></span>${n.t ? svg(I.chev, "nut-chev") : ""}</span>
+  </summary>${gaugeHtml(n)}</details>`;
 }
 
 function healthSection(p) {
@@ -547,6 +618,8 @@ function productDetail(p) {
     { id: "health", label: t(food ? "detail.health" : "detail.cosmetic_tab"), mark: s ? `<i class="tab-score g-${s.grade}" dir="ltr">${s.score}</i>` : "",
       html: food ? healthSection(p) + additivesSection(p) + extraSection(p) : cosmeticSection(p) },
     { id: "compo", label: t("detail.compo_tab"), mark: "", html: (food ? allAdditivesSection(p, v) : "") + ingr },
+    // Environnement : chargé à l'ouverture de l'onglet (aliments d'Open Food Facts seulement)
+    ...(food && !p.local && isBarcode ? [{ id: "planet", label: t("env.tab"), mark: "", html: `<section class="sec" id="envBox">${rowsSkeleton(4)}</section>` }] : []),
   ].filter((x) => x.html.trim());
   const cur = tabs.some((x) => x.id === sheetTab) ? sheetTab : "halal";
   const bar = `<div class="ptabs" role="tablist">${tabs.map((x) =>
@@ -709,6 +782,7 @@ function renderSheetProduct(p) {
   loadRecalls(p);
   loadCertCheck(p);
   loadTwins(p);
+  if (sheetTab === "planet") loadEnv(p);
   if (!prefs().sheetTourDone && !DEMO) setTimeout(startSheetTour, 900);
 }
 
@@ -1026,6 +1100,7 @@ $("sheetBody").addEventListener("click", (e) => {
   const b = e.target.closest("[data-ptab]");
   if (!b) return;
   sheetTab = b.dataset.ptab;
+  if (sheetTab === "planet" && sheetProduct) loadEnv(sheetProduct);
   document.querySelectorAll("#sheetBody .ptab").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
   document.querySelectorAll("#sheetBody .ppanel").forEach((x) => (x.hidden = x.id !== `pp-${sheetTab}`));
   // Garde la barre d'onglets visible en haut si on avait défilé plus bas

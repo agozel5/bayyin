@@ -105,3 +105,20 @@ test("Nutri-Score calculé quand Open Food Facts n'en donne pas", async () => {
   // Note officielle présente : pas d'estimation
   assert.equal(healthScore({ nutriscore_grade: "b", nutriments: {} }).estimated, null);
 });
+
+test("Green-Score : forme compacte (note, production, huile de palme, origines, emballage)", async () => {
+  const { greenScore } = await import("../public/lib/off.js");
+  const g = greenScore({
+    ecoscore_grade: "b", ecoscore_score: 68, labels_tags: ["en:organic"], ingredients_analysis_tags: ["en:palm-oil-free"],
+    ecoscore_data: { agribalyse: { score: 68, co2_total: 1.2, name_fr: "Barre de céréales" },
+      adjustments: { origins_of_ingredients: { aggregated_origins: [{ origin: "en:european-union", percent: 80 }, { origin: "en:unknown", percent: 20 }] },
+        packaging: { value: -10, packagings: [{ material: "en:pp-polypropylene", shape: "en:bag", recycling: "en:non-recyclable" }], non_recyclable_and_non_biodegradable_materials: 1 } } },
+  });
+  assert.equal(g.grade, "b"); assert.equal(g.score, 68); assert.equal(g.production, 68);
+  assert.equal(g.organic, true); assert.equal(g.palm, "free");
+  assert.deepEqual(g.origins, [{ origin: "european-union", percent: 80 }]);
+  assert.equal(g.packaging[0].recyclable, false); assert.equal(g.nonRecyclable, true);
+  // Nouveau nom des champs (Green-Score) pris en compte
+  assert.equal(greenScore({ environmental_score_grade: "a-plus", environmental_score_score: 95 }).grade, "a-plus");
+  assert.equal(greenScore({}).known, false);
+});

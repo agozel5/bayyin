@@ -151,19 +151,20 @@ export function nutrition(product) {
     if (v === null) continue;
     const [lo, hi] = limits[nut.id];
     const level = v <= lo ? "faible" : v > hi ? "eleve" : "modere";
-    const item = { id: nut.id, name: nut.name, value: v, unit: nut.unit, level, text: nut.text[level], max: hi * 1.6 };
+    // t : seuils (bas, haut) de la jauge ; kind « neg » : moins il y en a, mieux c'est
+    const item = { id: nut.id, name: nut.name, value: v, unit: nut.unit, level, text: nut.text[level], max: hi * 1.6, t: [lo, hi], kind: "neg" };
     (level === "faible" ? positives : negatives).push(item);
   }
 
   const protein = num(n["proteins_100g"]);
   if (protein !== null && protein >= 8 && !drink)
-    positives.push({ id: "proteins", name: "Protéines", value: protein, unit: "g", level: "bon", text: "Excellente quantité de protéines", max: 20 });
+    positives.push({ id: "proteins", name: "Protéines", value: protein, unit: "g", level: "bon", text: "Excellente quantité de protéines", max: 20, t: [8, 16], kind: "pos" });
   const fiber = num(n["fiber_100g"]);
   if (fiber !== null && fiber >= 3)
-    positives.push({ id: "fiber", name: "Fibres", value: fiber, unit: "g", level: "bon", text: fiber >= 6 ? "Excellente quantité de fibres" : "Bonne quantité de fibres", max: 10 });
+    positives.push({ id: "fiber", name: "Fibres", value: fiber, unit: "g", level: "bon", text: fiber >= 6 ? "Excellente quantité de fibres" : "Bonne quantité de fibres", max: 10, t: [3, 6], kind: "pos" });
   const fv = num(n["fruits-vegetables-nuts-estimate-from-ingredients_100g"]) ?? num(n["fruits-vegetables-legumes-estimate-from-ingredients_100g"]);
   if (fv !== null && fv >= 40)
-    positives.push({ id: "fruits", name: "Fruits et légumes", value: fv, unit: "%", level: "bon", text: "Riche en fruits ou légumes", max: 100 });
+    positives.push({ id: "fruits", name: "Fruits et légumes", value: fv, unit: "%", level: "bon", text: "Riche en fruits ou légumes", max: 100, t: [40, 80], kind: "pos" });
 
   const sev = { eleve: 0, modere: 1 };
   negatives.sort((a, b) => sev[a.level] - sev[b.level]);

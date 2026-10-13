@@ -1639,3 +1639,51 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 .kl-ico.k-illegal,.kl-ico.k-cmr{background:var(--c-haram-bg);color:var(--c-haram)}
 .kl-ico.k-ed,.kl-ico.k-allergen,.kl-ico.k-irritant{background:var(--c-doubt-bg);color:#B5600A}
 .kl-ico.k-env{background:var(--c-cert-bg);color:var(--c-cert)}
+
+/* Nutriments : ligne dépliable avec jauge */
+.nut-d{border-bottom:1px solid var(--line)}
+.nut-d:last-child{border-bottom:none}
+.nut-d > summary{list-style:none;cursor:pointer;border-bottom:none}
+.nut-d > summary::-webkit-details-marker{display:none}
+.nut-chev{width:16px;height:16px;color:var(--faint);fill:none;stroke:currentColor;stroke-width:2.4;transform:rotate(90deg);transition:transform .2s}
+.nut-d[open] .nut-chev{transform:rotate(-90deg)}
+.gauge{position:relative;margin:0 0 14px 48px;padding-top:12px}
+[dir="rtl"] .gauge{margin:0 48px 14px 0}
+.gauge-bar{position:relative;display:flex;height:8px;border-radius:999px;overflow:visible}
+.gauge-bar i{display:block;height:100%}
+.gauge-bar i:first-child{border-radius:999px 0 0 999px}
+.gauge-bar i:nth-child(3){border-radius:0 999px 999px 0}
+.gauge-bar i + i{border-left:2px solid var(--surface)}
+.g-good{background:#3FB46B}.g-mid{background:#F0A23A}.g-bad{background:#E2533F}
+.g-low{background:#B9DFC6}.g-best{background:#1E8A4C}
+.gauge-mark{position:absolute;top:-11px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--fg)}
+.gauge-labels{position:relative;height:18px;margin-top:6px;font-size:.74rem;color:var(--muted)}
+.gauge-labels span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.gauge-labels span:first-child{transform:none}
+.gauge-labels span:last-child{transform:translateX(-100%)}
+@media (prefers-reduced-motion:no-preference){.nut-d[open] .gauge{animation:panel-in .25s ease}}
+
+/* Onglet Planète (Green-Score) */
+.gs-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.gs-head strong{display:block;font-size:1.15rem;font-weight:800}
+.gs-head small{color:var(--muted);font-size:.9rem}
+.gs-badge{flex:none;width:52px;height:52px;border-radius:16px 4px 16px 4px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:1.35rem;background:var(--gs)}
+.gs-a-plus{--gs:#00703A}.gs-a{--gs:#1E8F4E}.gs-b{--gs:#4E9A0E}.gs-c{--gs:#B98400}.gs-d{--gs:#D9601A}.gs-e{--gs:#D3261F}.gs-f{--gs:#9E1A1A}
+.env-rows{display:flex;flex-direction:column}
+.env-rows > *{border-bottom:1px solid var(--line)}
+.env-rows > *:last-child{border-bottom:none}
+.env-row{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:12px;padding:12px 0}
+.env-rows details > summary{list-style:none;cursor:pointer}
+.env-rows details > summary::-webkit-details-marker{display:none}
+.env-right{font-weight:700;font-size:.95rem}
+.env-ok{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.env-ok svg{width:16px;height:16px;stroke-width:3}
+.env-ok.yes{background:var(--c-cert-bg);color:var(--c-cert)}
+.env-ok.no{background:var(--c-haram-bg);color:var(--c-haram)}
+.env-na{color:var(--faint);font-weight:700}
+.env-note{margin:0 0 14px 48px;font-size:.82rem;color:var(--muted)}
+[dir="rtl"] .env-note{margin:0 48px 14px 0}
+.eg-0{background:#E2533F}.eg-1{background:#F0A23A}.eg-2{background:#F2CF3B}.eg-3{background:#7CC36B}.eg-4{background:#2E9E57}
+.env-gauge .gauge-bar i{border-radius:0}
+.env-gauge .gauge-bar i:first-child{border-radius:999px 0 0 999px}
+.env-gauge .gauge-bar i:nth-child(5){border-radius:0 999px 999px 0}

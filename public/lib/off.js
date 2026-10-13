@@ -41,6 +41,42 @@ export function classifyAny(p, prefs = DEFAULT_PREFS) {
 }
 
 // Mise en forme commune (navigateur et serveur)
+// Green-Score (méthode d'Open Food Facts, à partir de l'analyse de cycle de vie Agribalyse de l'ADEME)
+// -> forme compacte : note, lettre, score de production, bio, huile de palme, origines, emballage.
+export function greenScore(p) {
+  const data = p.environmental_score_data || p.ecoscore_data || {};
+  const grade = String(p.environmental_score_grade || p.ecoscore_grade || data.grade || "").toLowerCase();
+  const score = p.environmental_score_score ?? p.ecoscore_score ?? data.score;
+  const known = /^(a-plus|a|b|c|d|e|f)$/.test(grade);
+  const adj = data.adjustments || {};
+  const agri = data.agribalyse || {};
+  const tags = p.ingredients_analysis_tags || [];
+  const palm = tags.includes("en:palm-oil-free") ? "free" : tags.includes("en:palm-oil") ? "yes" : tags.includes("en:may-contain-palm-oil") ? "maybe"
+    : adj.threatened_species && adj.threatened_species.ingredient ? "yes" : null;
+  const labels = p.labels_tags || [];
+  const organic = labels.some((t) => /^(en:organic|en:eu-organic|fr:ab-agriculture-biologique|en:ab-agriculture-biologique)$/.test(t));
+  const origins = ((adj.origins_of_ingredients && adj.origins_of_ingredients.aggregated_origins) || [])
+    .filter((o) => o.origin && o.origin !== "en:unknown").map((o) => ({ origin: o.origin.replace(/^\w+:/, ""), percent: Math.round(o.percent) }));
+  const pk = adj.packaging || {};
+  const packaging = (pk.packagings || []).map((x) => ({
+    material: String(x.material || "").replace(/^\w+:/, ""), shape: String(x.shape || "").replace(/^\w+:/, ""), recyclable: !/non-recyclable/.test(String(x.recycling || "")),
+  })).filter((x) => x.material || x.shape);
+  return {
+    known,
+    grade: known ? grade : null,
+    score: typeof score === "number" ? Math.round(score) : null,
+    production: typeof agri.score === "number" ? Math.round(agri.score) : null,
+    co2: typeof agri.co2_total === "number" ? agri.co2_total : null,
+    reference: agri.name_fr || agri.name_en || null,
+    organic,
+    palm,
+    origins,
+    packaging,
+    packagingScore: typeof pk.value === "number" ? pk.value : null,
+    nonRecyclable: !!pk.non_recyclable_and_non_biodegradable_materials,
+  };
+}
+
 export function present(p, prefs = DEFAULT_PREFS) {
   const raw = {};
   for (const k of RAW_KEYS) if (p[k] !== undefined) raw[k] = p[k];
@@ -322,6 +358,15 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         foodFailed,
         beautyFailed,
       };
+    },
+
+    // -> impact environnemental (Green-Score, ex-Eco-Score), chargé seulement quand on ouvre l'onglet
+    async environment(code) {
+      if (demo || !/^\d+$/.test(code)) return null;
+      const fields = "ecoscore_grade,ecoscore_score,ecoscore_data,environmental_score_grade,environmental_score_score,environmental_score_data," +
+        "labels_tags,ingredients_analysis_tags,origins_tags,manufacturing_places,packaging_materials_tags,packaging_recycling_tags";
+      const data = await getJson(`${OFF_BASE}/api/v2/product/${code}.json?fields=${fields}`, 15000, { tries: 2 });
+      return data && data.product ? greenScore(data.product) : null;
     },
 
     // -> fiches complètes d'un produit très proche (même nom, même marque), quand celle-ci est incomplète.
