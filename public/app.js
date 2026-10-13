@@ -17,6 +17,9 @@ import { fetchPlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "
 import { rankByRelevance } from "./lib/search.js";
 import { recallsFor, recentRecalls, matchRecent, isActive } from "./lib/recalls.js";
 import { CERTIFIER_INFO, searchUrl } from "./lib/certifiers.js";
+import { verdictConfidence } from "./lib/confidence.js";
+import { contribute, contributed, offAccountReady, addUrl } from "./lib/contribute.js";
+import { APP } from "./app-config.js";
 import { isPremium, premiumEnabled, premiumConfig, premiumState, activate as activatePremium, refresh as refreshPremium, deactivate as deactivatePremium, onPremiumChange, maskKey, FREE_HISTORY } from "./lib/premium.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
@@ -158,7 +161,19 @@ function verdictHero(p, v) {
       <span class="v-text"><span class="v-kicker">${t("detail.halal")}</span><strong class="v-label">${S(v.status, "label")}</strong><span class="v-lead">${S(v.status, "lead")}</span></span>
     </div>
     <div class="v-foot">${foot}</div>
-  </div>`;
+  </div>${confidenceHtml(p, v)}`;
+}
+
+// Fiabilité du verdict : niveau, puis le détail de ce qui a été vérifié
+function confidenceHtml(p, v) {
+  const c = verdictConfidence(p, v);
+  const bars = { high: 3, medium: 2, low: 1 }[c.level];
+  return `<details class="conf conf-${c.level}">
+    <summary><span class="conf-bars" aria-hidden="true">${[1, 2, 3].map((i) => `<i class="${i <= bars ? "on" : ""}"></i>`).join("")}</span>
+      <span class="conf-t">${t("conf.title")} : <strong>${t(`conf.${c.level}`)}</strong></span><span class="src-chev" aria-hidden="true">${svg(I.chev)}</span></summary>
+    <ul>${c.reasons.map((r) => `<li class="${r.ok ? "ok" : "no"}">${svg(r.ok ? I.check : I.dash)}<span>${t(`conf.r.${r.id}${r.ok ? "" : "_no"}`)}</span></li>`).join("")}</ul>
+    <p>${t(`conf.${c.level}.p`)}</p>
+  </details>`;
 }
 
 // Alerte personnelle en haut de la fiche
@@ -447,7 +462,7 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
       : `<section class="sec"></section>`;
   const food = kind === "food";
-  return `${productTop(p)}<div id="recallBox"></div>${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
+  return `${productTop(p)}${contributeCard(p)}<div id="recallBox"></div>${verdictHero(p, v)}${profileAlert(p)}${halalSection(p, v)}${kind === "medicine" ? medicineSection(p) : ""}${kind === "beauty" ? cosmeticSection(p) : ""}${food ? healthSection(p) + additivesSection(p) : ""}${alt}${food ? allAdditivesSection(p, v) : ""}${extraSection(p)}${ingr}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
 }
 
 // Mot clair à la place d'un « ! » : l'allergène en cause, ou le régime non respecté
@@ -479,12 +494,15 @@ function altCard(a, { fav = false } = {}) {
 async function loadAlternatives(p, code) {
   if (!$("altBox")) return;
   try {
-    const alts = (await off.alternatives(p)).filter((a) => !profileOf(a).alert); // respecte le profil
+    const found = await off.alternatives(p);
+    const alts = found.filter((a) => !profileOf(a).alert); // respecte le profil
     if (sheetCode !== code || !$("altBox")) return;
     alts.forEach((a) => memo.set(a.code, a));
     $("altBox").innerHTML = alts.length
       ? `<div class="alts">${alts.map(altCard).join("")}</div>`
-      : `<p class="notes">${t(p.categories && p.categories.length ? "detail.alt_none" : "detail.alt_nocat")}</p>`;
+      : found.best
+        ? `<p class="alt-best">${svg(I.check)}<span>${t("detail.alt_best")}</span></p>`
+        : `<p class="notes">${t(p.categories && p.categories.length ? "detail.alt_none" : "detail.alt_nocat")}</p>`;
   } catch {
     if (sheetCode === code && $("altBox")) $("altBox").innerHTML = `<p class="notes">${t("detail.alt_error")}</p>`;
   }
@@ -519,7 +537,8 @@ const ocrButton = (code = "") =>
 const notFoundHtml = (code) =>
   isMedicineCode(code)
     ? messageHtml(t("msg.notfound.t"), t("msg.med_notfound", { code }))
-    : messageHtml(t("msg.notfound.t"), t("msg.notfound.p", { code }), ocrButton(code));
+    : messageHtml(t("msg.notfound.t"), t("msg.notfound.p", { code }), ocrButton(code) +
+        `<a class="btn btn-soft" href="${esc(addUrl(code))}" target="_blank" rel="noopener">${t("contrib.web")}</a>`);
 
 function rowHtml(p, { fav = false, when = "" } = {}) {
   const img = p.image
@@ -870,8 +889,10 @@ function startOcr(file, code) {
 }
 
 // Étape 2 : lecture de la zone encadrée, puis texte à vérifier
+const ocrPhotos = new Map(); // photo des ingrédients par code-barres (mémoire seulement), pour Open Food Facts
 async function readOcr(file, code, crop) {
   const ticket = ++ocrTicket;
+  if (code) ocrPhotos.set(code, file);
   $("sheetBody").innerHTML = `<div class="ocr-progress"><span class="spinner"></span><p id="ocrStep">${t("ocr.loading")}</p><small>${t("ocr.loading_note")}</small><div class="progress"><i id="ocrBar"></i></div></div>`;
   try {
     const { text, confidence } = await readIngredients(file, {
@@ -1544,6 +1565,8 @@ function renderSettingsMenu() {
     group("settings.g_data", [setRow("offline", offlineValue(st)), setRow("data", tn("settings.data_count", nHist))]) +
     group("settings.g_about", [setRow("notes"), setRow("how"), setRow("sources"), setRow("privacy"), setRow("limits")]) +
     group("settings.g_links", [
+      `<a class="set-row" href="#" data-feedback><span class="set-ico si-feedback">${svg('<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/><path d="M8.5 9h7M8.5 12h4.5"/>')}</span>
+        <span class="set-text"><strong>${t("fb.title")}</strong><small>${esc(t("fb.row"))}</small></span><span class="set-chev" aria-hidden="true">${svg(I.chev, "flip")}</span></a>`,
       setRow("off", t("link.off.d"), { href: "https://fr.openfoodfacts.org", external: true }),
       setRow("report", t("link.report.d"), { href: "https://github.com/agozel5/bayyin/issues", external: true }),
       ...(DEMO ? [setRow("demo", t("link.demo_exit.d"), { href: location.pathname + "#scan" }).replace(` data-go="demo"`, "")] : []),
@@ -2596,6 +2619,103 @@ $("placesCats").addEventListener("click", (e) => {
 $("placesList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-focus]");
   if (b) selectPlace(b.dataset.focus);
+});
+
+// ===========================================================================
+// Produit manquant : l'ajouter à Open Food Facts pour tout le monde
+// ===========================================================================
+function contributeCard(p) {
+  if (!p.local || !/^\d{8,14}$/.test(p.code)) return "";
+  if (contributed(p.code)) return `<div class="contrib done">${svg(I.check)}<p><strong>${t("contrib.done_t")}</strong> ${t("contrib.done_p")}</p></div>`;
+  const direct = offAccountReady();
+  return `<section class="contrib" id="contribBox">
+    <div class="contrib-top"><span class="contrib-ico">${svg(I.box)}</span><div><strong>${t("contrib.t")}</strong><p>${t("contrib.p")}</p></div></div>
+    ${direct
+      ? `<label class="contrib-ok"><input type="checkbox" id="contribConsent"><span>${t("contrib.consent")}</span></label>
+         <button class="btn btn-primary btn-block" type="button" data-contrib="${esc(p.code)}" disabled>${t("contrib.send")}</button>`
+      : `<button class="btn btn-primary btn-block" type="button" data-contrib-web="${esc(p.code)}">${t("contrib.web")}</button>
+         <p class="contrib-hint">${t("contrib.web_hint")}</p>`}
+    <p class="contrib-msg" id="contribMsg" hidden></p>
+  </section>`;
+}
+$("sheetBody").addEventListener("change", (e) => {
+  if (e.target.id === "contribConsent") $("sheetBody").querySelector("[data-contrib]").disabled = !e.target.checked;
+});
+$("sheetBody").addEventListener("click", async (e) => {
+  const web = e.target.closest("[data-contrib-web]");
+  if (web) {
+    const p = sheetProduct;
+    if (p && p.raw && p.raw.ingredients_text) navigator.clipboard?.writeText(p.raw.ingredients_text).then(() => toast(t("contrib.copied")), () => {});
+    window.open(addUrl(web.dataset.contribWeb), "_blank", "noopener");
+    return;
+  }
+  const btn = e.target.closest("[data-contrib]");
+  if (!btn || !sheetProduct) return;
+  const p = sheetProduct;
+  btn.disabled = true;
+  btn.textContent = t("contrib.sending");
+  const name = p.raw.product_name && p.raw.product_name !== t("ocr.unnamed") ? p.raw.product_name : "";
+  const r = await contribute({ code: p.code, name, ingredients: p.raw.ingredients_text, photo: ocrPhotos.get(p.code) || null });
+  if (r.ok) {
+    toast(t("contrib.thanks"));
+    if (sheetProduct && sheetProduct.code === p.code) renderSheetProduct(p);
+  } else {
+    btn.disabled = false;
+    btn.textContent = t("contrib.send");
+    $("contribMsg").hidden = false;
+    $("contribMsg").textContent = t(r.error === "network" ? "contrib.err_network" : "contrib.err");
+  }
+});
+
+// ===========================================================================
+// Donner mon avis : envoyé par e-mail (adresse dans app-config.js) ou déposé sur GitHub
+// ===========================================================================
+const FEEDBACK_TYPES = ["idea", "bug", "product", "other"];
+let fbType = "idea";
+let fbRating = 0;
+function openFeedback() {
+  sheetCode = "feedback";
+  sheetProduct = null;
+  $("sheetTitle").textContent = t("fb.title");
+  $("sheetCompare").hidden = true;
+  $("sheetShare").hidden = true;
+  showSheet({ replace: !sheet.hidden });
+  refreshFav();
+  renderFeedback();
+}
+function renderFeedback() {
+  const keep = $("fbText") ? $("fbText").value : "";
+  $("sheetBody").innerHTML = `<div class="fb">
+    <p class="lead">${t("fb.lead")}</p>
+    <div class="fb-stars" role="radiogroup" aria-label="${esc(t("fb.rate"))}">${[1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${fbRating === n}" aria-label="${n}/5" data-fb-rate="${n}" class="${n <= fbRating ? "on" : ""}">${svg(I.star)}</button>`).join("")}</div>
+    <div class="chips" role="radiogroup">${FEEDBACK_TYPES.map((k) => `<button type="button" role="radio" class="chip" aria-checked="${fbType === k}" aria-selected="${fbType === k}" data-fb-type="${k}">${t(`fb.type.${k}`)}</button>`).join("")}</div>
+    <textarea id="fbText" class="field area" rows="6" placeholder="${esc(t(`fb.ph.${fbType}`))}">${esc(keep)}</textarea>
+    <button class="btn btn-primary btn-block" type="button" data-fb-send>${t("fb.send")}</button>
+    <p class="fineprint">${t(APP.feedbackEmail ? "fb.via_mail" : "fb.via_github")}</p>
+  </div>`;
+}
+$("sheetBody").addEventListener("click", (e) => {
+  if (sheetCode !== "feedback") return;
+  const r = e.target.closest("[data-fb-rate]");
+  if (r) { fbRating = Number(r.dataset.fbRate); return renderFeedback(); }
+  const ty = e.target.closest("[data-fb-type]");
+  if (ty) { fbType = ty.dataset.fbType; return renderFeedback(); }
+  if (!e.target.closest("[data-fb-send]")) return;
+  const text = $("fbText").value.trim();
+  if (!text && !fbRating) return $("fbText").focus();
+  const ua = /iPhone|iPad/.test(navigator.userAgent) ? "iPhone/iPad" : /Android/.test(navigator.userAgent) ? "Android" : "Ordinateur";
+  const subject = `Bayyin · ${t(`fb.type.${fbType}`)}${fbRating ? ` · ${fbRating}/5` : ""}`;
+  const body = `${text}\n\n—\n${t("fb.type." + fbType)} · ${fbRating ? fbRating + "/5" : "-"} · ${getLang()} · ${ua} · v${APP.version}`;
+  const url = APP.feedbackEmail
+    ? `mailto:${APP.feedbackEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    : `https://github.com/agozel5/bayyin/issues/new?title=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(url, "_blank", "noopener");
+  toast(t("fb.thanks"));
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("[data-feedback]")) return;
+  e.preventDefault();
+  openFeedback();
 });
 
 // ===========================================================================

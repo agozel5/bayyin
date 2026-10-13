@@ -1339,3 +1339,49 @@ html[data-text="xlarge"]{font-size:125%}
 .pm-plan[aria-checked="true"] .radio{border-color:var(--brand)}
 .pm-plan[aria-checked="true"] .radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--brand)}
 .pm-soon-badge{margin-inline-start:6px;padding:2px 8px;border-radius:99px;background:var(--gold,#E7B84E);color:#3B2A00;font-style:normal;font-size:.72rem;font-weight:800;vertical-align:2px}
+.alt-best{display:flex;gap:10px;align-items:flex-start;margin:0;padding:12px 14px;border-radius:var(--r-md);background:var(--c-cert-bg);font-weight:600}
+.alt-best svg{flex:none;color:var(--c-cert);width:20px;height:20px;margin-top:1px}
+
+/* fiabilité du verdict */
+.conf{margin:-6px 0 14px;border-radius:var(--r-md);background:var(--surface);box-shadow:var(--lift)}
+.conf summary{display:flex;align-items:center;gap:10px;padding:11px 14px;list-style:none;cursor:pointer;font-size:.92rem}
+.conf summary::-webkit-details-marker{display:none}
+.conf-t{flex:1}
+.conf-bars{display:flex;gap:3px;align-items:flex-end}
+.conf-bars i{width:5px;border-radius:2px;background:var(--tint-2)}
+.conf-bars i:nth-child(1){height:8px}.conf-bars i:nth-child(2){height:12px}.conf-bars i:nth-child(3){height:16px}
+.conf-high .conf-bars i.on{background:var(--c-cert)}
+.conf-medium .conf-bars i.on{background:var(--c-doubt)}
+.conf-low .conf-bars i.on{background:var(--c-haram)}
+.conf[open] .src-chev{transform:rotate(90deg)}
+.conf ul{list-style:none;margin:0;padding:0 14px;display:flex;flex-direction:column;gap:6px}
+.conf li{display:flex;gap:8px;align-items:flex-start;font-size:.9rem}
+.conf li svg{flex:none;width:18px;height:18px;margin-top:1px}
+.conf li.ok svg{color:var(--c-cert)}
+.conf li.no svg{color:var(--faint)}
+.conf li.no{color:var(--muted)}
+.conf p{margin:8px 14px 12px;color:var(--muted);font-size:.86rem;line-height:1.4}
+
+/* produit manquant : contribution à Open Food Facts */
+.contrib{display:flex;flex-direction:column;gap:12px;margin:0 0 14px;padding:16px;border-radius:var(--r-lg);background:var(--brand-soft)}
+.contrib-top{display:flex;gap:12px;align-items:flex-start}
+.contrib-ico{flex:none;width:40px;height:40px;border-radius:12px;background:var(--surface);color:var(--brand-dark);display:flex;align-items:center;justify-content:center}
+.contrib-top strong{display:block;font-weight:800}
+.contrib-top p{margin:4px 0 0;font-size:.92rem;line-height:1.4;color:var(--fg)}
+.contrib-ok{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;line-height:1.4}
+.contrib-ok input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--brand)}
+.contrib-hint,.contrib-msg{margin:0;font-size:.85rem;color:var(--muted)}
+.contrib-msg{color:var(--c-haram);font-weight:600}
+.contrib.done{flex-direction:row;align-items:flex-start;background:var(--c-cert-bg)}
+.contrib.done svg{flex:none;color:var(--c-cert);width:22px;height:22px}
+.contrib.done p{margin:0;font-size:.92rem}
+/* donner mon avis */
+.si-feedback{background:var(--brand-soft);color:var(--brand-dark)}
+.fb{display:flex;flex-direction:column;gap:14px;padding-top:4px}
+.fb .lead{margin:0}
+.fb-stars{display:flex;gap:6px}
+.fb-stars button{border:none;background:none;padding:4px;color:var(--tint-2)}
+.fb-stars button svg{width:36px;height:36px}
+.fb-stars button.on{color:#E9A100}
+.fb-stars button.on path{fill:currentColor}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}

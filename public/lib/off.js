@@ -20,7 +20,7 @@ export const FIELDS = [
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
   "image_front_small_url", "image_front_url",
   "nutriscore_grade", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
-  "compared_to_category",
+  "compared_to_category", "states_tags",
 ].join(",");
 
 export const productUrl = (code) => `${OFF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
@@ -30,7 +30,7 @@ export const beautyUrl = (code) => `${OBF_BASE}/api/v2/product/${code}.json?fiel
 // Champs nécessaires pour recalculer le verdict quand l'utilisateur change de réglage.
 const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_fr", "labels_tags", "categories_tags",
-  "allergens_tags", "traces_tags", "kind", "brands", "med_form", "med_cis"];
+  "allergens_tags", "traces_tags", "kind", "brands", "med_form", "med_cis", "states_tags"];
 
 // Type de produit : alimentaire (Open Food Facts), cosmétique (Open Beauty Facts) ou médicament (base publique).
 // Le verdict halal suit des règles différentes pour chacun.
@@ -140,7 +140,9 @@ export function pickAlternatives(product, candidates, limit = 6, { minSim = 0, n
       const s = c.health?.score?.score;
       return isHalal(c) && s !== undefined && s !== null && s >= Math.max(base, 0) && (s > base || !isHalal(product));
     })
+    // Produit d'origine non halal : les alternatives certifiées passent d'abord ; sinon la meilleure note
     .sort((a, b) =>
+      (!isHalal(product) ? (b.verdict.status === "halal_certifie") - (a.verdict.status === "halal_certifie") : 0) ||
       b.health.score.score - a.health.score.score ||
       b.similarity - a.similarity ||
       (b.verdict.status === "halal_certifie") - (a.verdict.status === "halal_certifie")
@@ -153,11 +155,25 @@ export function pickAlternatives(product, candidates, limit = 6, { minSim = 0, n
 export async function similarAlternatives(product, fetchCategory, limit = 6) {
   const { ref, parent } = categoryPath(product);
   if (!ref) return [];
-  const first = pickAlternatives(product, await fetchCategory(ref), limit, { minSim: 0.25, need: ref });
-  if (first.length >= 3 || !parent) return first;
-  const more = pickAlternatives(product, await fetchCategory(parent), limit, { minSim: 0.5, need: parent })
-    .filter((c) => !first.some((f) => f.code === c.code));
-  return [...first, ...more].slice(0, limit);
+  const pool = await fetchCategory(ref);
+  const first = pickAlternatives(product, pool, limit, { minSim: 0.25, need: ref });
+  let result = first;
+  let all = pool;
+  if (first.length < 3 && parent) {
+    const parentPool = await fetchCategory(parent);
+    all = [...pool, ...parentPool];
+    const more = pickAlternatives(product, parentPool, limit, { minSim: 0.5, need: parent })
+      .filter((c) => !first.some((f) => f.code === c.code));
+    result = [...first, ...more].slice(0, limit);
+  }
+  // Rien de mieux, mais des produits halal semblables existent : le produit est déjà parmi les mieux notés
+  if (!result.length && isHalal(product) && product.health?.score) {
+    const base = product.health.score.score;
+    const peers = all.filter((c) => c.code !== product.code && (c.kind || "food") === (product.kind || "food") && isHalal(c) &&
+      c.health?.score && similarity(product, c) >= 0.25);
+    if (peers.length >= 3 && peers.every((c) => c.health.score.score <= base)) result.best = true;
+  }
+  return result;
 }
 
 // code : "network" (pas de réponse) ou "server" (erreur HTTP) ; message traduit par l'interface.
@@ -205,12 +221,18 @@ const searchCache = new Map(); // réponses de recherche de la session (moins de
 export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBase = MED_DATA_BASE } = {}) {
   const show = (raw) => present(raw, prefs());
   // Recherche des produits d'une catégorie (aliments : Open Food Facts ; cosmétiques : Open Beauty Facts)
+  // Produits d'une catégorie vendus en France (les plus scannés d'abord), gardés pour la session
+  const catCache = new Map();
   async function categoryProducts(cat, kind) {
     const beauty = kind === "beauty";
     const url = `${beauty ? OBF_BASE : OFF_BASE}/api/v2/search?categories_tags=${encodeURIComponent(cat)}&countries_tags=en:france` +
-      `${beauty ? "" : "&nutrition_grades_tags=a|b|c|d"}&sort_by=unique_scans_n&page_size=${beauty ? 60 : 80}&fields=${FIELDS}`;
-    const data = await getJson(url);
-    return ((data && data.products) || []).filter((p) => p.code).map((p) => show(beauty ? { ...p, kind: "beauty" } : p));
+      `&sort_by=unique_scans_n&page_size=${beauty ? 80 : 100}&fields=${FIELDS}`;
+    if (!catCache.has(url)) {
+      const job = getJson(url, 15000, { tries: 2 }).then((data) => ((data && data.products) || []).filter((p) => p.code));
+      catCache.set(url, job);
+      job.catch(() => catCache.delete(url));
+    }
+    return (await catCache.get(url)).map((p) => show(beauty ? { ...p, kind: "beauty" } : p));
   }
   const medShards = new Map();
   // Médicament : un seul petit fichier de la base publique est téléchargé (≈ 1/100)

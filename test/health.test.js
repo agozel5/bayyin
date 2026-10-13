@@ -64,3 +64,16 @@ test("alternatives : halal et mieux notées", () => {
   const pork = all.find((p) => p.code === "3019081100148");
   assert.ok(pickAlternatives(pork, all).some((a) => a.name.includes("bœuf")));
 });
+
+test("alternatives : produit déjà parmi les mieux notés de son rayon", async () => {
+  const { similarAlternatives } = await import("../public/lib/off.js");
+  const cats = ["en:snacks", "en:biscuits", "en:chocolate-biscuits"];
+  const mk = (code, score, status = "halal_probable") => ({ code, kind: "food", name: "Biscuit " + code, brand: "B" + code, categories: cats,
+    verdict: { status }, health: { score: { score } } });
+  const me = mk("1", 90);
+  const res = await similarAlternatives(me, async () => [mk("2", 60), mk("3", 70), mk("4", 80), mk("5", 95, "haram")]);
+  assert.equal(res.length, 0);
+  assert.equal(res.best, true);
+  const res2 = await similarAlternatives(mk("9", 40, "haram"), async () => [mk("2", 60), mk("3", 70, "halal_certifie")]);
+  assert.equal(res2[0].code, "3", "produit haram : l'alternative certifiée d'abord");
+});
