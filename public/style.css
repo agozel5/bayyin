@@ -1687,3 +1687,15 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 .env-gauge .gauge-bar i{border-radius:0}
 .env-gauge .gauge-bar i:first-child{border-radius:999px 0 0 999px}
 .env-gauge .gauge-bar i:nth-child(5){border-radius:0 999px 999px 0}
+
+/* Jauges : animation à l'arrivée à l'écran (sans animation si l'utilisateur la refuse) */
+.gauge-mark{left:var(--x,0%)}
+@media (prefers-reduced-motion:no-preference){
+  /* La barre se dévoile de gauche à droite d'un seul trait, puis le repère glisse et rebondit sur la valeur */
+  .gauge .gauge-bar{clip-path:inset(-14px 100% -2px 0);transition:clip-path .7s cubic-bezier(.25,.8,.25,1)}
+  .gauge.in .gauge-bar{clip-path:inset(-14px 0 -2px 0)}
+  .gauge .gauge-mark{left:0;opacity:0;transition:left 1s .25s cubic-bezier(.3,1.4,.5,1),opacity .2s .25s}
+  .gauge.in .gauge-mark{left:var(--x,0%);opacity:1}
+  .gauge .gauge-labels{opacity:0;transform:translateY(-3px);transition:opacity .4s .45s,transform .4s .45s}
+  .gauge.in .gauge-labels{opacity:1;transform:none}
+}

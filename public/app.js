@@ -354,7 +354,7 @@ async function loadEnv(p) {
         <span><strong>Green-Score</strong><small>${esc(t(`env.grade.${g}`))}${e.score !== null ? ` · <span dir="ltr">${e.score}/100</span>` : ""}</small></span></div>`
     : "";
   const prodGauge = e.production !== null
-    ? `<div class="gauge env-gauge" dir="ltr"><div class="gauge-bar">${[20, 20, 20, 20, 20].map((w, i) => `<i class="eg-${i}" style="width:${w}%"></i>`).join("")}<b class="gauge-mark" style="left:${e.production}%"></b></div>
+    ? `<div class="gauge env-gauge" dir="ltr"><div class="gauge-bar">${[20, 20, 20, 20, 20].map((w, i) => `<i class="eg-${i}" style="width:${w}%"></i>`).join("")}<b class="gauge-mark" style="--x:${e.production}%"></b></div>
        <div class="gauge-labels">${[0, 20, 40, 60, 80, 100].map((x) => `<span style="left:${x}%">${x}</span>`).join("")}</div></div>` : "";
   const origins = e.origins.length ? e.origins.map((o) => `${esc(t(`env.origin.${o.origin}`) === `env.origin.${o.origin}` ? o.origin.replace(/-/g, " ") : t(`env.origin.${o.origin}`))} (${o.percent} %)`).join(", ") : esc(t("env.unknown"));
   const pack = e.packaging.length
@@ -370,6 +370,7 @@ async function loadEnv(p) {
       ${envRow(ENV_ICO.pack, t("env.packaging"), pack + (e.nonRecyclable ? ` · ${esc(t("env.non_recyclable"))}` : ""), e.packaging.length ? okIco(!e.nonRecyclable) : okIco(null))}
     </div>
     <p class="notes">${esc(t("env.source"))}</p>`;
+  requestAnimationFrame(animateGauges);
 }
 
 async function loadTwins(p) {
@@ -424,13 +425,13 @@ function gaugeHtml(n) {
   const r = (x) => fmt(x < 10 ? Math.round(x * 10) / 10 : Math.round(x));
   return `<div class="gauge" dir="ltr" role="img" aria-label="${esc(`${fmt(n.value)} ${n.unit} · ${r(a)} / ${r(b)}`)}">
     <div class="gauge-bar"><i class="${segs[0]}" style="width:${pct(a)}%"></i><i class="${segs[1]}" style="width:${pct(b) - pct(a)}%"></i><i class="${segs[2]}" style="width:${100 - pct(b)}%"></i>
-      <b class="gauge-mark" style="left:${pct(n.value)}%"></b></div>
+      <b class="gauge-mark" style="--x:${pct(n.value)}%"></b></div>
     <div class="gauge-labels"><span style="left:0">0</span><span style="left:${pct(a)}%">${r(a)}</span><span style="left:${pct(b)}%">${r(b)}</span><span style="left:100%">${r(top)}</span></div>
   </div>`;
 }
 function nutRow(n) {
   const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
-  return `<details class="nut-d lv-${n.level}"><summary class="nut lv-${n.level}">
+  return `<details class="nut-d lv-${n.level}"${n.t ? " open" : ""}><summary class="nut lv-${n.level}">
     <span class="nut-ico">${svg(I[n.id] || I.box)}</span>
     <span class="nut-text"><strong>${t(`nut.${n.id}`)}</strong><small>${t(`nut.${n.id}.${textKey}`)}</small></span>
     <span class="nut-val" dir="ltr">${fmt(n.value)} ${esc(n.unit)}<span class="dot"></span>${n.t ? svg(I.chev, "nut-chev") : ""}</span>
@@ -775,6 +776,36 @@ function showSheet({ replace = false, fromScan = false } = {}) {
   lockScroll();
 }
 
+// Jauges animées à l'arrivée à l'écran : les segments se remplissent, puis le repère glisse jusqu'à la valeur
+let gaugeObserver = null;
+function animateGauges() {
+  const root = $("sheetBody");
+  const gauges = root.querySelectorAll(".gauge:not(.in)");
+  if (!gauges.length) return;
+  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    gauges.forEach((g) => g.classList.add("in"));
+    return;
+  }
+  if (!gaugeObserver) {
+    gaugeObserver = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) { en.target.classList.add("in"); gaugeObserver.unobserve(en.target); }
+    }, { root, threshold: 0.6 });
+  }
+  gauges.forEach((g) => gaugeObserver.observe(g));
+}
+// Une rangée qu'on déplie rejoue l'animation de sa jauge
+document.addEventListener("toggle", (e) => {
+  const d = e.target;
+  if (!(d instanceof HTMLDetailsElement) || !d.closest("#sheetBody")) return;
+  // Le premier « toggle » vient de l'affichage d'une rangée déjà ouverte : rien à rejouer
+  if (!d.dataset.seen) { d.dataset.seen = "1"; if (d.hasAttribute("open")) return; }
+  if (!d.open) return;
+  const g = d.querySelector(".gauge");
+  if (!g) return;
+  g.classList.remove("in");
+  requestAnimationFrame(() => requestAnimationFrame(() => g.classList.add("in")));
+}, true);
+
 function renderSheetProduct(p) {
   sheetProduct = p;
   $("sheetTitle").textContent = nameOf(p);
@@ -785,6 +816,7 @@ function renderSheetProduct(p) {
   loadRecalls(p);
   loadCertCheck(p);
   loadTwins(p);
+  requestAnimationFrame(animateGauges);
   if (sheetTab === "planet") loadEnv(p);
   if (!prefs().sheetTourDone && !DEMO) setTimeout(startSheetTour, 900);
 }
@@ -1120,6 +1152,7 @@ $("sheetBody").addEventListener("click", (e) => {
   if (!b) return;
   sheetTab = b.dataset.ptab;
   if (sheetTab === "planet" && sheetProduct) loadEnv(sheetProduct);
+  requestAnimationFrame(animateGauges);
   document.querySelectorAll("#sheetBody .ptab").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
   document.querySelectorAll("#sheetBody .ppanel").forEach((x) => (x.hidden = x.id !== `pp-${sheetTab}`));
   // Garde la barre d'onglets visible en haut si on avait défilé plus bas
