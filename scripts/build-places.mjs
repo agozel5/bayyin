@@ -84,7 +84,7 @@ async function main() {
     const pbf = join(work, `${cc}.pbf`), geo = join(work, `${cc}.geojsonseq`);
     try {
       // Téléchargement en flux, filtré à la volée : seuls les objets avec diet:halal ou cuisine sont gardés
-      execSync(`set -o pipefail; curl -sSfL --retry 3 "${GEOFABRIK}${region}-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o ${pbf} --overwrite`,
+      execSync(`set -o pipefail; curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "${GEOFABRIK}${region}-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o ${pbf} --overwrite`,
         { stdio: ["ignore", "inherit", "inherit"], shell: "/bin/bash", timeout: 40 * 60000 });
       execSync(`osmium export ${pbf} -f geojsonseq -a type,id --geometry-types=point,polygon -o ${geo} --overwrite`, { stdio: ["ignore", "inherit", "inherit"] });
       const list = parsePlaces({ elements: await readFeatures(geo) }, 0, 0);
@@ -92,7 +92,7 @@ async function main() {
       countries[cc] = { n: list.length, bbox };
       console.log(`${cc} : ${list.length} commerces (${Math.round((Date.now() - t0) / 1000)} s)`);
     } catch (e) {
-      console.log(`${cc} indisponible (${String(e.message).split("\n")[0]})`);
+      console.log(`${cc} indisponible : ${String(e.message).slice(0, 400)}`);
     } finally {
       execSync(`rm -f ${pbf} ${geo}`);
     }
