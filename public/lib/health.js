@@ -185,11 +185,63 @@ export function isOrganic(product) {
 }
 
 // ---------------------------------------------------------------------------
+// Nutri-Score calculé par Bayyin (algorithme officiel 2023) quand Open Food Facts n'en donne pas
+// mais que le tableau nutritionnel est rempli. Exclus : eaux, matières grasses, fromages
+// (règles particulières) ; il faut au moins énergie, sucres et graisses saturées.
+// ---------------------------------------------------------------------------
+const pts = (v, steps) => steps.filter((t) => v > t).length;
+const NS = {
+  food: {
+    energy: [335, 670, 1005, 1340, 1675, 2010, 2345, 2680, 3015, 3350],
+    sugars: [3.4, 6.8, 10, 14, 17, 20, 24, 27, 31, 34, 37, 41, 44, 48, 51],
+    protein: [2.4, 4.8, 7.2, 9.6, 12, 14, 17],
+    grade: (n) => (n <= 0 ? "a" : n <= 2 ? "b" : n <= 10 ? "c" : n <= 18 ? "d" : "e"),
+  },
+  drink: {
+    energy: [30, 90, 150, 210, 240, 270, 300, 330, 360, 390],
+    sugars: [0.5, 2, 3.5, 5, 6, 7, 8, 9, 10, 11],
+    protein: [1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0],
+    grade: (n) => (n <= 2 ? "b" : n <= 6 ? "c" : n <= 9 ? "d" : "e"),
+  },
+};
+const SATFAT = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const SALT = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4];
+const FIBER = [3.0, 4.1, 5.2, 6.3, 7.4];
+export function estimateNutriscore(product) {
+  const n = product.nutriments || {};
+  const cats = product.categories_tags || [];
+  if (cats.some((c) => /^en:(waters|fats|vegetable-oils|cheeses|butters|baby-foods)$/.test(c))) return null;
+  const drink = isDrink(product);
+  const kj = num(n["energy-kj_100g"]) ?? num(n.energy_100g) ?? (num(n["energy-kcal_100g"]) !== null ? num(n["energy-kcal_100g"]) * 4.184 : null);
+  const sugars = num(n.sugars_100g), sat = num(n["saturated-fat_100g"]);
+  if (kj === null || sugars === null || sat === null) return null;
+  let salt = num(n.salt_100g);
+  if (salt === null && num(n.sodium_100g) !== null) salt = num(n.sodium_100g) * 2.5;
+  const saltMissing = salt === null;
+  const fruit = num(n["fruits-vegetables-legumes-estimate-from-ingredients_100g"]) ?? num(n["fruits-vegetables-nuts-estimate-from-ingredients_100g"]) ?? 0;
+  const t = NS[drink ? "drink" : "food"];
+  const sweeteners = drink && (product.additives_tags || []).some((a) => /^en:e(950|951|952|954|955|957|959|960|961|962|969)/.test(a));
+  const neg = pts(kj, t.energy) + pts(sugars, t.sugars) + pts(sat, SATFAT) + pts(salt || 0, SALT) + (sweeteners ? 4 : 0);
+  const fruitPts = drink ? (fruit > 80 ? 6 : fruit > 60 ? 4 : fruit > 40 ? 2 : 0) : (fruit > 80 ? 5 : fruit > 60 ? 2 : fruit > 40 ? 1 : 0);
+  let protein = pts(num(n.proteins_100g) || 0, t.protein);
+  if (cats.some((c) => /^en:(red-meats|beef|pork|lamb|sausages|hams)/.test(c))) protein = Math.min(protein, 2);
+  const fiber = pts(num(n.fiber_100g) || 0, FIBER);
+  // Aliments très défavorables (11 points négatifs ou plus) : les protéines ne comptent pas
+  const pos = fruitPts + fiber + (!drink && neg >= 11 && fruitPts < 5 ? 0 : protein);
+  return { grade: t.grade(neg - pos), points: neg - pos, saltMissing };
+}
+
+// ---------------------------------------------------------------------------
 // Note globale
 // ---------------------------------------------------------------------------
 export function healthScore(product) {
-  const grade = String(product.nutriscore_grade || product.nutrition_grades || "").toLowerCase();
-  if (!(grade in GRADE_POINTS)) return null;
+  let grade = String(product.nutriscore_grade || product.nutrition_grades || "").toLowerCase();
+  let estimated = null;
+  if (!(grade in GRADE_POINTS)) {
+    estimated = estimateNutriscore(product);
+    if (!estimated) return null;
+    grade = estimated.grade;
+  }
 
   const risks = additiveRisks(product);
   const high = risks.some((r) => r.level === "eleve");
@@ -207,6 +259,8 @@ export function healthScore(product) {
     grade: g.id,
     label: g.label,
     nutriscore: grade,
+    // Nutri-Score calculé par Bayyin (absent d'Open Food Facts) ; saltMissing : sel non renseigné
+    estimated: estimated ? { saltMissing: estimated.saltMissing } : null,
     parts: { nutrition: GRADE_POINTS[grade], additives: additivesPts, bio: bioPts },
   };
 }

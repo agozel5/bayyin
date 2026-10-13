@@ -289,10 +289,26 @@ function halalSection(p, v) {
     v.status === "inconnu" && /^\d+$/.test(p.code) && kindOf(p) === "food"
       ? `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
       : "";
+  // Fiche sans ingrédients : on cherche une fiche plus complète du même produit (autre format, autre pays)
+  const twins = !p.ingredients && !p.local && /^\d+$/.test(p.code) && kindOf(p) === "food" && nameOf(p)
+    ? `<div id="twinBox" class="twins" hidden></div>` : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
     ${cert}${ignored}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
-    ${flags}${askBrand(p, v)}${ocrCta}</section>`;
+    ${flags}${askBrand(p, v)}${ocrCta}${twins}</section>`;
+}
+
+async function loadTwins(p) {
+  const box = $("twinBox");
+  if (!box) return;
+  box.hidden = false;
+  box.innerHTML = `<p class="twins-t">${esc(t("twins.searching"))}</p>${altsSkeleton()}`;
+  let list = [];
+  try { list = await off.twins(p); } catch { /* recherche indisponible */ }
+  if (!sheetProduct || sheetProduct.code !== p.code || !$("twinBox")) return;
+  if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
+  list.forEach((a) => memo.set(a.code, a));
+  box.innerHTML = `<p class="twins-t">${esc(t("twins.t"))}</p><p class="twins-p">${esc(t("twins.p"))}</p><div class="alts">${list.map((a) => altCard(a)).join("")}</div>`;
 }
 
 // Pages des organismes où l'on peut vérifier un partenaire (seulement celles qui ont été vérifiées)
@@ -351,6 +367,8 @@ function healthSection(p) {
   const hasNut = neg.length || pos.length;
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.health")}</h3><small>${t("detail.per", { u: t(h.nutrition.drink ? "unit.100ml" : "unit.100g") })}</small></div>
     <p class="lead">${lead}</p>
+    ${s && s.estimated ? `<p class="ns-est">${svg(I.bulb)}<span>${esc(t(s.estimated.saltMissing ? "detail.ns_estimated_nosalt" : "detail.ns_estimated"))}</span></p>` : ""}
+    ${s && !p.ingredients && !(p.raw && (p.raw.additives_tags || []).length) ? `<p class="ns-est">${svg(I.bulb)}<span>${esc(t("detail.additives_unchecked"))}</span></p>` : ""}
     ${neg.length || risky ? `<p class="sub-label">${t("detail.defects")}</p>${list(neg)}${risky ? addRow(true) : ""}` : ""}
     ${pos.length || !risky ? `<p class="sub-label">${t("detail.qualities")}</p>${list(pos)}${!risky ? addRow(false) : ""}` : ""}
     ${!hasNut ? `<p class="notes">${t("detail.nut_missing")}</p>` : ""}
@@ -678,6 +696,7 @@ function renderSheetProduct(p) {
   refreshFav();
   loadRecalls(p);
   loadCertCheck(p);
+  loadTwins(p);
   if (!prefs().sheetTourDone && !DEMO) setTimeout(startSheetTour, 900);
 }
 

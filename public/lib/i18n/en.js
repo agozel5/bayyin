@@ -1280,4 +1280,12 @@ export default {
   "cmp.see": "View details",
   // ---------- Vie privée : commerces ----------
   "privacy.5": "Halal shops: in France and neighbouring countries, the list is already downloaded and your location stays on your phone. Elsewhere, it is sent to OpenStreetMap, rounded to about 100 m, only when you tap “Around me”.",
+  // ---------- Fiches incomplètes ----------
+  "twins.searching": "Looking for a more complete entry…",
+  "twins.t": "More complete entries for the same product",
+  "twins.p": "Open Food Facts has other entries for this product (another size or country). The recipe may differ: compare with the ingredient list on your pack.",
+  "detail.ns_estimated": "Nutri-Score calculated by Bayyin from the nutrition table (missing from the Open Food Facts entry).",
+  "detail.ns_estimated_nosalt": "Nutri-Score calculated by Bayyin from the nutrition table; salt is missing, so the score may be slightly too favourable.",
+  // ---------- Additifs non vérifiés ----------
+  "detail.additives_unchecked": "Additives not checked: the ingredient list is missing. Take a photo of it to complete the score.",
 };

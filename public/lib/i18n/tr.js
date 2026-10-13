@@ -1280,4 +1280,12 @@ export default {
   "cmp.see": "Ayrıntıları gör",
   // ---------- Vie privée : commerces ----------
   "privacy.5": "Helal mekânlar: Fransa ve komşu ülkelerde liste önceden indirilmiştir ve konumunuz telefonunuzda kalır. Başka yerlerde, yalnızca “Yakınımda”ya dokunduğunuzda yaklaşık 100 m'ye yuvarlanarak OpenStreetMap'e gönderilir.",
+  // ---------- Fiches incomplètes ----------
+  "twins.searching": "Daha eksiksiz bir kayıt aranıyor…",
+  "twins.t": "Aynı ürün için daha eksiksiz kayıtlar",
+  "twins.p": "Open Food Facts'te bu ürün için başka kayıtlar var (başka boyut veya ülke). Tarif farklı olabilir: ambalajınızdaki içindekiler listesiyle karşılaştırın.",
+  "detail.ns_estimated": "Nutri-Score, besin tablosundan Bayyin tarafından hesaplandı (Open Food Facts kaydında yok).",
+  "detail.ns_estimated_nosalt": "Nutri-Score, besin tablosundan Bayyin tarafından hesaplandı; tuz bilgisi yok, bu yüzden puan biraz fazla olumlu olabilir.",
+  // ---------- Additifs non vérifiés ----------
+  "detail.additives_unchecked": "Katkı maddeleri kontrol edilmedi: içindekiler listesi eksik. Puanı tamamlamak için fotoğrafını çekin.",
 };

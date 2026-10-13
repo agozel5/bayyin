@@ -10,7 +10,7 @@ import { analyzeCosmetic } from "./cosmetic.js";
 import { classifyBeauty } from "./beauty.js";
 import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
-import { rankByRelevance, translateQuery } from "./search.js";
+import { rankByRelevance, translateQuery, relevance, normalize as normalizeText } from "./search.js";
 
 export const OFF_BASE = "https://world.openfoodfacts.org";
 export const FIELDS = [
@@ -322,6 +322,31 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         foodFailed,
         beautyFailed,
       };
+    },
+
+    // -> fiches complètes d'un produit très proche (même nom, même marque), quand celle-ci est incomplète.
+    //    Open Food Facts a souvent plusieurs fiches pour un même produit (formats, pays, anciens codes).
+    async twins(product) {
+      if (demo || !product || product.kind === "beauty") return [];
+      const name = String(product.name || product.names?.any || "")
+        .replace(/\b\d+([.,]\d+)?\s*(x\s*\d+\s*)?(l|cl|ml|g|kg|gr)\b/gi, " ")
+        .replace(/\s+/g, " ").trim();
+      if (name.length < 3) return [];
+      const brand = String(product.brand || "").split(",")[0].trim();
+      const q = brand && !normalizeText(name).includes(normalizeText(brand)) ? `${brand} ${name}` : name;
+      const url = `${OFF_BASE}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=30&fields=${FIELDS},countries_tags`;
+      const data = await getJson(url, 15000, { tries: 2 });
+      const list = ((data && data.products) || []).filter((p) => p.code && p.code !== product.code && ingredientsText(p));
+      // Tous les mots du nom (et la marque) doivent se retrouver dans le nom ou la marque du produit proche
+      const ranked = list
+        .map((p, i) => ({ p, i, s: relevance(p, q) }))
+        .filter((x) => x.s >= 1 && (!brand || normalizeText(x.p.brands || "").includes(normalizeText(brand))))
+        .sort((a, b) => b.s - a.s || a.i - b.i)
+        .map((x) => x.p);
+      return ranked.slice(0, 3).map((p) => {
+        rawCache.set(p.code, p);
+        return show(p);
+      });
     },
 
     // -> alternatives du même type de produit, halal et mieux notées (vendues en France)

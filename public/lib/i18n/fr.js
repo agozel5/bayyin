@@ -1294,4 +1294,12 @@ export default {
   "cmp.see": "Voir la fiche",
   // ---------- Vie privée : commerces ----------
   "privacy.5": "Commerces halal : en France et dans les pays voisins, la liste est déjà téléchargée et votre position reste sur votre téléphone. Ailleurs, elle est envoyée à OpenStreetMap, arrondie à 100 m environ, seulement quand vous touchez « Autour de moi ».",
+  // ---------- Fiches incomplètes ----------
+  "twins.searching": "Recherche d'une fiche plus complète…",
+  "twins.t": "Fiches plus complètes du même produit",
+  "twins.p": "Open Food Facts a d'autres fiches pour ce produit (autre format ou autre pays). La recette peut différer : comparez avec la liste d'ingrédients de votre emballage.",
+  "detail.ns_estimated": "Nutri-Score calculé par Bayyin à partir du tableau nutritionnel (absent de la fiche Open Food Facts).",
+  "detail.ns_estimated_nosalt": "Nutri-Score calculé par Bayyin à partir du tableau nutritionnel ; le sel n'est pas renseigné, la note peut être un peu trop favorable.",
+  // ---------- Additifs non vérifiés ----------
+  "detail.additives_unchecked": "Additifs non vérifiés : la liste d'ingrédients manque sur la fiche. Prenez-la en photo pour compléter la note.",
 };

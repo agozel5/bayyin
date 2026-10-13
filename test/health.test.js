@@ -77,3 +77,19 @@ test("alternatives : produit déjà parmi les mieux notés de son rayon", async 
   const res2 = await similarAlternatives(mk("9", 40, "haram"), async () => [mk("2", 60), mk("3", 70, "halal_certifie")]);
   assert.equal(res2[0].code, "3", "produit haram : l'alternative certifiée d'abord");
 });
+
+test("Nutri-Score calculé quand Open Food Facts n'en donne pas", async () => {
+  const { estimateNutriscore, healthScore } = await import("../public/lib/health.js");
+  // Granola protéiné (fiche réelle sans Nutri-Score, sel absent) : A, signalé comme estimé
+  const granola = { nutriscore_grade: "unknown", categories_tags: ["en:breakfast-cereals"],
+    nutriments: { "energy-kj_100g": 1780, sugars_100g: 10.9, "saturated-fat_100g": 2.5, proteins_100g: 20.6, fiber_100g: 13.3 } };
+  assert.deepEqual(estimateNutriscore(granola), { grade: "a", points: -2, saltMissing: true });
+  assert.equal(healthScore(granola).estimated.saltMissing, true);
+  // Soda sucré : E ; biscuit gras et sucré : E ; données insuffisantes : rien
+  assert.equal(estimateNutriscore({ categories_tags: ["en:beverages"], nutriments: { "energy-kj_100g": 180, sugars_100g: 10.6, "saturated-fat_100g": 0, salt_100g: 0 } }).grade, "e");
+  assert.equal(estimateNutriscore({ nutriments: { "energy-kj_100g": 2000, sugars_100g: 30, "saturated-fat_100g": 9, salt_100g: 0.6, proteins_100g: 6, fiber_100g: 3 } }).grade, "e");
+  assert.equal(estimateNutriscore({ nutriments: { "energy-kcal_100g": 400 } }), null);
+  assert.equal(estimateNutriscore({ categories_tags: ["en:cheeses"], nutriments: { "energy-kj_100g": 1500, sugars_100g: 0, "saturated-fat_100g": 18 } }), null);
+  // Note officielle présente : pas d'estimation
+  assert.equal(healthScore({ nutriscore_grade: "b", nutriments: {} }).estimated, null);
+});

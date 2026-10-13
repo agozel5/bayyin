@@ -1577,3 +1577,10 @@ html[data-text="xlarge"]{font-size:125%}
 /* Onglets : la largeur suit le libellé (évite « Compo… » en grand texte) */
 .ptab{flex:1 1 auto;padding:10px 6px;gap:6px}
 html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
+
+/* Fiche incomplète : fiches proches plus complètes */
+.twins{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.twins-t{margin:0 0 4px;font-weight:800}
+.twins-p{margin:0 0 10px;font-size:.86rem;color:var(--muted);line-height:1.4}
+.ns-est{display:flex;gap:8px;align-items:flex-start;margin:-4px 0 12px;padding:10px 12px;border-radius:var(--r-md);background:var(--c-info-bg);font-size:.85rem;line-height:1.4}
+.ns-est svg{flex:none;width:18px;height:18px;color:var(--c-info)}
