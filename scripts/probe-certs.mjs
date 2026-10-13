@@ -1,28 +1,29 @@
-// Sonde temporaire (3)
-const UA = { "User-Agent": "Mozilla/5.0 (compatible; Bayyin/1.0; +https://github.com/agozel5/bayyin)" };
+// Sonde temporaire (4)
+const UA = { "User-Agent": "Mozilla/5.0 (compatible; Bayyin/1.0; +https://github.com/agozel5/bayyin)", Origin: "https://avs.fr", Referer: "https://avs.fr/etablissements/" };
 async function get(url) {
-  try { const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(25000) });
-    return { status: r.status, type: r.headers.get("content-type"), text: await r.text() };
+  try { const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(30000) });
+    return { status: r.status, cors: r.headers.get("access-control-allow-origin"), text: await r.text() };
   } catch (e) { return { status: "ERR " + e.message, text: "" }; }
 }
-const js = await get("https://avs.fr/etablissements/script.js?v=20251004");
-console.log("== AVS script.js", js.status, js.text.length);
-const i = js.text.indexOf("fetch(");
-console.log(js.text.slice(Math.max(0, i - 1500), i + 400));
-for (const m of js.text.matchAll(/["'`]([^"'`\s]*\.(?:json|php)[^"'`\s]*)["'`]/g)) console.log("  url:", m[1]);
-const urls = [...js.text.matchAll(/["'`]((?:\.\.?\/|\/|https?:)[^"'`\s]{3,120})["'`]/g)].map((m) => m[1]);
-console.log("  chemins:", [...new Set(urls)].slice(0, 40).join(" , "));
-const a = await get("https://achahada.com/wp-json/wp/v2/pages/6244");
-console.log("\n== Achahada page marques", a.status);
-try { const h = JSON.parse(a.text).content.rendered; console.log("len", h.length);
-  console.log([...h.matchAll(/<img[^>]*>/g)].map((m) => m[0].slice(0, 220)).slice(0, 60).join("\n"));
-  console.log("texte:", h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 2500));
-} catch (e) { console.log(a.text.slice(0, 500)); }
-const t = await get("https://halalhmc.org/wp-json/wp/v2/types");
-console.log("\n== HMC types", t.status);
-try { const o = JSON.parse(t.text); for (const k in o) console.log(" ", k, o[k].rest_base, o[k].name); } catch { console.log(t.text.slice(0, 300)); }
-const b = await get("https://halalhmc.org/brands/");
-console.log("\n== HMC brands", b.status);
-console.log([...b.text.matchAll(/<h[1-4][^>]*>([\s\S]{1,160}?)<\/h[1-4]>/g)].map((m) => m[1].replace(/<[^>]+>/g, "").trim()).filter(Boolean).slice(0, 60).join(" | "));
-const avsJ = await get("https://avs.fr/etablissements/data.json");
-console.log("\n== AVS data.json guess", avsJ.status, avsJ.text.slice(0, 200));
+for (const t of [1, 2, 3]) {
+  const r = await get(`https://equinox.avs.fr/v1/common/partners?type=${t}`);
+  console.log(`\n== AVS type=${t}`, r.status, "cors:", r.cors, r.text.length);
+  try { const d = JSON.parse(r.text); const arr = Array.isArray(d) ? d : d.data || d.partners || d.items || [];
+    console.log("n =", arr.length, "clés:", Object.keys(arr[0] || d).join(","));
+    console.log(JSON.stringify(arr.slice(0, 2)).slice(0, 1500));
+    if (t === 3) console.log("noms:", arr.slice(0, 200).map((x) => x.name || x.nom || x.title || x.raison_sociale || x.enseigne).join(" ; "));
+  } catch { console.log(r.text.slice(0, 400)); }
+}
+const s = await get("https://achahada.com/wp-admin/admin-ajax.php?action=store_search&lat=48.85&lng=2.35&max_results=500&search_radius=2000&autoload=1");
+console.log("\n== Achahada wpsl", s.status, s.text.length);
+try { const d = JSON.parse(s.text); console.log("n =", d.length, "clés:", Object.keys(d[0] || {}).join(","));
+  console.log(d.slice(0, 120).map((x) => (x.store || "").replace(/&#8217;/g, "'") + " [" + (x.city || "") + "]").join(" ; "));
+} catch { console.log(s.text.slice(0, 400)); }
+let n = 0, names = [];
+for (let p = 1; p <= 15; p++) {
+  const r = await get(`https://halalhmc.org/brands/${p > 1 ? `page/${p}/` : ""}`);
+  if (r.status !== 200) break;
+  const hs = [...r.text.matchAll(/<h2[^>]*>([\s\S]{1,160}?)<\/h2>/g)].map((m) => m[1].replace(/<[^>]+>/g, "").trim());
+  names.push(...hs); n = p;
+}
+console.log("\n== HMC pages", n, "marques:", [...new Set(names)].length, [...new Set(names)].join(" ; "));
