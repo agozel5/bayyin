@@ -19,7 +19,7 @@ export const FIELDS = [
   "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
   "image_front_small_url", "image_front_url", "image_ingredients_url", "image_nutrition_url",
-  "nutriscore_grade", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
+  "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
   "compared_to_category", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags",
 ].join(",");
 
@@ -30,7 +30,7 @@ export const beautyUrl = (code) => `${OBF_BASE}/api/v2/product/${code}.json?fiel
 // Champs nécessaires pour recalculer le verdict quand l'utilisateur change de réglage.
 const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_fr", "labels_tags", "categories_tags",
-  "allergens_tags", "traces_tags", "kind", "brands", "med_form", "med_cis", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags"];
+  "allergens_tags", "traces_tags", "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "kind", "brands", "med_form", "med_cis", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags"];
 
 // Type de produit : alimentaire (Open Food Facts), cosmétique (Open Beauty Facts) ou médicament (base publique).
 // Le verdict halal suit des règles différentes pour chacun.

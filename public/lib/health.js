@@ -1,16 +1,34 @@
-// Analyse santé, dans l'esprit de Yuka, à partir des données Open Food Facts.
+// Analyse santé à partir des données Open Food Facts.
 //
-// Note santé sur 100 :
-//   60 pts  qualité nutritionnelle (Nutri-Score A→E)
-//   30 pts  additifs (retrait selon le niveau de risque ; un additif à risque élevé plafonne la note à 49)
+// Note santé sur 100 (méthode Bayyin) :
+//   55 pts  qualité nutritionnelle : Nutri-Score 2023, au point près (et pas seulement la lettre)
+//   25 pts  additifs (retrait selon le niveau de risque ; un additif à risque élevé plafonne la note à 49)
+//   10 pts  degré de transformation (NOVA) : les aliments ultra-transformés sont associés à plus de
+//           maladies chroniques (revue de 45 méta-analyses, BMJ 2024 ; cohorte NutriNet-Santé)
 //   10 pts  agriculture biologique
-// Pas de Nutri-Score => pas de note (on n'invente pas de chiffre).
+// Pas de Nutri-Score ni de tableau nutritionnel => pas de note (on n'invente pas de chiffre).
 //
 // Seuils nutritionnels : ceux des feux tricolores de la Food Standards Agency (pour 100 g ou 100 ml).
 // Niveaux de risque des additifs : synthèse indicative d'avis publics (EFSA, ANSES, CIRC),
 // à lire comme un signal et pas comme un diagnostic.
 
-const GRADE_POINTS = { a: 60, b: 45, c: 30, d: 15, e: 0 };
+// Points de nutrition par lettre (haut et bas de la plage) ; la position dans la plage dépend
+// des points Nutri-Score : deux produits notés A ne valent pas forcément la même chose.
+const GRADE_BAND = { a: [55, 46], b: [45, 38], c: [37, 27], d: [26, 15], e: [14, 0] };
+const POINT_RANGE = {
+  food: { a: [-15, 0], b: [1, 2], c: [3, 10], d: [11, 18], e: [19, 40] },
+  drink: { a: [-15, 0], b: [-5, 2], c: [3, 6], d: [7, 9], e: [10, 25] },
+};
+const GRADE_POINTS = GRADE_BAND; // lettres reconnues
+export function nutritionPoints(grade, points, drink = false) {
+  const [top, bottom] = GRADE_BAND[grade];
+  if (typeof points !== "number" || isNaN(points)) return Math.round((top + bottom) / 2);
+  const [lo, hi] = POINT_RANGE[drink ? "drink" : "food"][grade];
+  const frac = Math.min(1, Math.max(0, (points - lo) / (hi - lo || 1)));
+  return Math.round(top - frac * (top - bottom));
+}
+const NOVA_POINTS = { 1: 10, 2: 9, 3: 6, 4: 0 };
+const NOVA_UNKNOWN = 5;
 
 export const HEALTH_GRADES = [
   { min: 75, id: "excellent", label: "Excellent" },
@@ -236,21 +254,26 @@ export function estimateNutriscore(product) {
 // ---------------------------------------------------------------------------
 export function healthScore(product) {
   let grade = String(product.nutriscore_grade || product.nutrition_grades || "").toLowerCase();
+  let points = num(product.nutriscore_score);
   let estimated = null;
   if (!(grade in GRADE_POINTS)) {
     estimated = estimateNutriscore(product);
     if (!estimated) return null;
     grade = estimated.grade;
+    points = estimated.points;
   }
+  const nutritionPts = nutritionPoints(grade, points, isDrink(product));
 
   const risks = additiveRisks(product);
   const high = risks.some((r) => r.level === "eleve");
-  let additivesPts = 30;
-  for (const r of risks) additivesPts -= r.level === "eleve" ? 30 : r.level === "modere" ? 10 : 4;
+  let additivesPts = 25;
+  for (const r of risks) additivesPts -= r.level === "eleve" ? 25 : r.level === "modere" ? 8 : 3;
   additivesPts = Math.max(0, additivesPts);
+  const g4 = num(product.nova_group);
+  const novaPts = g4 in NOVA_POINTS ? NOVA_POINTS[g4] : NOVA_UNKNOWN;
   const bioPts = isOrganic(product) ? 10 : 0;
 
-  let score = GRADE_POINTS[grade] + additivesPts + bioPts;
+  let score = nutritionPts + additivesPts + novaPts + bioPts;
   if (high) score = Math.min(score, 49);
   score = Math.max(0, Math.min(100, Math.round(score)));
   const g = HEALTH_GRADES.find((x) => score >= x.min);
@@ -261,7 +284,7 @@ export function healthScore(product) {
     nutriscore: grade,
     // Nutri-Score calculé par Bayyin (absent d'Open Food Facts) ; saltMissing : sel non renseigné
     estimated: estimated ? { saltMissing: estimated.saltMissing } : null,
-    parts: { nutrition: GRADE_POINTS[grade], additives: additivesPts, bio: bioPts },
+    parts: { nutrition: nutritionPts, additives: additivesPts, nova: novaPts, novaKnown: g4 in NOVA_POINTS, bio: bioPts },
   };
 }
 

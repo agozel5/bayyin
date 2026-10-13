@@ -7,11 +7,23 @@ import { FIXTURES } from "../public/lib/fixtures.js";
 
 const base = { additives_tags: [], labels_tags: [], nutriments: {} };
 
-test("note santé : Nutri-Score + additifs + bio", () => {
-  assert.equal(healthScore({ ...base, nutriscore_grade: "a" }).score, 90);
-  assert.equal(healthScore({ ...base, nutriscore_grade: "a", labels_tags: ["en:organic"] }).score, 100);
-  assert.equal(healthScore({ ...base, nutriscore_grade: "e" }).label, "Médiocre");
-  assert.equal(healthScore({ ...base, nutriscore_grade: "b", additives_tags: ["en:e951"] }).score, 65);
+test("note santé : nutrition au point près + additifs + transformation + bio", async () => {
+  const { nutritionPoints } = await import("../public/lib/health.js");
+  // Sans points Nutri-Score : milieu de la plage de la lettre ; transformation inconnue = 5
+  assert.equal(healthScore({ ...base, nutriscore_grade: "a" }).score, 51 + 25 + 5);
+  assert.equal(healthScore({ ...base, nutriscore_grade: "a", labels_tags: ["en:organic"], nova_group: 1 }).score, 51 + 25 + 10 + 10);
+  assert.equal(healthScore({ ...base, nutriscore_grade: "e", nutriscore_score: 30, nova_group: 4, additives_tags: ["en:e951"] }).label, "Mauvais");
+  assert.equal(healthScore({ ...base, nutriscore_grade: "b", nova_group: 4, additives_tags: ["en:e951"] }).score, 42 + 17 + 0);
+  // Au point près : deux produits A ne valent pas la même chose
+  assert.equal(nutritionPoints("a", -15), 55);
+  assert.equal(nutritionPoints("a", 0), 46);
+  assert.ok(healthScore({ ...base, nutriscore_grade: "a", nutriscore_score: -8 }).score > healthScore({ ...base, nutriscore_grade: "a", nutriscore_score: -1 }).score);
+  // Boissons : plages propres au Nutri-Score des boissons
+  assert.equal(nutritionPoints("e", 25, true), 0);
+  assert.equal(nutritionPoints("c", 3, true), 37);
+  // Le détail de la note est fourni
+  const parts = healthScore({ ...base, nutriscore_grade: "c", nova_group: 3 }).parts;
+  assert.deepEqual([parts.nova, parts.novaKnown, parts.bio], [6, true, 0]);
 });
 
 test("un additif à risque élevé plafonne la note à 49", () => {

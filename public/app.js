@@ -360,7 +360,7 @@ function healthSection(p) {
   const neg = h.nutrition.negatives;
   const pos = h.nutrition.positives;
   const lead = s
-    ? t("detail.health_lead_html", { n: s.score, g: s.nutriscore.toUpperCase(), a: s.parts.nutrition, b: s.parts.additives, c: s.parts.bio })
+    ? t(s.parts.novaKnown ? "detail.health_lead_html" : "detail.health_lead_nonova_html", { n: s.score, g: s.nutriscore.toUpperCase(), a: s.parts.nutrition, b: s.parts.additives, c: s.parts.bio, d: s.parts.nova })
     : esc(t("detail.health_none"));
   const list = (items) => `<div class="nut-list">${items.map(nutRow).join("")}</div>`;
   const addRow = (bad) =>
