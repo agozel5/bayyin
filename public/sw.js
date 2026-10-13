@@ -6,7 +6,7 @@
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
 
-const VERSION = "2026-10-13-3";
+const VERSION = "2026-10-13-4";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
@@ -27,7 +27,7 @@ const APP_FILES = [
 const CDN_HOSTS = ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com", "tessdata.projectnaptha.com"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(APP_CACHE).then((c) => c.addAll(APP_FILES)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(APP_CACHE).then((c) => c.addAll(APP_FILES.map((f) => new Request(f, { cache: "no-cache" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -43,7 +43,11 @@ const timeout = (ms) => new Promise((resolve) => setTimeout(() => resolve(null),
 
 async function networkFirst(request, cacheName, { wait, ignoreSearch = false } = {}) {
   const cache = await caches.open(cacheName);
-  const network = fetch(request).then((res) => {
+  // « no-cache » : le navigateur revérifie chaque fichier auprès du serveur (sinon GitHub Pages
+  // le laisse garder une ancienne copie 10 minutes, et une mise à jour n'apparaît pas tout de suite)
+  const sameOrigin = new URL(request.url).origin === self.location.origin;
+  // (une requête de navigation ne peut pas être recopiée : on repart de son adresse)
+  const network = (sameOrigin ? fetch(request.mode === "navigate" ? request.url : request, { cache: "no-cache" }) : fetch(request)).then((res) => {
     if (res && res.ok) cache.put(request, res.clone()).catch(() => {});
     return res;
   });

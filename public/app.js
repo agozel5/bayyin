@@ -1966,7 +1966,16 @@ function renderOnline() {
 window.addEventListener("online", renderOnline);
 window.addEventListener("offline", renderOnline);
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // updateViaCache "none" : le navigateur ne garde jamais sw.js en mémoire, une nouvelle version est vue tout de suite
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then((r) => r.update()).catch(() => {}));
+  // Nouvelle version installée pendant que l'app est ouverte : on recharge une fois pour l'afficher
+  let swReloaded = false;
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || swReloaded || !sheet.hidden || !cameraEl.hidden) return;
+    swReloaded = true;
+    location.reload();
+  });
 }
 
 // ===========================================================================
