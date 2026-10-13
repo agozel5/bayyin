@@ -109,6 +109,12 @@
       </div>
     </section>
 
+    <a class="rank-promo" href="#rankings">
+      <span class="rank-promo-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/></svg></span>
+      <span class="rank-promo-t"><strong data-i18n="rank.title"></strong><small data-i18n="rank.promo"></small></span>
+      <svg class="flip rank-promo-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+
     <div id="homeStatus" aria-live="polite"></div>
 
     <div class="recall-banner" id="homeRecall" role="alert" hidden></div>
@@ -375,6 +381,12 @@
     </div>
   </section>
   <!-- ================= COMMERCES HALAL ================= -->
+  <!-- ================= CLASSEMENTS ================= -->
+  <section class="view" id="view-rankings" data-view="rankings" aria-labelledby="h-rank" hidden>
+    <header class="sub-head"><a class="icon-btn" id="rankBack" href="#scan" data-i18n-aria="sheet.back"><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><h1 id="h-rank" data-i18n="rank.title"></h1></header>
+    <div id="rankBody"></div>
+  </section>
+
   <section class="view" id="view-places" data-view="places" aria-labelledby="h-places" hidden>
     <header class="sub-head"><a class="icon-btn" href="#scan" data-i18n-aria="sheet.back"><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><h1 id="h-places" data-i18n="places.short"></h1></header>
     <div class="places-search">

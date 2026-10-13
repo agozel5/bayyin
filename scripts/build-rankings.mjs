@@ -6,7 +6,7 @@
 // halal et la note avec les réglages de chaque utilisateur.
 // Données : Open Food Facts / Open Beauty Facts, licence ODbL.
 
-import { mkdir, writeFile, rm, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { setCosmeticDb } from "../public/lib/cosmetic.js";
 import { RANK_CATEGORIES } from "../public/lib/rankings.js";
 import { FIELDS, present } from "../public/lib/off.js";
@@ -19,7 +19,8 @@ const PAGES = 3; // 3 × 100 produits les plus scannés lus par étiquette
 const UA = { "User-Agent": "Bayyin/1.0 (github.com/agozel5/bayyin)" };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function getJson(url, tries = 3) {
+// Open Food Facts limite le nombre de recherches : en cas de 503 / 429, on attend de plus en plus longtemps
+async function getJson(url, tries = 6) {
   for (let i = 1; ; i++) {
     try {
       const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(60000) });
@@ -27,7 +28,7 @@ async function getJson(url, tries = 3) {
       return await res.json();
     } catch (e) {
       if (i >= tries) throw e;
-      await sleep(3000 * i);
+      await sleep(10000 * i);
     }
   }
 }
@@ -49,8 +50,9 @@ function slim(p, kind) {
 async function main() {
   // Base des ingrédients cosmétiques (CosIng), comme dans l'app
   try { setCosmeticDb(JSON.parse(await readFile(new URL("../public/data/cosing.json", import.meta.url), "utf8"))); } catch { /* sans CosIng */ }
-  await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
+  let previous = { categories: {} };
+  try { previous = JSON.parse(await readFile(new URL("index.json", OUT), "utf8")); } catch { /* première fois */ }
   const index = { updated: new Date().toISOString().slice(0, 10), categories: {} };
   for (const cat of RANK_CATEGORIES) {
     const seen = new Map();
@@ -67,19 +69,23 @@ async function main() {
           console.log(`  ${cat.id} ${tag} p${page} : ${e.message}`);
           break;
         }
-        await sleep(1200);
+        await sleep(4000);
       }
     }
     // Avec ingrédients, une note, et pas haram avec les réglages par défaut
     const ranked = [...seen.values()]
-      .filter((p) => ingredientsText(p))
+      .filter((p) => ingredientsText(p) && (p.product_name || p.product_name_fr))
       .map((p) => ({ raw: slim(p, cat.kind), shown: present(cat.kind === "beauty" ? { ...p, kind: "beauty" } : p) }))
       .filter(({ shown }) => shown.verdict.status !== "haram" && shown.health && shown.health.score && typeof shown.health.score.score === "number")
       .sort((a, b) => b.shown.health.score.score - a.shown.health.score.score)
       .slice(0, KEEP)
       .map((x) => x.raw);
     console.log(`${cat.id} : ${seen.size} lus, ${ranked.length} gardés`);
-    if (ranked.length < 5) continue; // rayon trop peu renseigné : pas affiché
+    if (ranked.length < 5) {
+      // Échec ou rayon trop peu renseigné : on garde la version précédente s'il y en a une
+      if (previous.categories[cat.id]) { index.categories[cat.id] = previous.categories[cat.id]; console.log(`  ${cat.id} : version précédente gardée`); }
+      continue;
+    }
     await writeFile(new URL(`${cat.id}.json`, OUT), JSON.stringify(ranked));
     index.categories[cat.id] = ranked.length;
   }

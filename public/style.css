@@ -1584,3 +1584,48 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 .twins-p{margin:0 0 10px;font-size:.86rem;color:var(--muted);line-height:1.4}
 .ns-est{display:flex;gap:8px;align-items:flex-start;margin:-4px 0 12px;padding:10px 12px;border-radius:var(--r-md);background:var(--c-info-bg);font-size:.85rem;line-height:1.4}
 .ns-est svg{flex:none;width:18px;height:18px;color:var(--c-info)}
+
+/* =====================================================================
+   Classements
+   ===================================================================== */
+.rank-promo{display:flex;align-items:center;gap:14px;margin:14px 0 4px;padding:14px 16px;border-radius:var(--r-lg);background:linear-gradient(120deg,#FFF6DF,#FDEBC4);color:#4A3608;text-decoration:none;box-shadow:var(--lift)}
+.rank-promo-ico{flex:none;width:44px;height:44px;border-radius:14px;background:#E7B84E;color:#fff;display:flex;align-items:center;justify-content:center}
+.rank-promo-ico svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rank-promo-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rank-promo-t strong{font-weight:800;font-size:1.02rem}
+.rank-promo-t small{font-size:.86rem;opacity:.85}
+.rank-promo-chev{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;flex:none}
+:root[data-theme="dark"] .rank-promo{background:linear-gradient(120deg,#3A2F14,#2E2512);color:#F6E3B4}
+:root[data-theme="dark"] .rank-promo-ico{background:#B88A22}
+.rank-intro{margin:14px 0 12px;color:var(--muted)}
+.rank-cats{display:flex;flex-direction:column;margin-top:14px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--lift);overflow:hidden}
+.rank-cat{display:flex;align-items:center;gap:14px;padding:12px 16px;color:var(--fg);text-decoration:none;border-top:1px solid var(--line)}
+.rank-cat:first-child{border-top:none}
+.rank-cat.locked .rank-cat-t strong{color:var(--muted)}
+.rank-ico{flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--brand-soft);color:var(--brand-dark)}
+.rank-ico.ri-beauty{background:#EDE9FB;color:#5B49B5}
+:root[data-theme="dark"] .rank-ico.ri-beauty{background:#2A2540;color:#B9AEF2}
+.rank-ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rank-cat.locked .rank-ico{filter:grayscale(1);opacity:.6}
+.rank-cat-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rank-cat-t strong{font-weight:700}
+.rank-cat-t small{color:var(--muted);font-size:.82rem}
+.rank-chev{width:18px;height:18px;color:var(--faint);fill:none;stroke:currentColor;stroke-width:2.2;flex:none}
+.rank-lock{flex:none;width:28px;height:28px;border-radius:50%;background:#FFF1D0;color:#A87410;display:flex;align-items:center;justify-content:center}
+.rank-lock svg{width:15px;height:15px}
+.rank-filter{margin-top:12px}
+.rank-basis{margin:6px 0 10px;color:var(--muted);font-size:.85rem}
+.rank-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--lift);overflow:hidden}
+.rank-list li{border-top:1px solid var(--line)}
+.rank-list li:first-child{border-top:none}
+.rank-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:none;background:none;color:var(--fg);font:inherit;text-align:start;cursor:pointer}
+.rank-n{flex:none;width:26px;text-align:center;font-weight:800;font-size:1.05rem;color:var(--muted)}
+.rank-n.top{color:#B8860B}
+.rank-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rank-t strong{font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rank-t small{color:var(--muted);font-size:.82rem}
+.rank-score{flex:none;display:flex;flex-direction:column;align-items:center;min-width:56px}
+.rank-score b{font-size:1.15rem;font-weight:800;color:color-mix(in srgb,var(--c) 70%,#000);line-height:1}
+:root[data-theme="dark"] .rank-score b{color:color-mix(in srgb,var(--c) 75%,#fff)}
+.rank-score small{font-size:.7rem;color:var(--muted)}
+.rank-score i{font-style:normal;font-size:.72rem;font-weight:700;color:var(--muted)}

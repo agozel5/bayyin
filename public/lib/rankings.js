@@ -35,7 +35,7 @@ export const RANK_CATEGORIES = [
   { id: "conditioners", kind: "beauty", tags: ["en:hair-conditioners", "en:conditioners"] },
   { id: "body_creams", kind: "beauty", tags: ["en:body-lotions", "en:body-milks", "en:body-creams"] },
   { id: "face_creams", kind: "beauty", tags: ["en:face-creams", "en:day-creams", "en:night-creams"] },
-  { id: "cleansers", kind: "beauty", tags: ["en:make-up-removers", "en:facial-cleansers"] },
+  { id: "cleansers", kind: "beauty", tags: ["en:make-up-removers", "en:micellar-waters", "en:face-cleansers", "en:cleansers"] },
   { id: "lip_balms", kind: "beauty", tags: ["en:lip-balms"] },
   { id: "hand_creams", kind: "beauty", tags: ["en:hand-creams"] },
   { id: "sunscreens", kind: "beauty", tags: ["en:sunscreens", "en:sun-protection"] },
@@ -108,6 +108,7 @@ export function rankList(raws, { present, scoreOf = (p) => p.health && p.health.
   return raws
     .map(present)
     .filter((p) => {
+      if (!p.name) return false; // fiche sans nom : inutile dans un classement
       const st = p.verdict && p.verdict.status;
       if (!HALAL_OK.includes(st) || (certifiedOnly && st !== "halal_certifie")) return false;
       const h = scoreOf(p);

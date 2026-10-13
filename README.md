@@ -35,6 +35,8 @@ Ce qui la distingue :
   labels que l'on suit, appliqué au verdict ;
 - **fiche produit en onglets** (Halal · Santé · Composition), illustrations par catégorie pour les produits sans photo,
   chargements en squelette, vibration différente selon le verdict ;
+- **classements** : les meilleurs produits halal de 30 rayons (alimentation et cosmétiques), triés par note santé et
+  recalculés avec les réglages de chacun ; 3 rayons gratuits par onglet, les autres avec Premium ;
 - **certification vérifiée** : le label AVS, Achahada ou HMC est comparé chaque semaine à la liste publiée par
   l'organisme (estampille sanitaire de l'emballage, puis marque) — « Certification vérifiée » ou « pas retrouvé dans la liste » ;
 - **recherche multilingue et triée par pertinence** (une recherche en arabe, turc ou anglais est aussi lancée en français) ;

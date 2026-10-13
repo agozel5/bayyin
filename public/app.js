@@ -13,6 +13,7 @@ import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
+import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
 import { recallsFor, recentRecalls, matchRecent, isActive } from "./lib/recalls.js";
@@ -2410,7 +2411,7 @@ settings.subscribe((st, patch) => {
 // ===========================================================================
 // Navigation
 // ===========================================================================
-const TABS = ["scan", "search", "history", "additives", "settings", "places"];
+const TABS = ["scan", "search", "history", "additives", "settings", "places", "rankings"];
 let current = null;
 
 // Bouton central : depuis un autre onglet il ramène à l'accueil ; sur l'accueil il ouvre la caméra.
@@ -2439,6 +2440,7 @@ function showTab(name) {
   }
   if (name === "additives") renderAdditives();
   if (name === "places") renderPlaces();
+  if (name === "rankings") renderRankings(sub);
   if (name === "settings") {
     renderSettings();
     showSetPage(SET_PAGES.includes(sub) ? sub : "menu", { animate: wasSettings });
@@ -3147,6 +3149,87 @@ $("placesList").addEventListener("click", (e) => {
 });
 
 // ===========================================================================
+// Classements : les meilleurs produits halal de chaque rayon (#rankings, #rankings/<rayon>)
+// ===========================================================================
+let rankKind = "food";
+let rankCertOnly = false;
+let rankJob = 0;
+const rankLocked = (c) => !c.free && premiumEnabled() && !isPremium();
+const rankIco = (id) => `<span class="rank-ico ri-${RANK_BY_ID[id].kind}">${svg(RANK_ICONS[id] || I.box)}</span>`;
+
+async function renderRankings(sub) {
+  const box = $("rankBody");
+  const job = ++rankJob;
+  const cat = sub && RANK_BY_ID[sub];
+  $("rankBack").setAttribute("href", cat ? "#rankings" : "#scan");
+  $("h-rank").textContent = cat ? t(`rank.cat.${cat.id}`) : t("rank.title");
+  if (cat && rankLocked(cat)) {
+    // Lien direct vers un rayon Premium : on revient à la liste (sans événement de navigation) et on propose Premium
+    history.replaceState(history.state, "", "#rankings");
+    renderRankings("");
+    return requirePremium("rankings");
+  }
+  if (!cat) {
+    // Liste des rayons
+    let index = null;
+    try { index = await rankIndex(); } catch { /* hors connexion : liste complète, sans les nombres */ }
+    if (job !== rankJob) return;
+    const cats = RANK_CATEGORIES.filter((c) => c.kind === rankKind && (!index || index.categories[c.id]));
+    box.innerHTML = `<p class="rank-intro">${esc(t("rank.intro"))}</p>
+      <div class="segmented" id="rankKinds" role="tablist">${["food", "beauty"].map((k) =>
+        `<button type="button" role="tab" aria-selected="${k === rankKind}" data-rank-kind="${k}">${t(`rank.kind.${k}`)}</button>`).join("")}</div>
+      <div class="rank-cats">${cats.map((c) => `<a class="rank-cat${rankLocked(c) ? " locked" : ""}" href="#rankings/${c.id}" data-rank-cat="${c.id}">${rankIco(c.id)}
+        <span class="rank-cat-t"><strong>${esc(t(`rank.cat.${c.id}`))}</strong>${index ? `<small>${esc(tn("rank.n", index.categories[c.id]))}</small>` : ""}</span>
+        ${rankLocked(c) ? `<span class="rank-lock" aria-label="${esc(t("premium.only"))}">${svg(I.crown)}</span>` : svg(I.chev, "flip rank-chev")}</a>`).join("")}</div>
+      ${index ? `<p class="fineprint start">${esc(t("rank.source", { d: longDate(index.updated) }))}</p>` : ""}`;
+    return;
+  }
+  // Classement d'un rayon
+  box.innerHTML = rowsSkeleton(6);
+  let raws;
+  try { raws = await rankProducts(cat.id); } catch {
+    if (job === rankJob) box.innerHTML = messageHtml(t("rank.error.t"), t("rank.error.p"), `<button class="btn btn-primary" type="button" data-rank-retry>${t("msg.retry")}</button>`);
+    return;
+  }
+  if (job !== rankJob) return;
+  const list = rankList(raws, {
+    present: (raw) => {
+      const p = present(raw, prefs());
+      memo.set(p.code, p);
+      return p;
+    },
+    scoreOf: (p) => scoreOf(p),
+    alertOf: (p) => profileOf(p).alert,
+    certifiedOnly: rankCertOnly,
+  });
+  const st = prefs();
+  box.innerHTML = `<div class="chips filter rank-filter" role="tablist">${[false, true].map((on) =>
+      `<button type="button" class="chip" role="tab" aria-selected="${rankCertOnly === on}" data-rank-cert="${on ? 1 : 0}">${t(on ? "rank.f.cert" : "rank.f.all")}</button>`).join("")}</div>
+    <p class="rank-basis">${esc(t("rank.basis", { school: t(`school.${st.school}`) }))}</p>
+    ${list.length
+      ? `<ol class="rank-list">${list.slice(0, 50).map((p, i) => {
+          const s = scoreOf(p);
+          const v = verdictOf(p);
+          const img = p.image ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : phArt(p, "row-img");
+          return `<li><button type="button" class="rank-row" data-open="${esc(p.code)}"><span class="rank-n${i < 3 ? " top" : ""}">${i + 1}</span>${img}
+            <span class="rank-t"><strong dir="auto">${esc(nameOf(p))}</strong><small dir="auto">${esc(p.brand || "")}</small>
+            <span class="row-tags">${statusPill(v.status)}${alertTag(p)}</span></span>
+            <span class="rank-score g-${s.grade}" dir="ltr"><b>${s.score}</b><small>/100</small><i>${esc(t(`grade.${s.grade}`))}</i></span></button></li>`;
+        }).join("")}</ol>`
+      : `<div class="empty">${emptyArt()}<strong>${esc(t("rank.empty.t"))}</strong><p>${esc(t(rankCertOnly ? "rank.empty.cert" : "rank.empty.p"))}</p></div>`}
+    <p class="fineprint start">${esc(t("rank.note"))}</p>`;
+}
+$("rankBody").addEventListener("click", (e) => {
+  const k = e.target.closest("[data-rank-kind]");
+  if (k) { rankKind = k.dataset.rankKind; return renderRankings(""); }
+  const c = e.target.closest("[data-rank-cat]");
+  if (c && rankLocked(RANK_BY_ID[c.dataset.rankCat])) { e.preventDefault(); return requirePremium("rankings"); }
+  const f = e.target.closest("[data-rank-cert]");
+  if (f) { rankCertOnly = f.dataset.rankCert === "1"; return renderRankings(location.hash.split("/")[1]); }
+  if (e.target.closest("[data-rank-retry]")) return renderRankings(location.hash.split("/")[1]);
+});
+
+// ===========================================================================
 // Produit manquant : l'ajouter à Open Food Facts pour tout le monde
 // ===========================================================================
 function contributeCard(p) {
@@ -3357,6 +3440,7 @@ document.addEventListener("keydown", (e) => {
 // ===========================================================================
 // L'essentiel reste gratuit pour tous : verdict halal, notes, rappels, allergies, photo des ingrédients.
 const PREMIUM_LIST = [
+  ["rankings", '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>'],
   ["aisle", '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="8.5" cy="10" r="2.2"/><circle cx="15.5" cy="10" r="2.2"/><circle cx="12" cy="16" r="2.2"/>'],
   ["basket", '<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.5a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>'],
   ["compare", '<path d="M7 4L3 8l4 4M3 8h13M17 12l4 4-4 4M21 16H8"/>'],

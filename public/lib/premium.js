@@ -10,7 +10,7 @@ const PREVIEW_KEY = "bayyin_premium_preview"; // pour tester la page avant la mi
 const RECHECK = 3 * 864e5; // revérification tous les 3 jours
 const GRACE = 45 * 864e5; // hors connexion : Premium gardé 45 jours sans vérification
 
-export const FEATURES = ["aisle", "basket", "compare", "offline", "history", "family"];
+export const FEATURES = ["rankings", "aisle", "basket", "compare", "offline", "history", "family"];
 export const FREE_HISTORY = 30;
 
 const read = () => {
