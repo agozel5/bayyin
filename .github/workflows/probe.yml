@@ -1,0 +1,30 @@
+name: Sonde Overpass (temporaire)
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/probe.yml"]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Essais
+        timeout-minutes: 10
+        run: |
+          Q='[out:json][timeout:60];(nwr["diet:halal"~"^(yes|only)$"](48,2,50,4););out tags center qt;'
+          for u in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter https://overpass.private.coffee/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
+            echo "== $u" >> docs/probe-overpass.txt
+            curl -s -o /tmp/o.json -w "code=%{http_code} temps=%{time_total}s taille=%{size_download}\n" --max-time 100 --data-urlencode "data=$Q" "$u" >> docs/probe-overpass.txt 2>&1 || echo "curl échec $?" >> docs/probe-overpass.txt
+            head -c 300 /tmp/o.json >> docs/probe-overpass.txt; echo >> docs/probe-overpass.txt
+          done
+          echo "== geofabrik" >> docs/probe-overpass.txt
+          curl -sI https://download.geofabrik.de/europe/france-latest.osm.pbf | grep -i "content-length" >> docs/probe-overpass.txt
+          curl -s -o /dev/null -w "geofabrik 200MB en %{time_total}s\n" -r 0-200000000 https://download.geofabrik.de/europe/france-latest.osm.pbf >> docs/probe-overpass.txt
+      - if: always()
+        run: |
+          git add docs/probe-overpass.txt
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Sonde Overpass" || exit 0
+          for i in 1 2 3; do git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0; sleep 5; done
