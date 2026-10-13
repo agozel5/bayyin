@@ -1441,4 +1441,8 @@ export default {
   "env.shape.individual-pack": "sachet individuel",
   "env.shape.film": "film",
   "env.shape.label": "étiquette",
+  // ---------- Mascotte ----------
+  "notes.mascot": "Ici, je vous explique comment chaque note est calculée, et d'où viennent nos informations.",
+  // ---------- Premium classements ----------
+  "premium.need.rankings": "Ce classement fait partie de Premium. Les 3 premiers rayons de chaque onglet restent gratuits.",
 };

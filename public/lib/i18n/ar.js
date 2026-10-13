@@ -1427,4 +1427,8 @@ export default {
   "env.shape.individual-pack": "عبوة فردية",
   "env.shape.film": "غشاء",
   "env.shape.label": "ملصق",
+  // ---------- Mascotte ----------
+  "notes.mascot": "هنا أشرح لك كيف يُحسب كل تقييم، ومن أين تأتي معلوماتنا.",
+  // ---------- Premium classements ----------
+  "premium.need.rankings": "هذا التصنيف جزء من الاشتراك المميز. تبقى أول 3 أقسام في كل تبويب مجانية.",
 };

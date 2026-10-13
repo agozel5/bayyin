@@ -298,6 +298,7 @@
 
     <div class="set-page" data-page="notes" hidden>
       <header class="sub-head"><button class="icon-btn set-back" type="button" data-back data-i18n-aria="sheet.back"><svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><h1 data-i18n="settings.notes"></h1></header>
+      <div class="notes-mascot" id="notesMascot"></div>
       <div class="segmented notes-tabs" id="notesTabs" role="tablist">
         <button type="button" role="tab" aria-selected="true" data-notes="halal" data-i18n="settings.notes_halal"></button>
         <button type="button" role="tab" aria-selected="false" data-notes="health" data-i18n="settings.notes_health"></button>
@@ -490,11 +491,13 @@
 
 <!-- ================= FICHE PRODUIT ================= -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-grab" aria-hidden="true"></div>
   <div class="sheet-bar">
     <button class="icon-btn" id="sheetClose" type="button" data-i18n-aria="sheet.back">
       <svg class="flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
     <span class="sheet-title" id="sheetTitle"></span>
+    <span class="sheet-mini" id="sheetMini" aria-hidden="true"></span>
     <button class="icon-btn" id="sheetCompare" type="button" data-i18n-aria="cmp.title" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11M11 3l4 4-4 4M20 17H9M13 13l-4 4 4 4"/></svg>
     </button>

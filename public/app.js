@@ -13,6 +13,7 @@ import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
+import { mascot } from "./lib/mascot.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -688,14 +689,8 @@ const rowsSkeleton = (n = 4, label = t("msg.loading")) => `<div class="skel skel
   Array.from({ length: n }, () => `<div class="sk-row"><i style="width:56px;height:56px;border-radius:14px"></i><div style="flex:1;display:flex;flex-direction:column;gap:8px"><i style="height:15px;width:75%"></i><i style="height:12px;width:45%"></i></div></div>`).join("")}</div>`;
 const altsSkeleton = () => `<div class="alts skel-alts" aria-busy="true" aria-label="${esc(t("detail.alt_loading"))}">${
   Array.from({ length: 3 }, () => `<div class="alt skel"><i style="height:22px;border-radius:8px"></i><i style="height:84px;border-radius:12px"></i><i style="height:14px;width:85%"></i><i style="height:12px;width:55%"></i></div>`).join("")}</div>`;
-// Petite illustration pour les pages vides (panier + étoile de la marque)
-const emptyArt = () => `<svg class="empty-art" viewBox="0 0 120 96" aria-hidden="true">
-  <circle cx="60" cy="50" r="40" fill="#E3F3EB" stroke="none"/>
-  <path d="M36 40h48l-5 30a6 6 0 0 1-6 5H47a6 6 0 0 1-6-5z" fill="#fff" stroke="#12724F" stroke-width="2.4" stroke-linejoin="round"/>
-  <path d="M46 40l8-14M74 40l-8-14" stroke="#12724F" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-  <path d="M52 52v12M60 52v12M68 52v12" stroke="#9CC9B4" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-  <g transform="translate(88 22)" fill="none" stroke="#E7B84E" stroke-width="2"><rect x="-7" y="-7" width="14" height="14"/><rect x="-7" y="-7" width="14" height="14" transform="rotate(45)"/></g>
-</svg>`;
+// Pages vides : la mascotte de Bayyin, dans l'attitude qui convient
+const emptyArt = (pose = "empty") => `<span class="empty-mascot">${mascot(pose, { size: 112 })}</span>`;
 const loadingHtml = (text) => `<div class="loading"><span class="spinner"></span>${esc(text)}</div>`;
 const messageHtml = (title, text, actions = "") =>
   `<div class="card-msg"><strong>${esc(title)}</strong><p>${esc(text)}</p>${actions ? `<div class="msg-actions">${actions}</div>` : ""}</div>`;
@@ -708,11 +703,11 @@ function errorText(err) {
 }
 const ocrButton = (code = "") =>
   `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`;
-const notFoundHtml = (code) =>
+const notFoundHtml = (code) => `<div class="nf-mascot">${mascot("search", { size: 104 })}</div>` + (
   isMedicineCode(code)
     ? messageHtml(t("msg.notfound.t"), t("msg.med_notfound", { code }))
     : messageHtml(t("msg.notfound.t"), t("msg.notfound.p", { code }), ocrButton(code) +
-        `<a class="btn btn-soft" href="${esc(addUrl(code))}" target="_blank" rel="noopener">${t("contrib.web")}</a>`);
+        `<a class="btn btn-soft" href="${esc(addUrl(code))}" target="_blank" rel="noopener">${t("contrib.web")}</a>`));
 
 function rowHtml(p, { fav = false, when = "" } = {}) {
   const img = p.image
@@ -767,8 +762,13 @@ function refreshFav() {
 }
 const lockScroll = () => document.body.classList.toggle("no-scroll", !sheet.hidden || !cameraEl.hidden || !$("aisle").hidden);
 
+let sheetCloseTimer = 0;
 function showSheet({ replace = false, fromScan = false } = {}) {
   $("sheetFoot").hidden = !fromScan;
+  clearTimeout(sheetCloseTimer);
+  sheet.classList.remove("closing", "compact");
+  sheet.style.transform = "";
+  $("sheetMini").innerHTML = "";
   sheet.hidden = false;
   $("sheetBody").scrollTop = 0;
   if (replace) history.replaceState({ sheet: true }, "");
@@ -806,10 +806,32 @@ document.addEventListener("toggle", (e) => {
   requestAnimationFrame(() => requestAnimationFrame(() => g.classList.add("in")));
 }, true);
 
+// En-tête compact : quand le grand bandeau du verdict sort de l'écran, la réponse reste visible en haut
+let heroObserver = null;
+function sheetMiniHtml(p) {
+  const st = verdictOf(p).status;
+  const s = scoreOf(p);
+  const img = p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : "";
+  return `${img}<span class="mini-st s-${st}">${svg(STATUS_ICON[st])}</span>${s ? `<span class="mini-sc g-${s.grade}" dir="ltr">${s.score}</span>` : ""}`;
+}
+function watchHero() {
+  const hero = $("sheetBody").querySelector(".verdict");
+  if (!("IntersectionObserver" in window)) return;
+  if (!heroObserver) {
+    heroObserver = new IntersectionObserver(([en]) => sheet.classList.toggle("compact", !en.isIntersecting && en.boundingClientRect.top < 80),
+      { root: $("sheetBody"), threshold: 0, rootMargin: "-40px 0px 0px 0px" });
+  }
+  heroObserver.disconnect();
+  sheet.classList.remove("compact");
+  if (hero) heroObserver.observe(hero);
+}
+
 function renderSheetProduct(p) {
   sheetProduct = p;
   $("sheetTitle").textContent = nameOf(p);
   $("sheetBody").innerHTML = productDetail(p);
+  $("sheetMini").innerHTML = sheetMiniHtml(p);
+  watchHero();
   $("sheetCompare").hidden = kindOf(p) === "medicine";
   $("sheetShare").hidden = false;
   refreshFav();
@@ -1137,10 +1159,15 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
   }
 }
 
+const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function closeSheet({ fromPop = false } = {}) {
-  if (sheet.hidden) return;
+  if (sheet.hidden || sheet.classList.contains("closing")) return;
   if (isSheetTour() && tourStep >= 0) endTour();
-  sheet.hidden = true;
+  if (REDUCED()) sheet.hidden = true;
+  else {
+    sheet.classList.add("closing");
+    sheetCloseTimer = setTimeout(() => { sheet.hidden = true; sheet.classList.remove("closing"); sheet.style.transform = ""; lockScroll(); }, 230);
+  }
   sheetCode = null;
   sheetProduct = null;
   lockScroll();
@@ -1150,7 +1177,12 @@ function closeSheet({ fromPop = false } = {}) {
 $("sheetBody").addEventListener("click", (e) => {
   const b = e.target.closest("[data-ptab]");
   if (!b) return;
+  // Le contenu glisse dans le sens de l'onglet choisi
+  const order = [...b.parentElement.children].map((x) => x.dataset.ptab);
+  const dir = order.indexOf(b.dataset.ptab) > order.indexOf(sheetTab) ? "next" : "prev";
   sheetTab = b.dataset.ptab;
+  const panel = document.getElementById(`pp-${sheetTab}`);
+  if (panel) { panel.classList.remove("from-next", "from-prev"); void panel.offsetWidth; panel.classList.add(`from-${dir}`); }
   if (sheetTab === "planet" && sheetProduct) loadEnv(sheetProduct);
   requestAnimationFrame(animateGauges);
   document.querySelectorAll("#sheetBody .ptab").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
@@ -1161,11 +1193,52 @@ $("sheetBody").addEventListener("click", (e) => {
   if (body.scrollTop > barTop) body.scrollTop = barTop;
 });
 $("sheetClose").addEventListener("click", () => closeSheet());
+// Tirer la fiche vers le bas (depuis l'en-tête, ou depuis le haut du contenu) la ferme
+(() => {
+  let y0 = null, x0 = 0, dy = 0, t0 = 0, active = false;
+  sheet.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1 || sheet.classList.contains("closing")) return;
+    const inBar = e.target.closest(".sheet-bar, .sheet-grab");
+    const atTop = $("sheetBody").scrollTop <= 0 && e.target.closest("#sheetBody") && !e.target.closest(".alts, .ptabs, .gauge, input, textarea");
+    if (!inBar && !atTop) return;
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0; t0 = Date.now(); active = false;
+  }, { passive: true });
+  sheet.addEventListener("touchmove", (e) => {
+    if (y0 === null) return;
+    const ny = e.touches[0].clientY - y0, nx = e.touches[0].clientX - x0;
+    if (!active) {
+      if (Math.abs(ny) < 8) return;
+      if (ny < 0 || Math.abs(nx) > Math.abs(ny)) { y0 = null; return; } // vers le haut ou de côté : défilement normal
+      active = true;
+      sheet.classList.add("dragging");
+    }
+    dy = Math.max(0, ny);
+    sheet.style.transform = `translateY(${dy}px)`;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  const end = () => {
+    if (y0 === null) return;
+    y0 = null;
+    sheet.classList.remove("dragging");
+    if (!active) return;
+    const fast = dy / Math.max(1, Date.now() - t0) > 0.6;
+    if (dy > 120 || (fast && dy > 40)) { sheet.style.transform = `translateY(${dy}px)`; closeSheet(); }
+    else sheet.style.transform = "";
+  };
+  sheet.addEventListener("touchend", end);
+  sheet.addEventListener("touchcancel", end);
+})();
 $("sheetFav").addEventListener("click", () => {
   if (!sheetCode || !sheetProduct) return;
   if (!store.get(sheetCode)) store.add(sheetProduct);
   const on = store.toggleFav(sheetCode);
   refreshFav();
+  // Petit « pop » de l'étoile
+  const fav = $("sheetFav");
+  fav.classList.remove("pop");
+  void fav.offsetWidth;
+  if (on) fav.classList.add("pop");
+  if (on && navigator.vibrate) navigator.vibrate(12);
   toast(t(on ? "sheet.fav_added" : "sheet.fav_removed"));
 });
 $("scanAgain").addEventListener("click", () => {
@@ -1721,7 +1794,7 @@ function renderResults(q) {
   // Les aliments n'ont pas répondu : on le dit, au lieu d'afficher seulement des cosmétiques
   if (r.foodFailed) html = messageHtml(t("search.food_failed.t"), t("search.food_failed.p"), `<button class="btn btn-primary" type="button" data-search-retry>${esc(t("msg.retry"))}</button>`) + html;
   else if (!total && all0.length) html = `<div class="empty"><p>${esc(t("search.f.none"))}</p></div>`;
-  else if (!total) html = `<div class="empty">${emptyArt()}<strong>${esc(t("search.none.t"))}</strong><p>${esc(t("search.none.p", { q }))}</p></div>`;
+  else if (!total) html = `<div class="empty">${emptyArt("search")}<strong>${esc(t("search.none.t"))}</strong><p>${esc(t("search.none.p", { q }))}</p></div>`;
   $("searchResults").innerHTML = chips + html;
 }
 $("searchResults").addEventListener("click", (e) => {
@@ -1801,7 +1874,7 @@ function renderHistory() {
   const seen = STATUS_ORDER.filter((s) => counts[s]);
 
   $("historyStats").innerHTML = !all.length
-    ? `<div class="empty">${emptyArt()}<strong>${t("history.empty.t")}</strong><p>${t("history.empty.p")}</p><a class="btn btn-primary" href="#scan">${t("home.scan")}</a></div>`
+    ? `<div class="empty">${emptyArt("hello")}<strong>${t("history.empty.t")}</strong><p>${t("history.empty.p")}</p><a class="btn btn-primary" href="#scan">${t("home.scan")}</a></div>`
     : `<div class="stats">
       <div class="stats-top"><span class="stats-num">${all.length}</span><span class="stats-unit">${t(all.length === 1 ? "history.count_one" : "history.count_other")}</span></div>
       <div class="bar" role="img" aria-label="${seen.map((s) => `${counts[s]} ${S(s, "label")}`).join(", ")}">${seen.map((s) => `<i style="flex:${counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("")}</div>
@@ -2268,6 +2341,7 @@ function renderSettings() {
   $("legendHalal").innerHTML = LEGEND_ORDER.map(
     (s) => `<div class="legend-row"><span class="pill s-${s}"><span class="dot"></span>${S(s, "label")}</span><p>${S(s, "legend")}</p></div>`
   ).join("");
+  $("notesMascot").innerHTML = `${mascot("teach", { size: 84 })}<p>${esc(t("notes.mascot"))}</p>`;
   $("cosmKinds").innerHTML = Object.entries(KIND_ICONS).map(([k, ico]) =>
     `<div class="kl-row"><span class="kl-ico k-${k}">${svg(ico)}</span><span><strong>${esc(t(`cosm.kind.${k}`))}</strong><small>${esc(t(`cosm.kind.${k}.d`))}</small></span></div>`).join("");
   $("legendHealth").innerHTML = HEALTH_GRADES.map((g, i) => {
@@ -2962,7 +3036,7 @@ $("toolCompare").addEventListener("click", () => {
   const items = store.all().map((e) => e.p).filter((p) => kindOf(p) !== "medicine");
   $("sheetBody").innerHTML = items.length >= 2
     ? `<p class="lead cmp-intro">${esc(t("cmp.pick_first"))}</p><div class="list">${items.map((p) => rowHtml(p).replace('data-open="', 'data-compare-base="')).join("")}</div>`
-    : `<div class="empty">${emptyArt()}<strong>${esc(t("cmp.need_two.t"))}</strong><p>${esc(t("cmp.need_two.p"))}</p><button class="btn btn-primary" type="button" data-scan-now>${esc(t("home.scan"))}</button></div>`;
+    : `<div class="empty">${emptyArt("search")}<strong>${esc(t("cmp.need_two.t"))}</strong><p>${esc(t("cmp.need_two.p"))}</p><button class="btn btn-primary" type="button" data-scan-now>${esc(t("home.scan"))}</button></div>`;
 });
 
 let cmpProducts = {};
@@ -3030,7 +3104,7 @@ let obStep = 0;
 function renderOnboard() {
   const st = prefs();
   document.querySelectorAll("#obDots i").forEach((d, i) => d.classList.toggle("on", i === obStep));
-  const head = (title, text) => `<img src="icon.svg" alt="" width="52" height="52" class="ob-logo"><h2 id="obTitle">${title}</h2><p class="muted">${text}</p>`;
+  const head = (title, text) => `<span class="ob-mascot">${mascot(["hello", "teach", "bravo"][obStep] || "hello", { size: 96 })}</span><h2 id="obTitle">${title}</h2><p class="muted">${text}</p>`;
   if (obStep === 0) {
     $("obBody").innerHTML = head(t("ob.1.t"), t("ob.1.p")) +
       `<div class="lang-grid" role="radiogroup">${LANGS.map((l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-ob-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`).join("")}</div>`;
@@ -3620,7 +3694,7 @@ function renderPremiumSheet(msg = "") {
   const manage = cfg.portal ? `<a class="btn btn-soft btn-block" href="${esc(cfg.portal)}" target="_blank" rel="noopener">${t("premium.manage")}</a>` : "";
   if (active) {
     $("sheetBody").innerHTML = `<div class="pm">
-      <div class="pm-hero on">${svg(I.crown)}<h2>${t("premium.active_t")}</h2><p>${t("premium.thanks")}</p></div>
+      <div class="pm-hero on"><span class="pm-mascot">${mascot("bravo", { size: 84 })}</span>${svg(I.crown)}<h2>${t("premium.active_t")}</h2><p>${t("premium.thanks")}</p></div>
       <dl class="pm-info"><div><dt>${t("premium.key")}</dt><dd dir="ltr">${esc(maskKey(st.key))}</dd></div>
         ${st.email ? `<div><dt>${t("premium.account")}</dt><dd dir="ltr">${esc(st.email)}</dd></div>` : ""}
         ${st.expiresAt ? `<div><dt>${t("premium.until")}</dt><dd>${esc(longDate(st.expiresAt.slice(0, 10)))}</dd></div>` : ""}</dl>
@@ -3637,7 +3711,7 @@ function renderPremiumSheet(msg = "") {
         <span class="radio" aria-hidden="true"></span><span class="pm-plan-t"><strong>${t(`premium.plan.${id}`)}</strong><small>${esc(sub)}</small></span>
         <span class="pm-price">${esc(price)}</span>${badge ? `<em>${esc(badge)}</em>` : ""}</button>` : "";
   $("sheetBody").innerHTML = `<div class="pm">
-    <div class="pm-hero">${svg(I.crown)}<h2>${t("premium.title")}</h2><p>${t("premium.lead")}</p></div>
+    <div class="pm-hero"><span class="pm-mascot">${mascot("star", { size: 84 })}</span>${svg(I.crown)}<h2>${t("premium.title")}</h2><p>${t("premium.lead")}</p></div>
     ${premiumFocus && ready ? `<p class="pm-focus">${svg(I.lock)}<span>${t(`premium.need.${premiumFocus}`)}</span></p>` : ""}
     ${features}
     <div class="pm-plans" role="radiogroup">

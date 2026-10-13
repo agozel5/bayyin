@@ -1427,4 +1427,8 @@ export default {
   "env.shape.individual-pack": "tekli paket",
   "env.shape.film": "film",
   "env.shape.label": "etiket",
+  // ---------- Mascotte ----------
+  "notes.mascot": "Burada her puanın nasıl hesaplandığını ve bilgilerimizin nereden geldiğini açıklıyorum.",
+  // ---------- Premium classements ----------
+  "premium.need.rankings": "Bu sıralama Premium'un parçasıdır. Her sekmedeki ilk 3 reyon ücretsiz kalır.",
 };

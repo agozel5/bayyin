@@ -1427,4 +1427,8 @@ export default {
   "env.shape.individual-pack": "individual pack",
   "env.shape.film": "film",
   "env.shape.label": "label",
+  // ---------- Mascotte ----------
+  "notes.mascot": "Here I explain how each score is calculated, and where our information comes from.",
+  // ---------- Premium classements ----------
+  "premium.need.rankings": "This ranking is part of Premium. The first 3 aisles of each tab stay free.",
 };
