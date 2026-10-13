@@ -1,47 +1,89 @@
-== AVS script.js 200
- … Language(); this.applyLanguage(); } detectLanguage() { // Méthode 1: Détection via l'URL parent (si dans une iframe) if (window.parent !== window) { try { const parentUrl = window.parent.location.href; const urlPath = window.parent.location.pathname; // Détecter la langue depuis l'URL if (urlPath.includes('/e
- … Language() { // Méthode 1: Détection via l'URL parent (si dans une iframe) if (window.parent !== window) { try { const parentUrl = window.parent.location.href; const urlPath = window.parent.location.pathname; // Détecter la langue depuis l'URL if (urlPath.includes('/en/') || urlPath.includes('/en')) { this.cur
- … catch (e) { console.log('Impossible d\'accéder à l\'URL parent, utilisation de la détection locale'); } } // Méthode 2: Détection locale via l'URL de l'iframe const currentUrl = window.location.href; const urlParams = new URLSearchParams(window.location.search); const langParam = urlParams.get('lang'); if (langParam && AVAILABLE_LANGUAGES[langP
- … le d\'accéder à l\'URL parent, utilisation de la détection locale'); } } // Méthode 2: Détection locale via l'URL de l'iframe const currentUrl = window.location.href; const urlParams = new URLSearchParams(window.location.search); const langParam = urlParams.get('lang'); if (langParam && AVAILABLE_LANGUAGES[langParam]) { this.currentLanguage = langP
- … e depuis plusieurs sources pour être robuste aux réécritures serveur const validCategories = ['boucheries', 'restaurants', 'fournisseurs']; let category = null; // 1) Query string locale const urlParams = new URLSearchParams(window.location.search); category = urlParams.get('category'); // 2) Hash (ex: #category=restaurants) if (!category) { const hash = window.locati
- … atch[1].toLowerCase(); } } // 5) Si embarqué en iframe et même origine accessible: lire l'URL du parent if (!category && window.parent !== window) { try { const parentUrl = new URL(window.parent.location.href); category = parentUrl.searchParams.get('category') || validCategories.find(seg => parentUrl.pathname.split('/').filter(Boo
- … er les raccourcis clavier tap: true // Garder le tap pour mobile }).setView([46.603354, 1.888334], 6); // Ajouter la couche de tuiles OpenStreetMap L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }).addTo(this.map); // Créer des groupes de clustering séparés p
+== AVS script.js 200 62565
+     // sinon, appliquer immédiatement les filtres actifs
+            if (this.userLocation) {
+                this.calculateDistances();
+            } else {
+                this.filterEstablishments();
+            }
+            
+            // Mettre à jour les boutons de filtre après le chargement
+            this.updateFilterButtons();
+            
+        } catch (error) {
+            console.error('Erreur lors du chargement des établissements:', error);
+            
+            if (loadingIndicator) {
+                loadingIndicator.innerHTML = `
+                    <div class="error-icon">⚠️</div>
+                    <p>${languageManager.getText('connectionError')}</p>
+                    <p class="error-details">${languageManager.getText('tryLater')}</p>
+                `;
+            }
+            
+            // Utiliser les données de test en cas d'erreur
+            this.establishments = this.getTestData();
+            
+            // Appliquer immédiatement les filtres actifs
+            if (this.userLocation) {
+                this.calculateDistances();
+            } else {
+                this.filterEstablishments();
+            }
+            this.updateFilterButtons();
+        } finally {
+            if (loadingIndicator) {
+                setTimeout(() => {
+                    loadingIndicator.style.display = 'none';
+                }, 2000);
+            }
+        }
+    }
 
-== Achahada /marques 200 94789
-images (alt): logo | https://achahada.com/wp-content/uploads/2024/06/main_logo.png
-  Mobile Logo | https://achahada.com/wp-content/uploads/2024/06/main_logo.png
-  logo | https://achahada.com/wp-content/uploads/2024/06/main_logo.png
-titres: Marques | Les marques certifiés | En savoir plus | Contact
-ajax: omments/feed/" /> <link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://achahada.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fachahada.com%2Fmarques%2F" /> <link rel="alternate" title="oEmbed (XML)" type
-ahada.com%2Fmarques%2F" /> <link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://achahada.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fachahada.com%2Fmarques%2F&#038;format=xml" /> <style id="wp-img-auto-sizes-co
-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"></script> <link rel="https://api.w.org/" href="https://achahada.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://achahada.com/wp-json/wp/v2/pages/62
-"https://achahada.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://achahada.com/wp-json/wp/v2/pages/6244" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://achahada.com/xmlrpc
+    async fetchEstablishments(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`Erreur lors du chargement depuis ${url}:`, error);
+            return [];
+        }
+    }
+    
+    processEstablishmentData(data) {
+        return data.map(establishment => {
+    
+  chemins: /en/ , /ar/ , /es/ , /tr/ , /pl/ , https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png , https://equinox.avs.fr/v1/common/partners?type=1 , https://equinox.avs.fr/v1/common/partners?type=2 , https://equinox.avs.fr/v1/common/partners?type=3
 
-== Achahada /verifiez-un-agrement 200
-Vérifiez un agrément | Achahada est un organisme chargé de l’authentification de la viande en abattoir, et procède à cette vérification au moyen d’un contrôle strict. | En savoir plus | Contact | Email | Tel | Nous suivre | &#916;
-document.getElementById( "ak_js_1" ).setAttribute( "value", ( new Date() ).getTime() ); | Copyright © Achahada.com - All Rights Reserved
-forms: xml" title="Achahada &raquo; Flux des commentaires" href="https://achahada.com/comments/feed/" /> <link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed" href="https://achahada.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fachahada.com%2Fverifiez-un-agrement%2F" /> <link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://achahada.com/wp-json/oembed/1.0/em
-https://achahada.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fachahada.com%2Fverifiez-un-agrement%2F" /> <link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed" href="https://achahada.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fachahada.com%2Fverifiez-un-agrement%2F&#038;format=xml" /> <style id="wp-img-auto-sizes-contain-inline-css"> img:is([sizes=auto i],[sizes^="auto," i]){contai
-er=3.7.1"></script> <script id="jquery-migrate-js" src="https://achahada.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"></script> <link rel="https://api.w.org/" href="https://achahada.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://achahada.com/wp-json/wp/v2/pages/6291" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://a
-/jquery-migrate.min.js?ver=3.4.1"></script> <link rel="https://api.w.org/" href="https://achahada.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://achahada.com/wp-json/wp/v2/pages/6291" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://achahada.com/xmlrpc.php?rsd" /> <meta name="generator" content="WordPress 7.1.2" /> <link rel="cano
+== Achahada page marques 200
+len 7655
+<img fetchpriority="high" decoding="async" width="683" height="1024" src="https://achahada.com/wp-content/uploads/2025/07/pexels-rachel-claire-8112906-683x1024.jpg" class="attachment-large size-large wp-image-7213" alt="
+texte:  Les marques certifiés Le contrôle des marques porte notamment sur: La traçabilité des viandes découpées mises en rayon avec la signature ‹‹ACHAHADA›› et les mentions complémentaires le cas échéant. L’existence et la conformité des documents et des enregistrements correspondants. L’engagement des fournisseurs, engagés dans la démarche De 1 à 2 contrôles inopinés par jours (tous les jours de l’année) Les modalités des contrôles effectués par les opérateurs lors de la réception des carcasses, des quartiers. #wpsl-stores .wpsl-store-thumb { height:45px !important; width:45px !important; } #wpsl-search-input { width:179px; } #wpsl-stores, #wpsl-direction-details, #wpsl-map { height:600px !important; } Votre emplacement Skip map, jump to search results 
 
-== https://halalhmc.org/suppliers/brands/ 404 137722
-gins/give/build/assets/dist/js/give-stripe.js"></script> <script id="give-js-extra"> var give_global_vars = {"ajaxurl":"https://halalhmc.org/wp-admin/admin-ajax.php","checkout_nonce":"adedd2458c","currency":"GBP","currency_sign":"\u00a3","currency_pos":"before","thousands_separator":",","decimal_sep
-sage":"Please check your email and click on the link to access your complete donation history.","ajax_vars":{"ajaxurl":"https://halalhmc.org/wp-admin/admin-ajax.php","ajaxNonce":"85a583fa33","loading":"Loading","select_option":"Please select an option","default_gateway":"stripe","permalinks":"1","nu
-okie_name":"wp-give_session_eea18c935646d29693182d136b192ffa","delete_session_nonce_cookie":"0"}; var giveApiSettings = {"root":"https://halalhmc.org/wp-json/give-api/v2/","rest_base":"give-api/v2"}; //# sourceURL=give-js-extra </script> <script id="give-js-translations"> ( function( domain, transla
-lhmc.org/wp-content/themes/hmc/assets/js/lightgallery/js/lightgallery-all.min.js"></script> <link rel="https://api.w.org/" href="https://halalhmc.org/wp-json/" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://halalhmc.org/xmlrpc.php?rsd" /> <meta name="generator" content="R
-); </script> </head> <body class="error404 wp-theme-vergeFramework wp-child-theme-hmc"> <!-- Google Tag Manager (noscript) --> <noscript><iframe data-src="https://www.googletagmanager.com/ns.html?id=GTM-TTMK96L2" height="0" width="0" style="display:none;visibility:hidden" src="data:image/svg+
+== HMC types 200
+  post posts Posts
+  page pages Pages
+  attachment media Media
+  nav_menu_item menu-items Navigation Menu Items
+  wp_block blocks Patterns
+  wp_template templates Templates
+  wp_template_part template-parts Template parts
+  wp_global_styles global-styles Global styles
+  wp_navigation navigation Navigation menus
+  wp_font_family font-families Font families
+  wp_font_face font-families/(?P<font_family_id>[\d]+)/font-faces Font faces
+  campaigns campaigns Campaigns
+  give_forms give_forms Donation Forms
 
-== https://halalhmc.org/brands/ 200 317563
-/> <!-- This site is optimized with the Yoast SEO plugin v28.6 - https://yoast.com/product/yoast-seo-wordpress/ --> <title>Fresh &amp; Frozen Meat Brands Archive - Halal Monitoring Committee</title> <link rel="canonical" href="https://halalhmc.org/brands/" /> <link rel="next" href="https://hala
--wordpress/ --> <title>Fresh &amp; Frozen Meat Brands Archive - Halal Monitoring Committee</title> <link rel="canonical" href="https://halalhmc.org/brands/" /> <link rel="next" href="https://halalhmc.org/brands/page/2/" /> <meta property="og:locale" content="en_GB" /> <meta property="og:type" c
-chive - Halal Monitoring Committee</title> <link rel="canonical" href="https://halalhmc.org/brands/" /> <link rel="next" href="https://halalhmc.org/brands/page/2/" /> <meta property="og:locale" content="en_GB" /> <meta property="og:type" content="website" /> <meta property="og:title" content="F
-ta property="og:locale" content="en_GB" /> <meta property="og:type" content="website" /> <meta property="og:title" content="Fresh &amp; Frozen Meat Brands Archive - Halal Monitoring Committee" /> <meta property="og:url" content="https://halalhmc.org/brands/" /> <meta property="og:site_name" cont
-ty="og:title" content="Fresh &amp; Frozen Meat Brands Archive - Halal Monitoring Committee" /> <meta property="og:url" content="https://halalhmc.org/brands/" /> <meta property="og:site_name" content="Halal Monitoring Committee" /> <meta name="twitter:card" content="summary_large_image" /> <meta 
+== HMC brands 200
+Fresh &#038; Frozen Meat Brands | Aaila | Aaila | Where can the products be found | Approved products | Armaan | Armaan | Where can the products be found | Approved products | Aunty Norays exclusive | Aunty Norays exclusive | Where can the products be found | Approved products | Aytac | Aytac | Where can the products be found | Approved products | Ceekays | Ceekays | Where can the products be found | Approved products | Classic Halal Foods | Classic Halal Foods | Where can the products be found | Approved products | Express Cuisine | Express Cuisine | Where can the products be found | Approved products | Fazila&#8217;s Foods Ltd | Fazila&#8217;s Foods Ltd | Where can the products be found | Approved products | Jilanis | Jilanis | Approved products | Khans by KQF | Khans by KQF | Where can the products be found | Approved products | KQF Classic Diner | KQF Classic Diner | Where can the products be found | Approved products | KQF Exotic | KQF Exotic | Where can the products be found | Approved products | KQF Premium | KQF Premium | Where can the products be found | Approved products | KQF Wild coast | KQF Wild coast | Where can the products be found | Approved products | Northern Bites | Northern Bites | Where can the products be found | Approved products
 
-== https://halalhmc.org/wp-json/wp/v2/types 200 18255
-ringCommittee\/","https:\/\/x.com\/hmc_uk","https:\/\/www.youtube.com\/user\/HalalMCUK"]}]}},"_links":{"collection":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/types"}],"wp:items":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/posts"}],"curies":[{"name":"wp","href":"https:\/\/api.w.org\/{
-user\/HalalMCUK"]}]}},"_links":{"collection":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/types"}],"wp:items":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/posts"}],"curies":[{"name":"wp","href":"https:\/\/api.w.org\/{rel}","templated":true}]}},"page":{"description":"","hierarchical":true
-space":"wp\/v2","template":[],"template_lock":false,"yoast_head":null,"yoast_head_json":null,"_links":{"collection":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/types"}],"wp:items":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/pages"}],"curies":[{"name":"wp","href":"https:\/\/api.w.org\/{
-yoast_head_json":null,"_links":{"collection":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/types"}],"wp:items":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/pages"}],"curies":[{"name":"wp","href":"https:\/\/api.w.org\/{rel}","templated":true}]}},"attachment":{"description":"","hierarchical
-space":"wp\/v2","template":[],"template_lock":false,"yoast_head":null,"yoast_head_json":null,"_links":{"collection":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/types"}],"wp:items":[{"href":"https:\/\/halalhmc.org\/wp-json\/wp\/v2\/media"}],"curies":[{"name":"wp","href":"https:\/\/api.w.org\/{
+== AVS data.json guess 404 <!doctype html>
+<html lang="fr-FR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="profile" href="https://gmpg.org/xfn/11">
+	<meta nam
