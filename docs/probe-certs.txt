@@ -1,0 +1,69 @@
+
+===== AVS annuaire → 200 https://avs.fr/etablissements/index.html?category=fournisseurs text/html (6319 o)
+scripts: https://unpkg.com/leaflet@1.9.4/dist/leaflet.js
+  https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js
+  https://avs.fr/etablissements/language-detector.js?v=20251004
+  https://avs.fr/etablissements/script.js?v=20251004
+inline fetch: 
+ - https://avs.fr/etablissements/language-detector.js?v=20251004 (8907 o):
+    
+ - https://avs.fr/etablissements/script.js?v=20251004 (62565 o):
+    fetch(url)
+    `);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`
+extrait HTML: <!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>AVS - Établissements Agréés</title> <link rel="stylesheet" href="styles.css"> <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet"> <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" /> <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" /> </head> <body> <div class="container"> <!-- Panneau de recherche --> <div class="search-panel"> <div class="search-header"> <h1>RECHERCHER UN COMMERCE AGRÉÉ AVS</h1> </div> <div class="search-bar"> <input type="text" id="searchInput" placeholder="Rechercher par nom, ville, code postal"> <button class="search-btn"> <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> <circle cx="11" cy="11" r="8"></circle> <path d="m21 21-4.35-4.35"></path> </svg> </button> </div> <div class="location-toggle"> <label class="toggle"> <input type="checkbox" id="aroundMeToggle"> <span class="slider"></span> </label> <span id="aroundMeText">AUTOUR DE MOI</span> </div> <div class="category-filters"> <button class="filter-btn active" data-category="boucheries"> <span class="filter-text">BOUCHERIES</span> </button> <button class="filter-btn active" data-category="restaurants"> <span class="filter-text">RESTAURANTS</span> </button> <button class="filter-btn active" data-category="fournisseurs"> <span class="filter-text">FOURNISSEURS</span> </button> </div> <div class="establishments-list" id="establishmentsList"> <div class="loading-indicator" id="loadingIndicator"> <div class="spinner"></div> <p id="loadingText">Chargement des établissements...</p> </div> <!-- Les établissements seront chargés ici --> </div> </div> <!-- Carte --> <div class="map-container"> <div id="map"></div> </div> <!-- Popup mobile pour les détails des établissements --> <div class="mobile-detail-popup" id="mobileDetailPopup"> <div class="mobile-detail-content"> <button class="mobile-detail-close" id="mobileDetailClose">&times;</button> <div class="mobile-detail-header"> <h2 class="mobile-detail-title" id="mobileDetailTitle
+
+===== https://www.achahada.fr → 200 https://achahada.com/ text/html; charset=UTF-8 (145434 o)
+https://achahada.com/wp-content/plugins/elementor/assets/css/widget-icon-list.min.css?ver=4.3.2
+  https://achahada.com/pourquoi-etre-certifie/
+  https://achahada.com/marques/
+  https://achahada.com/les-certificateurs/
+  https://achahada.com/verifiez-un-agrement/
+  https://achahada.com/wp-content/uploads/2025/07/agrement-1.png
+  https://achahada.com/agrement
+  https://achahada.com/2025/07/21/visuel-dagrement/
+  https://achahada.com/wp-content/uploads/2025/07/Logo-Fournisseur-Ikbal.png
+  https://achahada.com/wp-content/uploads/2025/07/Logo-Produit-AlloMouton.png
+
+===== https://achahada.com → 200 https://achahada.com/ text/html; charset=UTF-8 (145438 o)
+https://achahada.com/wp-content/plugins/elementor/assets/css/widget-icon-list.min.css?ver=4.3.2
+  https://achahada.com/pourquoi-etre-certifie/
+  https://achahada.com/marques/
+  https://achahada.com/les-certificateurs/
+  https://achahada.com/verifiez-un-agrement/
+  https://achahada.com/wp-content/uploads/2025/07/agrement-1.png
+  https://achahada.com/agrement
+  https://achahada.com/2025/07/21/visuel-dagrement/
+  https://achahada.com/wp-content/uploads/2025/07/Logo-Fournisseur-Ikbal.png
+  https://achahada.com/wp-content/uploads/2025/07/Logo-Produit-AlloMouton.png
+
+===== https://www.argml.fr → ERR fetch failed   (0 o)
+
+
+===== https://www.sfcvh.fr → ERR fetch failed   (0 o)
+
+
+===== https://www.halalhmc.org → 200 https://halalhmc.org/ text/html; charset=UTF-8 (163018 o)
+https://halalhmc.org/suppliers/
+  https://halalhmc.org/wp-content/themes/hmc/assets/img/certification-icons/certification_img2.png
+  https://halalhmc.org/wp-content/themes/hmc/assets/img/certification-icons/certification_img3.png
+  https://halalhmc.org/wp-content/themes/hmc/assets/img/certification-icons/certification_img4.png
+  https://halalhmc.org/wp-includes/js/dist/token-list.min.js
+
+===== https://www.halalfoodauthority.com → 200 https://halalfoodauthority.com/ text/html; charset=utf-8 (810 o)
+
+
+===== https://avs.fr/produits → 404 https://avs.fr/produits text/html; charset=UTF-8 (88999 o)
+https://avs.fr/wp-content/plugins/sitepress-multilingual-cms/templates/language-switchers/legacy-list-horizontal/style.min.css?ver=1
+  https://avs.fr/fournisseurs/
+
+===== https://avs.fr → 200 https://avs.fr/ text/html; charset=UTF-8 (236738 o)
+https://avs.fr/wp-content/plugins/sitepress-multilingual-cms/templates/language-switchers/legacy-list-horizontal/style.min.css?ver=1
+  https://avs.fr/fournisseurs/
+  https://avs.fr/wp-content/uploads/2025/08/marques@2x-1.png
+  https://avs.fr/les-procedes-de-certification-utilise-par-avs-pour-garantir-le-caractere-halal-des-viandes/
+  https://avs.fr/la-certification-halal/
+  https://avs.fr/wp-content/plugins/elementor/assets/css/widget-icon-list.min.css?ver=3.33.4
