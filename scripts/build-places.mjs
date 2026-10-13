@@ -1,82 +1,118 @@
 // Commerces halal d'OpenStreetMap (licence ODbL), pré-téléchargés -> public/data/places/
 //
-// Interroger Overpass depuis le téléphone prend souvent 10 à 30 secondes (serveurs publics chargés).
-// Ici, GitHub Actions télécharge une fois par semaine tous les commerces halal des pays couverts,
-// rangés en carreaux de 1° × 1° : l'app ne charge que le ou les carreaux autour de l'utilisateur
-// (quelques ko, depuis le même site), et trie par distance sur le téléphone. Instantané.
+// Interroger Overpass depuis le téléphone prend souvent 10 à 30 secondes : ses serveurs publics sont
+// saturés (erreurs 504 fréquentes). Ici, GitHub Actions télécharge une fois par semaine les extraits
+// OpenStreetMap de Geofabrik, n'en garde que les commerces halal (osmium), et les range en carreaux
+// de 1° × 1°. L'app ne charge que le ou les carreaux autour de l'utilisateur (quelques ko, depuis le
+// même site) et trie par distance sur le téléphone : la réponse est instantanée.
 // Hors des pays couverts, l'app interroge Overpass en direct, comme avant.
+//
+// Nécessite osmium-tool et curl (installés par le workflow).
 
 import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { createInterface } from "node:readline";
+import { execSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parsePlaces } from "../public/lib/places.js";
 
 const OUT = new URL("../public/data/places/", import.meta.url);
-const SERVERS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"];
-// Pays couverts, avec leur cadre (sud, ouest, nord, est) : la France et ses voisins, et les pays
-// d'Europe où vivent beaucoup d'utilisateurs potentiels.
+const GEOFABRIK = "https://download.geofabrik.de/europe/";
+// Pays couverts : extrait Geofabrik et cadre (sud, ouest, nord, est) utilisé par l'app
 export const COUNTRIES = {
-  FR: [41.3, -5.2, 51.1, 9.6],
-  BE: [49.5, 2.5, 51.5, 6.4],
-  LU: [49.4, 5.7, 50.2, 6.6],
-  CH: [45.8, 5.9, 47.8, 10.5],
-  NL: [50.7, 3.3, 53.6, 7.3],
-  DE: [47.2, 5.8, 55.1, 15.1],
-  GB: [49.9, -8.7, 60.9, 1.8],
-  ES: [36.0, -9.4, 43.8, 3.4],
-  IT: [36.6, 6.6, 47.1, 18.6],
-  AT: [46.4, 9.5, 49.0, 17.2],
+  FR: ["france", [41.3, -5.2, 51.1, 9.6]],
+  BE: ["belgium", [49.5, 2.5, 51.5, 6.4]],
+  LU: ["luxembourg", [49.4, 5.7, 50.2, 6.6]],
+  CH: ["switzerland", [45.8, 5.9, 47.8, 10.5]],
+  NL: ["netherlands", [50.7, 3.3, 53.6, 7.3]],
+  DE: ["germany", [47.2, 5.8, 55.1, 15.1]],
+  GB: ["great-britain", [49.9, -8.7, 60.9, 1.8]],
+  ES: ["spain", [36.0, -9.4, 43.8, 3.4]],
+  IT: ["italy", [36.6, 6.6, 47.1, 18.6]],
+  AT: ["austria", [46.4, 9.5, 49.0, 17.2]],
 };
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Un essai par serveur (3 au total), chacun limité à 2 minutes
-async function overpass(query) {
-  let last;
-  for (const url of SERVERS) {
-    const t0 = Date.now();
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "User-Agent": "Bayyin/1.0 (github.com/agozel5/bayyin)" },
-        body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(120000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.remark && /runtime error|timed out|out of memory/i.test(json.remark)) throw new Error(json.remark.slice(0, 120));
-      return json;
-    } catch (e) {
-      last = e;
-      console.log(`  ${new URL(url).host} : échec après ${Math.round((Date.now() - t0) / 1000)} s (${e.message})`);
-      await sleep(4000);
-    }
-  }
-  throw last;
-}
 
 const r5 = (x) => Math.round(x * 1e5) / 1e5; // ≈ 1 m
 export const tileOf = (lat, lon) => `${Math.floor(lat)}_${Math.floor(lon)}`;
+export const isHalal = (t) => /^(yes|only)$/.test(t["diet:halal"] || "") || /halal/i.test(t.cuisine || "");
 
-// Grille alignée de 2° × 2° : petites requêtes rapides (quelques secondes), aucun doublon entre pays,
-// et une case qui échoue n'empêche pas les autres.
-const STEP = 2;
-function chunks() {
-  const set = new Map();
-  for (const [s, w, n, e] of Object.values(COUNTRIES))
-    for (let a = Math.floor(s / STEP) * STEP; a < n; a += STEP)
-      for (let o = Math.floor(w / STEP) * STEP; o < e; o += STEP) set.set(`${a}_${o}`, [a, o, a + STEP, o + STEP]);
-  return [...set.entries()];
-}
-const inBox = (p, [s, w, n, e]) => p.lat >= s && p.lat < n && p.lon >= w && p.lon < e;
-
-async function readPrevious() {
-  try {
-    const index = JSON.parse(await readFile(new URL("index.json", OUT), "utf8"));
-    const list = [];
-    for (const key of index.tiles || []) list.push(...JSON.parse(await readFile(new URL(`${key}.json`, OUT), "utf8")));
-    return list;
-  } catch { return []; }
+// Centre d'une géométrie GeoJSON (point, ou milieu du cadre d'un bâtiment)
+export function centerOf(g) {
+  if (!g || !g.coordinates) return null;
+  if (g.type === "Point") return { lon: g.coordinates[0], lat: g.coordinates[1] };
+  let s = 90, w = 180, n = -90, e = -180;
+  const walk = (c) => {
+    if (typeof c[0] === "number") { s = Math.min(s, c[1]); n = Math.max(n, c[1]); w = Math.min(w, c[0]); e = Math.max(e, c[0]); }
+    else c.forEach(walk);
+  };
+  walk(g.coordinates);
+  return n >= s ? { lat: (s + n) / 2, lon: (w + e) / 2 } : null;
 }
 
-async function save(all, failed) {
+// Une ligne GeoJSON (sortie « geojsonseq » d'osmium) -> élément au format Overpass
+export function featureToElement(line) {
+  const f = JSON.parse(line.replace(/^\x1e/, ""));
+  const { "@type": type, "@id": id, ...tags } = f.properties || {};
+  if (!isHalal(tags)) return null;
+  const c = centerOf(f.geometry);
+  if (!c) return null;
+  // Un « area » d'osmium vient d'un chemin (id pair) ou d'une relation (id impair)
+  const real = type === "area" ? (id % 2 ? { type: "relation", id: (id - 1) / 2 } : { type: "way", id: id / 2 }) : { type: type || "node", id };
+  return { ...real, lat: c.lat, lon: c.lon, tags };
+}
+
+async function readFeatures(file) {
+  const elements = [];
+  const rl = createInterface({ input: createReadStream(file), crlfDelay: Infinity });
+  for await (const raw of rl) {
+    if (!raw.trim()) continue;
+    const el = featureToElement(raw.trim());
+    if (el) elements.push(el);
+  }
+  return elements;
+}
+
+async function main() {
+  const work = join(tmpdir(), "bayyin-places");
+  execSync(`rm -rf ${work} && mkdir -p ${work}`);
+  const all = new Map();
+  const countries = {};
+  for (const [cc, [region, bbox]] of Object.entries(COUNTRIES)) {
+    const t0 = Date.now();
+    const pbf = join(work, `${cc}.pbf`), geo = join(work, `${cc}.geojsonseq`);
+    try {
+      // Téléchargement en flux, filtré à la volée : seuls les objets avec diet:halal ou cuisine sont gardés
+      execSync(`set -o pipefail; curl -sSfL --retry 3 "${GEOFABRIK}${region}-latest.osm.pbf" | osmium tags-filter -F pbf - nwr/diet:halal nwr/cuisine -o ${pbf} --overwrite`,
+        { stdio: ["ignore", "inherit", "inherit"], shell: "/bin/bash", timeout: 40 * 60000 });
+      execSync(`osmium export ${pbf} -f geojsonseq -a type,id --geometry-types=point,polygon -o ${geo} --overwrite`, { stdio: ["ignore", "inherit", "inherit"] });
+      const list = parsePlaces({ elements: await readFeatures(geo) }, 0, 0);
+      for (const p of list) all.set(p.id, p);
+      countries[cc] = { n: list.length, bbox };
+      console.log(`${cc} : ${list.length} commerces (${Math.round((Date.now() - t0) / 1000)} s)`);
+    } catch (e) {
+      console.log(`${cc} indisponible (${String(e.message).split("\n")[0]})`);
+    } finally {
+      execSync(`rm -f ${pbf} ${geo}`);
+    }
+  }
+  // Pays en échec : on garde leurs commerces de la semaine précédente
+  let previous = null;
+  try { previous = JSON.parse(await readFile(new URL("index.json", OUT), "utf8")); } catch { /* première fois */ }
+  const missing = Object.keys(COUNTRIES).filter((cc) => !countries[cc] && previous && previous.countries && previous.countries[cc]);
+  if (missing.length) {
+    for (const key of previous.tiles || []) {
+      for (const p of JSON.parse(await readFile(new URL(`${key}.json`, OUT), "utf8"))) {
+        const cc = missing.find((c) => { const [s, w, n, e] = COUNTRIES[c][1]; return p.lat >= s && p.lat <= n && p.lon >= w && p.lon <= e; });
+        if (cc && !all.has(p.id)) all.set(p.id, p);
+      }
+    }
+    for (const cc of missing) countries[cc] = { ...previous.countries[cc], kept: true };
+    console.log("gardés de la semaine précédente :", missing.join(", "));
+  }
+  if (all.size < 500) throw new Error(`Trop peu de commerces (${all.size}) : rien n'est écrit.`);
+
   const tiles = new Map();
   for (const p of all.values()) {
     const key = tileOf(p.lat, p.lon);
@@ -88,44 +124,18 @@ async function save(all, failed) {
   await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
   for (const [key, list] of tiles) await writeFile(new URL(`${key}.json`, OUT), JSON.stringify(list));
-  const countries = Object.fromEntries(Object.entries(COUNTRIES).map(([cc, bbox]) => [cc, { bbox }]));
-  const index = { updated: new Date().toISOString().slice(0, 10), count: all.size, countries, failed, tiles: [...tiles.keys()].sort() };
+  const index = { updated: new Date().toISOString().slice(0, 10), count: all.size, countries, tiles: [...tiles.keys()].sort() };
   await writeFile(new URL("index.json", OUT), JSON.stringify(index));
   await writeFile(new URL("README.md", OUT),
-    "# Commerces halal\n\nDonnées © contributeurs OpenStreetMap, licence ODbL (https://www.openstreetmap.org/copyright).\n" +
-    "Construit chaque semaine par scripts/build-places.mjs. Un fichier par carreau de 1° × 1° (« lat_lon »).\n");
-  return index;
+    "# Commerces halal\n\nDonnées © contributeurs OpenStreetMap, licence ODbL (https://www.openstreetmap.org/copyright), " +
+    "extraits Geofabrik.\nConstruit chaque semaine par scripts/build-places.mjs. Un fichier par carreau de 1° × 1° (« lat_lon »).\n");
+  console.log(JSON.stringify({ updated: index.updated, count: index.count, tiles: index.tiles.length, countries: Object.fromEntries(Object.entries(countries).map(([k, v]) => [k, v.n])) }));
 }
 
-async function main() {
-  const previous = await readPrevious();
-  const all = new Map(); // id -> commerce
-  const failed = [];
-  const list = chunks();
-  const T = Date.now();
-  console.log(`${list.length} cases de ${STEP}° à interroger`);
-  for (const [i, [key, box]] of list.entries()) {
-    const b = `(${box.join(",")})`;
-    const q = `[out:json][timeout:90];(nwr["diet:halal"~"^(yes|only)$"]${b};nwr["cuisine"~"halal"]${b};nwr["cuisine"~"Halal"]${b};);out tags center qt;`;
-    try {
-      const found = parsePlaces(await overpass(q), 0, 0).filter((p) => inBox(p, box));
-      for (const p of found) all.set(p.id, p);
-      console.log(`[${Math.round((Date.now() - T) / 1000)} s] ${i + 1}/${list.length} case ${key} : ${found.length}`);
-    } catch (e) {
-      // Case indisponible : on garde ses commerces de la semaine précédente
-      failed.push(key);
-      const kept = previous.filter((p) => inBox(p, box));
-      for (const p of kept) all.set(p.id, p);
-      console.log(`[${Math.round((Date.now() - T) / 1000)} s] ${i + 1}/${list.length} case ${key} indisponible (${e.message}) : ${kept.length} gardés`);
-    }
-    await sleep(1500);
-  }
-  if (all.size < 500) throw new Error(`Trop peu de commerces (${all.size}) : rien n'est écrit.`);
-  const index = await save(all, failed);
-  console.log(JSON.stringify({ updated: index.updated, count: index.count, tiles: index.tiles.length, failed: failed.length }));
+// Lancé directement (et pas importé par les tests)
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
 }
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});

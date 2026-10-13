@@ -38,3 +38,16 @@ test("recherche locale : filtre par rayon et trie par distance", async () => {
     globalThis.fetch = orig;
   }
 });
+
+test("extraits OpenStreetMap : seuls les commerces halal, centre des bâtiments", async () => {
+  const { featureToElement, isHalal } = await import("../scripts/build-places.mjs");
+  assert.equal(isHalal({ "diet:halal": "only" }), true);
+  assert.equal(isHalal({ cuisine: "turkish;Halal" }), true);
+  assert.equal(isHalal({ cuisine: "pizza", "diet:halal": "no" }), false);
+  const node = featureToElement('\x1e{"type":"Feature","geometry":{"type":"Point","coordinates":[2.35,48.85]},"properties":{"@type":"node","@id":42,"name":"Boucherie","shop":"butcher","diet:halal":"only"}}');
+  assert.deepEqual([node.type, node.id, node.lat, node.lon, node.tags.name], ["node", 42, 48.85, 2.35, "Boucherie"]);
+  const way = featureToElement('{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[2,48],[2.2,48],[2.2,48.2],[2,48.2],[2,48]]]},"properties":{"@type":"way","@id":7,"amenity":"restaurant","cuisine":"halal"}}');
+  assert.equal(way.type, "way");
+  assert.ok(Math.abs(way.lat - 48.1) < 1e-9 && Math.abs(way.lon - 2.1) < 1e-9);
+  assert.equal(featureToElement('{"type":"Feature","geometry":{"type":"Point","coordinates":[2,48]},"properties":{"@type":"node","@id":1,"cuisine":"pizza"}}'), null);
+});
