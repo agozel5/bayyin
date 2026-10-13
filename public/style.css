@@ -1338,3 +1338,4 @@ html[data-text="xlarge"]{font-size:125%}
 .pm-plan .radio{margin-top:0}
 .pm-plan[aria-checked="true"] .radio{border-color:var(--brand)}
 .pm-plan[aria-checked="true"] .radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--brand)}
+.pm-soon-badge{margin-inline-start:6px;padding:2px 8px;border-radius:99px;background:var(--gold,#E7B84E);color:#3B2A00;font-style:normal;font-size:.72rem;font-weight:800;vertical-align:2px}

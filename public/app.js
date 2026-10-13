@@ -2705,6 +2705,7 @@ function renderPremiumSheet(msg = "") {
   const cfg = premiumConfig();
   const st = premiumState();
   const active = premiumEnabled() && isPremium() && st;
+  const ready = premiumEnabled();
   const features = `<ul class="pm-features">${PREMIUM_LIST.map(([id, ico]) => `<li class="${premiumFocus === id ? "focus" : ""}"><span class="pm-ico">${svg(ico)}</span><span><strong>${t(`premium.f.${id}`)}</strong><small>${t(`premium.f.${id}.d`)}</small></span></li>`).join("")}</ul>`;
   const free = `<div class="pm-free">${svg(I.shield)}<p><strong>${t("premium.free_t")}</strong> ${t("premium.free_p")}</p></div>`;
   const legal = [cfg.legal.cgv && `<a href="${esc(cfg.legal.cgv)}" target="_blank" rel="noopener">${t("premium.cgv")}</a>`, cfg.legal.mentions && `<a href="${esc(cfg.legal.mentions)}" target="_blank" rel="noopener">${t("premium.mentions")}</a>`].filter(Boolean).join(" · ");
@@ -2729,7 +2730,7 @@ function renderPremiumSheet(msg = "") {
         <span class="pm-price">${esc(price)}</span>${badge ? `<em>${esc(badge)}</em>` : ""}</button>` : "";
   $("sheetBody").innerHTML = `<div class="pm">
     <div class="pm-hero">${svg(I.crown)}<h2>${t("premium.title")}</h2><p>${t("premium.lead")}</p></div>
-    ${premiumFocus ? `<p class="pm-focus">${svg(I.lock)}<span>${t(`premium.need.${premiumFocus}`)}</span></p>` : ""}
+    ${premiumFocus && ready ? `<p class="pm-focus">${svg(I.lock)}<span>${t(`premium.need.${premiumFocus}`)}</span></p>` : ""}
     ${features}
     <div class="pm-plans" role="radiogroup">
       ${plan("year", cfg.prices.year + t("premium.per_year"), t("premium.year_sub", { p: cfg.prices.yearPerMonth }), t("premium.best"))}
@@ -2739,18 +2740,21 @@ function renderPremiumSheet(msg = "") {
       ? `<a class="btn btn-primary btn-block pm-cta" href="${esc(cfg.checkout[premiumPlan] || cfg.checkout.year || cfg.checkout.month)}" target="_blank" rel="noopener">${cfg.trialDays ? esc(t("premium.cta_trial", { n: cfg.trialDays })) : t("premium.cta")}</a>
          <p class="pm-renew">${esc(t(premiumPlan === "month" ? "premium.renew_month" : "premium.renew_year"))}</p>`
       : `<p class="pm-soon">${t("premium.soon")}</p>`}
-    <details class="pm-key"${msg ? " open" : ""}><summary>${t("premium.have_key")}</summary>
+    ${ready ? `<details class="pm-key"${msg ? " open" : ""}><summary>${t("premium.have_key")}</summary>
       <p class="muted">${t("premium.key_hint")}</p>
       <form class="field-row" id="pmKeyForm" autocomplete="off"><input class="field" id="pmKey" type="text" dir="ltr" spellcheck="false" autocapitalize="characters" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"><button class="btn btn-primary" type="submit">${t("premium.activate")}</button></form>
       ${msg ? `<p class="pm-msg">${esc(msg)}</p>` : ""}
-    </details>
+    </details>` : ""}
     ${free}
     ${manage}
     ${legal ? `<p class="fineprint">${legal}</p>` : ""}
   </div>`;
 }
 function premiumCard() {
-  if (!premiumEnabled()) return "";
+  // Avant la mise en vente : la carte est visible, avec « Bientôt disponible », et rien n'est bloqué
+  if (!premiumEnabled()) {
+    return `<button type="button" class="pm-card" data-premium>${svg(I.crown)}<span><strong>${t("premium.card_t")} <em class="pm-soon-badge">${t("premium.soon_badge")}</em></strong><small>${t("premium.card_p")}</small></span>${svg(I.chev, "flip")}</button>`;
+  }
   const on = isPremium();
   return `<button type="button" class="pm-card${on ? " on" : ""}" data-premium>${svg(I.crown)}<span><strong>${on ? t("premium.active_t") : t("premium.card_t")}</strong><small>${on ? t("premium.card_on") : t("premium.card_p")}</small></span>${svg(I.chev, "flip")}</button>`;
 }

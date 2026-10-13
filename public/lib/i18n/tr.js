@@ -1126,4 +1126,6 @@ export default {
   "src.osm": "Ortak dünya haritası: katkıda bulunanların helal olarak işaretlediği dükkanlar.",
   "privacy.6": "Ürün geri çağırmaları telefonda kontrol edilir: resmî liste indirilir, geçmişiniz asla dışarı çıkmaz.",
   "privacy.7": "Premium ile aboneliği doğrulamak için Lemon Squeezy'ye (satıcı) yalnızca etkinleştirme anahtarı ve anonim bir cihaz adı gönderilir.",
+  // ---------- premium : bientôt ----------
+  "premium.soon_badge": "Yakında",
 };

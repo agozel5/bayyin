@@ -1126,4 +1126,6 @@ export default {
   "src.osm": "Collaborative world map: shops tagged halal by its contributors.",
   "privacy.6": "Product recalls are checked on the phone: the official list is downloaded, your history never leaves.",
   "privacy.7": "With Premium, only the activation key and an anonymous device name are sent to Lemon Squeezy (the seller) to check the subscription.",
+  // ---------- premium : bientôt ----------
+  "premium.soon_badge": "Soon",
 };

@@ -1140,4 +1140,6 @@ export default {
   "src.osm": "Carte collaborative du monde : commerces signalés halal par ses contributeurs.",
   "privacy.6": "Les rappels de produits sont vérifiés sur le téléphone : la liste officielle est téléchargée, votre historique ne sort jamais.",
   "privacy.7": "Avec Premium, seuls la clé d'activation et un nom d'appareil anonyme sont envoyés à Lemon Squeezy (le vendeur) pour vérifier l'abonnement.",
+  // ---------- premium : bientôt ----------
+  "premium.soon_badge": "Bientôt",
 };
