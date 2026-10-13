@@ -28,6 +28,7 @@ jobs:
         with:
           node-version: 22
       - name: Télécharger les commerces halal
+        timeout-minutes: 55
         run: |
           set -o pipefail
           node scripts/build-places.mjs 2>&1 | tee docs/places-build.txt

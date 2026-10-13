@@ -27,7 +27,7 @@ export const COUNTRIES = {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Un essai par serveur (3 au total), chacun limité à 4 minutes : un pays bloqué ne bloque pas les autres
+// Un essai par serveur (3 au total), chacun limité à 2 minutes
 async function overpass(query) {
   let last;
   for (const url of SERVERS) {
@@ -37,7 +37,7 @@ async function overpass(query) {
         method: "POST",
         headers: { "User-Agent": "Bayyin/1.0 (github.com/agozel5/bayyin)" },
         body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(240000),
+        signal: AbortSignal.timeout(120000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
@@ -46,7 +46,7 @@ async function overpass(query) {
     } catch (e) {
       last = e;
       console.log(`  ${new URL(url).host} : échec après ${Math.round((Date.now() - t0) / 1000)} s (${e.message})`);
-      await sleep(8000);
+      await sleep(4000);
     }
   }
   throw last;
@@ -55,61 +55,74 @@ async function overpass(query) {
 const r5 = (x) => Math.round(x * 1e5) / 1e5; // ≈ 1 m
 export const tileOf = (lat, lon) => `${Math.floor(lat)}_${Math.floor(lon)}`;
 
-async function main() {
-  let previous = { countries: {} };
-  try { previous = JSON.parse(await readFile(new URL("index.json", OUT), "utf8")); } catch { /* première fois */ }
-  const all = new Map(); // id -> commerce
-  const done = {};
-  for (const [cc, bbox] of Object.entries(COUNTRIES)) {
-    // Cadre du pays plutôt que sa frontière exacte (bien plus rapide pour Overpass) ;
-    // les doublons entre pays voisins sont fusionnés par identifiant.
-    const [south, west, north, east] = bbox;
-    const b = `(${south},${west},${north},${east})`;
-    const q = `[out:json][timeout:220];(nwr["diet:halal"~"^(yes|only)$"]${b};nwr["cuisine"~"halal"]${b};nwr["cuisine"~"Halal"]${b};);out tags center qt;`;
-    const t0 = Date.now();
-    try {
-      const json = await overpass(q);
-      const list = parsePlaces(json, 0, 0);
-      for (const p of list) all.set(p.id, p);
-      done[cc] = { n: list.length, bbox };
-      console.log(`${cc} : ${list.length} commerces (${Math.round((Date.now() - t0) / 1000)} s)`);
-    } catch (e) {
-      console.log(`${cc} indisponible (${e.message})`);
-    }
-    await sleep(5000);
-  }
-  // Pays qui n'ont pas répondu : on garde leurs commerces de la semaine précédente
-  const missing = Object.keys(COUNTRIES).filter((cc) => !done[cc] && previous.countries && previous.countries[cc]);
-  if (missing.length) {
-    for (const key of previous.tiles || []) {
-      const old = JSON.parse(await readFile(new URL(`${key}.json`, OUT), "utf8"));
-      for (const p of old) {
-        const cc = missing.find((c) => { const [s, w, n, e] = COUNTRIES[c]; return p.lat >= s && p.lat <= n && p.lon >= w && p.lon <= e; });
-        if (cc && !all.has(p.id)) all.set(p.id, p);
-      }
-    }
-    for (const cc of missing) done[cc] = { ...previous.countries[cc], kept: true };
-    console.log("gardés de la semaine précédente :", missing.join(", "));
-  }
-  if (all.size < 500) throw new Error(`Trop peu de commerces (${all.size}) : rien n'est écrit.`);
+// Grille alignée de 2° × 2° : petites requêtes rapides (quelques secondes), aucun doublon entre pays,
+// et une case qui échoue n'empêche pas les autres.
+const STEP = 2;
+function chunks() {
+  const set = new Map();
+  for (const [s, w, n, e] of Object.values(COUNTRIES))
+    for (let a = Math.floor(s / STEP) * STEP; a < n; a += STEP)
+      for (let o = Math.floor(w / STEP) * STEP; o < e; o += STEP) set.set(`${a}_${o}`, [a, o, a + STEP, o + STEP]);
+  return [...set.entries()];
+}
+const inBox = (p, [s, w, n, e]) => p.lat >= s && p.lat < n && p.lon >= w && p.lon < e;
 
+async function readPrevious() {
+  try {
+    const index = JSON.parse(await readFile(new URL("index.json", OUT), "utf8"));
+    const list = [];
+    for (const key of index.tiles || []) list.push(...JSON.parse(await readFile(new URL(`${key}.json`, OUT), "utf8")));
+    return list;
+  } catch { return []; }
+}
+
+async function save(all, failed) {
   const tiles = new Map();
   for (const p of all.values()) {
     const key = tileOf(p.lat, p.lon);
     const { distance, ...rest } = p;
     const item = { ...rest, lat: r5(p.lat), lon: r5(p.lon) };
-    for (const k of Object.keys(item)) if (item[k] === "" || item[k] === null) delete item[k];
+    for (const k of Object.keys(item)) if (item[k] === "" || item[k] === null || item[k] === undefined) delete item[k];
     (tiles.get(key) || tiles.set(key, []).get(key)).push(item);
   }
   await rm(OUT, { recursive: true, force: true });
   await mkdir(OUT, { recursive: true });
   for (const [key, list] of tiles) await writeFile(new URL(`${key}.json`, OUT), JSON.stringify(list));
-  const index = { updated: new Date().toISOString().slice(0, 10), count: all.size, countries: done, tiles: [...tiles.keys()].sort() };
+  const countries = Object.fromEntries(Object.entries(COUNTRIES).map(([cc, bbox]) => [cc, { bbox }]));
+  const index = { updated: new Date().toISOString().slice(0, 10), count: all.size, countries, failed, tiles: [...tiles.keys()].sort() };
   await writeFile(new URL("index.json", OUT), JSON.stringify(index));
   await writeFile(new URL("README.md", OUT),
     "# Commerces halal\n\nDonnées © contributeurs OpenStreetMap, licence ODbL (https://www.openstreetmap.org/copyright).\n" +
     "Construit chaque semaine par scripts/build-places.mjs. Un fichier par carreau de 1° × 1° (« lat_lon »).\n");
-  console.log(JSON.stringify({ updated: index.updated, count: index.count, tiles: index.tiles.length, countries: Object.fromEntries(Object.entries(done).map(([k, v]) => [k, v.n])) }));
+  return index;
+}
+
+async function main() {
+  const previous = await readPrevious();
+  const all = new Map(); // id -> commerce
+  const failed = [];
+  const list = chunks();
+  const T = Date.now();
+  console.log(`${list.length} cases de ${STEP}° à interroger`);
+  for (const [i, [key, box]] of list.entries()) {
+    const b = `(${box.join(",")})`;
+    const q = `[out:json][timeout:90];(nwr["diet:halal"~"^(yes|only)$"]${b};nwr["cuisine"~"halal"]${b};nwr["cuisine"~"Halal"]${b};);out tags center qt;`;
+    try {
+      const found = parsePlaces(await overpass(q), 0, 0).filter((p) => inBox(p, box));
+      for (const p of found) all.set(p.id, p);
+      console.log(`[${Math.round((Date.now() - T) / 1000)} s] ${i + 1}/${list.length} case ${key} : ${found.length}`);
+    } catch (e) {
+      // Case indisponible : on garde ses commerces de la semaine précédente
+      failed.push(key);
+      const kept = previous.filter((p) => inBox(p, box));
+      for (const p of kept) all.set(p.id, p);
+      console.log(`[${Math.round((Date.now() - T) / 1000)} s] ${i + 1}/${list.length} case ${key} indisponible (${e.message}) : ${kept.length} gardés`);
+    }
+    await sleep(1500);
+  }
+  if (all.size < 500) throw new Error(`Trop peu de commerces (${all.size}) : rien n'est écrit.`);
+  const index = await save(all, failed);
+  console.log(JSON.stringify({ updated: index.updated, count: index.count, tiles: index.tiles.length, failed: failed.length }));
 }
 
 main().catch((e) => {
