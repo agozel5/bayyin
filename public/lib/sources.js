@@ -7,6 +7,8 @@ export const SOURCES = [
   { id: "obf", group: "data", kind: "database", name: "Open Beauty Facts", url: "https://world.openbeautyfacts.org" },
   { id: "cosing", group: "data", kind: "database", name: "CosIng (Commission européenne)", url: "https://ec.europa.eu/growth/tools-databases/cosing/" },
   { id: "bdpm", group: "data", kind: "database", name: "Base de données publique des médicaments", url: "https://base-donnees-publique.medicaments.gouv.fr" },
+  { id: "rappelconso", group: "data", kind: "database", name: "RappelConso (DGCCRF, DGAL)", url: "https://rappel.conso.gouv.fr" },
+  { id: "osm", group: "data", kind: "database", name: "OpenStreetMap", url: "https://www.openstreetmap.org" },
   // Santé et additifs
   { id: "efsa", group: "health", kind: "agency", name: "EFSA", url: "https://www.efsa.europa.eu" },
   { id: "anses", group: "health", kind: "agency", name: "ANSES", url: "https://www.anses.fr" },

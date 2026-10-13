@@ -1121,4 +1121,9 @@ export default {
   "tour.close": "Sonra",
   "tour.replay": "Rehberli turu tekrar izle",
   "tour.replay_p": "Ana ekranı keşfetmek için bir dakika",
+  // ---------- sources et confidentialité (ajouts) ----------
+  "src.rappelconso": "Fransa'nın resmî ürün geri çağırma sitesi: geri çağrılan ürünlerin listesi her gece alınır ve sizi uyarır.",
+  "src.osm": "Ortak dünya haritası: katkıda bulunanların helal olarak işaretlediği dükkanlar.",
+  "privacy.6": "Ürün geri çağırmaları telefonda kontrol edilir: resmî liste indirilir, geçmişiniz asla dışarı çıkmaz.",
+  "privacy.7": "Premium ile aboneliği doğrulamak için Lemon Squeezy'ye (satıcı) yalnızca etkinleştirme anahtarı ve anonim bir cihaz adı gönderilir.",
 };

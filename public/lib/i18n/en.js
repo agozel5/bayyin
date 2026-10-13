@@ -1121,4 +1121,9 @@ export default {
   "tour.close": "Later",
   "tour.replay": "Replay the guided tour",
   "tour.replay_p": "One minute to discover the home screen",
+  // ---------- sources et confidentialité (ajouts) ----------
+  "src.rappelconso": "Official French product recall site: every night the list of recalled products is fetched to warn you.",
+  "src.osm": "Collaborative world map: shops tagged halal by its contributors.",
+  "privacy.6": "Product recalls are checked on the phone: the official list is downloaded, your history never leaves.",
+  "privacy.7": "With Premium, only the activation key and an anonymous device name are sent to Lemon Squeezy (the seller) to check the subscription.",
 };

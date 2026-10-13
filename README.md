@@ -1,6 +1,6 @@
 # Bayyin — بيّن
 
-**Scanner halal & santé.** Gratuit, sans publicité, sans pistage.
+**Scanner halal & santé.** L'essentiel gratuit, sans publicité, sans pistage.
 
 > « Le halal est clair (*bayyin*) et le haram est clair, et entre les deux se trouvent des
 > choses douteuses. » — hadith rapporté par al-Bukhari (52) et Muslim (1599)
@@ -29,6 +29,18 @@ Ce qui la distingue :
 - **vie privée** : aucun compte, aucune publicité, aucun pistage ; tout reste sur le téléphone, seul le code-barres part vers Open Food Facts ;
 - **tous les additifs du produit** listés avec leur statut halal et santé, et un **signalement d'erreur** prérempli pour chaque produit ;
 - **hors connexion** : l'app et les fiches déjà vues restent disponibles sans réseau, plus un pack des 500 produits les plus scannés en France.
+- **rappels de produits** (RappelConso, mis à jour chaque nuit) : alerte sur la fiche d'un produit rappelé et
+  bandeau quand un produit déjà scanné vient d'être rappelé ;
+- **organismes de certification** : fiches neutres (AVS, Achahada, mosquées habilitées, HMC…) et choix des
+  labels que l'on suit, appliqué au verdict ;
+- **recherche multilingue et triée par pertinence** (une recherche en arabe, turc ou anglais est aussi lancée en français) ;
+- **visite guidée** au premier lancement, relançable depuis les réglages ;
+- **mode rayon** (plusieurs codes-barres d'un coup), **mode courses**, **comparaison**, **carte des commerces halal**
+  (OpenStreetMap) et **profils de la famille**.
+
+**Bayyin Premium** (abonnement facultatif, 14,99 €/an ou 2,49 €/mois) réserve le confort : mode rayon, mode courses,
+comparaison, famille, hors connexion et historique complet. Le verdict halal, les notes, les rappels et les
+alertes allergies restent gratuits. Mise en vente : voir [docs/abonnement.md](docs/abonnement.md).
 
 Les données produits viennent d'[Open Food Facts](https://fr.openfoodfacts.org)
 (base collaborative, gratuite, plus de 3 millions de produits).
@@ -126,6 +138,13 @@ public/                 la version web (à héberger telle quelle)
   lib/medicine.js       médicaments : code CIP13, verdict selon la forme
   lib/profile.js        profil allergies / régime comparé à chaque produit
   data/med/NN.json      base des médicaments découpée en 100 fichiers (workflow medicaments.yml, chaque lundi)
+  lib/cosmetic.js       note des cosmétiques (danger × exposition) et base CosIng (data/cosing.json, chaque mois)
+  lib/search.js         recherche : pertinence, fautes de frappe, traduction des mots courants (ar/tr/en → fr)
+  lib/recalls.js        rappels de produits ; data/rappels/NN.json construit chaque nuit (workflow rappels.yml)
+  lib/certifiers.js     fiches des organismes de certification halal
+  lib/places.js         commerces halal autour de soi (OpenStreetMap / Overpass)
+  lib/aisle.js          mode rayon : plusieurs codes-barres dans la même image
+  lib/premium.js        Bayyin Premium : clé de licence Lemon Squeezy (réglages : premium-config.js)
 scripts/build-medicaments.mjs   construit data/med depuis la base publique
 src/server.js           serveur local optionnel : sert public/ + API JSON
 test/                   tests node:test
