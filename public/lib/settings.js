@@ -47,6 +47,7 @@ function normalize(saved) {
     offlineMedCount: saved.offlineMedCount || 0,
     onboarded: !!saved.onboarded || Object.keys(saved).length > 0, // déjà utilisé avant l'accueil guidé
     tourDone: !!saved.tourDone, // visite guidée de l'écran d'accueil vue
+    sheetTourDone: !!saved.sheetTourDone, // explication de la fiche produit vue (au premier produit)
     // Profils de la famille (Premium) : prénom, allergies et régime de chacun
     members: (Array.isArray(saved.members) ? saved.members : []).slice(0, 8).filter((m) => m && m.id && m.name).map((m) => ({
       id: String(m.id).slice(0, 20),

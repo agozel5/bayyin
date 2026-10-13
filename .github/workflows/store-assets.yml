@@ -1,0 +1,50 @@
+name: Images des stores
+
+# Icônes, écrans de démarrage et captures (docs/store, public/splash), avec les vraies polices de l'app.
+# À la demande, ou quand le script / l'icône change.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/store-assets.py", "docs/store/icon-master.svg", ".github/workflows/store-assets.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: store-assets
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Playwright et Pillow
+        run: |
+          pip install playwright pillow
+          python -m playwright install --with-deps chromium
+      - name: Générer les images
+        run: |
+          PORT=3123 node src/server.js > /tmp/server.log 2>&1 &
+          for i in $(seq 1 20); do curl -s localhost:3123 > /dev/null && break; sleep 0.5; done
+          python scripts/store-assets.py --shots
+      - name: Enregistrer
+        run: |
+          git add -A docs/store public/splash public/icon.svg public/icon-180.png public/icon-192.png public/icon-512.png
+          if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Images des stores régénérées"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

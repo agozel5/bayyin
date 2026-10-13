@@ -1269,4 +1269,14 @@ export default {
   "zoom.ingredients": "İçindekiler",
   "zoom.nutrition": "Besin değerleri",
   "zoom.hint": "Yakınlaştırmak için iki parmakla açın veya çift dokunun · kapatmak için aşağı kaydırın",
+  // ---------- Visite de la fiche produit ----------
+  "tour.sheet_verdict.t": "Bir bakışta cevap",
+  "tour.sheet_verdict.p": "Ayarlarınıza göre helal, şüpheli veya haram; hemen altında sağlık puanı. Neyin kontrol edildiğini görmek için “Güvenilirlik”e dokunun.",
+  "tour.sheet_tabs.t": "Tüm ayrıntılar, düzenli",
+  "tour.sheet_tabs.p": "Helal: ilgili içerikler ve doğrulanmış sertifika. Sağlık: besin, katkı maddeleri, alerjenler. İçindekiler: tam liste.",
+  "tour.sheet_photo.t": "Fotoğrafı büyük görün",
+  "tour.sheet_photo.p": "Büyütmek ve yakınlaştırmak için fotoğrafa dokunun; içindekiler listesi ve besin tablosu dahil.",
+  "tour.got_it": "Anladım",
+  // ---------- Comparaison : voir la fiche ----------
+  "cmp.see": "Ayrıntıları gör",
 };

@@ -5,7 +5,7 @@ Usage (serveur local lancé : PORT=3123 node src/server.js) :
     python3 scripts/store-assets.py --shots    # + captures App Store / Play Store
 Nécessite Playwright (Chromium) et Pillow.
 """
-import io, json, re, sys
+import io, json, os, re, sys
 from pathlib import Path
 from PIL import Image
 from playwright.sync_api import sync_playwright
@@ -13,6 +13,11 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 PUB, STORE = ROOT / "public", ROOT / "docs" / "store"
 MASTER = (STORE / "icon-master.svg").read_text()
+# Sur GitHub Actions, Google Fonts est joignable : vraies polices de l'app (Figtree, IBM Plex Sans Arabic).
+# En local hors ligne, on bloque ces requêtes (Inter à défaut).
+ONLINE = bool(os.environ.get("CI"))
+FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800'
+         '&family=IBM+Plex+Sans+Arabic:wght@600;700&display=block">') if ONLINE else ""
 
 # iPhone : (largeur CSS, hauteur CSS, densité)
 IPHONES = [(440, 956, 3), (430, 932, 3), (428, 926, 3), (402, 874, 3), (393, 852, 3), (390, 844, 3), (375, 812, 3), (414, 896, 2), (375, 667, 2)]
@@ -23,8 +28,9 @@ def svg_sized(n, uid="a"):
 
 def shot(page, html, w, h, scale=1):
     page.set_viewport_size({"width": w, "height": h})
-    page.set_content(f'<!doctype html><html><head><meta charset="utf-8"><style>html,body{{margin:0;width:{w}px;height:{h}px;overflow:hidden}}</style></head><body>{html}</body></html>')
-    page.wait_for_timeout(150)
+    page.set_content(f'<!doctype html><html><head><meta charset="utf-8">{FONTS}<style>html,body{{margin:0;width:{w}px;height:{h}px;overflow:hidden}}</style></head><body>{html}</body></html>')
+    page.evaluate("document.fonts.ready.then(() => true)")
+    page.wait_for_timeout(250 if ONLINE else 150)
     return Image.open(io.BytesIO(page.screenshot()))
 
 def splash_html(w, h):
@@ -80,8 +86,9 @@ SUBS = {
 
 def app_screens(b, lang):
     ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=3, service_workers="block")
-    ctx.add_init_script(f'localStorage.setItem("halalscan_settings_v1", {json.dumps(json.dumps({"lang": lang, "onboarded": True, "tourDone": True}))})')
-    ctx.route(re.compile(r"https://fonts\..*"), lambda r: r.abort())  # hors ligne : Inter à défaut de Figtree
+    ctx.add_init_script(f'localStorage.setItem("halalscan_settings_v1", {json.dumps(json.dumps({"lang": lang, "onboarded": True, "tourDone": True, "sheetTourDone": True}))})')
+    if not ONLINE:
+        ctx.route(re.compile(r"https://fonts\..*"), lambda r: r.abort())  # hors ligne : Inter à défaut de Figtree
     ctx.route(re.compile(r".*/data/certified\.json"), lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(DB)))
     def prod(r):
         code = next((c for c in DEMO if c in r.request.url), None)
@@ -91,7 +98,7 @@ def app_screens(b, lang):
     ctx.route(re.compile(r".*world\.openfoodfacts\.org/(cgi|api/v2/search).*"), lambda r: r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"}, body='{"products":[],"count":0}'))
     ctx.route(re.compile(r".*openbeautyfacts.*"), lambda r: r.fulfill(status=200, content_type="application/json", body='{"status":0}'))
     p = ctx.new_page()
-    p.goto("http://localhost:3123/", wait_until="load"); p.wait_for_timeout(1200)
+    p.goto("http://localhost:3123/", wait_until="load"); p.evaluate("document.fonts.ready.then(() => true)"); p.wait_for_timeout(1200)
     out = [p.screenshot()]
     def open_code(code):
         p.click("#focusManual"); p.fill("#manualInput", code); p.press("#manualInput", "Enter")

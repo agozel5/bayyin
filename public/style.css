@@ -1538,3 +1538,42 @@ html[data-text="xlarge"]{font-size:125%}
   .lightbox:not([hidden]){animation:lb-in .2s ease}
   @keyframes lb-in{from{opacity:0}to{opacity:1}}
 }
+
+/* ---------- comparaison : même langage que les fiches ---------- */
+.cmp-head{gap:8px;padding:0 0 12px;overflow:hidden;cursor:default}
+.cmp-head .alt-band{align-self:stretch}
+.cmp-img{position:relative;width:96px;height:96px;padding:0;border:none;border-radius:16px;background:#fff;cursor:zoom-in;flex:none}
+.cmp-img img{width:100%;height:100%;object-fit:contain;border-radius:16px;display:block}
+.cmp-img.ph{display:flex;align-items:center;justify-content:center;background:var(--tint);color:var(--faint);cursor:default}
+.cmp-img.ph svg{width:40px;height:40px}
+.cmp-img .p-img-zoom{inset-block-end:4px;inset-inline-end:4px}
+.cmp-name{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 10px;border:none;background:none;color:var(--fg);font:inherit;text-align:center;cursor:pointer}
+.cmp-name strong{font-size:.95rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmp-name small{color:var(--muted);font-size:.8rem}
+.cmp-see{display:inline-flex;align-items:center;gap:2px;margin-top:4px;font-size:.8rem;font-weight:700;color:var(--brand)}
+.cmp-see svg{width:14px;height:14px}
+.cmp-head .alt-band{margin:0}
+
+/* =====================================================================
+   Accessibilité : contrastes (WCAG AA, 4,5:1 pour le texte courant)
+   ===================================================================== */
+:root{--faint:#5F6B64}
+:root[data-theme="dark"]{--faint:#8A978F}
+/* Pastilles : texte plus foncé que le point de couleur (clair), plus clair (sombre) */
+.pill{color:color-mix(in srgb,var(--c) 68%,#000)}
+:root[data-theme="dark"] .pill{color:color-mix(in srgb,var(--c) 72%,#fff)}
+.tab-score{background:color-mix(in srgb,var(--c) 72%,#000)}
+.f-health{color:#3B6B19}
+.add-ok{color:color-mix(in srgb,var(--c-cert) 75%,#000)}
+:root[data-theme="dark"] .add-ok{color:#5FD08F}
+.ring small{color:var(--fg);opacity:.75}
+.v-foot .ring small{opacity:1}
+/* Sombre : fonds verts pleins assez foncés pour du texte blanc */
+:root[data-theme="dark"] :is(.btn-primary,.scan-cta,.privacy-ico,.cam-basket,.set-summary,.tool-badge,.fam-av,.search-tip-ico){background:#17794F;color:#fff}
+:root[data-theme="dark"] .steps li::before{background:#17794F}
+:root[data-theme="dark"] .f-halal{color:#5FD08F}
+:root[data-theme="dark"] .f-add{color:#F2A657}
+.v-foot .ring span{background:color-mix(in srgb,var(--vc) 82%,#000)}
+/* Onglets : la largeur suit le libellé (évite « Compo… » en grand texte) */
+.ptab{flex:1 1 auto;padding:10px 6px;gap:6px}
+html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}

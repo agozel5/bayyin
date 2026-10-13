@@ -1283,4 +1283,14 @@ export default {
   "zoom.ingredients": "Ingrédients",
   "zoom.nutrition": "Valeurs nutritionnelles",
   "zoom.hint": "Pincez ou touchez deux fois pour zoomer · glissez vers le bas pour fermer",
+  // ---------- Visite de la fiche produit ----------
+  "tour.sheet_verdict.t": "La réponse en un coup d'œil",
+  "tour.sheet_verdict.p": "Halal, douteux ou haram selon vos réglages, avec la note santé juste en dessous. Touchez « Fiabilité » pour voir ce qui a été vérifié.",
+  "tour.sheet_tabs.t": "Tout le détail, rangé",
+  "tour.sheet_tabs.p": "Halal : les ingrédients en cause et la certification vérifiée. Santé : nutrition, additifs, allergènes. Composition : tous les ingrédients.",
+  "tour.sheet_photo.t": "Voyez la photo en grand",
+  "tour.sheet_photo.p": "Touchez la photo pour l'agrandir et zoomer, y compris sur la liste d'ingrédients et le tableau nutritionnel.",
+  "tour.got_it": "Compris",
+  // ---------- Comparaison : voir la fiche ----------
+  "cmp.see": "Voir la fiche",
 };

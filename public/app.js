@@ -678,6 +678,7 @@ function renderSheetProduct(p) {
   refreshFav();
   loadRecalls(p);
   loadCertCheck(p);
+  if (!prefs().sheetTourDone && !DEMO) setTimeout(startSheetTour, 900);
 }
 
 // ===========================================================================
@@ -832,7 +833,9 @@ function closeLightbox({ fromPop = false } = {}) {
   if (!fromPop && history.state && history.state.lb) history.back();
 }
 $("sheetBody").addEventListener("click", (e) => {
-  if (e.target.closest("[data-zoom]") && sheetProduct) openLightbox(sheetProduct);
+  if (e.target.closest("[data-zoom]") && sheetProduct) return openLightbox(sheetProduct);
+  const z = e.target.closest("[data-zoom-code]");
+  if (z && cmpProducts[z.dataset.zoomCode]) openLightbox(cmpProducts[z.dataset.zoomCode]);
 });
 
 // ===========================================================================
@@ -980,6 +983,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
 
 function closeSheet({ fromPop = false } = {}) {
   if (sheet.hidden) return;
+  if (isSheetTour() && tourStep >= 0) endTour();
   sheet.hidden = true;
   sheetCode = null;
   sheetProduct = null;
@@ -2800,6 +2804,7 @@ $("toolCompare").addEventListener("click", () => {
     : `<div class="empty">${emptyArt()}<strong>${esc(t("cmp.need_two.t"))}</strong><p>${esc(t("cmp.need_two.p"))}</p><button class="btn btn-primary" type="button" data-scan-now>${esc(t("home.scan"))}</button></div>`;
 });
 
+let cmpProducts = {};
 function showCompare(code) {
   const a = compareBase;
   const b = (store.get(code) || {}).p || memo.get(code);
@@ -2813,7 +2818,7 @@ function showCompare(code) {
   const nut = (p, id) => {
     const h = p.health;
     const n = h && h.nutrition && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
-    return n ? `<span class="lv-${n.level} cmp-nut">${fmt(n.value)} ${esc(n.unit)}<i class="dot"></i></span>` : "—";
+    return n ? `<span class="lv-${n.level} cmp-nut" dir="ltr">${fmt(n.value)} ${esc(n.unit)}<i class="dot"></i></span>` : "—";
   };
   const better = (x, y, lowIsBetter) => (x === null || y === null || x === y ? ["", ""] : (lowIsBetter ? x < y : x > y) ? ["win", ""] : ["", "win"]);
   const val = (p, id) => {
@@ -2836,7 +2841,16 @@ function showCompare(code) {
   for (let i = rows.length - 1; i >= 0; i--) if (rows[i][1] === "—" && rows[i][2] === "—") rows.splice(i, 1);
   const alA = profileOf(a).alert, alB = profileOf(b).alert;
   if (alA || alB) rows.push([t("settings.profile"), alA ? `<span class="pill a-${alA}">${t(`alert.short.${alA}`)}</span>` : "✓", alB ? `<span class="pill a-${alB}">${t(`alert.short.${alB}`)}</span>` : "✓", better(alA ? 0 : 1, alB ? 0 : 1)]);
-  const head = (p) => `<button type="button" class="cmp-head" data-open="${esc(p.code)}">${p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : `<span class="ph">${svg(KIND_ICON[kindOf(p)])}</span>`}<strong>${esc(nameOf(p))}</strong><small>${esc(p.brand || "")}</small></button>`;
+  cmpProducts = { [a.code]: a, [b.code]: b };
+  // En-tête de chaque produit : verdict en bandeau (comme les alternatives), photo agrandissable, nom qui ouvre la fiche
+  const head = (p) => {
+    const st = verdictOf(p).status;
+    const img = p.image
+      ? `<button type="button" class="cmp-img" data-zoom-code="${esc(p.code)}" aria-label="${esc(t("zoom.open"))}"><img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer"><span class="p-img-zoom">${svg('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5"/>')}</span></button>`
+      : phArt(p, "cmp-img");
+    return `<div class="cmp-head"><span class="alt-band s-${st}">${svg(STATUS_ICON[st])}<span>${esc(S(st, "label"))}</span></span>${img}
+      <button type="button" class="cmp-name" data-open="${esc(p.code)}"><strong>${esc(nameOf(p))}</strong><small>${esc(p.brand || "")}</small><span class="cmp-see">${t("cmp.see")} ${svg(I.chev, "flip")}</span></button></div>`;
+  };
   $("sheetTitle").textContent = t("cmp.title");
   $("sheetBody").innerHTML = `<div class="cmp">
     <div class="cmp-heads">${head(a)}${head(b)}</div>
@@ -3208,31 +3222,63 @@ const TOUR = [
   { id: "settings", el: () => document.querySelector(".home-top .round-btn") },
   { id: "end", el: () => null },
 ];
+// Au premier produit ouvert : le verdict, les onglets et la photo qu'on peut agrandir
+const SHEET_TOUR = [
+  { id: "sheet_verdict", el: () => document.querySelector("#sheetBody .verdict") },
+  { id: "sheet_tabs", el: () => document.querySelector("#sheetBody .ptabs") },
+  { id: "sheet_photo", el: () => document.querySelector("#sheetBody [data-zoom]"), when: () => !!document.querySelector("#sheetBody [data-zoom]") },
+];
 let tourStep = -1;
+let tourSteps = TOUR;
+const isSheetTour = () => tourSteps !== TOUR;
 function startTour() {
   if (current !== "scan") location.hash = "#scan";
   closeSheet();
+  tourSteps = TOUR;
   tourStep = 0;
   $("tour").hidden = false;
   document.body.classList.add("touring");
   $("tourDots").innerHTML = TOUR.map(() => "<i></i>").join("");
   setTimeout(renderTour, 60);
 }
+function startSheetTour() {
+  if (tourStep >= 0 || prefs().sheetTourDone || sheet.hidden || !document.querySelector("#sheetBody .ptabs")) return;
+  tourSteps = SHEET_TOUR.filter((s) => !s.when || s.when());
+  tourStep = 0;
+  $("tour").hidden = false;
+  document.body.classList.add("touring");
+  $("tourDots").innerHTML = tourSteps.map(() => "<i></i>").join("");
+  renderTour();
+}
 function endTour() {
+  const wasSheet = isSheetTour();
   tourStep = -1;
+  tourSteps = TOUR;
   $("tour").hidden = true;
   document.body.classList.remove("touring");
+  if (wasSheet) { if (!prefs().sheetTourDone) settings.set({ sheetTourDone: true }); return; }
   if (!prefs().tourDone) settings.set({ tourDone: true });
+}
+// L'élément visé est dans la fiche produit (panneau qui défile) ou dans la page
+function scrollIntoTour(el) {
+  const r0 = el.getBoundingClientRect();
+  if (r0.top >= 70 && r0.bottom <= innerHeight - 90) return;
+  const box = el.closest("#sheetBody");
+  if (box) box.scrollTop += r0.top - innerHeight / 4;
+  else if (!el.closest(".tabbar")) window.scrollBy({ top: r0.top - innerHeight / 3, behavior: "instant" });
 }
 function renderTour() {
   if (tourStep < 0) return;
+  const TOUR = tourSteps;
   const step = TOUR[tourStep];
   const el = step.el();
   const spot = $("tourSpot"), card = $("tourCard");
   $("tourTitle").textContent = t(`tour.${step.id}.t`);
   $("tourText").textContent = t(`tour.${step.id}.p`);
-  $("tourNext").textContent = t(tourStep === TOUR.length - 1 ? "tour.go" : "tour.next");
-  $("tourSkip").textContent = t(tourStep === TOUR.length - 1 ? "tour.close" : "tour.skip");
+  const last = tourStep === TOUR.length - 1;
+  $("tourNext").textContent = t(last ? (isSheetTour() ? "tour.got_it" : "tour.go") : "tour.next");
+  $("tourSkip").textContent = t(last ? "tour.close" : "tour.skip");
+  $("tourSkip").hidden = last && isSheetTour();
   $("tourDots").querySelectorAll("i").forEach((d, i) => d.classList.toggle("on", i === tourStep));
   card.classList.remove("center");
   if (!el) {
@@ -3243,10 +3289,7 @@ function renderTour() {
   }
   spot.classList.remove("none");
   // L'élément visé reste visible : on fait défiler la page si besoin
-  const r0 = el.getBoundingClientRect();
-  if (r0.top < 70 || r0.bottom > innerHeight - 90) {
-    if (!el.closest(".tabbar")) window.scrollBy({ top: r0.top - innerHeight / 3, behavior: "instant" });
-  }
+  scrollIntoTour(el);
   const r = el.getBoundingClientRect();
   const pad = 8;
   Object.assign(spot.style, { top: `${r.top - pad}px`, left: `${r.left - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
@@ -3256,9 +3299,10 @@ function renderTour() {
   card.style.top = below + h < innerHeight - 12 ? `${below}px` : `${Math.max(12, r.top - pad - 14 - h)}px`;
 }
 $("tourNext").addEventListener("click", () => {
-  if (tourStep >= TOUR.length - 1) {
+  if (tourStep >= tourSteps.length - 1) {
+    const sheetTour = isSheetTour();
     endTour();
-    return openCamera();
+    return sheetTour ? null : openCamera();
   }
   tourStep++;
   renderTour();
@@ -3266,7 +3310,7 @@ $("tourNext").addEventListener("click", () => {
 $("tourSkip").addEventListener("click", endTour);
 $("tour").addEventListener("click", (e) => {
   if (e.target === $("tour") || e.target === $("tourSpot")) {
-    tourStep < TOUR.length - 1 ? (tourStep++, renderTour()) : endTour();
+    tourStep < tourSteps.length - 1 ? (tourStep++, renderTour()) : endTour();
   }
 });
 window.addEventListener("resize", () => renderTour());
