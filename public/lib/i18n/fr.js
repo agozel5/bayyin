@@ -1445,4 +1445,11 @@ export default {
   "notes.mascot": "Ici, je vous explique comment chaque note est calculée, et d'où viennent nos informations.",
   // ---------- Premium classements ----------
   "premium.need.rankings": "Ce classement fait partie de Premium. Les 3 premiers rayons de chaque onglet restent gratuits.",
+  // ---------- Décomposition de la note ----------
+  "bd.nutrition": "Nutrition",
+  "bd.additives": "Additifs",
+  "bd.nova": "Transformation",
+  "bd.bio": "Bio",
+  // ---------- Risque nul ----------
+  "risk.short.none": "Sans risque",
 };

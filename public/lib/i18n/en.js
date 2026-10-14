@@ -1431,4 +1431,11 @@ export default {
   "notes.mascot": "Here I explain how each score is calculated, and where our information comes from.",
   // ---------- Premium classements ----------
   "premium.need.rankings": "This ranking is part of Premium. The first 3 aisles of each tab stay free.",
+  // ---------- Décomposition de la note ----------
+  "bd.nutrition": "Nutrition",
+  "bd.additives": "Additives",
+  "bd.nova": "Processing",
+  "bd.bio": "Organic",
+  // ---------- Risque nul ----------
+  "risk.short.none": "No risk",
 };

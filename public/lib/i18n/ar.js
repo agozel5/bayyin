@@ -1431,4 +1431,11 @@ export default {
   "notes.mascot": "هنا أشرح لك كيف يُحسب كل تقييم، ومن أين تأتي معلوماتنا.",
   // ---------- Premium classements ----------
   "premium.need.rankings": "هذا التصنيف جزء من الاشتراك المميز. تبقى أول 3 أقسام في كل تبويب مجانية.",
+  // ---------- Décomposition de la note ----------
+  "bd.nutrition": "التغذية",
+  "bd.additives": "المضافات",
+  "bd.nova": "التصنيع",
+  "bd.bio": "عضوي",
+  // ---------- Risque nul ----------
+  "risk.short.none": "بدون خطر",
 };

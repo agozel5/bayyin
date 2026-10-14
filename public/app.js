@@ -350,6 +350,7 @@ async function loadEnv(p) {
   if (e === undefined) { box.dataset.done = ""; box.innerHTML = `<p class="notes">${esc(t("env.error"))}</p>`; return; }
   if (!e || (!e.known && e.production === null)) { box.innerHTML = `<p class="notes">${esc(t("env.none"))}</p>`; return; }
   const g = e.grade;
+  const gsScale = e.known ? scaleHtml(GS_STEPS, GS_GRADES.indexOf(g), { label: `Green-Score ${g}`, cls: "scale-gs" }) : "";
   const head = e.known
     ? `<div class="gs-head"><span class="gs-badge gs-${g}">${g === "a-plus" ? "A+" : g.toUpperCase()}</span>
         <span><strong>Green-Score</strong><small>${esc(t(`env.grade.${g}`))}${e.score !== null ? ` · <span dir="ltr">${e.score}/100</span>` : ""}</small></span></div>`
@@ -361,7 +362,7 @@ async function loadEnv(p) {
   const pack = e.packaging.length
     ? e.packaging.map((x) => esc([envWord("shape", x.shape), envWord("mat", x.material)].filter(Boolean).join(" · "))).join(", ")
     : esc(t("env.unknown"));
-  box.innerHTML = `${head}
+  box.innerHTML = `${head}${gsScale}
     <div class="env-rows">
       ${e.production !== null ? `<details class="nut-d" open><summary>${envRow(ENV_ICO.prod, t("env.production"), esc(t(e.production >= 60 ? "env.prod.low" : e.production >= 40 ? "env.prod.mid" : "env.prod.high")), `<span dir="ltr">${e.production}/100</span>`)}</summary>${prodGauge}
         <p class="env-note">${esc(t("env.prod_note", { co2: fmt(e.co2 ?? 0), ref: e.reference || "—" }))}</p></details>` : ""}
@@ -430,6 +431,32 @@ function gaugeHtml(n) {
     <div class="gauge-labels"><span style="left:0">0</span><span style="left:${pct(a)}%">${r(a)}</span><span style="left:${pct(b)}%">${r(b)}</span><span style="left:100%">${r(top)}</span></div>
   </div>`;
 }
+// Échelle officielle (Nutri-Score, NOVA, Green-Score, risque) : la case du produit est agrandie,
+// et le même curseur que les jauges glisse jusqu'à elle
+function scaleHtml(steps, index, { label = "", cls = "" } = {}) {
+  if (index < 0) return "";
+  const w = 100 / steps.length;
+  return `<div class="gauge scale ${cls}" dir="ltr" role="img" aria-label="${esc(label)}">
+    <div class="scale-row">${steps.map((st, i) => `<span class="scale-step${i === index ? " on" : ""}" style="--sc:${st.color}">${esc(st.label)}</span>`).join("")}</div>
+    <b class="gauge-mark" style="--x:${w * index + w / 2}%"></b></div>`;
+}
+const NS_STEPS = [["A", "#038141"], ["B", "#85BB2F"], ["C", "#F6B800"], ["D", "#EE8100"], ["E", "#E63E11"]].map(([label, color]) => ({ label, color }));
+const NOVA_STEPS = [["1", "#00AA00"], ["2", "#C8A800"], ["3", "#FF6600"], ["4", "#E60000"]].map(([label, color]) => ({ label, color }));
+const GS_STEPS = [["A+", "#00703A"], ["A", "#1E8F4E"], ["B", "#4E9A0E"], ["C", "#D4A000"], ["D", "#E07020"], ["E", "#D3261F"], ["F", "#9E1A1A"]].map(([label, color]) => ({ label, color }));
+// « Pourquoi cette note ? » : les 4 critères côte à côte, chacun rempli selon les points obtenus
+function breakdownHtml(s) {
+  const parts = [
+    { id: "nutrition", got: s.parts.nutrition, max: 55, label: t("bd.nutrition") },
+    { id: "additives", got: s.parts.additives, max: 25, label: t("bd.additives") },
+    { id: "nova", got: s.parts.nova, max: 10, label: t("bd.nova") },
+    { id: "bio", got: s.parts.bio, max: 10, label: t("bd.bio") },
+  ];
+  return `<div class="gauge breakdown" dir="ltr">
+    <div class="bd-bar">${parts.map((x) => `<span class="bd-seg bd-${x.id}" style="flex:${x.max}"><i style="--f:${x.max ? x.got / x.max : 0}"></i></span>`).join("")}</div>
+    <div class="bd-legend">${parts.map((x) => `<span class="bd-key bd-${x.id}"><b></b>${esc(x.label)} <strong>${x.got}</strong><small>/${x.max}</small></span>`).join("")}</div>
+  </div>`;
+}
+
 function nutRow(n) {
   const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
   return `<details class="nut-d lv-${n.level}"${n.t ? " open" : ""}><summary class="nut lv-${n.level}">
@@ -455,6 +482,8 @@ function healthSection(p) {
   const hasNut = neg.length || pos.length;
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.health")}</h3><small>${t("detail.per", { u: t(h.nutrition.drink ? "unit.100ml" : "unit.100g") })}</small></div>
     <p class="lead">${lead}</p>
+    ${s && s.parts.nutrition !== undefined ? breakdownHtml(s) : ""}
+    ${s ? `<p class="scale-t">Nutri-Score</p>${scaleHtml(NS_STEPS, "abcde".indexOf(s.nutriscore), { label: `Nutri-Score ${s.nutriscore.toUpperCase()}`, cls: "scale-ns" })}` : ""}
     ${s && s.estimated ? `<p class="ns-est">${svg(I.bulb)}<span>${esc(t(s.estimated.saltMissing ? "detail.ns_estimated_nosalt" : "detail.ns_estimated"))}</span></p>` : ""}
     ${s && !p.ingredients && !(p.raw && (p.raw.additives_tags || []).length) ? `<p class="ns-est">${svg(I.bulb)}<span>${esc(t("detail.additives_unchecked"))}</span></p>` : ""}
     ${neg.length || risky ? `<p class="sub-label">${t("detail.defects")}</p>${list(neg)}${risky ? addRow(true) : ""}` : ""}
@@ -535,13 +564,15 @@ function ingredientListSection(p) {
   </details></section>`;
 }
 
+const RISK_STEPS = () => [["none", "#3FB46B"], ["limite", "#D9B600"], ["modere", "#F0A23A"], ["eleve", "#E2533F"]].map(([k, color]) => ({ label: t(`risk.short.${k}`), color }));
+const riskScale = (level) => scaleHtml(RISK_STEPS(), ["none", "limite", "modere", "eleve"].indexOf(level), { label: t(`risk.${level}`), cls: "scale-risk" });
 function additivesSection(p) {
   const h = p.health;
   if (!h || !h.additives.length) return "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.watch")}</h3><small>${h.additives.length}</small></div>
     <div class="risks">${h.additives
       .map(
-        (a) => `<details class="risk"><summary><span>${esc(a.code)} · ${esc(t(`addname.${a.code.toLowerCase()}`))}</span><span class="pill r-${a.level}">${t(`risk.${a.level}`)}</span></summary><p>${esc(t(`risk.reason.${a.key}`))}</p><p class="risk-src">${sourceLine(RISK_SOURCES[a.key])}</p></details>`
+        (a) => `<details class="risk"><summary><span>${esc(a.code)} · ${esc(t(`addname.${a.code.toLowerCase()}`))}</span><span class="pill r-${a.level}">${t(`risk.${a.level}`)}</span></summary>${riskScale(a.level)}<p>${esc(t(`risk.reason.${a.key}`))}</p><p class="risk-src">${sourceLine(RISK_SOURCES[a.key])}</p></details>`
       )
       .join("")}</div></section>`;
 }
@@ -587,7 +618,7 @@ function extraSection(p) {
       ? `<div class="tags">${h.allergens.map((a) => `<span class="tag">${esc(a)}</span>`).join("")}</div>`
       : `<p class="notes">${t("detail.allergens_none")}</p>`;
   const nova = h.nova
-    ? `<div class="nova"><span class="nova-num nova-${h.nova.group}">${h.nova.group}</span><p><strong>${t(`nova.${h.nova.group}.t`)}</strong>${t(`nova.${h.nova.group}.p`)}</p></div>`
+    ? `${scaleHtml(NOVA_STEPS, h.nova.group - 1, { label: `NOVA ${h.nova.group}`, cls: "scale-nova" })}<div class="nova"><span class="nova-num nova-${h.nova.group}">${h.nova.group}</span><p><strong>${t(`nova.${h.nova.group}.t`)}</strong>${t(`nova.${h.nova.group}.p`)}</p></div>`
     : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.allergens")}</h3></div>${allergens}</section>
     ${nova ? `<section class="sec"><div class="sec-head"><h3>${t("detail.nova")}</h3><small>${t("detail.nova_sub")}</small></div>${nova}</section>` : ""}`;
@@ -833,6 +864,12 @@ function sheetMiniHtml(p) {
   const img = p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : "";
   return `${img}<span class="mini-st s-${st}">${svg(STATUS_ICON[st])}</span>${s ? `<span class="mini-sc g-${s.grade}" dir="ltr">${s.score}</span>` : ""}`;
 }
+// Écrans de la fiche qui ne sont pas un produit (comparaison, Premium, panier) : pas d'en-tête compact
+function resetSheetHeader() {
+  if (heroObserver) heroObserver.disconnect();
+  sheet.classList.remove("compact");
+  $("sheetMini").innerHTML = "";
+}
 function watchHero() {
   const hero = $("sheetBody").querySelector(".verdict");
   if (!("IntersectionObserver" in window)) return;
@@ -845,12 +882,26 @@ function watchHero() {
   if (hero) heroObserver.observe(hero);
 }
 
+// La note du bandeau compte de 0 jusqu'à sa valeur, au rythme de l'anneau qui se remplit
+function countUp(el, to, ms = 900) {
+  if (!el || REDUCED()) return;
+  const t0 = performance.now() + 250; // même départ que l'anneau
+  const tick = (now) => {
+    const k = Math.min(1, Math.max(0, (now - t0) / ms));
+    el.firstChild.nodeValue = String(Math.round(to * (1 - Math.pow(1 - k, 3))));
+    if (k < 1) requestAnimationFrame(tick);
+  };
+  el.firstChild.nodeValue = "0";
+  requestAnimationFrame(tick);
+}
 function renderSheetProduct(p) {
   sheetProduct = p;
   $("sheetTitle").textContent = nameOf(p);
   $("sheetBody").innerHTML = productDetail(p);
   $("sheetMini").innerHTML = sheetMiniHtml(p);
   watchHero();
+  const sc = scoreOf(p);
+  if (sc) countUp($("sheetBody").querySelector(".v-foot .ring > span"), sc.score);
   $("sheetCompare").hidden = kindOf(p) === "medicine";
   $("sheetShare").hidden = false;
   refreshFav();
@@ -2649,6 +2700,7 @@ settings.subscribe((st, patch) => {
 // Navigation
 // ===========================================================================
 const TABS = ["scan", "search", "history", "additives", "settings", "places", "rankings"];
+let previousTab = null;
 let current = null;
 
 // Bouton central : depuis un autre onglet il ramène à l'accueil ; sur l'accueil il ouvre la caméra.
@@ -2665,8 +2717,23 @@ function showTab(name) {
   if (name === "infos") name = "settings"; // ancienne adresse
   if (!TABS.includes(name)) name = "scan";
   const wasSettings = current === "settings";
+  const prevName = current;
+  // L'écran arrive du côté de l'onglet touché (de droite si on va vers la droite de la barre)
+  const ORDER = ["search", "history", "scan", "additives", "settings"];
+  const from = ORDER.indexOf(prevName), to = ORDER.indexOf(name);
+  const dir = from < 0 || to < 0 ? "next" : to >= from ? "next" : "prev";
+  document.querySelectorAll(".view").forEach((v) => {
+    const show = v.dataset.view === name;
+    if (show && v.hidden && previousTab !== null && !REDUCED()) {
+      v.classList.remove("enter-next", "enter-prev");
+      v.hidden = false;
+      void v.offsetWidth; // relance l'animation
+      v.classList.add(`enter-${dir}`);
+    }
+    v.hidden = !show;
+  });
+  previousTab = name;
   current = name;
-  document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
   document.querySelectorAll(".tab").forEach((tab) =>
     tab.dataset.tab === name ? tab.setAttribute("aria-current", "page") : tab.removeAttribute("aria-current")
   );
@@ -2991,6 +3058,7 @@ $("toolBasket").addEventListener("click", () => {
 
 function openBasket({ replace = false } = {}) {
   sheetCode = "basket";
+  resetSheetHeader();
   sheetProduct = null;
   $("sheetTitle").textContent = t("basket.title");
   $("sheetCompare").hidden = true;
@@ -3034,6 +3102,7 @@ function renderBasket() {
 let compareBase = null;
 function pickCompareSecond(base) {
   compareBase = base;
+  resetSheetHeader();
   const others = store.all().map((e) => e.p).filter((p) => p.code !== base.code && kindOf(p) === kindOf(base));
   $("sheetTitle").textContent = t("cmp.title");
   $("sheetCompare").hidden = true;
@@ -3065,6 +3134,7 @@ $("toolCompare").addEventListener("click", () => {
 let cmpProducts = {};
 function showCompare(code) {
   const a = compareBase;
+  resetSheetHeader();
   const b = (store.get(code) || {}).p || memo.get(code);
   if (!a || !b) return;
   sheetCode = "compare";
@@ -3084,13 +3154,19 @@ function showCompare(code) {
     const n = h && h.nutrition && [...h.nutrition.negatives, ...h.nutrition.positives].find((x) => x.id === id);
     return n ? n.value : null;
   };
+  // Deux barres en miroir depuis le centre : on voit qui en a le plus, le meilleur est en vert
+  const duel = (x, y, [wa, wb]) => {
+    if (x === null || y === null) return "";
+    const m = Math.max(x, y) || 1;
+    return `<div class="duel" dir="ltr" aria-hidden="true"><span class="duel-l ${wa ? "win" : ""}"><i style="--w:${(x / m) * 100}%"></i></span><span class="duel-r ${wb ? "win" : ""}"><i style="--w:${(y / m) * 100}%"></i></span></div>`;
+  };
   // Additifs à risque (aliments) ou ingrédients controversés (cosmétiques)
   const watchCount = (p) => { const h = healthOf(p); return ((h && (h.additives || (h.risks || []).filter((r) => r.level))) || []).length; };
   const rank = { halal_certifie: 4, halal_probable: 3, inconnu: 2, mashbouh: 1, haram: 0 };
   const rows = [
     [t("detail.halal"), `<span class="pill s-${va.status}"><span class="dot"></span>${S(va.status, "short")}</span>`, `<span class="pill s-${vb.status}"><span class="dot"></span>${S(vb.status, "short")}</span>`, better(rank[va.status], rank[vb.status])],
     [t(kindOf(a) === "beauty" ? "detail.cosmetic" : "detail.health"), sa ? `${sa.score}/100` : "—", sb ? `${sb.score}/100` : "—", better(sa && sa.score, sb && sb.score)],
-    ...["sugars", "saturated-fat", "salt", "energy", "fiber", "proteins"].map((id) => [t(`nut.${id}`), nut(a, id), nut(b, id), better(val(a, id), val(b, id), !["fiber", "proteins"].includes(id))]),
+    ...["sugars", "saturated-fat", "salt", "energy", "fiber", "proteins"].map((id) => [t(`nut.${id}`), nut(a, id), nut(b, id), better(val(a, id), val(b, id), !["fiber", "proteins"].includes(id)), duel(val(a, id), val(b, id), better(val(a, id), val(b, id), !["fiber", "proteins"].includes(id)))]),
     [t(kindOf(a) === "beauty" ? "detail.cosmetic_watch" : "detail.watch"), String(watchCount(a)), String(watchCount(b)), better(watchCount(a), watchCount(b), true)],
     [t("detail.nova"), a.health && a.health.nova ? String(a.health.nova.group) : "—", b.health && b.health.nova ? String(b.health.nova.group) : "—",
       better(a.health && a.health.nova && a.health.nova.group, b.health && b.health.nova && b.health.nova.group, true)],
@@ -3113,7 +3189,7 @@ function showCompare(code) {
   $("sheetBody").innerHTML = `<div class="cmp">
     <div class="cmp-heads">${head(a)}${head(b)}</div>
     <div class="cmp-table">${rows
-      .map(([label, x, y, [wa, wb]]) => `<div class="cmp-row"><span class="cmp-label">${esc(label)}</span><span class="cmp-cell ${wa}">${x}</span><span class="cmp-cell ${wb}">${y}</span></div>`)
+      .map(([label, x, y, [wa, wb], bars = ""]) => `<div class="cmp-row"><span class="cmp-label">${esc(label)}</span><span class="cmp-cell ${wa}">${x}</span><span class="cmp-cell ${wb}">${y}</span>${bars}</div>`)
       .join("")}</div>
     <p class="notes cmp-note">${t("cmp.note")}</p>
   </div>`;
@@ -3455,6 +3531,7 @@ async function renderRankings(sub) {
           const img = p.image ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : phArt(p, "row-img");
           return `<li><button type="button" class="rank-row" data-open="${esc(p.code)}"><span class="rank-n${i < 3 ? " top" : ""}">${i + 1}</span>${img}
             <span class="rank-t"><strong dir="auto">${esc(nameOf(p))}</strong><small dir="auto">${esc(p.brand || "")}</small>
+            <span class="rank-bar g-${s.grade}" style="--w:${s.score}%" aria-hidden="true"><i></i></span>
             <span class="row-tags">${statusPill(v.status)}${alertTag(p)}</span></span>
             <span class="rank-score g-${s.grade}" dir="ltr"><b>${s.score}</b><small>/100</small><i>${esc(t(`grade.${s.grade}`))}</i></span></button></li>`;
         }).join("")}</ol>`
@@ -3700,6 +3777,7 @@ function requirePremium(feature) {
 }
 function openPremium(feature = "") {
   premiumFocus = feature;
+  resetSheetHeader();
   if (!cameraEl.hidden) closeCamera({ keepHistory: true });
   sheetCode = "premium";
   sheetProduct = null;

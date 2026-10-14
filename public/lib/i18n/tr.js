@@ -1431,4 +1431,11 @@ export default {
   "notes.mascot": "Burada her puanın nasıl hesaplandığını ve bilgilerimizin nereden geldiğini açıklıyorum.",
   // ---------- Premium classements ----------
   "premium.need.rankings": "Bu sıralama Premium'un parçasıdır. Her sekmedeki ilk 3 reyon ücretsiz kalır.",
+  // ---------- Décomposition de la note ----------
+  "bd.nutrition": "Besin",
+  "bd.additives": "Katkılar",
+  "bd.nova": "İşlenme",
+  "bd.bio": "Organik",
+  // ---------- Risque nul ----------
+  "risk.short.none": "Risksiz",
 };

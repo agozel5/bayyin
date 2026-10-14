@@ -1820,3 +1820,75 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 .places-empty p{margin:0;max-width:30ch;line-height:1.45}
 
 .rank-head{margin-bottom:14px}
+
+/* =====================================================================
+   Visualisations : échelles, décomposition de la note, duels, barres de classement
+   ===================================================================== */
+/* Échelles officielles */
+.scale-t{margin:14px 0 2px;font-weight:700;font-size:.92rem;color:var(--muted)}
+.scale{margin:4px 0 10px;padding-top:12px}
+.scale-row{display:flex;gap:3px;align-items:center;height:30px}
+.scale-step{flex:1;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--sc);color:#fff;font-weight:800;font-size:.78rem;opacity:.42;transition:transform .35s cubic-bezier(.3,1.4,.5,1),opacity .3s,height .3s}
+.scale-step:first-child{border-radius:11px 6px 6px 11px}
+.scale-step:last-child{border-radius:6px 11px 11px 6px}
+.scale-step.on{opacity:1;height:30px;font-size:1rem;box-shadow:0 4px 10px -4px var(--sc);border-radius:8px}
+.scale .gauge-mark{top:0}
+.scale-risk{margin:2px 0 8px}
+.scale-risk .scale-step{font-size:.66rem;font-weight:700}
+.scale-risk .scale-step.on{font-size:.74rem}
+.scale-nova{margin-bottom:4px}
+.scale-gs{margin:0 0 12px}
+@media (prefers-reduced-motion:no-preference){
+  .scale .scale-step.on{transform:scale(.7)}
+  .scale.in .scale-step.on{transform:none;transition-delay:.55s}
+  .scale .gauge-bar{clip-path:none}
+}
+
+/* « Pourquoi cette note ? » */
+.breakdown{margin:4px 0 6px;padding-top:4px}
+.bd-bar{display:flex;gap:4px;height:12px}
+.bd-seg{position:relative;border-radius:999px;background:var(--tint-2);overflow:hidden}
+.bd-seg i{position:absolute;inset:0;border-radius:inherit;background:var(--bc);transform-origin:left center;transform:scaleX(var(--f))}
+.bd-nutrition{--bc:#1E8F4E}.bd-additives{--bc:#3F79B5}.bd-nova{--bc:#E0912A}.bd-bio{--bc:#7AA834}
+.bd-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.82rem;color:var(--muted)}
+.bd-key{display:inline-flex;align-items:baseline;gap:5px}
+.bd-key b{width:9px;height:9px;border-radius:50%;background:var(--bc);align-self:center}
+.bd-key strong{color:var(--fg);font-variant-numeric:tabular-nums}
+.bd-key small{font-size:.74rem}
+@media (prefers-reduced-motion:no-preference){
+  .breakdown .bd-seg i{transform:scaleX(0);transition:transform .7s cubic-bezier(.25,.8,.25,1)}
+  .breakdown .bd-seg:nth-child(2) i{transition-delay:.15s}
+  .breakdown .bd-seg:nth-child(3) i{transition-delay:.3s}
+  .breakdown .bd-seg:nth-child(4) i{transition-delay:.45s}
+  .breakdown.in .bd-seg i{transform:scaleX(var(--f))}
+}
+
+/* Comparaison : barres en miroir */
+.duel{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 14px 12px}
+.duel span{height:6px;border-radius:999px;background:var(--tint-2);position:relative;overflow:hidden}
+.duel i{position:absolute;top:0;bottom:0;width:var(--w);border-radius:inherit;background:var(--faint)}
+.duel-l i{right:0}
+.duel-r i{left:0}
+.duel .win i{background:var(--c-cert)}
+@media (prefers-reduced-motion:no-preference){
+  .duel i{animation:duel-grow .7s cubic-bezier(.25,.8,.25,1) both}
+  .duel-l i{transform-origin:right center}.duel-r i{transform-origin:left center}
+  @keyframes duel-grow{from{transform:scaleX(0)}to{transform:none}}
+}
+
+/* Classements : barre de note sous le nom */
+.rank-bar{display:block;height:4px;margin-top:5px;border-radius:999px;background:var(--tint-2);overflow:hidden;max-width:160px}
+.rank-bar i{display:block;height:100%;width:var(--w);border-radius:inherit;background:var(--c)}
+@media (prefers-reduced-motion:no-preference){
+  .rank-bar i{transform-origin:left center;animation:duel-grow .8s .15s cubic-bezier(.25,.8,.25,1) both}
+}
+
+/* Onglets du bas : l'écran glisse depuis le côté de l'onglet touché */
+@media (prefers-reduced-motion:no-preference){
+  .view.enter-next{animation:view-next .3s cubic-bezier(.2,.8,.2,1)}
+  .view.enter-prev{animation:view-prev .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes view-next{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+  @keyframes view-prev{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+  [dir="rtl"] .view.enter-next{animation-name:view-prev}
+  [dir="rtl"] .view.enter-prev{animation-name:view-next}
+}
