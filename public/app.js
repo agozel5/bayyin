@@ -802,6 +802,16 @@ function animateGauges() {
   }
   gauges.forEach((g) => gaugeObserver.observe(g));
 }
+// Photo de produit qui ne se charge pas (hors connexion, image supprimée) : un pictogramme discret
+// remplace l'icône d'image cassée du navigateur
+const IMG_FALLBACK = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#EEF1EE"/><path d="M7 9l5-2.5L17 9v6l-5 2.5L7 15z M7 9l5 2.5L17 9 M12 11.5v6" fill="none" stroke="#9AA59F" stroke-width="1.2" stroke-linejoin="round"/></svg>');
+document.addEventListener("error", (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement) || img.dataset.fallback || img.id === "lbImg") return;
+  img.dataset.fallback = "1";
+  img.src = IMG_FALLBACK;
+}, true);
+
 // Une rangée qu'on déplie rejoue l'animation de sa jauge
 document.addEventListener("toggle", (e) => {
   const d = e.target;
@@ -2656,7 +2666,11 @@ function showTab(name) {
   if (!TABS.includes(name)) name = "scan";
   const wasSettings = current === "settings";
   current = name;
-  document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
+  document.querySelectorAll(".view").forEach((v) => {
+    const show = v.dataset.view === name;
+    if (show && v.hidden) { v.classList.remove("entering"); void v.offsetWidth; v.classList.add("entering"); }
+    v.hidden = !show;
+  });
   document.querySelectorAll(".tab").forEach((tab) =>
     tab.dataset.tab === name ? tab.setAttribute("aria-current", "page") : tab.removeAttribute("aria-current")
   );
@@ -3241,7 +3255,12 @@ function renderPlaces() {
       ? esc(st.error)
       : st.center
         ? esc(tn("places.found", vis.length, { where: st.label, r: st.radius / 1000 }))
-        : esc(t("places.intro"));
+        : "";
+  if (!st.center && !st.loading && !st.error) {
+    $("placesList").innerHTML = `<div class="places-empty">${mascot("search", { size: 96 })}<p>${esc(t("places.intro"))}</p></div>`;
+    $("placesLocate").disabled = false;
+    return updatePlacesMap();
+  }
   $("placesList").innerHTML = st.center && !st.loading && !st.error && !vis.length
     ? `<div class="empty"><strong>${t("places.empty_t")}</strong><p>${t("places.empty_p")}</p></div>`
     : vis.map(placeCard).join("");
@@ -3402,7 +3421,7 @@ async function renderRankings(sub) {
     try { index = await rankIndex(); } catch { /* hors connexion : liste complète, sans les nombres */ }
     if (job !== rankJob) return;
     const cats = RANK_CATEGORIES.filter((c) => c.kind === rankKind && (!index || index.categories[c.id]));
-    box.innerHTML = `<p class="rank-intro">${esc(t("rank.intro"))}</p>
+    box.innerHTML = `<div class="rank-head">${mascot("bravo", { size: 72 })}<p>${esc(t("rank.intro"))}</p></div>
       <div class="segmented" id="rankKinds" role="tablist">${["food", "beauty"].map((k) =>
         `<button type="button" role="tab" aria-selected="${k === rankKind}" data-rank-kind="${k}">${t(`rank.kind.${k}`)}</button>`).join("")}</div>
       <div class="rank-cats">${cats.map((c) => `<a class="rank-cat${rankLocked(c) ? " locked" : ""}" href="#rankings/${c.id}" data-rank-cat="${c.id}">${rankIco(c.id)}

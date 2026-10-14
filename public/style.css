@@ -1791,3 +1791,37 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 .pm-mascot{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,rgb(255 255 255 / .22),transparent 70%);display:flex;align-items:flex-end;justify-content:center}
 /* Liste réaffichée après une mise à jour : pas de nouvelle cascade */
 .settled > *{animation:none!important}
+
+/* =====================================================================
+   Finitions : libellés en casse normale, chiffres alignés, podium, transitions d'écran
+   ===================================================================== */
+/* Libellés de section : plus de majuscules espacées, une graisse et une couleur suffisent */
+.label,.sub-label,.set-group-t,.st-kicker{text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:700;color:var(--muted)}
+.sub-label{margin-top:10px}
+.ss-kicker{text-transform:none;letter-spacing:0;font-size:.9rem}
+.eyebrow{text-transform:none;letter-spacing:0;font-size:.9rem}
+/* Chiffres de même largeur : notes et valeurs alignées d'une ligne à l'autre */
+.mini-score,.rank-score,.ring,.nut-val,.tab-score,.mini-sc,.cmp-cell,.add-code,.env-right,.p-code{font-variant-numeric:tabular-nums}
+
+/* Classements : médailles pour le podium */
+.rank-n.top{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#fff;position:relative;
+  background:radial-gradient(circle at 35% 30%,var(--m1),var(--m2));box-shadow:0 2px 6px -2px var(--m2),inset 0 -2px 0 rgb(0 0 0 / .15)}
+.rank-list li:nth-child(1) .rank-n.top{--m1:#F7D774;--m2:#C9971C}
+.rank-list li:nth-child(2) .rank-n.top{--m1:#E4E9EC;--m2:#97A3AB}
+.rank-list li:nth-child(3) .rank-n.top{--m1:#EBB98A;--m2:#B06F33}
+.rank-list li:nth-child(-n+3) .rank-row{background:linear-gradient(90deg,color-mix(in srgb,var(--m,#F7D774) 10%,transparent),transparent 60%)}
+.rank-list li:nth-child(1){--m:#F7D774}.rank-list li:nth-child(2){--m:#C7D0D5}.rank-list li:nth-child(3){--m:#EBB98A}
+.rank-head{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
+.rank-head p{margin:0;color:var(--muted);line-height:1.45}
+.rank-head .mascot{flex:none}
+
+/* Commerces halal : état de départ illustré */
+.places-empty{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:10px 12px 4px;color:var(--muted)}
+.places-empty p{margin:0;max-width:30ch;line-height:1.45}
+
+/* Changement d'onglet principal : l'écran apparaît en fondu (réponse au toucher, pas de décor) */
+@media (prefers-reduced-motion:no-preference){
+  .view.entering{animation:view-in .22s ease-out}
+  @keyframes view-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+.rank-head{margin-bottom:14px}
