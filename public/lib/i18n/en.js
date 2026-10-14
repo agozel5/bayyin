@@ -1438,4 +1438,22 @@ export default {
   "bd.bio": "Organic",
   // ---------- Risque nul ----------
   "risk.short.none": "No risk",
+  // ---------- Visualisations 2 ----------
+  "chain.title": "Halal check",
+  "chain.s.ing": "Ingredients",
+  "chain.s.origin": "Origin",
+  "chain.s.add": "Additives",
+  "chain.s.cert": "Label",
+  "chain.ing_ok": "List read",
+  "chain.ing_none": "No list",
+  "chain.ok": "All clear",
+  "chain.covered": "Covered by label",
+  "chain.na": "Can't check",
+  "chain.cert_none": "No label",
+  "chain.cert_ignored": "Body not followed",
+  "bilan.title": "My overview",
+  "bilan.week": "Products checked in the last 7 days",
+  "bilan.avg": "Average health score",
+  "basket.avg_t": "Basket average score",
+  "risk.none": "No known risk",
 };

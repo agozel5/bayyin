@@ -263,6 +263,46 @@ function medicineSection(p) {
   </section>`;
 }
 
+// Chaîne de vérification : ce que Bayyin a contrôlé, étape par étape (ingrédients, origine, additifs, label).
+// Une étape en défaut renvoie au point concerné plus bas.
+const CHAIN_ICO = {
+  ing: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+  origin: '<path d="M8 4c0 3 1 4 4 4s4-1 4-4"/><path d="M6 10c0 6 2.5 10 6 10s6-4 6-10"/><path d="M10 14h4"/>',
+  add: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  cert: '<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+};
+function chainSteps(p, v) {
+  const hasList = !!(p.ingredients || (p.raw && (p.raw.additives_tags || []).length)) || v.flags.length > 0;
+  const step = (id, list) => {
+    if (!hasList && id !== "cert") return { id, state: "na", sub: t("chain.na") };
+    const bad = list.filter((f) => f.severity === "haram"), doubt = list.filter((f) => f.severity === "mashbouh");
+    const worst = bad.length ? bad : doubt;
+    if (worst.length) return { id, state: bad.length ? "bad" : "warn", sub: flagLabel(worst[0]) + (worst.length > 1 ? ` +${worst.length - 1}` : ""), jump: worst[0].id };
+    if (list.some((f) => f.covered)) return { id, state: "ok", sub: t("chain.covered") };
+    return { id, state: "ok", sub: t("chain.ok") };
+  };
+  const cert = v.certification
+    ? { id: "cert", state: "ok", sub: v.certification.organisme || t("detail.certified") }
+    : v.certIgnored ? { id: "cert", state: "warn", sub: t("chain.cert_ignored") } : { id: "cert", state: "none", sub: t("chain.cert_none") };
+  return [
+    hasList ? { id: "ing", state: "ok", sub: t("chain.ing_ok") } : { id: "ing", state: "na", sub: t("chain.ing_none") },
+    step("origin", v.flags.filter((f) => !f.code)),
+    step("add", v.flags.filter((f) => f.code)),
+    cert,
+  ];
+}
+const CHAIN_MARK = { ok: I.check, bad: I.cross, warn: '<path d="M12 7v6"/><path d="M12 17h.01"/>', na: I.dash, none: I.dash };
+function chainHtml(p, v) {
+  if (kindOf(p) === "medicine") return "";
+  const steps = chainSteps(p, v);
+  const label = steps.map((s) => `${t(`chain.s.${s.id}`)} : ${s.sub}`).join(" · ");
+  return `<ol class="chain" aria-label="${esc(`${t("chain.title")} — ${label}`)}">${steps.map((s, i) => {
+    const inner = `<span class="ch-dot">${svg(CHAIN_ICO[s.id])}<span class="ch-mark">${svg(CHAIN_MARK[s.state])}</span></span>
+      <span class="ch-name">${esc(t(`chain.s.${s.id}`))}</span><span class="ch-sub" dir="auto">${esc(s.sub)}</span>`;
+    return `<li class="ch-step ch-${s.state}" style="--i:${i}">${s.jump ? `<button type="button" class="ch-btn" data-jump-flag="${esc(s.jump)}">${inner}</button>` : `<span class="ch-btn">${inner}</span>`}</li>`;
+  }).join("")}</ol>`;
+}
+
 function halalSection(p, v) {
   // Label lu sur la fiche Open Food Facts. Quand l'organisme publie une liste (AVS, Achahada, HMC),
   // loadCertCheck remplace la note par le résultat de la vérification ; sinon on donne un moyen de vérifier.
@@ -291,7 +331,7 @@ function halalSection(p, v) {
             : f.topic && f.decision
               ? `<span class="flag-setting">${esc(t("detail.by_setting", { topic: t(`topic.${f.topic}`), d: t(`decision.${f.decision}`).toLowerCase() }))} <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>`
               : "";
-          return `<div class="flag ${f.severity}">
+          return `<div class="flag ${f.severity}" data-fid="${esc(f.id)}">
             <div class="flag-top"><span class="flag-term">${esc(flagLabel(f))}</span><span class="pill ${pillCls}">${t(`sev.${f.severity}`)}</span></div>
             <span class="flag-why">${esc(flagReason(f))}</span>
             ${setting}
@@ -309,7 +349,7 @@ function halalSection(p, v) {
   const twins = !p.ingredients && !p.local && /^\d+$/.test(p.code) && kindOf(p) === "food" && nameOf(p)
     ? `<div id="twinBox" class="twins" hidden></div>` : "";
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
-    ${cert}${ignored}
+    ${chainHtml(p, v)}${cert}${ignored}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
     ${flags}${askBrand(p, v)}${ocrCta}${twins}</section>`;
 }
@@ -817,21 +857,26 @@ function showSheet({ replace = false, fromScan = false } = {}) {
 }
 
 // Jauges animées à l'arrivée à l'écran : les segments se remplissent, puis le repère glisse jusqu'à la valeur
-let gaugeObserver = null;
-function animateGauges() {
-  const root = $("sheetBody");
-  const gauges = root.querySelectorAll(".gauge:not(.in)");
+// (fiche : la fiche défile ; écrans : la page défile). Même chose pour les anneaux et barres (.viz).
+const gaugeObservers = new Map();
+function animateGauges(container) {
+  if (!(container instanceof Element)) container = $("sheetBody"); // appelé aussi par requestAnimationFrame
+  if (!container) return;
+  const gauges = container.querySelectorAll(".gauge:not(.in), .viz:not(.in)");
   if (!gauges.length) return;
   if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) {
     gauges.forEach((g) => g.classList.add("in"));
     return;
   }
-  if (!gaugeObserver) {
-    gaugeObserver = new IntersectionObserver((entries) => {
-      for (const en of entries) if (en.isIntersecting) { en.target.classList.add("in"); gaugeObserver.unobserve(en.target); }
-    }, { root, threshold: 0.6 });
+  const root = container.closest("#sheetBody") ? $("sheetBody") : null;
+  const key = root ? "sheet" : "page";
+  if (!gaugeObservers.has(key)) {
+    const obs = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) { en.target.classList.add("in"); obs.unobserve(en.target); }
+    }, { root, threshold: 0.5 });
+    gaugeObservers.set(key, obs);
   }
-  gauges.forEach((g) => gaugeObserver.observe(g));
+  gauges.forEach((g) => gaugeObservers.get(key).observe(g));
 }
 // Photo de produit qui ne se charge pas (hors connexion, image supprimée) : un pictogramme discret
 // remplace l'icône d'image cassée du navigateur
@@ -846,9 +891,9 @@ document.addEventListener("error", (e) => {
 // Une rangée qu'on déplie rejoue l'animation de sa jauge
 document.addEventListener("toggle", (e) => {
   const d = e.target;
-  if (!(d instanceof HTMLDetailsElement) || !d.closest("#sheetBody")) return;
+  if (!(d instanceof HTMLDetailsElement) || !(d.closest("#sheetBody") || d.classList.contains("ae"))) return;
   // Le premier « toggle » vient de l'affichage d'une rangée déjà ouverte : rien à rejouer
-  if (!d.dataset.seen) { d.dataset.seen = "1"; if (d.hasAttribute("open")) return; }
+  if (!d.dataset.seen && !d.classList.contains("ae")) { d.dataset.seen = "1"; if (d.hasAttribute("open")) return; }
   if (!d.open) return;
   const g = d.querySelector(".gauge");
   if (!g) return;
@@ -1206,7 +1251,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
 
   if (fresh) {
     renderSheetProduct(cached);
-    if (fromScan) verdictHaptic(cached);
+    if (fromScan) { verdictHaptic(cached); verdictBurst(); }
     if (fromScan || !store.get(code)) store.add(cached);
     refreshFav();
     if (!cached.local) loadAlternatives(cached, code);
@@ -1221,7 +1266,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
       return;
     }
     renderSheetProduct(p);
-    if (fromScan) verdictHaptic(p);
+    if (fromScan) { verdictHaptic(p); verdictBurst(); }
     store.add(p);
     refreshFav();
     if (!p.local) loadAlternatives(p, code);
@@ -1233,6 +1278,12 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
 }
 
 const REDUCED = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Fiche ouverte juste après un scan : le verdict « s'allume » d'une onde à sa couleur
+function verdictBurst() {
+  if (REDUCED()) return;
+  const v = $("sheetBody").querySelector(".verdict");
+  if (v) v.classList.add("scanned");
+}
 function closeSheet({ fromPop = false } = {}) {
   if (sheet.hidden || sheet.classList.contains("closing")) return;
   if (isSheetTour() && tourStep >= 0) endTour();
@@ -1387,6 +1438,17 @@ document.addEventListener("click", (e) => {
   }
   const open = e.target.closest("[data-open]");
   if (open) return openSheet(open.dataset.open, { replace: !sheet.hidden });
+  const jump = e.target.closest("[data-jump-flag]");
+  if (jump) {
+    const target = $("sheetBody").querySelector(`.flag[data-fid="${CSS.escape(jump.dataset.jumpFlag)}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: REDUCED() ? "auto" : "smooth", block: "center" });
+      target.classList.remove("ping");
+      void target.offsetWidth;
+      target.classList.add("ping");
+    }
+    return;
+  }
   const ocr = e.target.closest("[data-ocr-code], label[for=ocrInput]");
   if (ocr) pendingOcrCode = ocr.dataset.ocrCode || null;
   const go = e.target.closest("[data-goto-settings]");
@@ -1564,15 +1626,31 @@ const camera = createCamera({
   onCode(code) {
     clearTimeout(slowTimer);
     if (basketMode) return basketScan(code); // mode courses : on reste dans la caméra
-    // Confirmation : cadre vert un court instant, puis la fiche
+    // Confirmation : cadre vert et onde qui part du code, un court instant, puis la fiche
     cameraEl.classList.add("found");
+    scanBurst("#3DDC84");
     setTimeout(() => {
       cameraEl.classList.remove("found");
       closeCamera({ keepHistory: true });
       openSheet(code, { fromScan: true, replace: true });
-    }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260);
+    }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
   },
 });
+
+// Onde de confirmation autour du cadre de visée (couleur : vert à la lecture, puis celle du verdict en mode courses)
+function scanBurst(color) {
+  if (REDUCED()) return;
+  const frame = $("camFrame");
+  frame.querySelectorAll(".burst").forEach((b) => b.remove());
+  for (let i = 0; i < 2; i++) {
+    const b = document.createElement("span");
+    b.className = "burst";
+    b.style.setProperty("--bc", color);
+    b.style.animationDelay = `${i * 120}ms`;
+    b.addEventListener("animationend", () => b.remove());
+    frame.appendChild(b);
+  }
+}
 
 function openCamera({ replace = false } = {}) {
   cameraEl.hidden = false;
@@ -1938,6 +2016,83 @@ function historyGroups(entries) {
     .join("");
 }
 
+// ---------------------------------------------------------------------------
+// Bilans en images : anneau des verdicts, 7 derniers jours, note moyenne
+// ---------------------------------------------------------------------------
+function statusCounts(products) {
+  const counts = {};
+  products.forEach((p) => { const st = verdictOf(p).status; counts[st] = (counts[st] || 0) + 1; });
+  return counts;
+}
+const pct = (n, total) => Math.round((n / total) * 100);
+// Anneau : un arc par verdict (périmètre 100 pour lire les pourcentages directement)
+function donutHtml(counts, total, center) {
+  let at = 0;
+  const arcs = STATUS_ORDER.filter((s) => counts[s]).map((s, i) => {
+    const d = (counts[s] / total) * 100;
+    const gap = total > counts[s] ? 0.8 : 0; // fine séparation entre deux arcs
+    const arc = `<circle class="dn-seg" cx="21" cy="21" r="15.915" pathLength="100" style="--c:${STATUS_COLOR[s]};--d:${Math.max(0, d - gap)};--o:${-at};--i:${i}"/>`;
+    at += d;
+    return arc;
+  }).join("");
+  return `<div class="donut viz" role="img" aria-label="${esc(STATUS_ORDER.filter((s) => counts[s]).map((s) => `${S(s, "label")} ${pct(counts[s], total)} %`).join(", "))}">
+    <svg viewBox="0 0 42 42" aria-hidden="true"><circle class="dn-track" cx="21" cy="21" r="15.915"/>${arcs}</svg>
+    <span class="dn-center">${center}</span></div>`;
+}
+function legendHtml(counts, total) {
+  return `<ul class="dn-legend">${STATUS_ORDER.filter((s) => counts[s]).map((s) =>
+    `<li><i class="dot" style="--c:${STATUS_COLOR[s]}"></i><span>${S(s, "label")}</span><b dir="ltr">${counts[s]}</b><small dir="ltr">${pct(counts[s], total)} %</small></li>`).join("")}</ul>`;
+}
+// Barres des 7 derniers jours, chaque barre partagée entre les verdicts
+function daysHtml(entries) {
+  const lang = getLang();
+  const day0 = new Date(); day0.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const start = day0.getTime() - (6 - i) * 864e5;
+    const list = entries.filter((e) => e.at >= start && e.at < start + 864e5).map((e) => e.p);
+    return { start, list, counts: statusCounts(list) };
+  });
+  const max = Math.max(1, ...days.map((d) => d.list.length));
+  const wd = new Intl.DateTimeFormat(lang === "ar" ? "ar" : lang, { weekday: "short" });
+  const full = new Intl.DateTimeFormat(lang === "ar" ? "ar" : lang, { weekday: "long" });
+  return `<div class="days viz" dir="ltr">${days.map((d, i) => {
+    const n = d.list.length;
+    const segs = STATUS_ORDER.filter((s) => d.counts[s]).map((s) => `<i style="flex:${d.counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("");
+    return `<div class="day${i === 6 ? " today" : ""}" style="--i:${i}" title="${esc(`${full.format(d.start)} : ${n}`)}">
+      <span class="day-n">${n || ""}</span>
+      <span class="day-bar"><span class="day-fill${n ? "" : " zero"}" style="--h:${n ? Math.max(8, (n / max) * 100) : 4}%">${segs}</span></span>
+      <span class="day-l">${esc(wd.format(d.start).replace(/\.$/, ""))}</span></div>`;
+  }).join("")}</div>`;
+}
+// Note moyenne sur une jauge à quatre niveaux, avec le curseur des autres jauges
+function scoreGaugeHtml(avg, title) {
+  const g = avg >= 75 ? "excellent" : avg >= 50 ? "bon" : avg >= 25 ? "mediocre" : "mauvais";
+  return `<div class="avg-head"><span>${esc(title)}</span><strong class="g-${g}" dir="ltr">${avg}<small>/100</small></strong><em class="g-${g}">${esc(t(`grade.${g}`))}</em></div>
+    <div class="gauge score-gauge" dir="ltr" role="img" aria-label="${esc(`${title} : ${avg}/100, ${t(`grade.${g}`)}`)}">
+      <div class="gauge-bar"><i class="sg-0" style="width:25%"></i><i class="sg-1" style="width:25%"></i><i class="sg-2" style="width:25%"></i><i class="sg-3" style="width:25%"></i>
+        <b class="gauge-mark" style="--x:${avg}%"></b></div>
+      <div class="gauge-labels">${[0, 25, 50, 75, 100].map((x) => `<span style="left:${x}%">${x}</span>`).join("")}</div></div>`;
+}
+const avgScore = (products) => {
+  const scores = products.map(scoreOf).filter(Boolean).map((x) => x.score);
+  return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+};
+
+// « Mon bilan » en tête de l'historique
+function bilanHtml(all, counts) {
+  const avg = avgScore(all.map((e) => e.p));
+  const week = all.filter((e) => e.at > Date.now() - 7 * 864e5).length;
+  return `<div class="stats bilan">
+    <h3 class="bilan-t">${esc(t("bilan.title"))}</h3>
+    <div class="bilan-top">
+      ${donutHtml(counts, all.length, `<b>${all.length}</b><small>${t(all.length === 1 ? "history.count_one" : "history.count_other")}</small>`)}
+      ${legendHtml(counts, all.length)}
+    </div>
+    <div class="bilan-sec"><div class="bilan-sub"><span>${esc(t("bilan.week"))}</span><b dir="ltr">${week}</b></div>${daysHtml(all)}</div>
+    ${avg !== null ? `<div class="bilan-sec">${scoreGaugeHtml(avg, t("bilan.avg"))}</div>` : ""}
+  </div>`;
+}
+
 function renderHistory() {
   const all = store.all();
   const counts = {};
@@ -1945,15 +2100,10 @@ function renderHistory() {
     const st = verdictOf(e.p).status;
     counts[st] = (counts[st] || 0) + 1;
   });
-  const seen = STATUS_ORDER.filter((s) => counts[s]);
-
-  $("historyStats").innerHTML = !all.length
+  setHtml($("historyStats"), !all.length
     ? `<div class="empty">${emptyArt("hello")}<strong>${t("history.empty.t")}</strong><p>${t("history.empty.p")}</p><a class="btn btn-primary" href="#scan">${t("home.scan")}</a></div>`
-    : `<div class="stats">
-      <div class="stats-top"><span class="stats-num">${all.length}</span><span class="stats-unit">${t(all.length === 1 ? "history.count_one" : "history.count_other")}</span></div>
-      <div class="bar" role="img" aria-label="${seen.map((s) => `${counts[s]} ${S(s, "label")}`).join(", ")}">${seen.map((s) => `<i style="flex:${counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("")}</div>
-      <div class="bar-legend">${seen.map((s) => `<span><i class="dot" style="--c:${STATUS_COLOR[s]}"></i>${counts[s]} ${S(s, "label")}</span>`).join("")}</div>
-    </div>`;
+    : bilanHtml(all, counts));
+  requestAnimationFrame(() => animateGauges($("historyStats")));
 
   $("historyFilter").hidden = !all.length;
   $("historyFilter").innerHTML = HISTORY_FILTERS.map(
@@ -2158,6 +2308,14 @@ function eFunctions(it) {
   if (n >= 900 && n < 950) return ["glazing-agent"];
   return ["other"];
 }
+// Pictogrammes d'origine : feuille (végétale, minérale ou de synthèse), animal, produit animal, l'un ou l'autre, inconnue
+const ORIGIN_ICO = {
+  plant: '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l8-8"/>',
+  animal: '<circle cx="7" cy="9" r="1.8"/><circle cx="11" cy="5.5" r="1.8"/><circle cx="15.5" cy="6" r="1.8"/><circle cx="18" cy="10" r="1.8"/><path d="M8 17c0-3 2-5.5 4.5-5.5S17 14 17 17c0 2-1.5 3-4.5 3S8 19 8 17z"/>',
+  animal_product: '<path d="M12 3c3.5 0 6.5 5.5 6.5 10a6.5 6.5 0 0 1-13 0C5.5 8.5 8.5 3 12 3z"/>',
+  maybe: '<path d="M4 18c0-6 4.5-10.5 10.5-10.5 0 6-4.5 10.5-10.5 10.5z"/><path d="M17 14.5a2.5 2.5 0 1 1 3 2.4V18"/><path d="M20 21h.01"/>',
+  unknown: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7"/><path d="M12 17h.01"/>',
+};
 const eOrigin = (it) => (it.g === "n" ? "animal" : it.v === "n" ? "animal_product" : it.v === "m" || it.g === "m" ? "maybe" : it.v === "y" ? "plant" : "unknown");
 function myAdditiveCounts() {
   const counts = new Map();
@@ -2223,10 +2381,10 @@ function renderECodes() {
         <span class="ae-badges">${halalPill(r.halal)}${healthPill(r.health)}${okAll ? `<span class="ae-ok" aria-label="${esc(t("add.no_concern"))}">${svg(I.check)}</span>` : ""}</span></summary>
       <dl class="ae-body">
         ${fn ? `<div><dt>${t("add.e_fn")}</dt><dd>${esc(fn)}</dd></div>` : ""}
-        <div><dt>${t("add.e_origin")}</dt><dd>${t(`add.origin.${r.origin}`)}</dd></div>
+        <div><dt>${t("add.e_origin")}</dt><dd class="ae-origin"><span class="origin-ico o-${r.origin}" aria-hidden="true">${svg(ORIGIN_ICO[r.origin])}</span><span>${t(`add.origin.${r.origin}`)}</span></dd></div>
         <div><dt>${t("add.e_halal")}</dt><dd>${r.halal.reason ? `${halalPill(r.halal) || `<span class="pill r-info">${t("sev.info")}</span>`} ${esc(r.halal.reason)}` : esc(t("add.halal_ok"))}
           ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
-        <div><dt>${t("add.e_health")}</dt><dd>${r.health.level ? `${healthPill(r.health)} ${esc(r.health.reason)}` : esc(t("add.health_ok"))}
+        <div><dt>${t("add.e_health")}</dt><dd>${riskScale(r.health.level || "none")}${r.health.level ? esc(r.health.reason) : esc(t("add.health_ok"))}
           ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
           ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
         ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}
@@ -3002,6 +3160,7 @@ function renderBasketButtons() {
   $("toolBasket").setAttribute("aria-label", n ? `${t("basket.mode")} · ${tn("basket.count", n)}` : t("basket.mode"));
 }
 
+const BURST_COLOR = { halal_certifie: "#3DDC84", halal_probable: "#3DDC84", mashbouh: "#FFB547", haram: "#FF5A4E", inconnu: "#FFFFFF" };
 async function basketScan(code) {
   cameraEl.classList.add("found");
   const flash = $("camFlash");
@@ -3016,6 +3175,7 @@ async function basketScan(code) {
       const st = verdictOf(p).status;
       const al = profileOf(p).alert;
       flash.className = `cam-flash v-${st}`;
+      scanBurst(al === "no" ? BURST_COLOR.haram : BURST_COLOR[st] || BURST_COLOR.inconnu);
       flash.innerHTML = `<strong>${esc(S(st, "label"))}</strong><span>${esc(nameOf(p))}</span>${al ? `<em>${esc(t(`alert.${al}`))}</em>` : ""}`;
       if (navigator.vibrate) navigator.vibrate(st === "haram" || al === "no" ? [60, 60, 60] : 40);
     } else {
@@ -3073,20 +3233,18 @@ function renderBasket() {
     $("sheetBody").innerHTML = `<div class="empty">${emptyArt()}<strong>${t("basket.empty.t")}</strong><p>${t("basket.empty.p")}</p><button class="btn btn-primary" type="button" data-basket-scan>${t("basket.start")}</button></div>`;
     return;
   }
-  const counts = {};
-  items.forEach((p) => {
-    const st = verdictOf(p).status;
-    counts[st] = (counts[st] || 0) + 1;
-  });
-  const scores = items.map(scoreOf).filter(Boolean).map((x) => x.score);
-  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const counts = statusCounts(items);
+  const avg = avgScore(items);
   const alerts = items.filter((p) => profileOf(p).alert).length;
   const seen = STATUS_ORDER.filter((x) => counts[x]);
+  // Barre empilée : chaque verdict prend sa part du panier, avec son pourcentage quand il y a la place
+  const stack = `<div class="stack viz" dir="ltr" role="img" aria-label="${esc(seen.map((x) => `${S(x, "label")} ${pct(counts[x], items.length)} %`).join(", "))}">${seen.map((x, i) =>
+    `<i style="flex:${counts[x]};--c:${STATUS_COLOR[x]};--i:${i}">${pct(counts[x], items.length) >= 14 ? `<span>${pct(counts[x], items.length)} %</span>` : ""}</i>`).join("")}</div>`;
   $("sheetBody").innerHTML = `<div class="stats basket-stats">
       <div class="stats-top"><span class="stats-num">${items.length}</span><span class="stats-unit">${esc(tn("basket.count", items.length).replace(/^\d+\s*/, ""))}</span></div>
-      <div class="bar">${seen.map((x) => `<i style="flex:${counts[x]};--c:${STATUS_COLOR[x]}"></i>`).join("")}</div>
+      ${stack}
       <div class="bar-legend">${seen.map((x) => `<span><i class="dot" style="--c:${STATUS_COLOR[x]}"></i>${counts[x]} ${S(x, "label")}</span>`).join("")}</div>
-      ${avg !== null ? `<p class="basket-avg">${t("basket.avg", { n: avg })}</p>` : ""}
+      ${avg !== null ? `<div class="bilan-sec">${scoreGaugeHtml(avg, t("basket.avg_t"))}</div>` : ""}
       ${alerts ? `<p class="basket-alert">${esc(tn("basket.alerts", alerts))}</p>` : ""}
     </div>
     <div class="list">${items.map((p) => rowHtml(p)).join("")}</div>
@@ -3094,6 +3252,7 @@ function renderBasket() {
       <button class="btn btn-primary" type="button" data-basket-scan>${t("basket.continue")}</button>
       <button class="link-btn danger" type="button" data-basket-clear>${t("basket.clear")}</button>
     </div>`;
+  requestAnimationFrame(() => animateGauges());
 }
 
 // ===========================================================================

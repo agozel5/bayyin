@@ -1438,4 +1438,22 @@ export default {
   "bd.bio": "عضوي",
   // ---------- Risque nul ----------
   "risk.short.none": "بدون خطر",
+  // ---------- Visualisations 2 ----------
+  "chain.title": "التحقق من الحلال",
+  "chain.s.ing": "المكوّنات",
+  "chain.s.origin": "المصدر",
+  "chain.s.add": "المضافات",
+  "chain.s.cert": "الشهادة",
+  "chain.ing_ok": "تمت القراءة",
+  "chain.ing_none": "لا توجد قائمة",
+  "chain.ok": "لا شيء يُذكر",
+  "chain.covered": "تغطيه الشهادة",
+  "chain.na": "يتعذّر التحقق",
+  "chain.cert_none": "بلا شهادة",
+  "chain.cert_ignored": "جهة لا تتبعها",
+  "bilan.title": "حصيلتي",
+  "bilan.week": "المنتجات التي تم فحصها في آخر 7 أيام",
+  "bilan.avg": "متوسط التقييم الصحي",
+  "basket.avg_t": "متوسط تقييم السلة",
+  "risk.none": "لا خطر معروف",
 };

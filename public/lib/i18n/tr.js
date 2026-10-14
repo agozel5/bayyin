@@ -1438,4 +1438,22 @@ export default {
   "bd.bio": "Organik",
   // ---------- Risque nul ----------
   "risk.short.none": "Risksiz",
+  // ---------- Visualisations 2 ----------
+  "chain.title": "Helal kontrolü",
+  "chain.s.ing": "İçindekiler",
+  "chain.s.origin": "Köken",
+  "chain.s.add": "Katkılar",
+  "chain.s.cert": "Sertifika",
+  "chain.ing_ok": "Liste okundu",
+  "chain.ing_none": "Liste yok",
+  "chain.ok": "Sorun yok",
+  "chain.covered": "Sertifika kapsamında",
+  "chain.na": "Kontrol edilemez",
+  "chain.cert_none": "Sertifika yok",
+  "chain.cert_ignored": "Takip edilmeyen kuruluş",
+  "bilan.title": "Özetim",
+  "bilan.week": "Son 7 günde kontrol edilen ürünler",
+  "bilan.avg": "Ortalama sağlık puanı",
+  "basket.avg_t": "Sepetin ortalama puanı",
+  "risk.none": "Bilinen risk yok",
 };

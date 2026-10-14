@@ -1452,4 +1452,22 @@ export default {
   "bd.bio": "Bio",
   // ---------- Risque nul ----------
   "risk.short.none": "Sans risque",
+  // ---------- Visualisations 2 ----------
+  "chain.title": "Vérification halal",
+  "chain.s.ing": "Ingrédients",
+  "chain.s.origin": "Origine",
+  "chain.s.add": "Additifs",
+  "chain.s.cert": "Label",
+  "chain.ing_ok": "Liste lue",
+  "chain.ing_none": "Liste absente",
+  "chain.ok": "Rien à signaler",
+  "chain.covered": "Couvert par le label",
+  "chain.na": "Non vérifiable",
+  "chain.cert_none": "Aucun label",
+  "chain.cert_ignored": "Organisme non suivi",
+  "bilan.title": "Mon bilan",
+  "bilan.week": "Produits vérifiés ces 7 derniers jours",
+  "bilan.avg": "Note santé moyenne",
+  "basket.avg_t": "Note moyenne du panier",
+  "risk.none": "Aucun risque connu",
 };
