@@ -1,0 +1,13 @@
+name: Sonde images
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          U=$(curl -s -A "Bayyin/1.0" "https://world.openfoodfacts.org/api/v2/product/3017620422003?fields=image_front_small_url,image_front_url" | tee /dev/stderr | python3 -c "import sys,json;print(json.load(sys.stdin)['product']['image_front_small_url'])")
+          { echo "$U"; curl -sI -H "Origin: https://agozel5.github.io" "$U"; echo ---; curl -s -o /dev/null -w "%{size_download} %{time_total}\n" "$U"; curl -s -o /dev/null -w "%{size_download} %{time_total}\n" "${U/.200./.100.}"; } > docs/probe-img.txt
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add docs/probe-img.txt; git commit -m "sonde images"; git push
