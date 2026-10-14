@@ -878,15 +878,54 @@ function animateGauges(container) {
   }
   gauges.forEach((g) => gaugeObservers.get(key).observe(g));
 }
-// Photo de produit qui ne se charge pas (hors connexion, image supprimée) : un pictogramme discret
-// remplace l'icône d'image cassée du navigateur
+// Photo de produit qui ne se charge pas. Réseau instable (4G qui décroche) : on réessaie tout seul
+// (après 1,5 s puis 5 s), avec un fond animé en attendant ; ensuite un pictogramme discret remplace
+// l'icône d'image cassée, et les photos manquantes sont rechargées dès que la connexion revient.
 const IMG_FALLBACK = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="#EEF1EE"/><path d="M7 9l5-2.5L17 9v6l-5 2.5L7 15z M7 9l5 2.5L17 9 M12 11.5v6" fill="none" stroke="#9AA59F" stroke-width="1.2" stroke-linejoin="round"/></svg>');
+const IMG_RETRY = [1500, 5000];
+const IMG_BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+const withTry = (url, n) => url + (url.includes("?") ? "&" : "?") + "r=" + n;
+function reloadImg(img) {
+  if (!img.isConnected || !img.dataset.orig) return;
+  const n = Number(img.dataset.tries || 0) + 1;
+  img.dataset.tries = String(n);
+  img.classList.add("img-wait");
+  img.src = withTry(img.dataset.orig, n);
+}
 document.addEventListener("error", (e) => {
   const img = e.target;
-  if (!(img instanceof HTMLImageElement) || img.dataset.fallback || img.id === "lbImg") return;
+  if (!(img instanceof HTMLImageElement) || img.id === "lbImg" || img.src.startsWith("data:") || img.src.startsWith("blob:")) return;
+  if (!img.dataset.orig) img.dataset.orig = img.src;
+  const n = Number(img.dataset.tries || 0);
+  if (n < IMG_RETRY.length && navigator.onLine !== false) {
+    img.classList.add("img-wait");
+    img.src = IMG_BLANK; // pas d'icône d'image cassée pendant l'attente : un fond animé à la place
+    setTimeout(() => reloadImg(img), IMG_RETRY[n]);
+    return;
+  }
+  img.classList.remove("img-wait");
   img.dataset.fallback = "1";
   img.src = IMG_FALLBACK;
 }, true);
+document.addEventListener("load", (e) => {
+  const img = e.target;
+  if (img instanceof HTMLImageElement && img.classList.contains("img-wait") && !img.src.startsWith("data:")) img.classList.remove("img-wait");
+}, true);
+// Connexion retrouvée (ou retour dans l'app) : nouvel essai pour les photos restées manquantes
+function retryMissingImages() {
+  if (navigator.onLine === false) return;
+  document.querySelectorAll("img[data-fallback][data-orig]").forEach((img) => {
+    const rounds = Number(img.dataset.rounds || 0) + 1;
+    if (rounds > 6) return; // photo vraiment introuvable : on arrête d'insister
+    img.dataset.rounds = String(rounds);
+    delete img.dataset.fallback;
+    img.dataset.tries = String(IMG_RETRY.length - 1); // un seul essai de plus, sans boucle
+    reloadImg(img);
+  });
+}
+window.addEventListener("online", retryMissingImages);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) retryMissingImages(); });
+setInterval(() => { if (!document.hidden) retryMissingImages(); }, 30000);
 
 // Une rangée qu'on déplie rejoue l'animation de sa jauge
 document.addEventListener("toggle", (e) => {

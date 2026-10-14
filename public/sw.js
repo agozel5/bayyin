@@ -5,8 +5,10 @@
 //   leurs adresses sont versionnées donc ne changent jamais.
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
+// - Photos des produits : gardées sur le téléphone (leur adresse change avec chaque nouvelle photo,
+//   donc une photo gardée n'est jamais périmée) ; sur un réseau instable, nouvel essai automatique.
 
-const VERSION = "2026-10-14-4";
+const VERSION = "2026-10-14-5";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
@@ -14,6 +16,9 @@ const MED_CACHE = "hs-med-v1"; // base des médicaments : gardée d'une version 
 const COSING_CACHE = "hs-cosing-v1"; // base des ingrédients cosmétiques (≈ 2 Mo) : idem
 const RECALL_CACHE = "hs-recalls-v1"; // rappels de produits : mis à jour chaque nuit
 const MAX_PRODUCTS = 4000;
+const IMG_CACHE = "hs-img-v1";
+const MAX_IMAGES = 1500; // ≈ 15 Mo de vignettes
+const IMG_HOSTS = ["images.openfoodfacts.org", "images.openbeautyfacts.org", "static.openfoodfacts.org", "static.openbeautyfacts.org"];
 
 const APP_FILES = [
   "./", "index.html", "style.css", "app.js", "manifest.webmanifest",
@@ -89,6 +94,37 @@ async function trimProducts() {
   for (let i = 0; i < extra; i++) await cache.delete(keys[i]);
 }
 
+// Photo : copie gardée si elle existe ; sinon téléchargement (en CORS, pour pouvoir la garder),
+// avec deux nouveaux essais rapprochés quand la connexion décroche.
+let imgPuts = 0;
+async function imageFirst(request) {
+  const cache = await caches.open(IMG_CACHE);
+  const url = new URL(request.url);
+  url.searchParams.delete("r"); // « r » : numéro d'essai ajouté par l'app, sans effet sur la photo
+  const key = url.href;
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  for (const pause of [0, 700, 2000]) {
+    if (pause) await new Promise((r) => setTimeout(r, pause));
+    try {
+      const res = await fetch(key, { mode: "cors", credentials: "omit", signal: AbortSignal.timeout(15000) });
+      if (res.ok) {
+        // Grandes photos (zoom) : non gardées, elles rempliraient vite le téléphone
+        if (!url.pathname.includes(".full.")) cache.put(key, res.clone()).then(() => (++imgPuts % 40 ? null : trimCache(IMG_CACHE, MAX_IMAGES))).catch(() => {});
+        return res;
+      }
+      if (res.status === 404) return res; // photo supprimée : inutile d'insister
+    } catch { /* connexion coupée : nouvel essai */ }
+  }
+  // Dernier recours : la requête d'origine (sans CORS), au cas où
+  try { return await fetch(request); } catch { return Response.error(); }
+}
+async function trimCache(name, max) {
+  const cache = await caches.open(name);
+  const keys = await cache.keys();
+  for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -120,6 +156,10 @@ self.addEventListener("fetch", (event) => {
   }
   if ((url.hostname === "world.openfoodfacts.org" || url.hostname === "world.openbeautyfacts.org") && url.pathname.startsWith("/api/v2/product/")) {
     event.respondWith(networkFirst(req, PRODUCT_CACHE, { wait: 4000 }).finally(() => trimProducts().catch(() => {})));
+    return;
+  }
+  if (IMG_HOSTS.includes(url.hostname) && /\.(jpe?g|png|webp)$/i.test(url.pathname)) {
+    event.respondWith(imageFirst(req));
     return;
   }
   if (CDN_HOSTS.includes(url.hostname)) {
