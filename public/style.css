@@ -1819,9 +1819,4 @@ html:is([data-text="large"],[data-text="xlarge"]) .ptab{font-size:.84rem}
 .places-empty{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:10px 12px 4px;color:var(--muted)}
 .places-empty p{margin:0;max-width:30ch;line-height:1.45}
 
-/* Changement d'onglet principal : l'écran apparaît en fondu (réponse au toucher, pas de décor) */
-@media (prefers-reduced-motion:no-preference){
-  .view.entering{animation:view-in .22s ease-out}
-  @keyframes view-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-}
 .rank-head{margin-bottom:14px}

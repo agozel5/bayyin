@@ -2666,11 +2666,7 @@ function showTab(name) {
   if (!TABS.includes(name)) name = "scan";
   const wasSettings = current === "settings";
   current = name;
-  document.querySelectorAll(".view").forEach((v) => {
-    const show = v.dataset.view === name;
-    if (show && v.hidden) { v.classList.remove("entering"); void v.offsetWidth; v.classList.add("entering"); }
-    v.hidden = !show;
-  });
+  document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
   document.querySelectorAll(".tab").forEach((tab) =>
     tab.dataset.tab === name ? tab.setAttribute("aria-current", "page") : tab.removeAttribute("aria-current")
   );
