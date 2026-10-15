@@ -2035,3 +2035,11 @@ img.img-wait{background:linear-gradient(100deg,var(--tint) 30%,color-mix(in srgb
 @media (max-width:340px){.src-grid{grid-template-columns:1fr}}
 .src-uses{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 .src-uses svg{width:11px;height:11px;stroke-width:3}
+
+/* Photo des ingrédients d'Open Food Facts, à lire */
+.off-photo{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center;margin:12px 0 10px;padding:12px;border-radius:var(--r-md);background:var(--brand-soft);color:var(--fg)}
+.off-photo img{width:64px;height:64px;object-fit:cover;border-radius:12px;background:var(--surface)}
+.off-photo span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.off-photo small{font-size:.82rem;color:var(--muted);line-height:1.35}
+.off-photo .btn{grid-column:1 / -1}
+.off-photo .btn .spinner{width:16px;height:16px;border-width:2px}

@@ -381,7 +381,7 @@ export function classify(product, prefs = DEFAULT_PREFS) {
   const topics = { ...SCHOOLS.standard, ...((prefs && prefs.topics) || {}) };
   const source = ingredientsSource(product);
   // Liste dans une autre langue : on y ajoute la version reconnue par Open Food Facts
-  const foreign = !!source.text && !["fr", "en", "tr", "ar"].includes(source.lang);
+  const foreign = !!source.text && !!source.lang && !["fr", "en", "tr", "ar"].includes(source.lang);
   const tagText = foreign || !source.text ? taxonomyText(product) : "";
   const text = [source.text, tagText].filter(Boolean).join(", ");
   const segs = segments(text);

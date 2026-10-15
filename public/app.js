@@ -321,7 +321,7 @@ function halalSection(p, v) {
   const ignored = v.certIgnored
     ? `<div class="cert cert-off">${svg(I.shield)}${esc(t("certs.ignored", { org: v.certIgnored.organisme }))}</div>`
     : "";
-  const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
+  const notes = [...(p.local ? [t(p.raw && p.raw.ocr_from === "off" ? "offocr.note" : "detail.local")] : []), ...v.notes.map(noteText)];
   const flags = v.flags.length
     ? `<div class="flags">${v.flags
         .map((f) => {
@@ -341,9 +341,15 @@ function halalSection(p, v) {
         })
         .join("")}</div>`
     : "";
+  // Liste absente mais photo des ingrédients publiée sur Open Food Facts : Bayyin peut la lire
+  const offPhoto = v.status === "inconnu" && /^\d+$/.test(p.code) && kindOf(p) === "food" && ingredientsPhoto(p);
   const ocrCta =
     v.status === "inconnu" && /^\d+$/.test(p.code) && kindOf(p) === "food"
-      ? `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
+      ? (offPhoto ? `<div class="off-photo">
+          <img src="${esc(offPhoto)}" alt="" referrerpolicy="no-referrer">
+          <span><strong>${esc(t("offocr.t"))}</strong><small>${esc(t("offocr.p"))}</small></span>
+          <button class="btn btn-primary" type="button" data-off-ocr="${esc(p.code)}">${svg(I.doc)}${esc(t("offocr.btn"))}</button></div>` : "") +
+        `<label class="btn ${offPhoto ? "btn-soft" : "btn-primary"}" for="ocrInput" data-ocr-code="${esc(p.code)}">${svg(I.doc)}${t("detail.photo_ingredients")}</label>`
       : "";
   // Fiche sans ingrédients : on cherche une fiche plus complète du même produit (autre format, autre pays)
   const twins = !p.ingredients && !p.local && /^\d+$/.test(p.code) && kindOf(p) === "food" && nameOf(p)
@@ -1480,6 +1486,8 @@ document.addEventListener("click", (e) => {
   }
   const open = e.target.closest("[data-open]");
   if (open) return openSheet(open.dataset.open, { replace: !sheet.hidden });
+  const offOcr = e.target.closest("[data-off-ocr]");
+  if (offOcr) return readOffPhoto(offOcr.dataset.offOcr, offOcr);
   const jump = e.target.closest("[data-jump-flag]");
   if (jump) {
     const target = $("sheetBody").querySelector(`.flag[data-fid="${CSS.escape(jump.dataset.jumpFlag)}"]`);
@@ -1507,8 +1515,34 @@ document.addEventListener("click", (e) => {
 // Photo de la liste d'ingrédients (OCR)
 // ===========================================================================
 let ocrTicket = 0;
+// Photo de la liste d'ingrédients publiée sur Open Food Facts (petite version pour l'aperçu)
+function ingredientsPhoto(p) {
+  const ph = (p.photos || []).find((x) => (x.k || x[0]) === "ingredients");
+  const u = ph && (ph.u || ph[1]);
+  return u || (p.raw && p.raw.image_ingredients_url) || null;
+}
+// Lecture de cette photo : téléchargée en grand, puis même parcours qu'une photo prise par l'utilisateur
+async function readOffPhoto(code, btn) {
+  const p = memo.get(code) || (store.get(code) && store.get(code).p);
+  const url = p && ingredientsPhoto(p);
+  if (!url) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>${esc(t("offocr.loading"))}`; }
+  let blob = null;
+  for (const u of [fullPhoto(url), url]) {
+    try {
+      const res = await fetch(u, { mode: "cors", signal: AbortSignal.timeout(20000) });
+      if (res.ok) { blob = await res.blob(); break; }
+    } catch { /* essai suivant */ }
+  }
+  if (!blob) {
+    if (btn) { btn.disabled = false; btn.innerHTML = `${svg(I.doc)}${esc(t("offocr.btn"))}`; }
+    return toast(t("offocr.error"));
+  }
+  startOcr(blob, code, { fromOff: true, name: nameOf(p) });
+}
+
 // Étape 1 : la photo s'affiche avec un cadre à ajuster sur la liste d'ingrédients
-function startOcr(file, code) {
+function startOcr(file, code, opts = {}) {
   ++ocrTicket;
   sheetCode = code ? `ocr:${code}` : "ocr";
   sheetProduct = null;
@@ -1517,7 +1551,7 @@ function startOcr(file, code) {
   $("sheetCompare").hidden = true;
   const url = URL.createObjectURL(file);
   $("sheetBody").innerHTML = `<div class="ocr-crop">
-      <h3>${t("ocr.crop_t")}</h3><p class="muted">${t("ocr.crop_hint")}</p>
+      <h3>${t("ocr.crop_t")}</h3><p class="muted">${opts.fromOff ? esc(t("offocr.crop_hint")) : t("ocr.crop_hint")}</p>
       <div class="crop-stage" id="cropStage">
         <img id="cropImg" src="${url}" alt="">
         <div class="crop-box" id="cropBox"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
@@ -1527,7 +1561,8 @@ function startOcr(file, code) {
     </div>`;
   showSheet({ replace: !sheet.hidden });
   refreshFav();
-  const box = { x: 0.06, y: 0.22, w: 0.88, h: 0.5 };
+  // Photo d'Open Food Facts : déjà recadrée sur la liste, le cadre prend toute l'image
+  const box = opts.fromOff ? { x: 0.02, y: 0.02, w: 0.96, h: 0.96 } : { x: 0.06, y: 0.22, w: 0.88, h: 0.5 };
   const el = $("cropBox");
   const draw = () => Object.assign(el.style, { left: box.x * 100 + "%", top: box.y * 100 + "%", width: box.w * 100 + "%", height: box.h * 100 + "%" });
   draw();
@@ -1564,19 +1599,21 @@ function startOcr(file, code) {
   stage.addEventListener("pointercancel", stop);
   $("ocrRead").addEventListener("click", () => {
     URL.revokeObjectURL(url);
-    readOcr(file, code, { ...box });
+    readOcr(file, code, { ...box }, opts);
   });
 }
 
 // Étape 2 : lecture de la zone encadrée, puis texte à vérifier
 const ocrPhotos = new Map(); // photo des ingrédients par code-barres (mémoire seulement), pour Open Food Facts
-async function readOcr(file, code, crop) {
+async function readOcr(file, code, crop, opts = {}) {
   const ticket = ++ocrTicket;
-  if (code) ocrPhotos.set(code, file);
+  if (code && !opts.fromOff) ocrPhotos.set(code, file); // (photo déjà sur Open Food Facts : rien à renvoyer)
   $("sheetBody").innerHTML = `<div class="ocr-progress"><span class="spinner"></span><p id="ocrStep">${t("ocr.loading")}</p><small>${t("ocr.loading_note")}</small><div class="progress"><i id="ocrBar"></i></div></div>`;
   try {
     const { text, confidence } = await readIngredients(file, {
       lang: getLang(),
+      // Photo d'Open Food Facts : souvent un produit importé, l'allemand est lu en plus
+      langs: opts.fromOff ? "fra+deu+eng" : null,
       crop,
       onProgress: (n) => {
         if (ticket !== ocrTicket || !$("ocrStep")) return;
@@ -1595,27 +1632,45 @@ async function readOcr(file, code, crop) {
       ${confidence < 70 ? `<p class="ocr-warn">${svg(I.alert)}<span>${t("ocr.low_conf")}</span></p>` : ""}
       <textarea id="ocrText" class="field area" rows="8" spellcheck="false">${esc(text)}</textarea>
       <label class="muted small" for="ocrName">${t("ocr.name")}</label>
-      <input id="ocrName" class="field" type="text" autocomplete="off">
+      <input id="ocrName" class="field" type="text" autocomplete="off" value="${esc(opts.name || "")}">
       <button class="btn btn-primary btn-block" type="button" id="ocrAnalyze">${t("ocr.analyze")}</button>
       <label class="btn btn-soft btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
     </div>`;
-    $("ocrAnalyze").addEventListener("click", () => analyzeOcr(code));
+    $("ocrAnalyze").addEventListener("click", () => analyzeOcr(code, opts));
   } catch {
     if (ticket === ocrTicket) $("sheetBody").innerHTML = messageHtml(t("msg.reader_error.t"), t("ocr.error.p"));
   }
 }
 
-function analyzeOcr(code) {
+function analyzeOcr(code, opts = {}) {
   const text = $("ocrText").value.trim();
   if (!text) return;
   const name = $("ocrName").value.trim();
+  // Produit déjà connu (Open Food Facts) : on garde sa fiche (photo, marque, valeurs nutritionnelles…)
+  // et on y ajoute seulement la liste lue
+  const known = code && (memo.get(code) || (store.get(code) && store.get(code).p));
+  const base = known && known.raw && !known.raw.local ? { ...known.raw } : {};
+  if (known) {
+    // Fiches gardées avant que les photos fassent partie des données conservées
+    const ph = Object.fromEntries((known.photos || []).map((x) => [x.k, x.u]));
+    base.image_front_small_url ||= known.image || undefined;
+    base.image_front_url ||= ph.front;
+    base.image_ingredients_url ||= ph.ingredients;
+    base.image_nutrition_url ||= ph.nutrition;
+    base.brands ||= known.brand || undefined;
+    base.quantity ||= known.quantity || undefined;
+  }
   const raw = {
+    ...base,
     code: code || `local-${Date.now()}`,
-    product_name: name || t("ocr.unnamed"),
+    product_name: name || base.product_name || t("ocr.unnamed"),
     ingredients_text: text,
-    additives_tags: additivesFromText(text),
-    categories_tags: [],
+    ingredients_text_fr: "",
+    lang: "",
+    additives_tags: [...new Set([...(base.additives_tags || []), ...additivesFromText(text)])],
+    categories_tags: base.categories_tags || [],
     local: true,
+    ...(opts.fromOff ? { ocr_from: "off" } : {}),
   };
   if (code) localProducts.set(code, raw);
   const p = present(raw, prefs());
@@ -3801,7 +3856,7 @@ function contributeCard(p) {
   if (contributed(p.code)) return `<div class="contrib done">${svg(I.check)}<p><strong>${t("contrib.done_t")}</strong> ${t("contrib.done_p")}</p></div>`;
   const direct = offAccountReady();
   return `<section class="contrib" id="contribBox">
-    <div class="contrib-top"><span class="contrib-ico">${svg(I.box)}</span><div><strong>${t("contrib.t")}</strong><p>${t("contrib.p")}</p></div></div>
+    <div class="contrib-top"><span class="contrib-ico">${svg(I.box)}</span><div><strong>${t(p.raw && (p.raw.ocr_from === "off" || p.raw.nutriments) ? "contrib.t_list" : "contrib.t")}</strong><p>${t("contrib.p")}</p></div></div>
     ${direct
       ? `<label class="contrib-ok"><input type="checkbox" id="contribConsent"><span>${t("contrib.consent")}</span></label>
          <button class="btn btn-primary btn-block" type="button" data-contrib="${esc(p.code)}" disabled>${t("contrib.send")}</button>`

@@ -1479,4 +1479,14 @@ export default {
   "sources.uses_title": "Uygulamada bu kaynağa dayanan kontrol sayısı",
   // ---------- Listes en d'autres langues ----------
   "note.list_other": "Bu ürünün Fransızca içindekiler listesi yok: liste etiketin dilinde, Open Food Facts'in tanıdığı içeriklerle birlikte okundu.",
+  // ---------- Lecture de la photo Open Food Facts ----------
+  "offocr.t": "İçindekilerin fotoğrafı var",
+  "offocr.p": "Henüz kimse Open Food Facts'e yazmadı. Bayyin sizin için okuyabilir.",
+  "offocr.btn": "Fotoğrafı oku",
+  "offocr.loading": "İndiriliyor…",
+  "offocr.error": "Fotoğraf şu an alınamıyor. Daha iyi bir bağlantıyla tekrar deneyin.",
+  "offocr.crop_hint": "Open Food Facts'te yayınlanan fotoğraf. Gerekirse çerçeveyi içindekiler listesine ayarlayın (tek dil yeterli).",
+  "offocr.note": "Open Food Facts'te yayınlanan içindekiler fotoğrafından, Bayyin'in okumasıyla yapılan analiz.",
+  // ---------- Contribution : liste manquante ----------
+  "contrib.t_list": "İçindekiler listesi Open Food Facts'te eksik",
 };

@@ -1479,4 +1479,14 @@ export default {
   "sources.uses_title": "عدد النقاط في التطبيق التي تستند إلى هذا المصدر",
   // ---------- Listes en d'autres langues ----------
   "note.list_other": "لا تتوفر قائمة مكوّنات بالفرنسية لهذا المنتج: قُرئت بلغة الملصق مع المكوّنات التي تعرّف عليها Open Food Facts.",
+  // ---------- Lecture de la photo Open Food Facts ----------
+  "offocr.t": "توجد صورة للمكوّنات",
+  "offocr.p": "لم ينسخها أحد بعد على Open Food Facts. يمكن لبيّن قراءتها لك.",
+  "offocr.btn": "قراءة الصورة",
+  "offocr.loading": "جارٍ التنزيل…",
+  "offocr.error": "الصورة غير متاحة حاليًا. أعد المحاولة باتصال أفضل.",
+  "offocr.crop_hint": "صورة منشورة على Open Food Facts. اضبط الإطار على قائمة المكوّنات عند الحاجة (تكفي لغة واحدة).",
+  "offocr.note": "تحليل مبني على صورة المكوّنات المنشورة على Open Food Facts، قرأها بيّن.",
+  // ---------- Contribution : liste manquante ----------
+  "contrib.t_list": "قائمة مكوّناته غير موجودة على Open Food Facts",
 };

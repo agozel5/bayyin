@@ -158,9 +158,9 @@ function linesOf(data) {
  * Lit le texte d'une photo. crop : zone à lire (fractions de l'image). onProgress(0..100).
  * -> { text, confidence }
  */
-export async function readIngredients(file, { lang = "fr", crop = null, onProgress } = {}) {
+export async function readIngredients(file, { lang = "fr", langs = null, crop = null, onProgress } = {}) {
   const [Tesseract, canvas] = await Promise.all([loadTesseract(), preprocess(file, crop)]);
-  const worker = await Tesseract.createWorker(OCR_LANGS[lang] || OCR_LANGS.fr, 1, {
+  const worker = await Tesseract.createWorker(langs || OCR_LANGS[lang] || OCR_LANGS.fr, 1, {
     logger: (m) => {
       if (m && m.status === "recognizing text" && onProgress) onProgress(Math.round((m.progress || 0) * 100));
     },

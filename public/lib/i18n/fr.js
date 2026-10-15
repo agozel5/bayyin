@@ -1493,4 +1493,14 @@ export default {
   "sources.uses_title": "Nombre de points de l'app qui citent cette source",
   // ---------- Listes en d'autres langues ----------
   "note.list_other": "Cette fiche n'a pas de liste d'ingrédients en français : elle a été lue dans la langue de l'étiquette, avec les ingrédients reconnus par Open Food Facts.",
+  // ---------- Lecture de la photo Open Food Facts ----------
+  "offocr.t": "Une photo des ingrédients existe",
+  "offocr.p": "Personne ne l'a encore recopiée sur Open Food Facts. Bayyin peut la lire pour vous.",
+  "offocr.btn": "Lire la photo",
+  "offocr.loading": "Téléchargement…",
+  "offocr.error": "Photo indisponible pour le moment. Réessayez avec une meilleure connexion.",
+  "offocr.crop_hint": "Photo publiée sur Open Food Facts. Ajustez le cadre sur la liste d'ingrédients si besoin (une seule langue suffit).",
+  "offocr.note": "Analyse faite à partir de la photo des ingrédients publiée sur Open Food Facts, lue par Bayyin.",
+  // ---------- Contribution : liste manquante ----------
+  "contrib.t_list": "Sa liste d'ingrédients manque sur Open Food Facts",
 };
