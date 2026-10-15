@@ -1998,3 +1998,40 @@ button.ch-btn .ch-sub{text-decoration:underline;text-decoration-thickness:1px;te
 img.img-wait{background:linear-gradient(100deg,var(--tint) 30%,color-mix(in srgb,var(--line) 70%,var(--tint)) 50%,var(--tint) 70%) 0 0/250% 100%}
 @media (prefers-reduced-motion:no-preference){img.img-wait{animation:img-shimmer 1.2s linear infinite}}
 @keyframes img-shimmer{from{background-position:100% 0}to{background-position:-150% 0}}
+
+/* ---------- Nos sources : cartes par thème ---------- */
+.src-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 12px}
+.src-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 4px 10px;border:0;border-radius:var(--r-md);background:var(--tint);color:var(--fg);font:inherit;cursor:pointer}
+.src-stat b{font-size:1.45rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.src-stat small{font-size:.72rem;color:var(--muted);text-align:center;line-height:1.2}
+.src-stat-ico,.src-sec-ico{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--tc) 15%,transparent);color:var(--tc);margin-bottom:2px}
+.src-stat-ico svg,.src-sec-ico svg{width:17px;height:17px}
+.st-halal{--tc:var(--brand)} .st-food{--tc:#D9822B} .st-cosm{--tc:#B4589C} .st-data{--tc:#2F7FC1}
+.src-chips{margin-bottom:6px}
+.src-sec{margin-top:14px}
+.src-sec-t{display:flex;align-items:center;gap:10px;margin:0 2px 10px;font-size:1rem}
+.src-sec-t > span:last-child{display:flex;flex-direction:column;min-width:0}
+.src-sec-t small{font-weight:400;font-size:.8rem;color:var(--muted);line-height:1.3}
+.src-sec-ico{width:36px;height:36px;margin:0;flex:none}
+.src-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.src-card{--kc:#2F7FC1;display:flex;flex-direction:column;gap:4px;padding:14px 13px 12px;border-radius:var(--r-md);background:var(--surface);border:1.5px solid color-mix(in srgb,var(--kc) 28%,var(--line));color:var(--fg);text-decoration:none;min-width:0;transition:transform .15s ease,border-color .15s}
+.src-card:active{transform:scale(.97)}
+.src-card:hover{border-color:color-mix(in srgb,var(--kc) 60%,var(--line))}
+.sk-database{--kc:#2F7FC1} .sk-agency{--kc:#1E8F5A} .sk-law{--kc:#5B6B86} .sk-study{--kc:#7A5BC2} .sk-text{--kc:#B8892A} .sk-fatwa{--kc:#14857A}
+.src-mono{position:relative;align-self:flex-start;min-width:56px;height:46px;padding:0 10px;margin-bottom:6px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,color-mix(in srgb,var(--kc) 88%,#fff),var(--kc));color:#fff;font-weight:800;font-size:1rem;letter-spacing:.01em;box-shadow:0 6px 14px -8px var(--kc)}
+.src-mono.long{font-size:.82rem}
+.src-kind-ico{position:absolute;inset-inline-end:-7px;bottom:-7px;width:22px;height:22px;border-radius:50%;background:var(--surface);color:var(--kc);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--kc) 35%,var(--line))}
+.src-kind-ico svg{width:13px;height:13px}
+.src-card strong{font-size:.9rem;line-height:1.25;overflow-wrap:anywhere}
+.src-k{font-size:.72rem;font-weight:700;color:color-mix(in srgb,var(--kc) 70%,var(--fg))}
+.src-card small{font-size:.76rem;line-height:1.35;color:var(--muted);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.src-foot{margin-top:auto;padding-top:6px;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:.72rem;color:var(--faint)}
+.src-uses{font-weight:700;color:var(--brand-dark);background:var(--brand-soft);padding:2px 8px;border-radius:999px}
+.src-how{display:flex;gap:10px;align-items:flex-start;margin:18px 0 4px;padding:12px 14px;border-radius:var(--r-md);background:var(--tint);font-size:.84rem;line-height:1.45;color:var(--muted)}
+.src-how svg{flex:none;width:20px;height:20px;color:var(--brand)}
+@media (prefers-reduced-motion:no-preference){
+  .src-card{animation:fade-up .35s calc(min(var(--i), 12) * .03s) ease-out both}
+}
+@media (max-width:340px){.src-grid{grid-template-columns:1fr}}
+.src-uses{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.src-uses svg{width:11px;height:11px;stroke-width:3}

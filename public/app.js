@@ -11,7 +11,7 @@ import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profil
 import { BEAUTY_RULES } from "./lib/beauty.js";
 import { isMedicineCode } from "./lib/medicine.js";
 import { drawShareCard } from "./lib/sharecard.js";
-import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic } from "./lib/cosmetic.js";
+import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic, COSMETIC_RULES } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
 import { mascot } from "./lib/mascot.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList } from "./lib/rankings.js";
@@ -2620,30 +2620,74 @@ function renderSettings() {
     return `<div class="legend-row"><span class="pill g-${g.id}" style="--cbg:var(--tint)"><span class="dot"></span>${t(`grade.${g.id}`)}</span><p>${t("health.range", { a: g.min, b: max })}</p></div>`;
   }).join("");
   document.querySelectorAll(".se-pts[data-pts]").forEach((el) => (el.textContent = t("health.pts", { n: el.dataset.pts })));
-  // Sources regroupées : on touche un groupe pour voir les organismes et textes qu'il contient
-  const GROUP_ICON = { data: I.box, health: I.flask, halal: I.shield };
-  $("sourceList").innerHTML = ["data", "health", "halal"]
-    .map((g) => {
-      const list = SOURCES.filter((src) => src.group === g);
-      const preview = list.slice(0, 3).map((src) => src.name.split(" (")[0]).join(", ") + (list.length > 3 ? "…" : "");
-      return `<details class="src-group">
-        <summary>
-          <span class="src-ico">${svg(GROUP_ICON[g])}</span>
-          <span class="src-head"><strong>${t(`sources.g.${g}`)}</strong><small>${t(`sources.gd.${g}`)}</small>
-            <small class="src-meta"><span class="src-count">${tn("sources.count", list.length)}</span><span class="src-preview">${esc(preview)}</span></small></span>
-          <span class="src-chev" aria-hidden="true">${svg(I.chev)}</span>
-        </summary>
-        ${[...new Set(list.map((src) => src.kind))]
-          .map((k) => `<p class="src-kind">${t(`sources.k.${k}`)}</p><div class="source-list">${list
-            .filter((src) => src.kind === k)
-            .map((src) => `<a class="source" href="${esc(src.url)}" target="_blank" rel="noopener"><span><strong>${esc(src.name)}</strong><small>${t(`src.${src.id}`)}</small></span><span aria-hidden="true">↗</span></a>`)
-            .join("")}</div>`)
-          .join("")}
-      </details>`;
-    })
-    .join("");
+  renderSources();
   showSetPage(setPage);
 }
+
+// ---------------------------------------------------------------------------
+// Nos sources : des cartes par thème. Pas de logos officiels (ce serait laisser croire à un partenariat) :
+// un sigle sur une pastille dont la couleur et le pictogramme disent le type de source.
+// ---------------------------------------------------------------------------
+const SRC_THEMES = ["halal", "food", "cosm", "data"];
+const SRC_COSM = new Set(["sccs", "echa", "ansm", "eu_cosmetics", "cir", "essca", "ema", "cosmetics_europe", "afssaps_baby", "fr_pfas"]);
+const srcTheme = (src) => (src.group === "halal" || /_list$/.test(src.id) ? "halal" : src.group === "data" ? "data" : SRC_COSM.has(src.id) ? "cosm" : "food");
+const SRC_THEME_ICO = { halal: I.shield, food: I.flask, cosm: '<path d="M9 3h6v4H9z"/><path d="M8 7h8l1 4v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-9z"/><path d="M10 14h4"/>', data: I.box };
+const SRC_KIND_ICO = {
+  database: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+  agency: '<path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M3 10l9-6 9 6z"/>',
+  law: '<path d="M12 4v16M5 20h14M6 8h12M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z"/>',
+  study: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+  text: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/>',
+  fatwa: '<path d="M12 3a6 6 0 0 0 0 12 5 5 0 0 1 0-10"/><path d="M5 21h14M7 21v-4h10v4"/>',
+};
+const SRC_SHORT = { off: "OFF", obf: "OBF", cosing: "CosIng", bdpm: "BDPM", rappelconso: "Rappel", osm: "OSM", avs_list: "AVS", achahada_list: "Achahada", hmc_list: "HMC",
+  efsa: "EFSA", anses: "ANSES", iarc: "CIRC", jecfa: "JECFA", eu_additives: "1333", eu_labelling: "1169", fda: "FDA", nutriscore: "Nutri", fsa: "FSA", nova: "NOVA", nutrinet: "NutriNet",
+  sccs: "SCCS", echa: "ECHA", ansm: "ANSM", eu_cosmetics: "1223", cir: "CIR", essca: "ESSCA", ema: "EMA", cosmetics_europe: "CE", afssaps_baby: "ANSM", fr_pfas: "PFAS",
+  quran: "قرآن", iifa: "IIFA", ecfr: "ECFR", diyanet: "Diyanet", daralifta: "Ifta", muftiwp: "Mufti", mui: "MUI" };
+// Nombre de points de l'app (signalements halal, additifs, ingrédients cosmétiques) qui citent chaque source
+let srcUses = null;
+function sourceUses() {
+  if (srcUses) return srcUses;
+  srcUses = new Map();
+  const add = (ids) => (ids || []).forEach((id) => srcUses.set(id, (srcUses.get(id) || 0) + 1));
+  Object.values(FLAG_SOURCES).forEach(add);
+  Object.values(RISK_SOURCES).forEach(add);
+  COSMETIC_RULES.forEach((r) => add(r.sources));
+  return srcUses;
+}
+let srcFilter = "all";
+function renderSources() {
+  const uses = sourceUses();
+  const count = (th) => SOURCES.filter((src) => th === "all" || srcTheme(src) === th).length;
+  const chips = ["all", ...SRC_THEMES].map((th) =>
+    `<button type="button" class="chip" role="tab" aria-selected="${th === srcFilter}" data-src-f="${th}">${th === "all" ? esc(t("sources.all")) : esc(t(`sources.t.${th}`))}<span class="n">${count(th)}</span></button>`).join("");
+  const card = (src, i) => {
+    const short = SRC_SHORT[src.id] || src.name.split(" ")[0];
+    const n = uses.get(src.id) || 0;
+    return `<a class="src-card sk-${src.kind}" href="${esc(src.url)}" target="_blank" rel="noopener" style="--i:${i}">
+      <span class="src-mono${short.length > 5 ? " long" : ""}" dir="auto" aria-hidden="true">${esc(short)}<span class="src-kind-ico">${svg(SRC_KIND_ICO[src.kind] || I.box)}</span></span>
+      <strong dir="auto">${esc(src.name)}</strong>
+      <span class="src-k">${esc(t(`sources.k1.${src.kind}`))}</span>
+      <small>${esc(t(`src.${src.id}`))}</small>
+      <span class="src-foot">${n ? `<span class="src-uses" title="${esc(t("sources.uses_title"))}">${svg(I.check)}${esc(tn("sources.uses", n))}</span>` : "<span></span>"}<span aria-hidden="true">↗</span></span>
+    </a>`;
+  };
+  const themes = srcFilter === "all" ? SRC_THEMES : [srcFilter];
+  let i = 0;
+  $("sourceList").innerHTML = `<div class="src-stats">${SRC_THEMES.map((th) =>
+      `<button type="button" class="src-stat st-${th}" data-src-f="${th}"><span class="src-stat-ico">${svg(SRC_THEME_ICO[th])}</span><b>${count(th)}</b><small>${esc(t(`sources.t.${th}`))}</small></button>`).join("")}</div>
+    <div class="chips filter src-chips" role="tablist">${chips}</div>
+    ${themes.map((th) => `<section class="src-sec">
+      <h3 class="src-sec-t"><span class="src-sec-ico st-${th}">${svg(SRC_THEME_ICO[th])}</span><span><strong>${esc(t(`sources.t.${th}`))}</strong><small>${esc(t(`sources.td.${th}`))}</small></span></h3>
+      <div class="src-grid">${SOURCES.filter((src) => srcTheme(src) === th).map((src) => card(src, i++)).join("")}</div></section>`).join("")}
+    <p class="src-how">${svg(I.bulb)}<span>${esc(t("sources.how"))}</span></p>`;
+}
+$("sourceList").addEventListener("click", (e) => {
+  const f = e.target.closest("[data-src-f]");
+  if (!f) return;
+  srcFilter = srcFilter === f.dataset.srcF && f.classList.contains("src-stat") ? "all" : f.dataset.srcF;
+  renderSources();
+});
 
 // Point par point : replié par défaut, avec recherche ; les points modifiés passent en tête
 function renderTopics() {
