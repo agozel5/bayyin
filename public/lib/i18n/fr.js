@@ -1491,4 +1491,6 @@ export default {
   "sources.uses_one": "1 point",
   "sources.uses_other": "{n} points",
   "sources.uses_title": "Nombre de points de l'app qui citent cette source",
+  // ---------- Listes en d'autres langues ----------
+  "note.list_other": "Cette fiche n'a pas de liste d'ingrédients en français : elle a été lue dans la langue de l'étiquette, avec les ingrédients reconnus par Open Food Facts.",
 };

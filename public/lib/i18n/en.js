@@ -1477,4 +1477,6 @@ export default {
   "sources.uses_one": "1 check",
   "sources.uses_other": "{n} checks",
   "sources.uses_title": "Number of checks in the app that cite this source",
+  // ---------- Listes en d'autres langues ----------
+  "note.list_other": "This product has no ingredient list in English or French: it was read in the label's language, with the ingredients recognised by Open Food Facts.",
 };

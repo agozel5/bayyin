@@ -1477,4 +1477,6 @@ export default {
   "sources.uses_one": "1 kontrol",
   "sources.uses_other": "{n} kontrol",
   "sources.uses_title": "Uygulamada bu kaynağa dayanan kontrol sayısı",
+  // ---------- Listes en d'autres langues ----------
+  "note.list_other": "Bu ürünün Fransızca içindekiler listesi yok: liste etiketin dilinde, Open Food Facts'in tanıdığı içeriklerle birlikte okundu.",
 };

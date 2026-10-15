@@ -1477,4 +1477,6 @@ export default {
   "sources.uses_one": "نقطة واحدة",
   "sources.uses_other": "{n} نقاط",
   "sources.uses_title": "عدد النقاط في التطبيق التي تستند إلى هذا المصدر",
+  // ---------- Listes en d'autres langues ----------
+  "note.list_other": "لا تتوفر قائمة مكوّنات بالفرنسية لهذا المنتج: قُرئت بلغة الملصق مع المكوّنات التي تعرّف عليها Open Food Facts.",
 };

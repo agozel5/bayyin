@@ -1258,10 +1258,13 @@ function verdictHaptic(p) {
   const al = profileOf(p).alert;
   navigator.vibrate(al === "no" ? HAPTIC.haram : HAPTIC[verdictOf(p).status] || [30]);
 }
+// Fiche sans liste d'ingrédients, gardée avant que l'app lise les listes en d'autres langues
+// (allemand, espagnol…) : rechargée, la liste existe peut-être dans une autre langue
+const listStale = (p) => !!p && !p.ingredients && !p.local && kindOf(p) === "food" && /^\d+$/.test(p.code) && !!p.raw && !("lang" in p.raw);
 // Fiches de l'historique notées avec une ancienne méthode : rechargées discrètement, une par une
 async function refreshStaleHistory() {
   if (navigator.onLine === false) return;
-  const stale = store.all().filter((e) => healthStale(e.p) && !(e.p.raw && e.p.raw.nutriments)).slice(0, 40);
+  const stale = store.all().filter((e) => (healthStale(e.p) && !(e.p.raw && e.p.raw.nutriments)) || listStale(e.p)).slice(0, 40);
   const fresh = [];
   for (const e of stale) {
     try {
@@ -1282,7 +1285,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
   const cached = memo.get(code) || (store.get(code) && store.get(code).p);
   // Les très anciennes entrées n'ont pas de données santé ; une note d'une ancienne méthode est rechargée
   if (cached) healthOf(cached); // recalcul sur place quand la fiche gardée le permet
-  const fresh = cached && cached.health && (!healthStale(cached) || navigator.onLine === false);
+  const fresh = cached && cached.health && ((!healthStale(cached) && !listStale(cached)) || navigator.onLine === false);
   $("sheetTitle").textContent = cached ? nameOf(cached) : t("sheet.title");
   $("sheetBody").innerHTML = skeletonHtml();
   showSheet({ replace, fromScan });

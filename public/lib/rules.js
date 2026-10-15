@@ -125,7 +125,7 @@ export const TEXT_RULES = [
     id: "porc", severity: "haram",
     label: "Porc / dérivé porcin",
     reason: "Porc ou dérivé porcin : interdit quelle que soit la quantité.",
-    match: /\b(porc|porcine?s?|pork|lard|lardons?|saindoux|bacon|jambons?|ham|pancetta|coppa|rillettes|chorizo|pig|swine|cochon|sanglier|marcassin|couenne|wild boar|domuz)\b|خنزير/,
+    match: /\b(porc|porcine?s?|pork|lard|lardons?|saindoux|bacon|jambons?|ham|pancetta|coppa|rillettes|chorizo|pig|swine|cochon|sanglier|marcassin|couenne|wild boar|domuz)\b|\bschwein\w*|خنزير/,
     exclude: /\b(dinde|poulet|volaille|boeuf|turkey|chicken|beef|halal|helal|hindi|tavuk|sigir|dana)\b/,
   },
   {
@@ -202,14 +202,14 @@ export const TEXT_RULES = [
     id: "alcool", severity: "haram",
     label: "Alcool",
     reason: "Vin, bière ou alcool ajouté comme ingrédient : interdit même en petite quantité. La cuisson n'élimine pas tout l'alcool.",
-    match: /\b(alcool|alcohol|vins?|wine|bieres?|beer|rhum|rum|liqueurs?|cognac|whisky|whiskey|vodka|kirsch|calvados|brandy|armagnac|porto|marsala|cidre|cider|champagne|gin|amaretto|cointreau|grand marnier|alkol|etil alkol|sarap|bira|likor|raki)\b|كحول|نبيذ|خمر/,
+    match: /\b(alcool|alcohol|vins?|wine|bieres?|beer|rhum|rum|liqueurs?|cognac|whisky|whiskey|vodka|kirsch|calvados|brandy|armagnac|porto|marsala|cidre|cider|champagne|gin|amaretto|cointreau|grand marnier|alkol|alkohol|etil alkol|sarap|bira|likor|raki)\b|كحول|نبيذ|خمر/,
     exclude: /vinaigre|vinegar|sirke|sans alcool|alcohol.?free|non.?alcoolis|desalcoolis|alkolsuz|alkol icermez|teneur en alcool|alcool\s*:?\s*0|0[.,]0\s*%|sucres?.?alcools?|polyols?|arome|aroma|flavou?r|خال من الكحول|بدون كحول/,
   },
   {
     id: "gelatine", severity: "mashbouh",
     label: "Gélatine",
     reason: "Gélatine d'origine non précisée : bœuf, porc ou poisson selon le fournisseur.",
-    match: /\b(gelatine|gelatin|jelatin|jelatini)\b|جيلاتين/,
+    match: /\b(gelatine|gelatin|jelatin|jelatini)\b|\w(gelatine)\b|جيلاتين/,
     exclude: /halal|helal|poisson|fish|balik|vegetal|vegan|bitkisel|agar|حلال|سمك|نباتي/,
   },
   {
@@ -354,13 +354,36 @@ export function detectCertification(product) {
 // ---------------------------------------------------------------------------
 // Classification
 // ---------------------------------------------------------------------------
+// Liste d'ingrédients : en français ou en anglais de préférence, sinon dans la langue où elle existe
+// (beaucoup de produits importés n'ont qu'une liste en allemand, en espagnol, en néerlandais…).
+export const OTHER_INGREDIENT_LANGS = ["de", "es", "it", "nl", "pt", "tr", "ar", "pl"];
+export function ingredientsSource(product) {
+  if (product.ingredients_text_fr) return { text: product.ingredients_text_fr, lang: "fr" };
+  if (product.ingredients_text) return { text: product.ingredients_text, lang: product.lang || product.lc || "" };
+  if (product.ingredients_text_en) return { text: product.ingredients_text_en, lang: "en" };
+  for (const l of OTHER_INGREDIENT_LANGS) {
+    const v = product[`ingredients_text_${l}`];
+    if (v) return { text: v, lang: l };
+  }
+  return { text: "", lang: "" };
+}
 export function ingredientsText(product) {
-  return product.ingredients_text_fr || product.ingredients_text || product.ingredients_text_en || "";
+  return ingredientsSource(product).text;
+}
+// Ingrédients reconnus par Open Food Facts, en anglais quelle que soit la langue de l'étiquette
+// (« Schweinegelatine » -> en:pork-gelatin -> « pork gelatin ») : sert quand la liste n'est ni en français
+// ni en anglais, pour que les règles (écrites en français, anglais, turc et arabe) la comprennent.
+export function taxonomyText(product) {
+  return [...new Set((product.ingredients_tags || []).filter((tag) => /^en:/.test(tag)).map((tag) => tag.slice(3).replace(/-/g, " ")))].join(", ");
 }
 
 export function classify(product, prefs = DEFAULT_PREFS) {
   const topics = { ...SCHOOLS.standard, ...((prefs && prefs.topics) || {}) };
-  const text = ingredientsText(product);
+  const source = ingredientsSource(product);
+  // Liste dans une autre langue : on y ajoute la version reconnue par Open Food Facts
+  const foreign = !!source.text && !["fr", "en", "tr", "ar"].includes(source.lang);
+  const tagText = foreign || !source.text ? taxonomyText(product) : "";
+  const text = [source.text, tagText].filter(Boolean).join(", ");
   const segs = segments(text);
   const analysis = product.ingredients_analysis_tags || [];
   const isVegan = analysis.includes("en:vegan");
@@ -444,6 +467,7 @@ export function classify(product, prefs = DEFAULT_PREFS) {
 
   let certification = detectCertification(product);
   const notes = []; // identifiants, traduits par l'interface
+  if (foreign) notes.push("list_other");
   // Organisme que l'utilisateur ne suit pas : le label est ignoré, le verdict repose sur les ingrédients
   let certIgnored = null;
   if (certification && certification.organismeId && (prefs.distrust || []).includes(certification.organismeId)) {

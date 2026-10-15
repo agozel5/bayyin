@@ -207,3 +207,20 @@ test("organisme non suivi : le label est ignoré, verdict sur les ingrédients",
   assert.equal(off.certIgnored.organismeId, "avs");
   assert.ok(off.notes.includes("cert_untrusted"));
 });
+
+test("liste d'ingrédients seulement en allemand : lue, et comprise grâce aux ingrédients reconnus par Open Food Facts", () => {
+  const veggie = classify({ code: "4001686333044", lang: "de",
+    ingredients_text_de: "Glukosesirup; Zucker; Stärke; Säuerungsmittel: Citronensäure; Aroma; Überzugsmittel: Bienenwachs weiß und gelb, Carnaubawachs",
+    ingredients_tags: ["en:glucose-syrup", "en:sugar", "en:starch", "en:acid", "en:citric-acid", "en:flavouring", "en:glazing-agent", "en:beeswax", "en:carnauba-wax"] });
+  assert.notEqual(veggie.status, "inconnu");
+  assert.ok(veggie.notes.includes("list_other"));
+  // Mot composé allemand : « Schweinegelatine » (gélatine de porc)
+  const pork = classify({ code: "1", lang: "de", ingredients_text_de: "Glukosesirup, Zucker, Schweinegelatine, Dextrose" });
+  assert.equal(pork.status, "haram");
+  // Langue non comprise par les règles, mais ingrédient reconnu par Open Food Facts
+  const nl = classify({ code: "2", lang: "nl", ingredients_text_nl: "glucosestroop, suiker, varkensgelatine", ingredients_tags: ["en:glucose-syrup", "en:sugar", "en:pork-gelatin"] });
+  assert.equal(nl.status, "haram");
+  // Une liste en français reste lue seule
+  const fr = classify({ code: "3", ingredients_text_fr: "sucre, sirop de glucose", ingredients_tags: ["en:pork-gelatin"] });
+  assert.notEqual(fr.status, "haram");
+});

@@ -16,7 +16,8 @@ export const OFF_BASE = "https://world.openfoodfacts.org";
 export const FIELDS = [
   "code", "product_name", "product_name_fr", "product_name_en", "product_name_ar", "product_name_tr",
   "brands", "quantity",
-  "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
+  "ingredients_text", "ingredients_text_fr", "ingredients_text_en", "lang", "ingredients_tags",
+  "ingredients_text_de", "ingredients_text_es", "ingredients_text_it", "ingredients_text_nl", "ingredients_text_pt", "ingredients_text_tr", "ingredients_text_ar", "ingredients_text_pl",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
   "image_front_small_url", "image_front_url", "image_ingredients_url", "image_nutrition_url",
   "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
@@ -28,7 +29,8 @@ export const OBF_BASE = "https://world.openbeautyfacts.org";
 export const beautyUrl = (code) => `${OBF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
 
 // Champs nécessaires pour recalculer le verdict quand l'utilisateur change de réglage.
-const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en",
+const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en", "lang", "ingredients_tags",
+  "ingredients_text_de", "ingredients_text_es", "ingredients_text_it", "ingredients_text_nl", "ingredients_text_pt", "ingredients_text_tr", "ingredients_text_ar", "ingredients_text_pl",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_fr", "labels_tags", "categories_tags",
   "allergens_tags", "traces_tags", "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "kind", "brands", "med_form", "med_cis", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags"];
 
