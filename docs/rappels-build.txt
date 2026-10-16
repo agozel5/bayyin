@@ -8,4 +8,4 @@
   … 16000 lignes
   … 18000 lignes
 18553 lignes lues depuis tabular-api.data.gouv.fr
-{"updated":"2026-10-15","source":"tabular-api.data.gouv.fr","recalls":4945,"gtins":7075,"recent":481}
+{"updated":"2026-10-16","source":"tabular-api.data.gouv.fr","recalls":4941,"gtins":7069,"recent":480}
