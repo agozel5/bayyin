@@ -1,0 +1,19 @@
+name: Sonde comptes
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          q() { curl -s -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://world.openfoodfacts.org/api/v2/search?$1&page_size=1&fields=code" | python3 -c "import sys,json;print(json.load(sys.stdin).get('count'))"; sleep 8; }
+          {
+            echo "monde: $(q '')"
+            echo "monde avec ingredients: $(q 'states_tags=en:ingredients-completed')"
+            echo "france: $(q 'countries_tags=en:france')"
+            echo "france avec ingredients: $(q 'countries_tags=en:france&states_tags=en:ingredients-completed')"
+          } > docs/probe-count.txt
+          cat docs/probe-count.txt
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add docs/probe-count.txt; git commit -m "sonde comptes"; git push
