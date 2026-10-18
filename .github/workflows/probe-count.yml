@@ -7,9 +7,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          for u in "country/en:france.json?page_size=1&fields=code" "api/v2/search?countries_tags_en=france&page_size=1&fields=code" "cgi/search.pl?action=process&json=1&page_size=1&tagtype_0=countries&tag_contains_0=contains&tag_0=france&fields=code" "api/v2/search?states_tags=en:ingredients-completed&countries_tags=en:france&page_size=1&fields=code"; do
-            echo "== $u"; curl -s -m 90 -w " [HTTP %{http_code} %{time_total}s]" -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://world.openfoodfacts.org/$u" | head -c 400; echo; sleep 10
-          done > docs/probe-count.txt 2>&1
+          q() { for i in 1 2 3 4; do r=$(curl -sL -m 90 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" "https://world.openfoodfacts.org/$1" | python3 -c "import sys,json;print(json.load(sys.stdin).get('count'))" 2>/dev/null); [ -n "$r" ] && { echo "$r"; return; }; sleep 45; done; echo "?"; }
+          {
+            echo "monde: $(q 'api/v2/search?page_size=1&fields=code')"; sleep 30
+            echo "france: $(q 'api/v2/search?countries_tags_en=france&page_size=1&fields=code')"; sleep 30
+            echo "france ingredients: $(q 'facets/countries/france/states/en:ingredients-completed.json?page_size=1&fields=code')"; sleep 30
+            echo "monde ingredients: $(q 'facets/states/en:ingredients-completed.json?page_size=1&fields=code')"
+          } > docs/probe-count.txt 2>&1
           cat docs/probe-count.txt
           git config user.name bot; git config user.email bot@users.noreply.github.com
           git add docs/probe-count.txt; git commit -m "sonde comptes"; git push
