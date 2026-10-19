@@ -1,4 +1,4 @@
 avs : 23 noms, 21 estampilles
 achahada : 260 noms
 hmc : 21 noms
-{"updated":"2026-10-13","orgs":{"avs":23,"achahada":260,"hmc":21}}
+{"updated":"2026-10-19","orgs":{"avs":23,"achahada":260,"hmc":21}}
