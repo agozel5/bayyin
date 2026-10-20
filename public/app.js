@@ -2617,7 +2617,7 @@ const ADD_MODES = {
 
 function renderAdditives() {
   document.querySelectorAll("#addModes button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === addMode)));
-  $("addFn").hidden = true;
+  $("addFn").hidden = addMode !== "ecodes";
   if (addMode === "ecodes") return renderECodes();
   const m = ADD_MODES[addMode];
   const all = m.items();
@@ -2626,10 +2626,9 @@ function renderAdditives() {
   $("addFilter").innerHTML = m.filters
     .map(([id, key]) => {
       const n = id === "all" ? all.length : all.filter((i) => i.level === id).length;
-      return `<button type="button" class="ef" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${t(key)}<span>${n}</span></button>`;
+      return `<button type="button" class="chip" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${t(key)}<span class="n">${n}</span></button>`;
     })
     .join("");
-  $("addFilter").insertAdjacentHTML("afterbegin", `<span class="ef-label">${esc(t("add.show"))}</span>`);
   const items = all
     .filter((it) => (addFilter === "all" || it.level === addFilter) && (!q || norm([it.name, it.codes.join(" "), it.reason].join(" ")).includes(q)))
     .sort((a, b) => m.order[a.level] - m.order[b.level]);
@@ -2727,38 +2726,10 @@ function myAdditiveCounts() {
   }
   return counts;
 }
-// Les codes E sont rangés par centaines selon leur rôle (règlement européen) : le répertoire
-// suit ce classement, avec un index pour sauter d'une centaine à l'autre.
-const E_RANGES = [[100, 1], [200, 2], [300, 3], [400, 4], [500, 5], [600, 6], [700, 7], [900, 9], [1000, 10]];
-const eRange = (code) => {
-  const n = parseInt(code.replace(/\D/g, ""), 10) || 0;
-  return [...E_RANGES].reverse().find(([min]) => n >= min) || E_RANGES[0];
-};
-let eRows = new Map();
-function eMarks(r) {
-  const m = [];
-  if (r.halal.level === "haram" || r.halal.level === "mashbouh") m.push(`<span class="ae-mark m-${r.halal.level}">${esc(t(`add.m.${r.halal.level}`))}</span>`);
-  if (r.health.level) m.push(`<span class="ae-mark m-${r.health.level}">${esc(t(`add.m.${r.health.level}`))}</span>`);
-  return m.join("");
-}
-// Détail d'un additif : construit à l'ouverture seulement (534 lignes restent légères)
-function eBody(r) {
-  const fn = r.it.k.map((k) => t(`fn.${k}`)).join(", ");
-  const verdict = (cls, txt) => `<span class="ae-v ${cls}">${esc(txt)}</span>`;
-  const halalHead = r.halal.level === "haram" || r.halal.level === "mashbouh" ? verdict(`m-${r.halal.level}`, t(`add.m.${r.halal.level}`)) : r.halal.reason ? verdict("m-info", t("sev.info")) : "";
-  return `${fn ? `<div><dt>${t("add.e_fn")}</dt><dd>${esc(fn)}</dd></div>` : ""}
-    <div><dt>${t("add.e_origin")}</dt><dd class="ae-origin"><span class="origin-ico o-${r.origin}" aria-hidden="true">${svg(ORIGIN_ICO[r.origin])}</span><span>${t(`add.origin.${r.origin}`)}</span></dd></div>
-    <div><dt>${t("add.e_halal")}</dt><dd>${r.halal.reason ? `${halalHead}${esc(r.halal.reason)}` : esc(t("add.halal_ok"))}
-      ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
-    <div><dt>${t("add.e_health")}</dt><dd>${riskScale(r.health.level || "none")}${r.health.level ? esc(r.health.reason) : esc(t("add.health_ok"))}
-      ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
-      ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
-    ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}`;
-}
 function renderECodes() {
-  $("addFn").hidden = true; // les centaines remplacent le filtre par fonction
   if (!eDb) {
     $("addFilter").innerHTML = "";
+    $("addFn").innerHTML = "";
     $("addList").innerHTML = rowsSkeleton(6);
     loadEDb();
     return;
@@ -2772,79 +2743,71 @@ function renderECodes() {
     return { it, code, label: it.e.replace(/[A-F]$/, (l) => l.toLowerCase()), name: raw.charAt(0).toUpperCase() + raw.slice(1),
       halal: eHalal(code), health: eHealth(code, it), origin: eOrigin(it), mine: mine.get(code) || 0 };
   });
-  eRows = new Map(rows.map((r) => [r.code, r]));
   const FILTERS = {
     all: () => true,
+    mine: (r) => r.mine > 0,
     halal: (r) => r.halal.level === "haram" || r.halal.level === "mashbouh",
     health: (r) => !!r.health.level,
     animal: (r) => r.origin === "animal" || r.origin === "animal_product" || r.origin === "maybe",
-    mine: (r) => r.mine > 0,
   };
   if (!FILTERS[addFilter]) addFilter = "all";
-  // Filtres en onglets de texte (pas de pastilles)
-  $("addFilter").innerHTML = `<span class="ef-label">${esc(t("add.show"))}</span>` + Object.keys(FILTERS)
+  $("addFilter").innerHTML = Object.keys(FILTERS)
     .filter((id) => id !== "mine" || mine.size)
-    .map((id) => `<button type="button" class="ef" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${esc(t(`add.ef.${id}`))}<span>${rows.filter(FILTERS[id]).length}</span></button>`)
+    .map((id) => `<button type="button" class="chip" role="tab" aria-selected="${id === addFilter}" data-f="${id}">${t(`add.ef.${id}`)}<span class="n">${rows.filter(FILTERS[id]).length}</span></button>`)
     .join("");
+  // Fonctions les plus courantes d'abord
+  const fnCount = new Map();
+  rows.forEach((r) => r.it.k.forEach((k) => fnCount.set(k, (fnCount.get(k) || 0) + 1)));
+  const fns = [...fnCount].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const fnName = (k) => t(`fn.${k}`);
+  $("addFn").innerHTML = [`<button type="button" class="chip mini" aria-selected="${!eFn}" data-fn="">${t("add.fn_all")}</button>`,
+    ...fns.map((k) => `<button type="button" class="chip mini" aria-selected="${eFn === k}" data-fn="${esc(k)}">${esc(fnName(k))}</button>`)].join("");
   const q = norm($("addInput").value || "");
   const qCode = q.replace(/^e-?/, "");
-  const fnText = (r) => r.it.k.map((k) => t(`fn.${k}`)).join(" ");
-  const list = rows.filter((r) => FILTERS[addFilter](r) &&
-    (!q || r.code === "e" + qCode || r.code.startsWith("e" + qCode) && /^\d/.test(qCode) || norm(r.name + " " + Object.values(r.it.n).join(" ") + " " + fnText(r)).includes(q)));
-  const byName = q && !/^\d/.test(qCode);
-  if (byName) {
+  const list = rows.filter((r) => FILTERS[addFilter](r) && (!eFn || r.it.k.includes(eFn)) &&
+    (!q || r.code === "e" + qCode || r.code.startsWith("e" + qCode) && /^\d/.test(qCode) || norm(r.name + " " + Object.values(r.it.n).join(" ")).includes(q)));
+  if (addFilter === "mine") list.sort((a, b) => b.mine - a.mine);
+  // Recherche par nom : le nom qui commence par les lettres tapées d'abord
+  else if (q && !/^\d/.test(qCode)) {
     const rank = (r) => (norm(r.name) === q ? 2 : norm(r.name).startsWith(q) ? 1 : 0);
     list.sort((a, b) => rank(b) - rank(a));
   }
-  const row = (r) => `<details class="ae" data-e="${esc(r.code)}">
-      <summary><span class="ae-code" dir="ltr">${esc(r.label)}</span><span class="ae-name"><strong dir="auto">${esc(r.name || r.label)}</strong>${r.it.k.length ? `<small>${esc(r.it.k.map((k) => t(`fn.${k}`)).join(", "))}</small>` : ""}</span>
-        <span class="ae-marks">${eMarks(r)}</span></summary>
-      <dl class="ae-body"></dl>
+  const halalPill = (h) => (h.level === "haram" || h.level === "mashbouh" ? `<span class="pill ${h.level === "haram" ? "s-haram" : "s-mashbouh"}">${t(`sev.${h.level}`)}</span>` : "");
+  const healthPill = (h) => (h.level ? `<span class="pill r-${h.level}">${t(`risk.short.${h.level}`)}</span>` : "");
+  const row = (r) => {
+    const fn = r.it.k.map(fnName).join(", ");
+    const okAll = !halalPill(r.halal) && !healthPill(r.health);
+    return `<details class="ae">
+      <summary><span class="ae-code" dir="ltr">${esc(r.label)}</span><span class="ae-name"><strong dir="auto">${esc(r.name || r.label)}</strong>${fn ? `<small>${esc(fn)}</small>` : ""}</span>
+        <span class="ae-badges">${halalPill(r.halal)}${healthPill(r.health)}${okAll ? `<span class="ae-ok" aria-label="${esc(t("add.no_concern"))}">${svg(I.check)}</span>` : ""}</span></summary>
+      <dl class="ae-body">
+        ${fn ? `<div><dt>${t("add.e_fn")}</dt><dd>${esc(fn)}</dd></div>` : ""}
+        <div><dt>${t("add.e_origin")}</dt><dd class="ae-origin"><span class="origin-ico o-${r.origin}" aria-hidden="true">${svg(ORIGIN_ICO[r.origin])}</span><span>${t(`add.origin.${r.origin}`)}</span></dd></div>
+        <div><dt>${t("add.e_halal")}</dt><dd>${r.halal.reason ? `${halalPill(r.halal) || `<span class="pill r-info">${t("sev.info")}</span>`} ${esc(r.halal.reason)}` : esc(t("add.halal_ok"))}
+          ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
+        <div><dt>${t("add.e_health")}</dt><dd>${riskScale(r.health.level || "none")}${r.health.level ? esc(r.health.reason) : esc(t("add.health_ok"))}
+          ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
+          ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
+        ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}
+      </dl>
     </details>`;
-  if (!list.length) {
-    $("addList").innerHTML = `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t("add.e_none")}</p></div>`;
-    return;
-  }
-  // Recherche par nom : une seule liste triée ; sinon, les centaines avec leur index
-  if (byName) {
-    $("addList").innerHTML = `<p class="search-count">${esc(tn("add.count", list.length))}</p><div class="ae-list">${list.map(row).join("")}</div><p class="fineprint">${t("add.e_source")}</p>`;
-    return;
-  }
-  const groups = E_RANGES.map(([min, id]) => ({ min, id, items: list.filter((r) => eRange(r.code)[1] === id) })).filter((g) => g.items.length);
-  const span = (g) => {
-    const next = E_RANGES.find(([m]) => m > g.min);
-    return g.id === 10 ? "E1000 +" : `E${g.min} – E${next ? next[0] - 1 : g.min + 99}`;
   };
-  $("addList").innerHTML = `${groups.length < 2 ? "" : `<nav class="e-index" aria-label="${esc(t("add.index"))}">${groups.map((g) => `<a href="#eg-${g.id}" data-eg="${g.id}" dir="ltr">${g.id === 10 ? "1000+" : g.min}</a>`).join("")}</nav>`}
-    ${groups.map((g) => `<section class="e-group" id="eg-${g.id}">
-      <h2 class="e-head"><span class="e-range" dir="ltr">${span(g)}</span><span class="e-name">${esc(t(`add.rg.${g.id}`))}</span><span class="e-n">${g.items.length}</span></h2>
-      <div class="ae-list">${g.items.map(row).join("")}</div></section>`).join("")}
-    <p class="fineprint">${t("add.e_source")}</p>`;
+  $("addList").innerHTML = list.length
+    ? `<p class="search-count">${esc(tn("add.count", list.length))}</p><div class="ae-list">${list.slice(0, eShown).map(row).join("")}</div>` +
+      (list.length > eShown ? `<button class="btn btn-soft btn-block" type="button" data-e-more>${esc(t("add.more", { n: list.length - eShown }))}</button>` : "") +
+      `<p class="fineprint">${t("add.e_source")}</p>`
+    : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t("add.e_none")}</p></div>`;
 }
-// Index des centaines : défilement vers la section, sans changer l'adresse
-$("addList").addEventListener("click", (e) => {
-  const a = e.target.closest("[data-eg]");
-  if (!a) return;
-  e.preventDefault();
-  const sec = $(`eg-${a.dataset.eg}`);
-  if (!sec) return;
-  const idx = $("addList").querySelector(".e-index");
-  const y = sec.getBoundingClientRect().top + scrollY - (idx ? idx.offsetHeight : 0) - 4;
-  scrollTo({ top: y, behavior: REDUCED() ? "auto" : "smooth" });
-  tapHaptic();
-});
-// Détail construit à la première ouverture
-$("addList").addEventListener("toggle", (e) => {
-  const d = e.target;
-  if (!d.matches || !d.matches("details.ae") || !d.open) return;
-  const body = d.querySelector(".ae-body");
-  if (body && !body.childElementCount) { const r = eRows.get(d.dataset.e); if (r) body.innerHTML = eBody(r); }
-}, true);
 $("addFn").addEventListener("click", (e) => {
   const b = e.target.closest("[data-fn]");
   if (!b) return;
   eFn = b.dataset.fn;
   eShown = 80;
+  renderAdditives();
+});
+$("addList").addEventListener("click", (e) => {
+  if (!e.target.closest("[data-e-more]")) return;
+  eShown += 120;
   renderAdditives();
 });
 

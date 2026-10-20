@@ -1173,6 +1173,7 @@ export default {
   "fb.via_github": "Mesaj projenin takip edildiği GitHub'da açılır (ücretsiz hesap gerekir).",
   "fb.thanks": "Görüşünüz için teşekkürler!",
   // ---------- encyclopédie des additifs ----------
+  "add.sub": "Tüm katkı maddeleri: köken, helal ve sağlık.",
   "add.mode_e": "E kodları",
   "add.ef.all": "Tümü",
   "add.ef.mine": "Ürünlerimde",
@@ -1542,22 +1543,4 @@ export default {
   "ram.unavailable": "Bu enlemde vakitler hesaplanamıyor.",
   // ---------- carte story ----------
   "share.scan_line": "Ayrıntıların tamamı için tarayın",
-  // ---------- répertoire des additifs ----------
-  "add.sub": "E kodları rehberi, mevzuattaki gibi yüzlüklere göre sıralı.",
-  "add.show": "Göster",
-  "add.index": "Kodlara git",
-  "add.rg.1": "Renklendiriciler",
-  "add.rg.2": "Koruyucular",
-  "add.rg.3": "Antioksidanlar ve asitlik düzenleyiciler",
-  "add.rg.4": "Kıvam artırıcılar, jelleştiriciler, emülgatörler",
-  "add.rg.5": "Asitler, tuzlar, topaklanmayı önleyiciler",
-  "add.rg.6": "Lezzet artırıcılar",
-  "add.rg.7": "Antibiyotikler",
-  "add.rg.9": "Kaplama maddeleri, gazlar, tatlandırıcılar",
-  "add.rg.10": "Modifiye nişastalar ve diğerleri",
-  "add.m.haram": "Haram",
-  "add.m.mashbouh": "Helalliği şüpheli",
-  "add.m.limite": "Sınırlı risk",
-  "add.m.modere": "Orta risk",
-  "add.m.eleve": "Yüksek risk",
 };
