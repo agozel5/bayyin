@@ -1187,7 +1187,6 @@ export default {
   "fb.via_github": "Le message s'ouvre sur GitHub, où le projet est suivi (un compte gratuit est demandé).",
   "fb.thanks": "Merci pour votre avis !",
   // ---------- encyclopédie des additifs ----------
-  "add.sub": "Tous les additifs : origine, halal et santé.",
   "add.mode_e": "Codes E",
   "add.ef.all": "Tous",
   "add.ef.mine": "Dans mes produits",
@@ -1557,4 +1556,22 @@ export default {
   "ram.unavailable": "Horaires impossibles à calculer à cette latitude.",
   // ---------- carte story ----------
   "share.scan_line": "Scannez pour voir la fiche complète",
+  // ---------- répertoire des additifs ----------
+  "add.sub": "Le répertoire des codes E, rangés comme dans la réglementation : par centaines.",
+  "add.show": "Afficher",
+  "add.index": "Aller aux codes",
+  "add.rg.1": "Colorants",
+  "add.rg.2": "Conservateurs",
+  "add.rg.3": "Antioxydants et acidifiants",
+  "add.rg.4": "Épaississants, gélifiants, émulsifiants",
+  "add.rg.5": "Acidifiants, sels, antiagglomérants",
+  "add.rg.6": "Exhausteurs de goût",
+  "add.rg.7": "Antibiotiques",
+  "add.rg.9": "Enrobages, gaz, édulcorants",
+  "add.rg.10": "Amidons modifiés et autres",
+  "add.m.haram": "Haram",
+  "add.m.mashbouh": "Halal douteux",
+  "add.m.limite": "Risque limité",
+  "add.m.modere": "Risque modéré",
+  "add.m.eleve": "Risque élevé",
 };

@@ -1173,7 +1173,6 @@ export default {
   "fb.via_github": "The message opens on GitHub, where the project is tracked (a free account is required).",
   "fb.thanks": "Thank you for your feedback!",
   // ---------- encyclopédie des additifs ----------
-  "add.sub": "Every additive: origin, halal and health.",
   "add.mode_e": "E-numbers",
   "add.ef.all": "All",
   "add.ef.mine": "In my products",
@@ -1543,4 +1542,22 @@ export default {
   "ram.unavailable": "Times can't be calculated at this latitude.",
   // ---------- carte story ----------
   "share.scan_line": "Scan to see the full details",
+  // ---------- répertoire des additifs ----------
+  "add.sub": "The E-number directory, arranged as in the regulations: by hundreds.",
+  "add.show": "Show",
+  "add.index": "Jump to codes",
+  "add.rg.1": "Colours",
+  "add.rg.2": "Preservatives",
+  "add.rg.3": "Antioxidants and acidity regulators",
+  "add.rg.4": "Thickeners, gelling agents, emulsifiers",
+  "add.rg.5": "Acids, salts, anti-caking agents",
+  "add.rg.6": "Flavour enhancers",
+  "add.rg.7": "Antibiotics",
+  "add.rg.9": "Glazing agents, gases, sweeteners",
+  "add.rg.10": "Modified starches and others",
+  "add.m.haram": "Haram",
+  "add.m.mashbouh": "Doubtful halal",
+  "add.m.limite": "Limited risk",
+  "add.m.modere": "Moderate risk",
+  "add.m.eleve": "High risk",
 };
