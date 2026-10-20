@@ -16,6 +16,7 @@ import { createAisle } from "./lib/aisle.js";
 import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
+import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -451,6 +452,45 @@ const envWord = (kind, w) => {
   return w.replace(/-/g, " ");
 };
 const okIco = (ok) => ok === null ? `<span class="env-na">—</span>` : `<span class="env-ok ${ok ? "yes" : "no"}">${svg(ok ? I.check : I.cross)}</span>`;
+// Repères sous la jauge de production : où se situent quelques aliments connus (ordre de grandeur)
+const BENCH = [
+  [4, '<path d="M5.5 10.5C6.5 6 12 3.5 16.5 6s4 9.5-1 11.5-11 1.5-11-2.5c0-1.6.5-3 1-4.5z"/><circle cx="14" cy="11" r="2"/>'],
+  [22, '<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M6 9h12M6 15h12M12 3v18"/>'],
+  [41, '<path d="M14.5 3.5a5.5 5.5 0 0 1 2.8 10.3L13 15l-3.2 3.2"/><path d="M14.5 3.5A5.5 5.5 0 0 0 9 9l-.5 5"/><path d="M8.5 14L6 16.5a2 2 0 1 0 1.5 1.5L10 15.5"/>'],
+  [60, '<path d="M12 21L3.5 6.5c5.5-3 11.5-3 17 0z"/><path d="M5 9c4.5-2 9.5-2 14 0"/><circle cx="12" cy="12" r="1.2"/><circle cx="10" cy="15.5" r="1"/>'],
+  [80, '<path d="M12 21v-7"/><path d="M8 14.5a4 4 0 1 1 2.3-7.3 4 4 0 0 1 7.2 1.3 3.5 3.5 0 0 1-1.5 6z"/>'],
+  [96, '<path d="M12 7.5c-3-2-7 0-7 4.8 0 4.5 3 8.7 5 8.7.9 0 1.4-.5 2-.5s1.1.5 2 .5c2 0 5-4.2 5-8.7 0-4.8-4-6.8-7-4.8z"/><path d="M12 7.5c0-2 1-3.3 3-4"/>'],
+];
+const benchHtml = () => `<div class="env-bench" dir="ltr" aria-hidden="true">${BENCH.map(([x, ico]) => `<span style="left:${x}%">${svg(ico)}</span>`).join("")}</div>
+  <p class="env-bench-t">${esc(t("env.bench"))}</p>`;
+// Nom d'une origine dans la langue choisie : pays (Intl), région, ou le mot tel quel
+function originName(o) {
+  if (!o) return "";
+  if (o.region) return t(`env.region.${o.region}`);
+  if (o.iso) return countryName(o.iso, getLang());
+  const k = `env.origin.${o.tag}`;
+  return t(k) !== k ? t(k) : o.tag.replace(/-/g, " ");
+}
+function originBlock(e, world) {
+  const R = (tag) => resolveOrigin(tag, world);
+  const agg = e.origins.map((o) => ({ o: R(o.origin), percent: o.percent })).filter((x) => x.o);
+  const ingr = e.byIngredient.map((x) => ({ name: x.name, list: x.origins.map(R).filter(Boolean) })).filter((x) => x.list.length);
+  const prod = e.productOrigins.map(R).filter(Boolean);
+  const all = [...agg.map((x) => x.o), ...ingr.flatMap((x) => x.list), ...prod];
+  if (!all.length) return envRow(ENV_ICO.origin, t("env.origins"), esc(t("env.origin_none")), okIco(null));
+  const uniq = [...new Map(all.map((o) => [o.tag, o])).values()];
+  const isos = [...new Set(all.flatMap((o) => (o.iso ? [o.iso] : o.isos || [])))];
+  const summary = esc(uniq.map(originName).join(", "));
+  const flags = `<span class="env-flags" aria-hidden="true">${uniq.slice(0, 3).map(flagOf).join("")}${uniq.length > 3 ? "…" : ""}</span>`;
+  const rows = ingr.length
+    ? ingr.map((x) => `<li><span class="env-flag" aria-hidden="true">${flagOf(x.list[0])}</span><span><strong dir="auto">${esc(x.name.charAt(0).toUpperCase() + x.name.slice(1))}</strong><small>${esc(x.list.map(originName).join(", "))}</small></span></li>`)
+    : (agg.length ? agg : prod.map((o) => ({ o, percent: null }))).map((x) => `<li><span class="env-flag" aria-hidden="true">${flagOf(x.o)}</span><span><strong>${esc(originName(x.o))}</strong>${x.percent ? `<small>${esc(t("env.pct", { p: x.percent }))}</small>` : ""}</span></li>`);
+  return `<details class="nut-d env-origin" open><summary>${envRow(ENV_ICO.origin, t("env.origins"), summary, flags)}</summary>
+    ${isos.length ? mapSvg(world, isos, t("env.map_label")) : ""}
+    <ul class="env-olist">${rows.join("")}</ul>
+    ${e.originText ? `<p class="env-note">${esc(t("env.maker_says"))} « ${esc(e.originText)} »</p>` : ""}
+  </details>`;
+}
 async function loadEnv(p) {
   const box = $("envBox");
   if (!box || box.dataset.done) return;
@@ -472,17 +512,21 @@ async function loadEnv(p) {
   const prodGauge = e.production !== null
     ? `<div class="gauge env-gauge" dir="ltr"><div class="gauge-bar">${[20, 20, 20, 20, 20].map((w, i) => `<i class="eg-${i}" style="width:${w}%"></i>`).join("")}<b class="gauge-mark" style="--x:${e.production}%"></b></div>
        <div class="gauge-labels">${[0, 20, 40, 60, 80, 100].map((x) => `<span style="left:${x}%">${x}</span>`).join("")}</div></div>` : "";
-  const origins = e.origins.length ? e.origins.map((o) => `${esc(t(`env.origin.${o.origin}`) === `env.origin.${o.origin}` ? o.origin.replace(/-/g, " ") : t(`env.origin.${o.origin}`))} (${o.percent} %)`).join(", ") : esc(t("env.unknown"));
+  // Origines : carte, drapeaux et origine de chaque ingrédient quand l'étiquette la donne
+  const hasOrigin = e.origins.length || e.byIngredient.length || e.productOrigins.length;
+  const world = hasOrigin ? await loadWorld() : null;
+  if (!sheetProduct || sheetProduct.code !== p.code || !$("envBox")) return;
+  const originsHtml = originBlock(e, world);
   const pack = e.packaging.length
     ? e.packaging.map((x) => esc([envWord("shape", x.shape), envWord("mat", x.material)].filter(Boolean).join(" · "))).join(", ")
     : esc(t("env.unknown"));
   box.innerHTML = `${head}${gsScale}
     <div class="env-rows">
       ${e.production !== null ? `<details class="nut-d" open><summary>${envRow(ENV_ICO.prod, t("env.production"), esc(t(e.production >= 60 ? "env.prod.low" : e.production >= 40 ? "env.prod.mid" : "env.prod.high")), `<span dir="ltr">${e.production}/100</span>`)}</summary>${prodGauge}
-        <p class="env-note">${esc(t("env.prod_note", { co2: fmt(e.co2 ?? 0), ref: e.reference || "—" }))}</p></details>` : ""}
+        ${benchHtml()}<p class="env-note">${esc(t("env.prod_note", { co2: fmt(e.co2 ?? 0), ref: e.reference || "—" }))}</p></details>` : ""}
       ${envRow(ENV_ICO.bio, t("env.organic"), esc(t(e.organic ? "env.organic.yes" : "env.organic.no")), okIco(e.organic))}
       ${envRow(ENV_ICO.palm, t("env.palm"), esc(t(`env.palm.${e.palm || "unknown"}`)), okIco(e.palm === "free" ? true : e.palm === "yes" ? false : null))}
-      ${envRow(ENV_ICO.origin, t("env.origins"), origins, "")}
+      ${originsHtml}
       ${envRow(ENV_ICO.pack, t("env.packaging"), pack + (e.nonRecyclable ? ` · ${esc(t("env.non_recyclable"))}` : ""), e.packaging.length ? okIco(!e.nonRecyclable) : okIco(null))}
     </div>
     <p class="notes">${esc(t("env.source"))}</p>`;

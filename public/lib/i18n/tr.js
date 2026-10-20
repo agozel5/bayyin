@@ -1543,4 +1543,19 @@ export default {
   "ram.unavailable": "Bu enlemde vakitler hesaplanamıyor.",
   // ---------- carte story ----------
   "share.scan_line": "Ayrıntıların tamamı için tarayın",
+  // ---------- planète : origines et repères ----------
+  "env.region.europe": "Avrupa",
+  "env.region.africa": "Afrika",
+  "env.region.asia": "Asya",
+  "env.region.oceania": "Okyanusya",
+  "env.region.north-america": "Kuzey Amerika",
+  "env.region.south-america": "Güney Amerika",
+  "env.region.world": "Dünya",
+  "env.region.non-european-union": "Avrupa Birliği dışı",
+  "env.region.european-union": "Avrupa Birliği",
+  "env.pct": "İçeriklerin %{p}'i",
+  "env.maker_says": "Üreticinin belirttiği:",
+  "env.origin_none": "Üretici, içeriklerin kökenini Open Food Facts'te belirtmemiş.",
+  "env.map_label": "Menşe ülkeler haritası",
+  "env.bench": "Yaklaşık karşılaştırmalar: sığır eti, çikolata, tavuk, pizza, sebze, meyve.",
 };

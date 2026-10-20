@@ -8,7 +8,7 @@
 // - Photos des produits : gardées sur le téléphone (leur adresse change avec chaque nouvelle photo,
 //   donc une photo gardée n'est jamais périmée) ; sur un réseau instable, nouvel essai automatique.
 
-const VERSION = "2026-10-20-7";
+const VERSION = "2026-10-20-8";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
@@ -25,7 +25,7 @@ const APP_FILES = [
   "icon.svg", "icon-180.png", "icon-192.png", "icon-512.png",
   "lib/off.js", "lib/rules.js", "lib/health.js", "lib/fixtures.js", "lib/camera.js", "lib/barcode.js",
   "lib/store.js", "lib/settings.js", "lib/i18n.js", "lib/ocr.js", "lib/sources.js",
-  "lib/beauty.js", "lib/medicine.js", "lib/profile.js", "lib/sharecard.js", "lib/aisle.js", "lib/cosmetic.js", "lib/places.js", "lib/search.js", "lib/recalls.js", "lib/certifiers.js", "lib/confidence.js", "lib/contribute.js", "lib/certcheck.js", "lib/rankings.js", "lib/mascot.js", "lib/highlight.js", "lib/ramadan.js", "lib/qr.js", "app-config.js", "lib/premium.js", "premium-config.js",
+  "lib/beauty.js", "lib/medicine.js", "lib/profile.js", "lib/sharecard.js", "lib/aisle.js", "lib/cosmetic.js", "lib/places.js", "lib/search.js", "lib/recalls.js", "lib/certifiers.js", "lib/confidence.js", "lib/contribute.js", "lib/certcheck.js", "lib/rankings.js", "lib/mascot.js", "lib/highlight.js", "lib/ramadan.js", "lib/qr.js", "lib/world.js", "app-config.js", "lib/premium.js", "premium-config.js",
   "lib/i18n/fr.js", "lib/i18n/en.js", "lib/i18n/ar.js", "lib/i18n/tr.js",
 ];
 

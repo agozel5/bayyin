@@ -1557,4 +1557,19 @@ export default {
   "ram.unavailable": "Horaires impossibles à calculer à cette latitude.",
   // ---------- carte story ----------
   "share.scan_line": "Scannez pour voir la fiche complète",
+  // ---------- planète : origines et repères ----------
+  "env.region.europe": "Europe",
+  "env.region.africa": "Afrique",
+  "env.region.asia": "Asie",
+  "env.region.oceania": "Océanie",
+  "env.region.north-america": "Amérique du Nord",
+  "env.region.south-america": "Amérique du Sud",
+  "env.region.world": "Monde",
+  "env.region.non-european-union": "Hors Union européenne",
+  "env.region.european-union": "Union européenne",
+  "env.pct": "{p} % des ingrédients",
+  "env.maker_says": "Indiqué par le fabricant :",
+  "env.origin_none": "Le fabricant n'a pas indiqué l'origine des ingrédients sur Open Food Facts.",
+  "env.map_label": "Carte des pays d'origine",
+  "env.bench": "Repères indicatifs : bœuf, chocolat, poulet, pizza, légumes, fruits.",
 };

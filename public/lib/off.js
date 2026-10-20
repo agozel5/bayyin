@@ -60,6 +60,15 @@ export function greenScore(p) {
   const organic = labels.some((t) => /^(en:organic|en:eu-organic|fr:ab-agriculture-biologique|en:ab-agriculture-biologique)$/.test(t));
   const origins = ((adj.origins_of_ingredients && adj.origins_of_ingredients.aggregated_origins) || [])
     .filter((o) => o.origin && o.origin !== "en:unknown").map((o) => ({ origin: o.origin.replace(/^\w+:/, ""), percent: Math.round(o.percent) }));
+  // Origine par ingrédient, quand l'étiquette la donne (« blé (France) ») : Open Food Facts la range
+  // dans ingredients[].origins ; sinon, l'origine générale du produit (origins_tags)
+  const byIngredient = [];
+  const walk = (list) => (list || []).forEach((x) => {
+    if (x && x.origins) byIngredient.push({ name: String(x.text || "").replace(/_/g, "").trim(), origins: String(x.origins).split(",").map((o) => o.trim().replace(/^\w+:/, "")).filter(Boolean) });
+    if (x && x.ingredients) walk(x.ingredients);
+  });
+  walk(p.ingredients);
+  const productOrigins = (p.origins_tags || []).map((o) => String(o).replace(/^\w+:/, "")).filter((o) => o && o !== "unknown");
   const pk = adj.packaging || {};
   const packaging = (pk.packagings || []).map((x) => ({
     material: String(x.material || "").replace(/^\w+:/, ""), shape: String(x.shape || "").replace(/^\w+:/, ""), recyclable: !/non-recyclable/.test(String(x.recycling || "")),
@@ -74,6 +83,9 @@ export function greenScore(p) {
     organic,
     palm,
     origins,
+    byIngredient: byIngredient.filter((x) => x.name && x.origins.length).slice(0, 12),
+    productOrigins,
+    originText: String(p.origin_fr || p.origin || "").trim(),
     packaging,
     packagingScore: typeof pk.value === "number" ? pk.value : null,
     nonRecyclable: !!pk.non_recyclable_and_non_biodegradable_materials,
@@ -369,9 +381,10 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
 
     // -> impact environnemental (Green-Score, ex-Eco-Score), chargé seulement quand on ouvre l'onglet
     async environment(code) {
-      if (demo || !/^\d+$/.test(code)) return null;
+      if (demo) return FIXTURES[code] && FIXTURES[code].env ? greenScore(FIXTURES[code].env) : null;
+      if (!/^\d+$/.test(code)) return null;
       const fields = "ecoscore_grade,ecoscore_score,ecoscore_data,environmental_score_grade,environmental_score_score,environmental_score_data," +
-        "labels_tags,ingredients_analysis_tags,origins_tags,manufacturing_places,packaging_materials_tags,packaging_recycling_tags";
+        "labels_tags,ingredients_analysis_tags,origins_tags,origin_fr,origin,ingredients,manufacturing_places,packaging_materials_tags,packaging_recycling_tags";
       const data = await getJson(`${OFF_BASE}/api/v2/product/${code}.json?fields=${fields}`, 15000, { tries: 2 });
       return data && data.product ? greenScore(data.product) : null;
     },

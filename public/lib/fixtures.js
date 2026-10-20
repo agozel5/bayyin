@@ -217,3 +217,24 @@ const HEALTH = {
     nutriments: { "energy-kcal_100g": 0, "sugars_100g": 0, "saturated-fat_100g": 0, "salt_100g": 0 } },
 };
 for (const [code, extra] of Object.entries(HEALTH)) Object.assign(FIXTURES[code], extra);
+
+// Impact environnemental d'exemple (onglet Planète en mode démo), au format d'Open Food Facts
+FIXTURES["3245390011015"].env = {
+  environmental_score_grade: "b", environmental_score_score: 68,
+  environmental_score_data: {
+    agribalyse: { score: 61, co2_total: 1.32, name_fr: "Pain de mie, courant" },
+    adjustments: {
+      origins_of_ingredients: { aggregated_origins: [{ origin: "en:france", percent: 62 }, { origin: "en:european-union", percent: 26 }, { origin: "en:brazil", percent: 12 }] },
+      packaging: { packagings: [{ material: "en:plastic", shape: "en:bag" }], non_recyclable_and_non_biodegradable_materials: 0 },
+    },
+  },
+  labels_tags: [], ingredients_analysis_tags: ["en:palm-oil-free"],
+  origins_tags: [],
+  origin_fr: "Blé : France. Huile de colza : Union européenne. Sucre : Brésil.",
+  ingredients: [
+    { text: "Farine de _blé_", origins: "en:france" },
+    { text: "huile de colza", origins: "en:european-union" },
+    { text: "sucre", origins: "en:brazil,en:paraguay" },
+    { text: "levure" },
+  ],
+};

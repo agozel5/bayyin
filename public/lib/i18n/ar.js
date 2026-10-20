@@ -1543,4 +1543,19 @@ export default {
   "ram.unavailable": "لا يمكن حساب المواقيت عند خط العرض هذا.",
   // ---------- carte story ----------
   "share.scan_line": "امسح الرمز لرؤية البطاقة كاملة",
+  // ---------- planète : origines et repères ----------
+  "env.region.europe": "أوروبا",
+  "env.region.africa": "أفريقيا",
+  "env.region.asia": "آسيا",
+  "env.region.oceania": "أوقيانوسيا",
+  "env.region.north-america": "أمريكا الشمالية",
+  "env.region.south-america": "أمريكا الجنوبية",
+  "env.region.world": "العالم",
+  "env.region.non-european-union": "خارج الاتحاد الأوروبي",
+  "env.region.european-union": "الاتحاد الأوروبي",
+  "env.pct": "{p}٪ من المكوّنات",
+  "env.maker_says": "ما يذكره المصنّع:",
+  "env.origin_none": "لم يذكر المصنّع مصدر المكوّنات على Open Food Facts.",
+  "env.map_label": "خريطة بلدان المنشأ",
+  "env.bench": "مراجع تقريبية: لحم البقر، الشوكولاتة، الدجاج، البيتزا، الخضار، الفواكه.",
 };
