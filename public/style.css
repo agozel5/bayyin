@@ -2060,3 +2060,105 @@ img.img-wait{background:linear-gradient(100deg,var(--tint) 30%,color-mix(in srgb
 #rankKinds button{padding:10px 4px;font-size:.86rem;line-height:1.2}
 .kind-seg button{flex:1 1 auto;padding:9px 6px;gap:4px;font-size:.8rem}
 .kind-seg button svg{width:14px;height:14px}
+
+/* ---------- Le moment du scan : le code-barres devient le verdict ---------- */
+.cam-morph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cam-morph svg{width:100%;height:100%;overflow:visible}
+.cam-morph .mb rect{fill:#fff;stroke:none;transform-box:fill-box;transform-origin:center;opacity:0;
+  transition:transform .3s cubic-bezier(.6,0,.3,1) var(--d,0ms),opacity .15s ease}
+.camera.m-read .cam-morph .mb rect{opacity:1;transform:translateX(var(--dx)) scaleY(.1)}
+.cam-morph .md{fill:var(--mc,#fff);stroke:none;transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .34s cubic-bezier(.3,1.4,.5,1)}
+.cam-morph .ms{fill:none;stroke:#fff;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset .32s .18s ease-out}
+.camera.m-v .cam-morph .mb rect{opacity:0;transition-delay:0ms}
+.camera.m-v .cam-morph .md{transform:scale(1)}
+.camera.m-v .cam-morph .ms{stroke-dashoffset:0}
+.camera.m-read .laser{opacity:0}
+.camera.m-v .corner{border-color:var(--mc)}
+.camera.m-v .cam-frame{box-shadow:0 0 0 200vmax rgb(0 0 0 / .7),inset 0 0 0 999px color-mix(in srgb,var(--mc) 18%,transparent);outline-color:var(--mc)}
+.cam-morph-label{position:absolute;top:100%;left:0;right:0;margin:18px 0 0;text-align:center;font-weight:700;font-size:1.15rem;color:#fff;
+  opacity:0;transform:translateY(6px);transition:opacity .25s .3s ease,transform .25s .3s ease;text-shadow:0 1px 8px rgb(0 0 0 / .6)}
+.camera.m-v .cam-morph-label{opacity:1;transform:none}
+/* pendant l'attente des données : le point respire */
+@media (prefers-reduced-motion:no-preference){
+  .camera.m-read:not(.m-v) .cam-morph .mb{animation:m-wait 1s .4s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+  @keyframes m-wait{to{transform:scale(1.35);opacity:.6}}
+}
+
+/* ---------- Ce que dit l'étiquette : la liste, surlignée à l'endroit exact ---------- */
+.reader{margin:14px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
+.reader-head{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.reader-head strong{font-size:1rem;font-weight:700}
+.reader-head small{color:var(--muted);font-size:.86rem}
+.reader-text{margin:0;font-size:.98rem;line-height:1.85;color:var(--fg)}
+.reader.long:not(.open) .reader-text{max-height:9.3em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 62%,transparent);mask-image:linear-gradient(#000 62%,transparent)}
+.reader-more{margin-top:4px;padding:6px 0;border:0;background:none;color:var(--brand);font:inherit;font-weight:600;font-size:.92rem}
+.lb-al{font-weight:700}
+.hl{--c:var(--c-info);display:inline;padding:1px 2px;margin:0 -1px;border:0;border-radius:4px;font:inherit;color:inherit;line-height:inherit;
+  background:color-mix(in srgb,var(--c) 11%,transparent);
+  text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:2px;text-underline-offset:4px;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;cursor:pointer;transition:background .15s}
+.hl-haram{--c:var(--c-haram)}
+.hl-mashbouh{--c:var(--c-doubt)}
+.hl-risk{--c:#D9822B;text-decoration-style:dotted;text-decoration-thickness:2.5px}
+.hl-info{--c:var(--c-info);text-decoration-style:dotted;background:transparent}
+.hl[aria-expanded="true"]{background:color-mix(in srgb,var(--c) 24%,transparent)}
+.hl-note{--c:var(--c-info);margin-top:12px;padding:12px 14px;border-radius:var(--r-md);background:var(--tint);border-inline-start:3px solid var(--c);display:flex;flex-direction:column;gap:10px}
+.hl-note-haram{--c:var(--c-haram)}
+.hl-note-mashbouh{--c:var(--c-doubt)}
+.hl-note-risk{--c:#D9822B}
+.hn-row{display:flex;flex-direction:column;gap:4px}
+.hn-row + .hn-row{padding-top:10px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:no-preference){
+  .hl-note:not([hidden]){animation:hn-in .2s ease-out}
+  @keyframes hn-in{from{opacity:0;transform:translateY(-4px)}}
+}
+.reader-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:.8rem;color:var(--muted)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg::before{content:"";width:14px;height:3px;border-radius:2px;background:var(--c,var(--c-info))}
+.lg-haram{--c:var(--c-haram)}
+.lg-mashbouh{--c:var(--c-doubt)}
+.lg-risk{--c:#D9822B}
+.lg-al::before{height:10px;width:10px;border-radius:2px;background:var(--fg);opacity:.7}
+
+/* ---------- Chargement : le khatam (étoile à huit branches) tourne à la place du rond ---------- */
+.spinner{position:relative;border:0!important;border-radius:0!important;color:var(--brand);background:none;animation:khatam 1.6s cubic-bezier(.45,0,.55,1) infinite}
+.spinner::before,.spinner::after{content:"";position:absolute;inset:17%;border:2.4px solid currentColor;border-radius:2px}
+.spinner::after{transform:rotate(45deg)}
+.spinner.light{color:#fff}
+.cert-badge .spinner::before,.cert-badge .spinner::after,.off-photo .btn .spinner::before,.off-photo .btn .spinner::after{border-width:1.6px}
+@keyframes khatam{0%{transform:rotate(0)}100%{transform:rotate(90deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:4s}}
+
+/* ---------- Premier lancement : بيّن se trace à l'encre ---------- */
+.intro{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--bg);transition:opacity .45s ease}
+.intro svg{width:min(78vw,420px);height:auto;overflow:visible}
+.intro-ar{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;font-weight:700;font-size:150px;fill:transparent;stroke:var(--brand);stroke-width:2.2;stroke-linejoin:round;stroke-dasharray:900;stroke-dashoffset:900}
+.intro.go .intro-ar{animation:ink 1.5s cubic-bezier(.55,.1,.35,1) forwards,ink-fill .5s 1.25s ease forwards}
+@keyframes ink{to{stroke-dashoffset:0}}
+@keyframes ink-fill{to{fill:var(--brand)}}
+.intro-latin{margin:0;font-weight:600;font-size:1.05rem;letter-spacing:.02em;color:var(--muted);opacity:0}
+.intro.go .intro-latin{animation:intro-up .5s 1.4s ease forwards}
+@keyframes intro-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.intro.out{opacity:0;pointer-events:none}
+
+/* ---------- Mode Ramadan ---------- */
+.ramadan{position:relative;overflow:hidden;isolation:isolate;padding:18px;border-radius:var(--r-xl);color:#EEF4F1;
+  background:linear-gradient(160deg,#12324A 0%,#0E3B33 100%)}
+.ramadan::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--khatam);background-size:56px 56px;opacity:.2;-webkit-mask-image:linear-gradient(200deg,#000 5%,transparent 60%);mask-image:linear-gradient(200deg,#000 5%,transparent 60%)}
+.ram-head{display:flex;align-items:center;gap:12px}
+.ram-moon{width:34px;height:34px;color:#F3D27A;fill:#F3D27A;stroke:none}
+.ram-head h2{font-size:1.15rem;font-weight:700;color:#fff}
+.ram-head p{margin:0;color:rgb(238 244 241 / .75);font-size:.9rem}
+.ram-times{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.ram-time{display:flex;flex-direction:column;padding:12px 14px;border-radius:var(--r-md);background:rgb(255 255 255 / .08);border:1px solid rgb(255 255 255 / .12)}
+.ram-time small{color:rgb(238 244 241 / .72);font-size:.82rem}
+.ram-time b{font-family:var(--font-mono);font-weight:600;font-size:1.6rem;letter-spacing:-.01em;color:#fff}
+.ram-count{margin:12px 0 0;font-weight:600;color:#F3D27A}
+.ram-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+.ram-method{display:flex;align-items:center;gap:8px;font-size:.85rem;color:rgb(238 244 241 / .8)}
+.ram-method select{max-width:52vw;padding:6px 8px;border-radius:8px;border:1px solid rgb(255 255 255 / .2);background:rgb(255 255 255 / .08);color:#fff;font:inherit;font-size:.85rem}
+.ram-method select option{color:#15211A}
+.ramadan .link-btn{color:#F3D27A;background:none;border:0;padding:4px 0;font:inherit;font-weight:600;font-size:.85rem}
+.ram-locate{margin-top:14px;width:100%;color:#12324A}
+.ram-locate .spinner{width:20px;height:20px;color:#12324A}
+.ram-note{margin:10px 0 0;font-size:.8rem;color:rgb(238 244 241 / .65)}

@@ -1,4 +1,5 @@
 // Carte image du verdict, à partager (WhatsApp, Instagram…). Dessinée dans un canvas, sans service externe.
+import { qrMatrix } from "./qr.js";
 
 const COLORS = { halal_certifie: "#128A4E", halal_probable: "#2E7F45", mashbouh: "#BF650A", haram: "#C3362D", inconnu: "#5F6B65" };
 
@@ -57,30 +58,41 @@ function khatam(ctx, cx, cy, r) {
 }
 
 /**
- * @param {object} o { name, brand, image, status, statusLabel, kicker, lead, score, grade, gradeLabel, healthLabel, footer, rtl }
- * @returns {Promise<Blob>} image PNG 1080 × 1350
+ * Carte au format story (Instagram, WhatsApp, Snapchat) : photo, verdict, note santé et un QR code
+ * qui ouvre la fiche du produit dans Bayyin. Les zones du haut et du bas, couvertes par l'interface
+ * des applis de story, ne portent rien d'essentiel.
+ * @param {object} o { name, brand, image, status, statusLabel, kicker, lead, score, grade, gradeLabel, healthLabel,
+ *                     footer, scanLine, url, urlLabel, rtl }
+ * @returns {Promise<Blob>} image PNG 1080 × 1920
  */
 export async function drawShareCard(o) {
   if (document.fonts && document.fonts.ready) await document.fonts.ready.catch(() => {});
-  const W = 1080, H = 1350;
+  const W = 1080, H = 1920, M = 90;
   const c = document.createElement("canvas");
   c.width = W;
   c.height = H;
   const ctx = c.getContext("2d");
-  const font = (w, s) => `${w} ${s}px Figtree, "IBM Plex Sans Arabic", system-ui, sans-serif`;
+  const font = (w, s, mono) => `${w} ${s}px ${mono ? '"IBM Plex Mono", ui-monospace, monospace' : '"IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif'}`;
   ctx.direction = o.rtl ? "rtl" : "ltr";
   const X = (x) => (o.rtl ? W - x : x);
-  ctx.textAlign = o.rtl ? "right" : "left";
+  const start = o.rtl ? "right" : "left";
+  ctx.textAlign = start;
+  const vc = COLORS[o.status] || COLORS.inconnu;
 
-  // Fond
+  // Fond : sauge clair, et le khatam en filigrane derrière l'en-tête
   ctx.fillStyle = "#F1F5F0";
   ctx.fillRect(0, 0, W, H);
-
-  // En-tête : logo (le même tracé que icon.svg) + nom
-  const lx = o.rtl ? W - 72 - 88 : 72;
   ctx.save();
-  ctx.translate(lx, 70);
-  ctx.scale(88 / 48, 88 / 48);
+  ctx.strokeStyle = "rgba(18,114,79,.07)";
+  ctx.lineWidth = 3;
+  for (let y = 40; y < 300; y += 120) for (let x = 40; x < W + 60; x += 120) khatam(ctx, x, y, 30);
+  ctx.restore();
+
+  // En-tête : logo + nom
+  const lx = o.rtl ? W - M - 84 : M;
+  ctx.save();
+  ctx.translate(lx, 150);
+  ctx.scale(84 / 48, 84 / 48);
   ctx.fillStyle = "#12724F";
   roundRect(ctx, 0, 0, 48, 48, 12);
   ctx.fill();
@@ -95,110 +107,148 @@ export async function drawShareCard(o) {
   ctx.fill();
   ctx.restore();
   ctx.fillStyle = "#15211A";
-  ctx.font = font(800, 52);
-  ctx.fillText("Bayyin", X(184), 132);
+  ctx.font = font(700, 50);
+  ctx.fillText("Bayyin", X(M + 108), 208);
+  ctx.fillStyle = "#12724F";
+  ctx.font = font(600, 46);
+  ctx.textAlign = o.rtl ? "left" : "right";
+  ctx.fillText("بيّن", X(W - M), 208);
+  ctx.textAlign = start;
 
-  // Carte produit
+  // Photo du produit sur une carte blanche
+  const py = 280, ph = 460;
   ctx.fillStyle = "#fff";
-  roundRect(ctx, 60, 210, W - 120, 330, 40);
+  roundRect(ctx, M, py, W - 2 * M, ph, 36);
   ctx.fill();
+  ctx.strokeStyle = "#E3E8E2";
+  ctx.lineWidth = 2;
+  ctx.stroke();
   const img = await loadImage(o.image);
-  const imgX = o.rtl ? W - 100 - 250 : 100;
   if (img) {
-    const s = Math.min(250 / img.width, 250 / img.height);
-    ctx.drawImage(img, imgX + (250 - img.width * s) / 2, 250 + (250 - img.height * s) / 2, img.width * s, img.height * s);
+    const box = ph - 100;
+    const sc = Math.min(box / img.width, (W - 2 * M - 100) / img.width, box / img.height);
+    ctx.drawImage(img, (W - img.width * sc) / 2, py + (ph - img.height * sc) / 2, img.width * sc, img.height * sc);
   } else {
-    ctx.fillStyle = "#F3F6F2";
-    roundRect(ctx, imgX, 250, 250, 250, 30);
-    ctx.fill();
+    ctx.strokeStyle = "#C9D3CC";
+    ctx.lineWidth = 6;
+    ctx.save();
+    ctx.translate(W / 2, py + ph / 2);
+    ctx.strokeRect(-70, -50, 140, 100);
+    for (let i = -46; i <= 46; i += 14) { ctx.beginPath(); ctx.moveTo(i, -28); ctx.lineTo(i, 28); ctx.stroke(); }
+    ctx.restore();
   }
-  const tx = o.rtl ? W - 100 - 250 - 40 : 100 + 250 + 40;
-  const tw = W - 120 - 250 - 120;
-  ctx.fillStyle = "#15211A";
-  ctx.font = font(800, 54);
-  const nameLines = wrap(ctx, o.name, tw, 3);
-  nameLines.forEach((l, i) => ctx.fillText(l, tx, 310 + i * 64));
-  ctx.fillStyle = "#5D6A63";
-  ctx.font = font(500, 38);
-  if (o.brand) ctx.fillText(wrap(ctx, o.brand, tw, 1)[0], tx, 310 + nameLines.length * 64 + 16);
 
-  // Bandeau du verdict
-  const vc = COLORS[o.status] || COLORS.inconnu;
-  const top = 580, bh = o.score ? 560 : 440;
+  // Nom et marque
+  ctx.fillStyle = "#15211A";
+  ctx.font = font(700, 62);
+  const nameLines = wrap(ctx, o.name, W - 2 * M, 2);
+  nameLines.forEach((l, i) => ctx.fillText(l, X(M), 830 + i * 74));
+  let y = 830 + nameLines.length * 74;
+  if (o.brand) {
+    ctx.fillStyle = "#5D6A63";
+    ctx.font = font(500, 40);
+    ctx.fillText(wrap(ctx, o.brand, W - 2 * M, 1)[0], X(M), y + 2);
+    y += 50;
+  }
+
+  // Bloc du verdict
+  const top = Math.max(y + 36, 1000), bh = 300;
   ctx.fillStyle = vc;
-  roundRect(ctx, 60, top, W - 120, bh, 48);
+  roundRect(ctx, M, top, W - 2 * M, bh, 40);
   ctx.fill();
   ctx.save();
-  roundRect(ctx, 60, top, W - 120, bh, 48);
+  roundRect(ctx, M, top, W - 2 * M, bh, 40);
   ctx.clip();
-  ctx.strokeStyle = "rgba(255,255,255,.14)";
+  ctx.strokeStyle = "rgba(255,255,255,.13)";
   ctx.lineWidth = 3;
-  for (let y = top + 20; y < top + bh + 60; y += 110) for (let x = 90; x < W; x += 110) khatam(ctx, x, y, 26);
+  for (let yy = top + 10; yy < top + bh + 60; yy += 110) for (let x = M + 20; x < W; x += 110) khatam(ctx, x, yy, 26);
   ctx.restore();
-
-  const icx = o.rtl ? W - 200 : 200;
+  const icx = o.rtl ? W - M - 120 : M + 120, icy = top + 120;
   ctx.fillStyle = "#fff";
   ctx.beginPath();
-  ctx.arc(icx, top + 150, 90, 0, Math.PI * 2);
+  ctx.arc(icx, icy, 74, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = vc;
-  ctx.lineWidth = 16;
+  ctx.fillStyle = vc;
+  ctx.lineWidth = 14;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.beginPath();
   if (o.status === "halal_certifie" || o.status === "halal_probable") {
-    ctx.moveTo(icx - 40, top + 152); ctx.lineTo(icx - 10, top + 182); ctx.lineTo(icx + 44, top + 122);
+    ctx.moveTo(icx - 32, icy + 2); ctx.lineTo(icx - 8, icy + 26); ctx.lineTo(icx + 36, icy - 22);
   } else if (o.status === "haram") {
-    ctx.moveTo(icx - 36, top + 114); ctx.lineTo(icx + 36, top + 186); ctx.moveTo(icx + 36, top + 114); ctx.lineTo(icx - 36, top + 186);
+    ctx.moveTo(icx - 28, icy - 28); ctx.lineTo(icx + 28, icy + 28); ctx.moveTo(icx + 28, icy - 28); ctx.lineTo(icx - 28, icy + 28);
   } else if (o.status === "mashbouh") {
-    ctx.font = font(900, 120); ctx.fillStyle = vc; ctx.textAlign = "center"; ctx.fillText("?", icx, top + 192); ctx.textAlign = o.rtl ? "right" : "left";
+    ctx.font = font(700, 100); ctx.textAlign = "center"; ctx.fillText("?", icx, icy + 36); ctx.textAlign = start;
   } else {
-    ctx.moveTo(icx - 40, top + 150); ctx.lineTo(icx + 40, top + 150);
+    ctx.moveTo(icx - 32, icy); ctx.lineTo(icx + 32, icy);
   }
   ctx.stroke();
-
-  const vx = o.rtl ? W - 340 : 340;
-  ctx.fillStyle = "rgba(255,255,255,.88)";
-  ctx.font = font(600, 38);
-  ctx.fillText(o.kicker, vx, top + 110);
+  const vx = o.rtl ? W - M - 230 : M + 230;
+  ctx.fillStyle = "rgba(255,255,255,.85)";
+  ctx.font = font(600, 36);
+  ctx.fillText(o.kicker, X(o.rtl ? W - vx : vx), top + 92);
   ctx.fillStyle = "#fff";
-  ctx.font = font(800, 84);
-  ctx.fillText(wrap(ctx, o.statusLabel, W - 340 - 100, 1)[0], vx, top + 196);
-  ctx.font = font(500, 38);
+  ctx.font = font(700, 76);
+  ctx.fillText(wrap(ctx, o.statusLabel, W - 2 * M - 270, 1)[0], X(o.rtl ? W - vx : vx), top + 172);
+  ctx.font = font(500, 34);
   ctx.fillStyle = "rgba(255,255,255,.92)";
-  wrap(ctx, o.lead, W - 220, 2).forEach((l, i) => ctx.fillText(l, X(110), top + 300 + i * 52));
+  wrap(ctx, o.lead, W - 2 * M - 80, 1).forEach((l) => ctx.fillText(l, X(M + 40), top + 262));
 
+  // Note santé
+  let qy = top + bh + 40;
   if (o.score) {
-    ctx.save();
-    roundRect(ctx, 60, top, W - 120, bh, 48);
-    ctx.clip();
-    ctx.fillStyle = "rgba(0,0,0,.14)";
-    ctx.fillRect(60, top + bh - 170, W - 120, 170);
-    ctx.restore();
-    const rx = o.rtl ? W - 190 : 190, ry = top + bh - 85;
-    ctx.strokeStyle = "rgba(255,255,255,.3)";
-    ctx.lineWidth = 14;
-    ctx.beginPath(); ctx.arc(rx, ry, 56, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = "#fff";
-    ctx.beginPath(); ctx.arc(rx, ry, 56, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * o.score) / 100); ctx.stroke();
     ctx.fillStyle = "#fff";
+    roundRect(ctx, M, qy, W - 2 * M, 150, 32);
+    ctx.fill();
+    ctx.strokeStyle = "#E3E8E2";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    const gc = { excellent: "#169B57", bon: "#7DBE45", mediocre: "#EE8A1F", mauvais: "#E0423A" }[o.grade] || "#5D6A63";
+    const rx = o.rtl ? W - M - 90 : M + 90, ry = qy + 75;
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = "#EBEFEA";
+    ctx.beginPath(); ctx.arc(rx, ry, 46, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = gc;
+    ctx.beginPath(); ctx.arc(rx, ry, 46, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * o.score) / 100); ctx.stroke();
+    ctx.fillStyle = "#15211A";
     ctx.textAlign = "center";
-    ctx.font = font(800, 44);
-    ctx.fillText(String(o.score), rx, ry + 15);
-    ctx.textAlign = o.rtl ? "right" : "left";
-    ctx.font = font(500, 34);
-    ctx.fillStyle = "rgba(255,255,255,.85)";
-    ctx.fillText(o.healthLabel, X(290), ry - 12);
-    ctx.font = font(800, 46);
-    ctx.fillStyle = "#fff";
-    ctx.fillText(`${o.gradeLabel} · ${o.score}/100`, X(290), ry + 42);
+    ctx.font = font(600, 38, true);
+    ctx.fillText(String(o.score), rx, ry + 13);
+    ctx.textAlign = start;
+    ctx.fillStyle = "#5D6A63";
+    ctx.font = font(500, 32);
+    ctx.fillText(o.healthLabel, X(M + 170), ry - 10);
+    ctx.fillStyle = "#15211A";
+    ctx.font = font(700, 42);
+    ctx.fillText(`${o.gradeLabel} · ${o.score}/100`, X(M + 170), ry + 38);
+    qy += 150 + 40;
   }
 
-  // Pied
-  ctx.fillStyle = "#5D6A63";
-  ctx.font = font(600, 34);
-  ctx.textAlign = "center";
-  ctx.fillText(o.footer, W / 2, H - 70);
+  // QR code : la fiche du produit dans Bayyin
+  if (o.url) {
+    const qs = 200;
+    const qx = o.rtl ? W - M - qs : M;
+    ctx.fillStyle = "#fff";
+    roundRect(ctx, qx, qy, qs, qs, 24);
+    ctx.fill();
+    try {
+      const m = qrMatrix(o.url);
+      const n = m.length, cell = (qs - 28) / n;
+      ctx.fillStyle = "#15211A";
+      m.forEach((row, yy) => row.forEach((on, xx) => { if (on) ctx.fillRect(qx + 14 + xx * cell, qy + 14 + yy * cell, cell + 0.4, cell + 0.4); }));
+    } catch { /* lien trop long : la carte reste valable sans QR */ }
+    const tx = o.rtl ? W - M - qs - 36 : M + qs + 36;
+    ctx.fillStyle = "#15211A";
+    ctx.font = font(700, 40);
+    wrap(ctx, o.scanLine || o.footer, W - 2 * M - qs - 36, 2).forEach((l, i) => ctx.fillText(l, X(o.rtl ? W - tx : tx), qy + 70 + i * 50));
+    ctx.fillStyle = "#12724F";
+    ctx.font = font(500, 30, true);
+    ctx.direction = "ltr";
+    ctx.textAlign = o.rtl ? "right" : "left";
+    ctx.fillText(o.urlLabel || "", tx, qy + 178);
+    ctx.direction = o.rtl ? "rtl" : "ltr";
+  }
 
   return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
 }

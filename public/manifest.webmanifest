@@ -29,12 +29,50 @@
   ],
   "shortcuts": [
     {
+      "name": "Scanner un produit",
+      "short_name": "Scanner",
+      "url": "./?action=scan#scan",
+      "icons": [
+        {
+          "src": "shortcut-scan.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mode courses",
+      "short_name": "Courses",
+      "url": "./?action=basket#scan",
+      "icons": [
+        {
+          "src": "shortcut-basket.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Rechercher",
-      "url": "./#search"
+      "url": "./#search",
+      "icons": [
+        {
+          "src": "shortcut-search.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Historique",
-      "url": "./#history"
+      "url": "./#history",
+      "icons": [
+        {
+          "src": "shortcut-history.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

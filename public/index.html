@@ -86,6 +86,8 @@
       </div>
     </form>
 
+    <section class="ramadan" id="ramadanBox" aria-labelledby="h-ram" hidden></section>
+
     <section class="tools" aria-labelledby="h-tools">
       <h2 class="sr-only" id="h-tools" data-i18n="home.tools"></h2>
       <div class="tool-row">
@@ -462,7 +464,7 @@
 
 <div class="camera" id="camera" data-state="idle" role="dialog" aria-modal="true" data-i18n-aria="cam.label" hidden>
   <video id="camVideo" playsinline muted autoplay></video>
-  <div class="cam-mask" aria-hidden="true"><div class="cam-frame" id="camFrame"><span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span><span class="laser"></span></div></div>
+  <div class="cam-mask" aria-hidden="true"><div class="cam-frame" id="camFrame"><span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span><span class="laser"></span><div class="cam-morph" id="camMorph" hidden></div></div></div>
   <div class="cam-top">
     <button class="cam-btn" id="closeCamera" type="button" data-i18n-aria="cam.close">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>

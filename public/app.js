@@ -14,6 +14,8 @@ import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic, COSMETIC_RULES } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
 import { mascot } from "./lib/mascot.js";
+import { readLabel } from "./lib/highlight.js";
+import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -27,6 +29,27 @@ import { isPremium, premiumEnabled, premiumConfig, premiumState, activate as act
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
+
+// Tout premier lancement : le nom بيّن se trace à l'encre, une seule fois (touchez pour passer).
+(function playIntro() {
+  const qs = new URLSearchParams(location.search);
+  let seen = false;
+  try { seen = localStorage.getItem("bayyin_intro") === "1"; } catch { /* stockage indisponible */ }
+  if (!qs.has("intro") && (seen || DEMO || matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  try { localStorage.setItem("bayyin_intro", "1"); } catch { /* stockage indisponible */ }
+  const el = document.createElement("div");
+  el.className = "intro";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `<svg viewBox="0 0 400 230"><text x="200" y="160" text-anchor="middle" class="intro-ar">بيّن</text></svg><p class="intro-latin">Bayyin</p>`;
+  document.body.appendChild(el);
+  const done = () => { el.classList.add("out"); setTimeout(() => el.remove(), 500); };
+  el.addEventListener("click", done);
+  const ready = document.fonts && document.fonts.load ? document.fonts.load("700 140px 'IBM Plex Sans Arabic'", "بيّن").catch(() => {}) : Promise.resolve();
+  Promise.race([ready, new Promise((r) => setTimeout(r, 700))]).then(() => {
+    el.classList.add("go");
+    setTimeout(done, 2300);
+  });
+})();
 const prefs = () => settings.get();
 // La base des médicaments est servie avec l'app (dossier data/med), donc aussi hors connexion.
 const off = createClient({ demo: DEMO, prefs, medBase: new URL("data/med/", location.href).href });
@@ -303,6 +326,55 @@ function chainHtml(p, v) {
   }).join("")}</ol>`;
 }
 
+function flagSetting(f) {
+  return f.covered
+    ? `<span class="flag-setting">${t("detail.covered")}</span>`
+    : f.topic && f.decision
+      ? `<span class="flag-setting">${esc(t("detail.by_setting", { topic: t(`topic.${f.topic}`), d: t(`decision.${f.decision}`).toLowerCase() }))} <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>`
+      : "";
+}
+const pillOf = (sev) => (sev === "haram" ? "s-haram" : sev === "mashbouh" ? "s-mashbouh" : "r-info");
+
+// ---------------------------------------------------------------------------
+// Ce que dit l'étiquette : la vraie liste, les passages en cause surlignés à leur place.
+// On touche un passage : l'explication s'ouvre juste en dessous (selon l'école choisie).
+// ---------------------------------------------------------------------------
+function labelReader(p, v) {
+  if (!p.ingredients || kindOf(p) === "beauty") return "";
+  const parts = readLabel(p.ingredients, { flags: v.flags, risks: (p.health && p.health.additives) || [] });
+  const marks = parts.filter((x) => x.t === "hl");
+  const notes = [];
+  let k = 0;
+  const body = parts.map((x) => {
+    if (x.t === "text") return esc(x.text);
+    if (x.t === "allergen") return `<b class="lb-al">${esc(x.text)}</b>`;
+    const i = k++;
+    notes.push(readerNote(x, i));
+    return `<button type="button" class="hl hl-${x.kind}" data-hl="${i}" aria-expanded="false" aria-controls="hln-${i}">${esc(x.text)}</button>`;
+  }).join("");
+  const kinds = ["haram", "mashbouh", "risk", "info"].filter((kd) => marks.some((m) => m.kind === kd));
+  const legend = [...kinds.map((kd) => `<span class="lg lg-${kd}">${esc(t(`reader.k.${kd}`))}</span>`),
+    parts.some((x) => x.t === "allergen") ? `<span class="lg lg-al">${esc(t("reader.k.allergen"))}</span>` : ""].join("");
+  const long = p.ingredients.length > 380;
+  return `<div class="reader${long ? " long" : ""}">
+    <div class="reader-head"><strong>${t("reader.title")}</strong><small>${esc(marks.length ? tn("reader.sum", marks.length) : t("reader.none"))}</small></div>
+    <p class="reader-text" dir="auto">${body}</p>
+    ${long ? `<button type="button" class="reader-more" data-reader-more>${t("reader.more")}</button>` : ""}
+    ${notes.join("")}
+    ${legend ? `<div class="reader-legend">${legend}</div>` : ""}
+  </div>`;
+}
+function readerNote(x, i) {
+  const rows = x.flags.map((f) => `<div class="hn-row"><div class="flag-top"><span class="flag-term">${esc(flagLabel(f))}</span><span class="pill ${pillOf(f.severity)}">${t(`sev.${f.severity}`)}</span></div>
+    <span class="flag-why">${esc(flagReason(f))}</span>${flagSetting(f)}</div>`);
+  if (x.risk) {
+    const c = String(x.risk.code);
+    rows.push(`<div class="hn-row"><div class="flag-top"><span class="flag-term">${esc(c.toUpperCase())} · ${esc(t(`addname.${c.toLowerCase()}`))}</span><span class="pill r-${x.risk.level}">${t(`risk.${x.risk.level}`)}</span></div>
+      <span class="flag-why">${esc(t(`risk.reason.${x.risk.key}`))}</span></div>`);
+  }
+  return `<div class="hl-note hl-note-${x.kind}" id="hln-${i}" hidden>${rows.join("")}</div>`;
+}
+
 function halalSection(p, v) {
   // Label lu sur la fiche Open Food Facts. Quand l'organisme publie une liste (AVS, Achahada, HMC),
   // loadCertCheck remplace la note par le résultat de la vérification ; sinon on donne un moyen de vérifier.
@@ -325,12 +397,8 @@ function halalSection(p, v) {
   const flags = v.flags.length
     ? `<div class="flags">${v.flags
         .map((f) => {
-          const pillCls = f.severity === "haram" ? "s-haram" : f.severity === "mashbouh" ? "s-mashbouh" : "r-info";
-          const setting = f.covered
-            ? `<span class="flag-setting">${t("detail.covered")}</span>`
-            : f.topic && f.decision
-              ? `<span class="flag-setting">${esc(t("detail.by_setting", { topic: t(`topic.${f.topic}`), d: t(`decision.${f.decision}`).toLowerCase() }))} <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>`
-              : "";
+          const pillCls = pillOf(f.severity);
+          const setting = flagSetting(f);
           return `<div class="flag ${f.severity}" data-fid="${esc(f.id)}">
             <div class="flag-top"><span class="flag-term">${esc(flagLabel(f))}</span><span class="pill ${pillCls}">${t(`sev.${f.severity}`)}</span></div>
             <span class="flag-why">${esc(flagReason(f))}</span>
@@ -357,7 +425,7 @@ function halalSection(p, v) {
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
     ${chainHtml(p, v)}${cert}${ignored}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
-    ${flags}${askBrand(p, v)}${ocrCta}${twins}</section>`;
+    ${labelReader(p, v)}${flags}${askBrand(p, v)}${ocrCta}${twins}</section>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -674,8 +742,9 @@ function productDetail(p) {
   const v = verdictOf(p);
   const kind = kindOf(p);
   const ingrList = kind === "beauty" ? ingredientListSection(p) : "";
-  const ingr = ingrList || (p.ingredients
-    ? `<section class="sec"><details class="ingr"${p.local ? " open" : ""}><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
+  // Aliments et médicaments : la liste est lue dans l'onglet Halal (« Ce que dit l'étiquette »)
+  const ingr = ingrList || (kind === "beauty" && p.ingredients
+    ? `<section class="sec"><details class="ingr"><summary>${t("detail.ingredients")}</summary><p>${esc(p.ingredients.replace(/_/g, ""))}</p></details></section>`
     : "");
   const isBarcode = /^\d+$/.test(p.code);
   const alt = p.local || kind === "medicine"
@@ -1257,6 +1326,10 @@ $("homeRecall").addEventListener("click", (e) => {
   renderRecallBanner();
 });
 
+// Petit retour au toucher, comme sur les applis natives (Android ; Safari l'ignore)
+function tapHaptic(ms = 8) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* refusé par le navigateur */ }
+}
 // Vibration différente selon le verdict : on « sent » la réponse avant de la lire
 const HAPTIC = { halal_certifie: [35], halal_probable: [35], mashbouh: [50, 70, 50], haram: [140, 70, 140], inconnu: [20] };
 function verdictHaptic(p) {
@@ -1284,7 +1357,7 @@ async function refreshStaleHistory() {
 }
 setTimeout(refreshStaleHistory, 4000);
 
-async function openSheet(code, { fromScan = false, replace = false } = {}) {
+async function openSheet(code, { fromScan = false, replace = false, revealed = false } = {}) {
   if (fromScan) sheetTab = "halal";
   sheetCode = code;
   sheetProduct = null;
@@ -1299,7 +1372,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
 
   if (fresh) {
     renderSheetProduct(cached);
-    if (fromScan) { verdictHaptic(cached); verdictBurst(); }
+    if (fromScan) { if (!revealed) verdictHaptic(cached); verdictBurst(); }
     if (fromScan || !store.get(code)) store.add(cached);
     refreshFav();
     if (!cached.local) loadAlternatives(cached, code);
@@ -1314,7 +1387,7 @@ async function openSheet(code, { fromScan = false, replace = false } = {}) {
       return;
     }
     renderSheetProduct(p);
-    if (fromScan) { verdictHaptic(p); verdictBurst(); }
+    if (fromScan) { if (!revealed) verdictHaptic(p); verdictBurst(); }
     store.add(p);
     refreshFav();
     if (!p.local) loadAlternatives(p, code);
@@ -1426,12 +1499,14 @@ $("sheetShare").addEventListener("click", async () => {
   const v = verdictOf(p);
   const s = scoreOf(p);
   const text = t("sheet.share_text", { name: nameOf(p), status: S(v.status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
-  const url = location.origin + location.pathname;
+  // Lien direct vers la fiche : ouvre le produit dans Bayyin (aussi encodé dans le QR de la carte)
+  const url = location.origin + location.pathname + "?p=" + encodeURIComponent(p.code);
   try {
     const blob = await drawShareCard({
       name: nameOf(p), brand: p.brand, image: p.image, status: v.status, statusLabel: S(v.status, "label"),
       kicker: t("detail.halal"), lead: S(v.status, "lead"), score: s ? s.score : null, grade: s && s.grade,
       gradeLabel: s ? t(`grade.${s.grade}`) : "", healthLabel: t(kindOf(p) === "beauty" ? "detail.cosmetic" : "detail.health"), footer: t("share.footer"), rtl: getLang() === "ar",
+      scanLine: t("share.scan_line"), url, urlLabel: (location.host + location.pathname).replace(/\/$/, ""),
     });
     const file = new File([blob], `bayyin-${p.code}.png`, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1488,6 +1563,27 @@ document.addEventListener("click", (e) => {
   if (open) return openSheet(open.dataset.open, { replace: !sheet.hidden });
   const offOcr = e.target.closest("[data-off-ocr]");
   if (offOcr) return readOffPhoto(offOcr.dataset.offOcr, offOcr);
+  // Ce que dit l'étiquette : un passage touché ouvre son explication (un seul à la fois)
+  const hlBtn = e.target.closest("[data-hl]");
+  if (hlBtn) {
+    const box = hlBtn.closest(".reader");
+    const wasOpen = hlBtn.getAttribute("aria-expanded") === "true";
+    box.querySelectorAll("[data-hl]").forEach((b) => b.setAttribute("aria-expanded", "false"));
+    box.querySelectorAll(".hl-note").forEach((n) => { n.hidden = true; });
+    if (!wasOpen) {
+      hlBtn.setAttribute("aria-expanded", "true");
+      const note = box.querySelector(`#hln-${hlBtn.dataset.hl}`);
+      note.hidden = false;
+      tapHaptic();
+    }
+    return;
+  }
+  const more = e.target.closest("[data-reader-more]");
+  if (more) {
+    more.closest(".reader").classList.add("open");
+    more.remove();
+    return;
+  }
   const jump = e.target.closest("[data-jump-flag]");
   if (jump) {
     const target = $("sheetBody").querySelector(`.flag[data-fid="${CSS.escape(jump.dataset.jumpFlag)}"]`);
@@ -1723,16 +1819,88 @@ const camera = createCamera({
   onCode(code) {
     clearTimeout(slowTimer);
     if (basketMode) return basketScan(code); // mode courses : on reste dans la caméra
-    // Confirmation : cadre vert et onde qui part du code, un court instant, puis la fiche
-    cameraEl.classList.add("found");
-    scanBurst("#3DDC84");
-    setTimeout(() => {
-      cameraEl.classList.remove("found");
-      closeCamera({ keepHistory: true });
-      openSheet(code, { fromScan: true, replace: true });
-    }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
+    morphScan(code);
   },
 });
+
+// ---------------------------------------------------------------------------
+// Le moment du scan : les barres du code se resserrent en un point, qui s'ouvre
+// sur le verdict (coche, point d'exclamation, croix) à sa couleur, avec sa vibration.
+// Si la fiche tarde (réseau lent), on n'attend pas : elle s'ouvre comme avant.
+// ---------------------------------------------------------------------------
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const MORPH_SYMBOL = {
+  ok: "M127 61l15 15 31-32",
+  warn: "M150 40v26M150 82v.5",
+  no: "M134 44l32 32M166 44l-32 32",
+  question: "M139 47a11 11 0 1 1 16 10c-4 2-5 5-5 9M150 82v.5",
+  dash: "M132 60h36",
+};
+function morphSvg() {
+  // Barres d'épaisseurs variées, comme un vrai code-barres (motif fixe : pas de hasard à l'écran)
+  const widths = [3, 2, 5, 2, 3, 6, 2, 2, 4, 3, 2, 5, 3, 2, 6, 2, 3, 4, 2, 3, 5, 2];
+  const gap = 4.4;
+  const total = widths.reduce((a, w) => a + w, 0) + gap * (widths.length - 1);
+  let x = 150 - total / 2;
+  const bars = widths.map((w, i) => {
+    const cx = x + w / 2;
+    const r = `<rect x="${x.toFixed(1)}" y="26" width="${w}" height="68" rx="${Math.min(w, 2) / 2}" style="--dx:${(150 - cx).toFixed(1)}px;--d:${Math.abs(150 - cx) * 1.6}ms"/>`;
+    x += w + gap;
+    return r;
+  });
+  return `<svg viewBox="0 0 300 120" aria-hidden="true"><g class="mb">${bars.join("")}</g>
+    <circle class="md" cx="150" cy="60" r="42"/><path class="ms" pathLength="100" d=""/></svg><p class="cam-morph-label" id="camMorphLabel"></p>`;
+}
+let morphRun = 0;
+function morphReset() {
+  cameraEl.classList.remove("found", "m-read", "m-v");
+  const m = $("camMorph");
+  m.hidden = true;
+  m.innerHTML = "";
+}
+// Mode démo : permet de rejouer le moment du scan sans caméra (tests et présentations)
+if (DEMO) window.__bayyinScan = (code) => { cameraEl.hidden = false; cameraEl.dataset.state = "scanning"; morphScan(code); };
+async function morphScan(code) {
+  const run = ++morphRun;
+  cameraEl.classList.add("found");
+  scanBurst("#3DDC84");
+  const open = (revealed) => {
+    if (run !== morphRun) return;
+    morphReset();
+    closeCamera({ keepHistory: true });
+    openSheet(code, { fromScan: true, replace: true, revealed });
+  };
+  if (REDUCED()) { // pas d'animation : le verdict s'affiche directement sur la fiche
+    setTimeout(() => open(false), 0);
+    return;
+  }
+  const m = $("camMorph");
+  m.innerHTML = morphSvg();
+  m.hidden = false;
+  requestAnimationFrame(() => cameraEl.classList.add("m-read"));
+  let p;
+  try {
+    [p] = await Promise.all([Promise.race([fetchProduct(code), sleep(1500).then(() => undefined)]), sleep(320)]);
+  } catch { p = undefined; }
+  if (run !== morphRun || cameraEl.hidden) return;
+  if (!p) return open(false); // lent, introuvable ou erreur : la fiche s'en charge
+  const st = verdictOf(p).status;
+  const al = profileOf(p).alert;
+  const look = al === "no" ? ["no", BURST_COLOR.haram, t(`alert.${al}`)]
+    : st === "haram" ? ["no", BURST_COLOR.haram, S(st, "label")]
+    : st === "mashbouh" ? ["question", BURST_COLOR.mashbouh, S(st, "label")]
+    : al === "maybe" ? ["warn", BURST_COLOR.mashbouh, t(`alert.${al}`)]
+    : st === "inconnu" ? ["dash", "#8A9790", S(st, "label")]
+    : ["ok", BURST_COLOR[st], S(st, "label")];
+  m.style.setProperty("--mc", look[1]);
+  m.querySelector(".ms").setAttribute("d", MORPH_SYMBOL[look[0]]);
+  $("camMorphLabel").textContent = look[2];
+  cameraEl.style.setProperty("--mc", look[1]);
+  cameraEl.classList.add("m-v");
+  verdictHaptic(p);
+  await sleep(820);
+  open(true);
+}
 
 // Onde de confirmation autour du cadre de visée (couleur : vert à la lecture, puis celle du verdict en mode courses)
 function scanBurst(color) {
@@ -1765,6 +1933,8 @@ function openCamera({ replace = false } = {}) {
 function closeCamera({ fromPop = false, keepHistory = false } = {}) {
   if (cameraEl.hidden) return;
   basketMode = false; // le mode courses ne dure que le temps d'une session de caméra
+  morphRun++; // une animation de verdict en cours s'arrête avec la caméra
+  morphReset();
   camera.stop();
   cameraEl.hidden = true;
   lockScroll();
@@ -1911,7 +2081,98 @@ function renderHome() {
   $("homeTip").textContent = t(`home.tip.${1 + (today() % TIP_COUNT)}`); // une astuce par jour
   $("homeTipBox").hidden = tipHiddenToday();
   $("homeTipBox").classList.remove("closing");
+  renderRamadan();
 }
+
+// ---------------------------------------------------------------------------
+// Mode Ramadan : pendant le mois, l'accueil prend des tons de nuit et donne le jour,
+// l'heure de l'iftar et la fin du suhoor (calculées sur le téléphone, position arrondie).
+// ---------------------------------------------------------------------------
+const RAM_KEY = "bayyin_ramadan";
+const FORCE_RAMADAN = new URLSearchParams(location.search).has("ramadan"); // aperçu
+const ramDayNow = () => (FORCE_RAMADAN ? 13 : ramadanDay());
+let ramTimer = null;
+let ramLocating = false;
+let ramError = "";
+function ramPrefs() {
+  const saved = readJson(RAM_KEY, {});
+  return { angle: getLang() === "fr" ? 12 : 18, ...saved };
+}
+function untilText(ms) {
+  const mins = Math.max(1, Math.round(ms / 60000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? t("ram.hm", { h, m: String(m).padStart(2, "0") }) : t("ram.m", { m });
+}
+function renderRamadan() {
+  const box = $("ramadanBox");
+  const day = ramDayNow();
+  document.documentElement.toggleAttribute("data-ramadan", !!day);
+  clearTimeout(ramTimer);
+  box.hidden = !day;
+  if (!day) return;
+  const rp = ramPrefs();
+  const hm = (d) => d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
+  let times = "";
+  if (rp.lat != null) {
+    const now = new Date();
+    const td = fastTimes(now, rp.lat, rp.lng, { fajrAngle: rp.angle });
+    if (td.fajr && td.maghrib) {
+      const next = fastTimes(new Date(now.getTime() + 864e5), rp.lat, rp.lng, { fajrAngle: rp.angle });
+      const count = now < td.fajr ? t("ram.until_suhoor", { d: untilText(td.fajr - now) })
+        : now < td.maghrib ? t("ram.until_iftar", { d: untilText(td.maghrib - now) })
+        : next.fajr ? t("ram.until_suhoor", { d: untilText(next.fajr - now) }) : "";
+      times = `<div class="ram-times">
+          <div class="ram-time"><small>${esc(t("ram.suhoor"))}</small><b dir="ltr">${hm(td.fajr)}</b></div>
+          <div class="ram-time"><small>${esc(t("ram.iftar"))}</small><b dir="ltr">${hm(td.maghrib)}</b></div>
+        </div>
+        ${count ? `<p class="ram-count">${esc(count)}</p>` : ""}
+        <div class="ram-foot">
+          <label class="ram-method">${esc(t("ram.method"))}
+            <select data-ram-angle>${[12, 15, 18].map((a) => `<option value="${a}"${a === rp.angle ? " selected" : ""}>${esc(t(`ram.m${a}`))}</option>`).join("")}</select>
+          </label>
+          <button type="button" class="link-btn" data-ram-locate>${esc(t("ram.relocate"))}</button>
+        </div>
+        <p class="ram-note">${esc(t("ram.note"))}</p>`;
+      // Mise à jour du compte à rebours à la minute
+      ramTimer = setTimeout(() => { if (current === "scan") renderRamadan(); }, 60000 - (Date.now() % 60000) + 50);
+    } else {
+      times = `<p class="ram-note">${esc(t("ram.unavailable"))}</p>`;
+    }
+  } else {
+    times = `<button type="button" class="btn btn-white ram-locate" data-ram-locate${ramLocating ? " disabled" : ""}>${ramLocating ? '<span class="spinner"></span>' : svg('<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>')}<span>${esc(t(ramLocating ? "ram.locating" : "ram.locate"))}</span></button>
+      ${ramError ? `<p class="ram-note">${esc(ramError)}</p>` : `<p class="ram-note">${esc(t("ram.privacy"))}</p>`}`;
+  }
+  box.innerHTML = `<div class="ram-head">
+      <svg class="ram-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+      <div><h2 id="h-ram">${esc(t("ram.title"))}</h2><p>${esc(t("ram.day", { n: day }))}</p></div>
+    </div>${times}`;
+}
+function ramLocate() {
+  if (!navigator.geolocation) { ramError = t("ram.denied"); return renderRamadan(); }
+  ramLocating = true;
+  ramError = "";
+  renderRamadan();
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      // Position arrondie (environ 1 km) et gardée sur le téléphone seulement
+      const r = (x) => Math.round(x * 100) / 100;
+      writeJson(RAM_KEY, { ...readJson(RAM_KEY, {}), lat: r(pos.coords.latitude), lng: r(pos.coords.longitude) });
+      ramLocating = false;
+      renderRamadan();
+    },
+    () => { ramLocating = false; ramError = t("ram.denied"); renderRamadan(); },
+    { enableHighAccuracy: false, maximumAge: 6 * 3600e3, timeout: 15000 },
+  );
+}
+$("ramadanBox").addEventListener("click", (e) => {
+  if (e.target.closest("[data-ram-locate]")) ramLocate();
+});
+$("ramadanBox").addEventListener("change", (e) => {
+  const sel = e.target.closest("[data-ram-angle]");
+  if (!sel) return;
+  writeJson(RAM_KEY, { ...readJson(RAM_KEY, {}), angle: Number(sel.value) });
+  renderRamadan();
+});
 
 // ===========================================================================
 // Recherche
@@ -4271,6 +4532,27 @@ else if (!prefs().tourDone && !DEMO && current === "scan") setTimeout(startTour,
 renderPremiumLocks();
 premiumFromHash();
 refreshPremium().catch(() => {});
+// Lien partagé (?p=code, aussi dans le QR des cartes) : la fiche du produit s'ouvre directement
+{
+  const shared = new URLSearchParams(location.search).get("p");
+  if (shared && /^[\w-]{4,20}$/.test(shared)) {
+    history.replaceState(history.state, "", location.pathname + (DEMO ? "?demo" : "") + location.hash);
+    openSheet(shared);
+  }
+}
+// Raccourcis de l'icône (appui long sur l'icône de l'app) : « Scanner » ouvre directement la caméra
+{
+  const action = new URLSearchParams(location.search).get("action");
+  if (action && prefs().onboarded) {
+    history.replaceState(history.state, "", location.pathname + location.hash);
+    if (action === "scan") openCamera();
+    else if (action === "basket") $("toolBasket").click();
+  }
+}
+// Retour au toucher sur les commandes (onglets, filtres, interrupteurs), comme dans les applis natives
+document.addEventListener("click", (e) => {
+  if (e.target.closest('.tab, .ptab, [role="tab"], [role="switch"], .switch, .chip, .seg3 button, .set-chip')) tapHaptic(6);
+}, { capture: true, passive: true });
 // Prépare le lecteur en arrière-plan pour que le premier scan soit immédiat.
 const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
 idle(() => getDetector().then(() => ($("engineInfo").textContent = detectorEngine())).catch(() => {}));
