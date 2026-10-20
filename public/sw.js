@@ -8,7 +8,7 @@
 // - Photos des produits : gardées sur le téléphone (leur adresse change avec chaque nouvelle photo,
 //   donc une photo gardée n'est jamais périmée) ; sur un réseau instable, nouvel essai automatique.
 
-const VERSION = "2026-10-20-3";
+const VERSION = "2026-10-20-4";
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";

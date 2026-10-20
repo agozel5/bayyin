@@ -2162,3 +2162,121 @@ img.img-wait{background:linear-gradient(100deg,var(--tint) 30%,color-mix(in srgb
 .ram-locate{margin-top:14px;width:100%;color:#12324A}
 .ram-locate .spinner{width:20px;height:20px;color:#12324A}
 .ram-note{margin:10px 0 0;font-size:.8rem;color:rgb(238 244 241 / .65)}
+
+/* =====================================================================
+   Harmonisation finale (oct. 2026) : fiche produit, classements, réglages
+   Une seule grammaire partout : rayons resserrés, liserés fins au lieu
+   d'ombres, couleurs réservées aux verdicts, titres sobres.
+   ===================================================================== */
+/* Titres : une hiérarchie, pas de gros caractères à chaque bloc */
+h2,.sub{font-size:1.1rem;font-weight:700;letter-spacing:-.005em}
+.sub-head{margin-bottom:-4px}
+.sub-head h1{font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+.sec-head h3{font-size:1.02rem;font-weight:700;letter-spacing:0}
+.sec-head small{font-size:.82rem}
+.sec{border-radius:var(--r-lg)}
+
+/* Fiche produit */
+.verdict{border-radius:var(--r-xl);box-shadow:none}
+.p-img,.p-img-btn{border-radius:var(--r-lg)}
+.p-img{box-shadow:var(--lift)}
+.ptabs{border-radius:var(--r-md);padding:4px;gap:2px}
+.ptab{border-radius:9px;font-weight:600}
+.ptab[aria-selected="true"]{box-shadow:0 0 0 1px var(--line),0 1px 2px rgb(21 33 26 / .06)}
+.ask{background:var(--tint);border:1px solid var(--line)}
+.ask h3,.ask strong:first-child{color:var(--fg);font-size:1.02rem;font-weight:700}
+.alt-best{background:var(--tint);border:1px solid var(--line)}
+.cert-card{border-radius:var(--r-md)}
+
+/* Accueil : le seul bloc coloré reste le scan */
+.hero{border-radius:var(--r-xl)}
+.hero-scan{border-radius:var(--r-lg)}
+.tool-ico{background:var(--tint);color:var(--brand)}
+.rank-promo{background:var(--surface);color:var(--fg);box-shadow:var(--lift)}
+.rank-promo-ico{background:var(--tint)!important;color:#B07D12!important}
+.rank-promo-t small{opacity:1;color:var(--muted)}
+
+/* Classements : podium par la médaille seule, sans fonds teintés */
+.rank-list li:nth-child(-n+3) .rank-row{background:none}
+.rank-n.top{box-shadow:none;background:var(--m2)}
+.rank-ico,.rank-ico.ri-beauty{background:var(--tint);color:var(--brand)}
+.rank-lock{background:var(--tint);color:#A87410}
+
+/* Réglages : icônes neutres, un seul bloc vert (Premium) */
+.set-ico,.si-religion,.si-notes,.si-appearance,.si-privacy,.si-offline,.si-data,.si-feedback{background:var(--tint);color:var(--brand)}
+.si-limits,.si-report{background:var(--tint);color:var(--c-haram)}
+.set-ico{border-radius:9px}
+.set-summary{background:var(--surface);color:var(--fg);box-shadow:var(--lift)}
+.set-summary::before{display:none}
+.ss-kicker{opacity:1;color:var(--muted)}
+.ss-item{background:var(--tint);color:var(--fg);border-radius:var(--r-sm)}
+.ss-item small{opacity:1;color:var(--muted)}
+.ss-item strong{color:var(--brand-dark)}
+.ss-item:active{background:var(--tint-2)}
+.pm-hero,.pm-card{border-radius:var(--r-xl)}
+.tour-card{border-radius:var(--r-xl)}
+.ph.cat{background:var(--tint)!important}
+.f-ico{background:var(--tint)!important;border-radius:9px}
+.tip-line{background:var(--tint);border:1px solid var(--line)}
+.tip-line strong{color:#8A6400}
+.row-img{border-radius:var(--r-md)}
+
+/* =====================================================================
+   Mode sombre, repassé (oct. 2026)
+   Fond presque noir à peine vert, surfaces séparées par un liseré (les ombres
+   ne se voient pas sur du noir), couleurs des verdicts un peu adoucies
+   pour ne pas éblouir le soir, mêmes règles que le mode clair.
+   ===================================================================== */
+:root[data-theme="dark"]{
+  --bg:#0B100D;
+  --surface:#141B17;
+  --tint:#1B241F;
+  --tint-2:#232E28;
+  --line:#28332D;
+  --fg:#E8EEEA;
+  --muted:#9FADA5;
+  --faint:#76847C;
+  --brand:#3DBE8A;
+  --brand-dark:#86DDB6;
+  --brand-soft:#15342A;
+  --lift:0 0 0 1px var(--line);
+  --shadow-sm:0 0 0 1px var(--line);
+  --shadow:0 0 0 1px var(--line),0 14px 30px -14px rgb(0 0 0 / .7);
+  --c-haram:#F0675D; --c-doubt:#F0A04A; --c-cert:#3FC27C; --c-info:#6FA6DE;
+}
+/* Verdict : mêmes couleurs, un ton plus bas, pour ne pas éblouir */
+:root[data-theme="dark"] .verdict{filter:saturate(.88) brightness(.9)}
+:root[data-theme="dark"] .alt-band{filter:saturate(.88) brightness(.92)}
+/* Photos sur fond blanc : légèrement atténuées */
+:root[data-theme="dark"] :is(.row-img,.p-img,.alt img,.off-photo img):not(.ph){filter:brightness(.88)}
+/* Mêmes surfaces neutres qu'en clair : plus de tuiles colorées */
+:root[data-theme="dark"] :is(.set-ico,.si-religion,.si-notes,.si-appearance,.si-privacy,.si-offline,.si-data,.si-feedback){background:var(--tint);color:var(--brand)}
+:root[data-theme="dark"] :is(.si-limits,.si-report){background:var(--tint);color:var(--c-haram)}
+:root[data-theme="dark"] .set-summary{background:var(--surface);color:var(--fg)}
+:root[data-theme="dark"] .rank-promo{background:var(--surface);color:var(--fg)}
+:root[data-theme="dark"] .rank-promo-ico{background:var(--tint)!important;color:#E2B84E!important}
+:root[data-theme="dark"] .rank-ico.ri-beauty{background:var(--tint);color:var(--brand)}
+:root[data-theme="dark"] :is(.t-aisle,.t-places,.t-compare,.t-photo){--tc-bg:var(--tint)}
+:root[data-theme="dark"] .tool-ico{background:var(--tint);color:var(--brand)}
+:root[data-theme="dark"] .tip-line{background:var(--tint)}
+:root[data-theme="dark"] .tip-line strong{color:#E2B84E}
+:root[data-theme="dark"] .f-ico{background:var(--tint)!important}
+:root[data-theme="dark"] .ptab[aria-selected="true"]{background:var(--tint-2);box-shadow:0 0 0 1px var(--line)}
+:root[data-theme="dark"] .hero{background:#0F4A35}
+:root[data-theme="dark"] .hero-scan{background:#F2F6F3}
+:root[data-theme="dark"] .tabbar{background:rgb(20 27 23 / .78)!important;border-color:var(--line);box-shadow:0 10px 30px -10px rgb(0 0 0 / .8)}
+:root[data-theme="dark"] .ask,:root[data-theme="dark"] .alt-best{background:var(--tint);border-color:var(--line)}
+:root[data-theme="dark"] .rank-n.top{color:#1A140A}
+:root[data-theme="dark"] .hl{background:color-mix(in srgb,var(--c) 16%,transparent)}
+:root[data-theme="dark"] .hl[aria-expanded="true"]{background:color-mix(in srgb,var(--c) 30%,transparent)}
+:root[data-theme="dark"] .demo-badge{background:#3A2913;color:#F0A04A}
+:root[data-theme="dark"] .ramadan{background:linear-gradient(160deg,#0F2638 0%,#0B2E27 100%);border:1px solid var(--line)}
+:root[data-theme="dark"] .intro{background:var(--bg)}
+.search-tip{background:var(--surface);box-shadow:var(--lift)}
+.search-tip-ico{border-radius:var(--r-sm)}
+:root[data-theme="dark"] .search-tip-ico{background:var(--tint);color:var(--brand)}
+/* Tous les additifs : code, nom sur toute la largeur, puis les pastilles en dessous */
+.add-row{column-gap:10px;row-gap:6px}
+.add-row .add-code{flex:none;width:56px;font-family:var(--font-mono);font-weight:600}
+.add-row-name{flex:1 1 calc(100% - 66px);min-width:0}
+.add-row-name + :is(.pill,.add-ok){margin-inline-start:66px}
