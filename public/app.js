@@ -2243,7 +2243,9 @@ $("suggestChips").addEventListener("click", (e) => {
 let searchCtl = null;
 let searchRunning = ""; // recherche en cours : un deuxième appui ne la relance pas
 let lastResults = null;
-async function runSearch(raw, { force = false } = {}) {
+// Résultats d'Open Food Facts gardés 10 minutes : retaper ou effacer une lettre ne relance pas la recherche
+const searchCache = new Map();
+async function runSearch(raw, { force = false, remember = true } = {}) {
   const q = raw.trim();
   const out = $("searchResults");
   $("searchSuggest").hidden = !!q;
@@ -2276,13 +2278,16 @@ async function runSearch(raw, { force = false } = {}) {
     // Tout de suite : les produits déjà scannés qui correspondent
     const local = rankByRelevance(store.all().map((e) => e.p).filter((p) => kind === "all" || kindOf(p) === kind), q).slice(0, 3);
     out.innerHTML = (local.length ? resultGroup(t("search.in_history"), local) : "") + rowsSkeleton(4, t("search.searching"));
-    const res = await off.search(q, { lang: getLang(), signal: ctl.signal, kind });
+    const ck = `${getLang()}|${kind}|${norm(q)}`;
+    const hit = !force && searchCache.get(ck);
+    const res = hit && Date.now() - hit.at < 600000 ? hit.res : await off.search(q, { lang: getLang(), signal: ctl.signal, kind });
     if (ctl.signal.aborted) return;
+    if (!res.foodFailed && !res.beautyFailed) searchCache.set(ck, { res, at: Date.now() });
     const known = new Set(local.map((p) => p.code));
     const fresh = (list) => list.filter((p) => !known.has(p.code));
     [...res.food, ...res.beauty].forEach((p) => memo.set(p.code, p));
     lastResults = { q, local, food: fresh(res.food), beauty: fresh(res.beauty), alt: res.alt, foodFailed: res.foodFailed };
-    rememberQuery(q);
+    if (remember) rememberQuery(q);
     renderResults(q);
   } catch (err) {
     if (ctl.signal.aborted) return;
@@ -2337,17 +2342,54 @@ $("searchResults").addEventListener("click", (e) => {
 });
 function submitSearch(e) {
   e?.preventDefault();
+  clearTimeout(liveTimer);
   $("searchInput").blur();
-  runSearch($("searchInput").value);
+  const q = $("searchInput").value.trim();
+  if (q.length >= 2 && !/^\d+$/.test(q.replace(/\s+/g, ""))) rememberQuery(q);
+  runSearch(q);
 }
 $("searchForm").addEventListener("submit", submitSearch);
 // Certains claviers de téléphone envoient seulement la touche « Rechercher » sans valider le formulaire
 $("searchInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.isComposing) submitSearch(e);
 });
+// Recherche pendant la frappe :
+// - tout de suite, les produits déjà scannés qui correspondent (rien n'est demandé à Open Food Facts) ;
+// - après une courte pause, la recherche Open Food Facts part seule (qui limite les recherches :
+//   on n'envoie donc pas une requête par lettre, et une frappe reprise annule la précédente).
+let liveTimer = null;
+const LIVE_PAUSE = 700;
+function liveLocal(q) {
+  const kind = searchKind;
+  const local = rankByRelevance(store.all().map((e) => e.p).filter((p) => kind === "all" || kindOf(p) === kind), q).slice(0, 5);
+  $("searchSuggest").hidden = true;
+  $("searchResults").innerHTML = (local.length ? resultGroup(t("search.in_history"), local) : "") +
+    (q.length >= 3 ? rowsSkeleton(3, t("search.searching")) : "");
+}
 $("searchInput").addEventListener("input", (e) => {
-  if (!e.target.value.trim()) runSearch("");
+  clearTimeout(liveTimer);
+  const q = e.target.value.trim();
+  if (!q) return runSearch("");
+  const digits = q.replace(/\s+/g, "");
+  if (/^\d+$/.test(digits)) {
+    // Code-barres : on attend qu'il soit complet
+    if (/^\d{8,14}$/.test(digits)) liveTimer = setTimeout(() => runSearch(q, { remember: false }), 450);
+    return;
+  }
+  if (q.length < 2) return;
+  if (lastResults && lastResults.q === q) return; // déjà affiché
+  searchCtl?.abort(); // la recherche précédente ne sert plus
+  searchRunning = "";
+  liveLocal(q);
+  if (q.length >= 3) liveTimer = setTimeout(() => runSearch(q, { remember: false }), LIVE_PAUSE);
 });
+// Recherche gardée dans « Recherches récentes » quand on ouvre un des résultats
+$("searchResults").addEventListener("click", (e) => {
+  if (e.target.closest("[data-open]")) {
+    const q = $("searchInput").value.trim();
+    if (q.length >= 2 && !/^\d+$/.test(q.replace(/\s+/g, ""))) rememberQuery(q);
+  }
+}, true);
 
 // ===========================================================================
 // Historique
