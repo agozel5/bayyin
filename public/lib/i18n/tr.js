@@ -1289,7 +1289,6 @@ export default {
   "rank.promo": "Her reyondaki en iyi helal ürünler",
   "rank.intro": "Ayarlarınıza göre, reyon reyon sağlık puanı en yüksek helal ürünler.",
   "rank.kind.food": "Gıda",
-  "rank.kind.beauty": "Kozmetik",
   "rank.n_one": "{n} ürün incelendi",
   "rank.n_other": "{n} ürün incelendi",
   "rank.source": "Fransa'da en çok taranan ürünler, Open Food Facts ve Open Beauty Facts verilerine göre ({d} güncellemesi).",
@@ -1489,4 +1488,26 @@ export default {
   "offocr.note": "Open Food Facts'te yayınlanan içindekiler fotoğrafından, Bayyin'in okumasıyla yapılan analiz.",
   // ---------- Contribution : liste manquante ----------
   "contrib.t_list": "İçindekiler listesi Open Food Facts'te eksik",
+  // ---------- Types de produits ----------
+  "kindtab.all": "Tümü",
+  "kindtab.food": "Gıda",
+  "kindtab.beauty": "Kozmetik",
+  "kindtab.medicine": "İlaçlar",
+  // ---------- Idées de recherche cosmétiques ----------
+  "sidea.mascara": "Maskara",
+  "sidea.lipstick": "Ruj",
+  "sidea.foundation": "Fondöten",
+  "sidea.nail": "Oje",
+  "rank.kind.makeup": "Makyaj",
+  "rank.makeup_note": "Makyaj: tüm ülkelerde en çok taranan ürünler (az sayıda ürün sayfası satış ülkesini belirtiyor).",
+  "rank.cat.lipsticks": "Rujlar",
+  "rank.cat.mascaras": "Maskaralar",
+  "rank.cat.nail_polishes": "Ojeler",
+  "rank.cat.eye_makeup": "Göz: eyeliner ve farlar",
+  "rank.cat.complexion": "Ten: fondöten, BB krem, allık",
+  "rank.cat.makeup_other": "Diğer makyaj ürünleri",
+  // ---------- Classements en préparation ----------
+  "rank.preparing": "Bu sıralamalar hazırlanıyor: birkaç saat içinde burada görünecek.",
+  // ---------- Classements maquillage ----------
+  "rank.kind.beauty": "Bakım",
 };

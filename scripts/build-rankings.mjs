@@ -1,7 +1,8 @@
 // Classements -> public/data/rankings/<rayon>.json (+ index.json)
 //
 // Pour chaque rayon : les produits les plus scannés en France sur Open Food Facts (aliments) ou
-// Open Beauty Facts (cosmétiques), avec leur liste d'ingrédients. On garde les meilleurs selon la note
+// Open Beauty Facts (cosmétiques), avec leur liste d'ingrédients. Rayons « world » (maquillage) : tous
+// pays confondus, car ces fiches indiquent rarement le pays de vente. On garde les meilleurs selon la note
 // santé, sans ceux qui sont haram avec les réglages par défaut. L'app recalcule ensuite le verdict
 // halal et la note avec les réglages de chaque utilisateur.
 // Données : Open Food Facts / Open Beauty Facts, licence ODbL.
@@ -58,7 +59,7 @@ async function main() {
     const seen = new Map();
     for (const tag of cat.tags) {
       for (let page = 1; page <= PAGES; page++) {
-        const url = `${BASE[cat.kind]}/api/v2/search?categories_tags=${encodeURIComponent(tag)}&countries_tags=en:france` +
+        const url = `${BASE[cat.kind]}/api/v2/search?categories_tags=${encodeURIComponent(tag)}${cat.world ? "" : "&countries_tags=en:france"}` +
           `&sort_by=unique_scans_n&page_size=100&page=${page}&fields=${FIELDS},nutriments`;
         try {
           const data = await getJson(url);

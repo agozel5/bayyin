@@ -2043,3 +2043,18 @@ img.img-wait{background:linear-gradient(100deg,var(--tint) 30%,color-mix(in srgb
 .off-photo small{font-size:.82rem;color:var(--muted);line-height:1.35}
 .off-photo .btn{grid-column:1 / -1}
 .off-photo .btn .spinner{width:16px;height:16px;border-width:2px}
+
+/* Aliments / Cosmétiques / Médicaments : sélecteur en segments */
+.kind-seg{display:flex;gap:4px;padding:4px;margin:0 0 12px;border-radius:16px;background:var(--tint)}
+.kind-seg button{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 4px;border:0;border-radius:12px;background:none;color:var(--muted);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s}
+.kind-seg button svg{width:16px;height:16px;flex:none}
+.kind-seg button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kind-seg button b{font-size:.72rem;font-weight:700;color:var(--faint);font-variant-numeric:tabular-nums}
+.kind-seg button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 2px 8px -3px rgb(0 0 0 / .18)}
+.kind-seg button[aria-selected="true"] b{color:var(--brand)}
+@media (max-width:370px){.kind-seg button svg{display:none}}
+.rank-note{margin:-2px 2px 12px;font-size:.8rem;color:var(--muted);line-height:1.4}
+#rankKinds{grid-template-columns:repeat(3,minmax(0,1fr))}
+#rankKinds button{padding:10px 4px;font-size:.86rem;line-height:1.2}
+.kind-seg button{flex:1 1 auto;padding:9px 6px;gap:4px;font-size:.8rem}
+.kind-seg button svg{width:14px;height:14px}

@@ -1303,7 +1303,6 @@ export default {
   "rank.promo": "Les meilleurs produits halal de chaque rayon",
   "rank.intro": "Les produits halal les mieux notés pour la santé, rayon par rayon, selon vos réglages.",
   "rank.kind.food": "Alimentation",
-  "rank.kind.beauty": "Cosmétiques",
   "rank.n_one": "{n} produit analysé",
   "rank.n_other": "{n} produits analysés",
   "rank.source": "Produits les plus scannés en France, d'après Open Food Facts et Open Beauty Facts (mise à jour du {d}).",
@@ -1503,4 +1502,26 @@ export default {
   "offocr.note": "Analyse faite à partir de la photo des ingrédients publiée sur Open Food Facts, lue par Bayyin.",
   // ---------- Contribution : liste manquante ----------
   "contrib.t_list": "Sa liste d'ingrédients manque sur Open Food Facts",
+  // ---------- Types de produits ----------
+  "kindtab.all": "Tout",
+  "kindtab.food": "Aliments",
+  "kindtab.beauty": "Cosmétiques",
+  "kindtab.medicine": "Médicaments",
+  // ---------- Idées de recherche cosmétiques ----------
+  "sidea.mascara": "Mascara",
+  "sidea.lipstick": "Rouge à lèvres",
+  "sidea.foundation": "Fond de teint",
+  "sidea.nail": "Vernis à ongles",
+  "rank.kind.makeup": "Maquillage",
+  "rank.makeup_note": "Maquillage : les produits les plus scannés tous pays confondus (peu de fiches indiquent le pays de vente).",
+  "rank.cat.lipsticks": "Rouges à lèvres",
+  "rank.cat.mascaras": "Mascaras",
+  "rank.cat.nail_polishes": "Vernis à ongles",
+  "rank.cat.eye_makeup": "Yeux : eye-liners et fards",
+  "rank.cat.complexion": "Teint : fonds de teint, BB crèmes, blush",
+  "rank.cat.makeup_other": "Autres produits de maquillage",
+  // ---------- Classements en préparation ----------
+  "rank.preparing": "Ces classements sont en préparation : ils apparaîtront ici d'ici quelques heures.",
+  // ---------- Classements maquillage ----------
+  "rank.kind.beauty": "Soins",
 };

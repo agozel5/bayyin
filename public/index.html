@@ -161,6 +161,7 @@
       <label class="sr-only" for="searchInput" data-i18n="search.title"></label>
       <input id="searchInput" type="search" data-i18n-ph="search.placeholder" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </form>
+    <div class="kind-seg" id="searchKind" role="tablist"></div>
     <div id="searchSuggest" class="suggest">
       <div id="recentSearches"></div>
       <p class="label" data-i18n="search.ideas"></p>
@@ -176,6 +177,7 @@
   <!-- ================= HISTORIQUE ================= -->
   <section class="view" id="view-history" data-view="history" aria-labelledby="h-history" hidden>
     <header class="view-head"><h1 id="h-history" data-i18n="history.title"></h1><p data-i18n="history.sub"></p></header>
+    <div class="kind-seg" id="historyKind" role="tablist" hidden></div>
     <div id="historyStats"></div>
     <div class="chips filter" id="historyFilter" role="tablist"></div>
     <div id="historyList" class="list"></div>

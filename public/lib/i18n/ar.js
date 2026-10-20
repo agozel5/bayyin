@@ -1289,7 +1289,6 @@ export default {
   "rank.promo": "أفضل المنتجات الحلال في كل قسم",
   "rank.intro": "المنتجات الحلال الأعلى تقييمًا صحيًا، قسمًا بقسم، حسب إعداداتك.",
   "rank.kind.food": "الأغذية",
-  "rank.kind.beauty": "مستحضرات التجميل",
   "rank.n_one": "{n} منتج تم تحليله",
   "rank.n_other": "{n} منتجًا تم تحليلها",
   "rank.source": "المنتجات الأكثر مسحًا في فرنسا، حسب Open Food Facts وOpen Beauty Facts (تحديث {d}).",
@@ -1489,4 +1488,26 @@ export default {
   "offocr.note": "تحليل مبني على صورة المكوّنات المنشورة على Open Food Facts، قرأها بيّن.",
   // ---------- Contribution : liste manquante ----------
   "contrib.t_list": "قائمة مكوّناته غير موجودة على Open Food Facts",
+  // ---------- Types de produits ----------
+  "kindtab.all": "الكل",
+  "kindtab.food": "أغذية",
+  "kindtab.beauty": "تجميل",
+  "kindtab.medicine": "أدوية",
+  // ---------- Idées de recherche cosmétiques ----------
+  "sidea.mascara": "ماسكارا",
+  "sidea.lipstick": "أحمر شفاه",
+  "sidea.foundation": "كريم أساس",
+  "sidea.nail": "طلاء أظافر",
+  "rank.kind.makeup": "المكياج",
+  "rank.makeup_note": "المكياج: أكثر المنتجات مسحًا في جميع البلدان (قلّما تذكر البطاقات بلد البيع).",
+  "rank.cat.lipsticks": "أحمر الشفاه",
+  "rank.cat.mascaras": "الماسكارا",
+  "rank.cat.nail_polishes": "طلاء الأظافر",
+  "rank.cat.eye_makeup": "العيون: آيلاينر وظلال",
+  "rank.cat.complexion": "البشرة: كريم أساس، بي بي كريم، أحمر خدود",
+  "rank.cat.makeup_other": "منتجات مكياج أخرى",
+  // ---------- Classements en préparation ----------
+  "rank.preparing": "هذه التصنيفات قيد الإعداد: ستظهر هنا خلال بضع ساعات.",
+  // ---------- Classements maquillage ----------
+  "rank.kind.beauty": "العناية",
 };

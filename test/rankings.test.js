@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rankList, RANK_CATEGORIES, RANK_ICONS } from "../public/lib/rankings.js";
+import { rankList, RANK_CATEGORIES, RANK_ICONS, rankTab } from "../public/lib/rankings.js";
 import { present } from "../public/lib/off.js";
 
 const P = (code, name, extra) => ({ code, product_name: name, nutriments: { "energy-kj_100g": 1500, sugars_100g: 10, "saturated-fat_100g": 2, salt_100g: 0.3 }, ...extra });
@@ -31,6 +31,7 @@ test("chaque rayon a une icône et au moins une étiquette", () => {
     assert.ok(RANK_ICONS[c.id], c.id);
     assert.ok(c.tags.length, c.id);
   }
-  assert.equal(RANK_CATEGORIES.filter((c) => c.free && c.kind === "food").length, 3);
-  assert.equal(RANK_CATEGORIES.filter((c) => c.free && c.kind === "beauty").length, 3);
+  assert.equal(RANK_CATEGORIES.filter((c) => c.free && rankTab(c) === "food").length, 3);
+  assert.equal(RANK_CATEGORIES.filter((c) => c.free && rankTab(c) === "beauty").length, 3);
+  assert.equal(RANK_CATEGORIES.filter((c) => c.free && rankTab(c) === "makeup").length, 3);
 });

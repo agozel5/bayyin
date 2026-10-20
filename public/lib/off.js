@@ -316,13 +316,14 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
     // Recherche par nom -> { food, beauty, alt, foodFailed, beautyFailed }
     // alt : la même recherche en français, lancée aussi quand elle a été tapée dans une autre langue.
     // Les résultats sont triés par pertinence et ceux sans rapport avec la recherche sont écartés.
-    async search(q, { lang = "fr", signal } = {}) {
+    // kind : "all" (aliments et cosmétiques), "food" ou "beauty" (plus de résultats du type choisi)
+    async search(q, { lang = "fr", signal, kind = "all" } = {}) {
       const alt = translateQuery(q, lang);
       const queries = [q, alt].filter(Boolean);
       if (demo) {
         const all = Object.values(FIXTURES);
         const ranked = rankByRelevance(all, queries);
-        const pick = (kind) => ranked.filter((p) => (p.kind || "food") === kind).map(show);
+        const pick = (k) => (kind === "all" || kind === k ? ranked.filter((p) => (p.kind || "food") === k).map(show) : []);
         return { food: pick("food"), beauty: pick("beauty"), alt, foodFailed: false, beautyFailed: false };
       }
       const run = (base, term, size, kind) => {
@@ -338,16 +339,19 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         return searchCache.get(url).then((list) => (kind ? list.map((p) => ({ ...p, kind })) : list));
       };
       // Aliments : la recherche telle quelle, et sa traduction ; cosmétiques : une seule recherche.
-      const [f1, f2, b] = await Promise.allSettled([
-        run(OFF_BASE, q, 24),
-        alt ? run(OFF_BASE, alt, 24) : Promise.resolve([]),
-        run(OBF_BASE, alt || q, 12, "beauty"),
+      // Cosmétiques seuls : la recherche telle quelle et sa traduction, avec plus de résultats
+      const none = Promise.resolve([]);
+      const [f1, f2, b, b2] = await Promise.allSettled([
+        kind === "beauty" ? none : run(OFF_BASE, q, 24),
+        kind !== "beauty" && alt ? run(OFF_BASE, alt, 24) : none,
+        kind === "food" ? none : run(OBF_BASE, alt || q, kind === "beauty" ? 40 : 12, "beauty"),
+        kind === "beauty" && alt ? run(OBF_BASE, q, 24, "beauty") : none,
       ]);
       if (signal?.aborted) throw signal.reason;
       const ok = (r) => (r.status === "fulfilled" ? r.value : []);
-      const foodFailed = f1.status === "rejected" && (!alt || f2.status === "rejected");
-      const beautyFailed = b.status === "rejected";
-      if (foodFailed && beautyFailed) throw f1.reason;
+      const foodFailed = kind !== "beauty" && f1.status === "rejected" && (!alt || f2.status === "rejected");
+      const beautyFailed = kind !== "food" && b.status === "rejected";
+      if ((foodFailed || kind === "beauty") && (beautyFailed || kind === "food")) throw (f1.status === "rejected" ? f1.reason : b.reason);
       const seen = new Set();
       const unique = (list) => list.filter((p) => (seen.has(p.code) ? false : seen.add(p.code)));
       const shown = (list) => list.map((p) => {
@@ -356,7 +360,7 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
       });
       return {
         food: shown(rankByRelevance(unique([...ok(f1), ...ok(f2)]), queries)),
-        beauty: shown(rankByRelevance(unique(ok(b)), queries)),
+        beauty: shown(rankByRelevance(unique([...ok(b), ...ok(b2)]), queries)),
         alt,
         foodFailed,
         beautyFailed,

@@ -14,7 +14,7 @@ import { drawShareCard } from "./lib/sharecard.js";
 import { setCosmeticDb, cosmeticDbVersion, analyzeCosmetic, COSMETIC_RULES } from "./lib/cosmetic.js";
 import { createAisle } from "./lib/aisle.js";
 import { mascot } from "./lib/mascot.js";
-import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList } from "./lib/rankings.js";
+import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
 import { recallsFor, recentRecalls, matchRecent, isActive } from "./lib/recalls.js";
@@ -1947,10 +1947,29 @@ $("searchSuggest").addEventListener("click", (e) => {
   setTimeout(() => openCamera(), 80);
 });
 
+// Type de recherche : tout, aliments seulement, cosmétiques seulement (maquillage, soins, hygiène)
+let searchKind = "all";
+const SEARCH_KIND_ICON = { all: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/>', food: I.box, beauty: I.drop };
+function renderSearchKind() {
+  $("searchKind").innerHTML = ["all", "food", "beauty"].map((k) =>
+    `<button type="button" role="tab" aria-selected="${k === searchKind}" data-sk="${k}">${svg(SEARCH_KIND_ICON[k])}<span>${esc(t(`kindtab.${k}`))}</span></button>`).join("");
+}
+$("searchKind").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sk]");
+  if (!b || b.dataset.sk === searchKind) return;
+  searchKind = b.dataset.sk;
+  renderSearchKind();
+  renderSuggestions();
+  if ($("searchInput").value.trim()) runSearch($("searchInput").value, { force: true });
+});
+
 function renderSuggestions() {
   renderRecentSearches();
+  renderSearchKind();
   // Des marques, et deux mots courants dans la langue de l'app (la recherche les comprend dans les 4 langues)
-  const ideas = [...SUGGESTIONS.slice(0, 3), t("search.idea_milk"), t("search.idea_chicken"), ...SUGGESTIONS.slice(3)];
+  const ideas = searchKind === "beauty"
+    ? [t("sidea.mascara"), t("sidea.lipstick"), t("sidea.foundation"), "Nivea", "Garnier", t("sidea.nail"), "Maybelline"]
+    : [...SUGGESTIONS.slice(0, 3), t("search.idea_milk"), t("search.idea_chicken"), ...SUGGESTIONS.slice(3)];
   $("suggestChips").innerHTML = ideas.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
 }
 $("suggestChips").addEventListener("click", (e) => {
@@ -1976,6 +1995,7 @@ async function runSearch(raw, { force = false } = {}) {
   }
   if (q === searchRunning && !force) return;
   if (!lastResults || lastResults.q !== q) resultFilter = "all";
+  const kind = searchKind;
   searchCtl?.abort();
   const ctl = (searchCtl = new AbortController());
   searchRunning = q;
@@ -1993,9 +2013,9 @@ async function runSearch(raw, { force = false } = {}) {
     }
     if (q.length < 2) return (out.innerHTML = messageHtml(t("search.short.t"), t("search.short.p")));
     // Tout de suite : les produits déjà scannés qui correspondent
-    const local = rankByRelevance(store.all().map((e) => e.p), q).slice(0, 3);
+    const local = rankByRelevance(store.all().map((e) => e.p).filter((p) => kind === "all" || kindOf(p) === kind), q).slice(0, 3);
     out.innerHTML = (local.length ? resultGroup(t("search.in_history"), local) : "") + rowsSkeleton(4, t("search.searching"));
-    const res = await off.search(q, { lang: getLang(), signal: ctl.signal });
+    const res = await off.search(q, { lang: getLang(), signal: ctl.signal, kind });
     if (ctl.signal.aborted) return;
     const known = new Set(local.map((p) => p.code));
     const fresh = (list) => list.filter((p) => !known.has(p.code));
@@ -2072,6 +2092,17 @@ $("searchInput").addEventListener("input", (e) => {
 // Historique
 // ===========================================================================
 let historyFilter = "all";
+// Type de produit : aliments, cosmétiques, médicaments (rangée affichée dès qu'il y en a deux sortes)
+let historyKind = "all";
+const KIND_ORDER = ["food", "beauty", "medicine"];
+function kindSegHtml(entries, current, attr) {
+  const kinds = KIND_ORDER.filter((k) => entries.some((e) => kindOf(e.p || e) === k));
+  if (kinds.length < 2) return "";
+  return ["all", ...kinds].map((k) => {
+    const n = k === "all" ? entries.length : entries.filter((e) => kindOf(e.p || e) === k).length;
+    return `<button type="button" role="tab" aria-selected="${k === current}" ${attr}="${k}">${k === "all" ? "" : svg(KIND_ICON[k])}<span>${esc(t(`kindtab.${k}`))}</span><b>${n}</b></button>`;
+  }).join("");
+}
 let confirmClear = false;
 
 function relTime(ts) {
@@ -2191,7 +2222,12 @@ function bilanHtml(all, counts) {
 }
 
 function renderHistory() {
-  const all = store.all();
+  const everything = store.all();
+  const seg = kindSegHtml(everything, historyKind, "data-hk");
+  if (!seg) historyKind = "all";
+  $("historyKind").hidden = !seg;
+  $("historyKind").innerHTML = seg;
+  const all = historyKind === "all" ? everything : everything.filter((e) => kindOf(e.p) === historyKind);
   const counts = {};
   all.forEach((e) => {
     const st = verdictOf(e.p).status;
@@ -2223,6 +2259,13 @@ function renderHistory() {
       ? `<span>${t("history.clear_q")}</span><button type="button" class="link-btn danger" data-clear="yes">${t("history.clear_yes")}</button><button type="button" class="link-btn" data-clear="no">${t("history.clear_no")}</button>`
       : `<button type="button" class="link-btn" data-clear="ask">${t("history.clear")}</button>`;
 }
+$("historyKind").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-hk]");
+  if (!b || b.dataset.hk === historyKind) return;
+  historyKind = b.dataset.hk;
+  historyFilter = "all";
+  renderHistory();
+});
 $("historyFilter").addEventListener("click", (e) => {
   const b = e.target.closest("[data-f]");
   if (!b) return;
@@ -3792,10 +3835,12 @@ async function renderRankings(sub) {
     let index = null;
     try { index = await rankIndex(); } catch { /* hors connexion : liste complète, sans les nombres */ }
     if (job !== rankJob) return;
-    const cats = RANK_CATEGORIES.filter((c) => c.kind === rankKind && (!index || index.categories[c.id]));
+    const cats = RANK_CATEGORIES.filter((c) => rankTab(c) === rankKind && (!index || index.categories[c.id]));
     box.innerHTML = `<div class="rank-head">${mascot("bravo", { size: 72 })}<p>${esc(t("rank.intro"))}</p></div>
-      <div class="segmented" id="rankKinds" role="tablist">${["food", "beauty"].map((k) =>
+      <div class="segmented" id="rankKinds" role="tablist">${["food", "beauty", "makeup"].map((k) =>
         `<button type="button" role="tab" aria-selected="${k === rankKind}" data-rank-kind="${k}">${t(`rank.kind.${k}`)}</button>`).join("")}</div>
+      ${rankKind === "makeup" ? `<p class="rank-note">${esc(t("rank.makeup_note"))}</p>` : ""}
+      ${cats.length ? "" : `<div class="empty">${emptyArt("teach")}<p>${esc(t("rank.preparing"))}</p></div>`}
       <div class="rank-cats">${cats.map((c) => `<a class="rank-cat${rankLocked(c) ? " locked" : ""}" href="#rankings/${c.id}" data-rank-cat="${c.id}">${rankIco(c.id)}
         <span class="rank-cat-t"><strong>${esc(t(`rank.cat.${c.id}`))}</strong>${index ? `<small>${esc(tn("rank.n", index.categories[c.id]))}</small>` : ""}</span>
         ${rankLocked(c) ? `<span class="rank-lock" aria-label="${esc(t("premium.only"))}">${svg(I.crown)}</span>` : svg(I.chev, "flip rank-chev")}</a>`).join("")}</div>

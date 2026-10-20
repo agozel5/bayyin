@@ -1289,7 +1289,6 @@ export default {
   "rank.promo": "The best halal products in every aisle",
   "rank.intro": "The halal products with the best health scores, aisle by aisle, based on your settings.",
   "rank.kind.food": "Food",
-  "rank.kind.beauty": "Cosmetics",
   "rank.n_one": "{n} product analysed",
   "rank.n_other": "{n} products analysed",
   "rank.source": "Most-scanned products in France, from Open Food Facts and Open Beauty Facts (updated {d}).",
@@ -1489,4 +1488,26 @@ export default {
   "offocr.note": "Analysis based on the ingredients photo published on Open Food Facts, read by Bayyin.",
   // ---------- Contribution : liste manquante ----------
   "contrib.t_list": "Its ingredient list is missing on Open Food Facts",
+  // ---------- Types de produits ----------
+  "kindtab.all": "All",
+  "kindtab.food": "Food",
+  "kindtab.beauty": "Cosmetics",
+  "kindtab.medicine": "Medicines",
+  // ---------- Idées de recherche cosmétiques ----------
+  "sidea.mascara": "Mascara",
+  "sidea.lipstick": "Lipstick",
+  "sidea.foundation": "Foundation",
+  "sidea.nail": "Nail polish",
+  "rank.kind.makeup": "Makeup",
+  "rank.makeup_note": "Makeup: the most scanned products in all countries (few product sheets say where they are sold).",
+  "rank.cat.lipsticks": "Lipsticks",
+  "rank.cat.mascaras": "Mascaras",
+  "rank.cat.nail_polishes": "Nail polishes",
+  "rank.cat.eye_makeup": "Eyes: eyeliners and shadows",
+  "rank.cat.complexion": "Complexion: foundations, BB creams, blush",
+  "rank.cat.makeup_other": "Other makeup",
+  // ---------- Classements en préparation ----------
+  "rank.preparing": "These rankings are being prepared: they will appear here within a few hours.",
+  // ---------- Classements maquillage ----------
+  "rank.kind.beauty": "Care",
 };

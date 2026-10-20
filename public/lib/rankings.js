@@ -36,10 +36,19 @@ export const RANK_CATEGORIES = [
   { id: "body_creams", kind: "beauty", tags: ["en:body-lotions", "en:body-milks", "en:body-creams"] },
   { id: "face_creams", kind: "beauty", tags: ["en:face-creams", "en:day-creams", "en:night-creams"] },
   { id: "cleansers", kind: "beauty", tags: ["en:make-up-removers", "en:micellar-waters", "en:face-cleansers", "en:cleansers"] },
-  { id: "lip_balms", kind: "beauty", tags: ["en:lip-balms"] },
+  { id: "lip_balms", kind: "beauty", tags: ["en:lip-balms"], world: true },
   { id: "hand_creams", kind: "beauty", tags: ["en:hand-creams"] },
   { id: "sunscreens", kind: "beauty", tags: ["en:sunscreens", "en:sun-protection"] },
+  // Maquillage : peu de fiches indiquent le pays de vente, le classement est fait sur tous les pays (world)
+  { id: "lipsticks", kind: "beauty", group: "makeup", tags: ["en:lipsticks"], free: true, world: true },
+  { id: "mascaras", kind: "beauty", group: "makeup", tags: ["en:mascaras"], free: true, world: true },
+  { id: "nail_polishes", kind: "beauty", group: "makeup", tags: ["en:nail-polishes"], free: true, world: true },
+  { id: "eye_makeup", kind: "beauty", group: "makeup", tags: ["en:eyeliners", "en:eye-shadows"], world: true },
+  { id: "complexion", kind: "beauty", group: "makeup", tags: ["en:foundations", "en:bb-creams", "en:blushes"], world: true },
+  { id: "makeup_other", kind: "beauty", group: "makeup", tags: ["en:makeup"], world: true },
 ];
+/** Onglet d'un rayon dans l'écran des classements : alimentation, soins et hygiène, maquillage */
+export const rankTab = (c) => c.group || c.kind;
 export const RANK_BY_ID = Object.fromEntries(RANK_CATEGORIES.map((c) => [c.id, c]));
 
 // Icônes (traits, 24 × 24)
@@ -75,6 +84,12 @@ export const RANK_ICONS = {
   cleansers: '<circle cx="9" cy="13" r="5"/><circle cx="15" cy="11" r="5"/>',
   lip_balms: '<rect x="9" y="9" width="6" height="12" rx="1"/><path d="M10 9V5l4-2v6"/>',
   hand_creams: '<path d="M9 3h6l-1 4h-4z"/><path d="M8 7h8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/>',
+  lipsticks: '<rect x="9" y="12" width="6" height="9" rx="1"/><path d="M10 12V7l4-3v8"/>',
+  mascaras: '<rect x="10" y="10" width="4" height="11" rx="1"/><path d="M12 10V3M9 4h6M9 6h6M9 8h6"/>',
+  nail_polishes: '<rect x="7" y="11" width="10" height="10" rx="2"/><path d="M10 11V7h4v4M11 7V3h2v4"/>',
+  eye_makeup: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/><path d="M5 7l-1-2M9 5.5L8.5 3M15 5.5l.5-2.5M19 7l1-2"/>',
+  complexion: '<circle cx="12" cy="13" r="8"/><circle cx="12" cy="13" r="4.5"/><path d="M9 4h6"/>',
+  makeup_other: '<path d="M4 20l6-6M10 14l7-7 3 3-7 7z"/><path d="M15 9l3-3"/>',
   sunscreens: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
 };
 

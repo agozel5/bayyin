@@ -177,6 +177,21 @@ export const LEXICON = [
   { fr: ["parfum"], en: ["perfume"], ar: ["عطر"], tr: ["parfüm"] },
   { fr: ["crème"], en: ["cream"], ar: ["كريم"], tr: ["krem"] },
   { fr: ["rouge à lèvres"], en: ["lipstick"], ar: ["أحمر شفاه", "احمر الشفاه"], tr: ["ruj"] },
+  // Maquillage
+  { fr: ["maquillage"], en: ["makeup", "make up"], ar: ["مكياج", "ماكياج"], tr: ["makyaj"] },
+  { fr: ["mascara"], en: ["mascara"], ar: ["ماسكارا", "مسكرة"], tr: ["maskara", "rimel"] },
+  { fr: ["fond de teint"], en: ["foundation"], ar: ["كريم أساس", "فاونديشن"], tr: ["fondöten"] },
+  { fr: ["vernis à ongles"], en: ["nail polish", "nail varnish"], ar: ["طلاء أظافر", "مناكير"], tr: ["oje"] },
+  { fr: ["fard à paupières"], en: ["eyeshadow", "eye shadow"], ar: ["ظلال العيون", "ظل عيون"], tr: ["far", "göz farı"] },
+  { fr: ["eyeliner"], en: ["eyeliner", "eye liner"], ar: ["آيلاينر", "كحل سائل"], tr: ["eyeliner", "eyeliner kalem"] },
+  { fr: ["crayon yeux"], en: ["eye pencil", "kohl"], ar: ["كحل", "قلم عيون"], tr: ["göz kalemi"] },
+  { fr: ["gloss"], en: ["lip gloss", "gloss"], ar: ["ملمع شفاه", "جلوس"], tr: ["dudak parlatıcısı", "parlatıcı"] },
+  { fr: ["anticernes"], en: ["concealer"], ar: ["كونسيلر", "خافي عيوب"], tr: ["kapatıcı"] },
+  { fr: ["poudre"], en: ["powder", "face powder"], ar: ["بودرة"], tr: ["pudra"] },
+  { fr: ["blush"], en: ["blush", "blusher"], ar: ["أحمر خدود", "بلاشر"], tr: ["allık"] },
+  { fr: ["démaquillant"], en: ["makeup remover", "make up remover"], ar: ["مزيل مكياج", "مزيل المكياج"], tr: ["makyaj temizleyici", "makyaj temizleme"] },
+  { fr: ["crème solaire"], en: ["sunscreen", "sun cream"], ar: ["واقي شمس", "واقي الشمس"], tr: ["güneş kremi"] },
+  { fr: ["baume à lèvres"], en: ["lip balm"], ar: ["مرطب شفاه"], tr: ["dudak kremi", "lip balm"] },
 ];
 
 // Index : forme normalisée (une ou plusieurs mots) -> entrée du lexique, par langue
