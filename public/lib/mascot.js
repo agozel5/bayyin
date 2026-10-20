@@ -42,11 +42,9 @@ const POSES = {
 };
 
 function eyes(kind) {
-  if (kind === "happy") return `<path d="M58 70c4-6 12-6 16 0M88 70c4-6 12-6 16 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`;
-  const dx = kind === "right" ? 3 : 0, dy = kind === "up" ? -3 : 0;
-  return `<ellipse cx="66" cy="70" rx="9" ry="11" fill="#fff"/><ellipse cx="96" cy="70" rx="9" ry="11" fill="#fff"/>
-    <circle cx="${67 + dx}" cy="${72 + dy}" r="5" fill="#0B3B29"/><circle cx="${97 + dx}" cy="${72 + dy}" r="5" fill="#0B3B29"/>
-    <circle cx="${69 + dx}" cy="${69 + dy}" r="1.6" fill="#fff"/><circle cx="${99 + dx}" cy="${69 + dy}" r="1.6" fill="#fff"/>`;
+  if (kind === "happy") return `<path d="M58 71c4-6 12-6 16 0M88 71c4-6 12-6 16 0" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/>`;
+  const dx = kind === "right" ? 2.5 : 0, dy = kind === "up" ? -2.5 : 0;
+  return `<circle cx="${66 + dx}" cy="${70 + dy}" r="6.5" fill="#fff"/><circle cx="${96 + dx}" cy="${70 + dy}" r="6.5" fill="#fff"/>`;
 }
 
 /** Mascotte en SVG. pose : hello | search | empty | teach | star | bravo */
@@ -55,18 +53,16 @@ export function mascot(pose = "hello", { size = 120, label = "" } = {}) {
   const id = `m${++uid}`;
   const a11y = label ? `role="img" aria-label="${label.replace(/"/g, "&quot;")}"` : 'aria-hidden="true"';
   return `<svg class="mascot m-${pose}" viewBox="0 0 160 160" width="${size}" height="${size}" style="width:${size}px;height:${size}px" ${a11y}>
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26A877"/><stop offset="1" stop-color="#11734F"/></linearGradient></defs>
-    <ellipse cx="80" cy="150" rx="38" ry="6" fill="rgb(0 0 0 / .1)"/>
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17865D"/><stop offset="1" stop-color="#0E6346"/></linearGradient></defs>
+    <ellipse cx="80" cy="150" rx="34" ry="4" fill="rgb(0 0 0 / .08)"/>
     ${p.extra || ""}
     <g class="m-body">
       ${p.arms}
-      <path d="M50 142v-8M110 142v-8" stroke="#0E6346" stroke-width="7" stroke-linecap="round"/>
-      <rect x="34" y="38" width="92" height="98" rx="34" fill="url(#${id})"/>
-      <path d="M44 56c6-10 16-14 26-14" fill="none" stroke="rgb(255 255 255 / .35)" stroke-width="5" stroke-linecap="round"/>
+      <path d="M50 142v-8M110 142v-8" stroke="#0E6346" stroke-width="6" stroke-linecap="round"/>
+      <rect x="34" y="38" width="92" height="98" rx="26" fill="url(#${id})"/>
       ${eyes(p.eyes)}
-      <ellipse cx="54" cy="90" rx="7" ry="4.5" fill="#FF8A7A" opacity=".5"/><ellipse cx="108" cy="90" rx="7" ry="4.5" fill="#FF8A7A" opacity=".5"/>
-      <path d="M60 86c0 12 8 17 21 17h4c13 0 19-6 19-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="80" cy="116" r="5.5" fill="#FFC95C"/>
+      <path d="M60 86c0 11 8 15 21 15h4c13 0 19-4 19-15" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="80" cy="113" r="4.5" fill="#FFC95C"/>
     </g>
     ${p.top || ""}
   </svg>`;
