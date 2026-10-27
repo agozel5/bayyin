@@ -2334,3 +2334,80 @@ h2,.sub{font-size:1.1rem;font-weight:700;letter-spacing:-.005em}
 .p-img.ph svg{width:28px;height:28px}
 .p-img.ph.cat svg{width:34px;height:34px}
 .ask-actions .btn-soft{width:auto;flex:1 1 calc(50% - 4px);min-width:0}
+
+/* =====================================================================
+   Relief, verre, transitions et symbole 3D
+   ===================================================================== */
+@property --gx{syntax:"<percentage>";inherits:true;initial-value:28%}
+@property --gy{syntax:"<percentage>";inherits:true;initial-value:0%}
+
+/* 1 · Carte du verdict en relief : elle s'incline vers le doigt, ou avec le téléphone */
+.v-tilt{margin-bottom:14px;border-radius:var(--r-xl);transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition:transform .55s cubic-bezier(.2,.8,.2,1);
+  box-shadow:0 2px 5px -3px rgb(16 28 21 / .18),0 16px 28px -20px rgb(16 28 21 / .45)}
+.v-tilt.tilting{transition:transform .12s ease-out}
+.v-tilt > .verdict{margin-bottom:0}
+:root[data-theme="dark"] .v-tilt{box-shadow:0 2px 6px -3px rgb(0 0 0 / .6),0 18px 30px -18px rgb(0 0 0 / .9)}
+/* 6 · Reflet : une lumière douce qui suit l'inclinaison ; liseré clair en haut, ombre en bas */
+.v-sheen{position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(130% 95% at var(--gx) var(--gy),rgb(255 255 255 / .26),rgb(255 255 255 / .06) 38%,rgb(255 255 255 / 0) 62%);
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .32),inset 0 -1px 0 rgb(0 0 0 / .14);
+  transition:--gx .55s cubic-bezier(.2,.8,.2,1),--gy .55s cubic-bezier(.2,.8,.2,1)}
+.v-tilt.tilting .v-sheen{transition-duration:.12s}
+:root[data-theme="dark"] .v-sheen{background:radial-gradient(130% 95% at var(--gx) var(--gy),rgb(255 255 255 / .16),rgb(255 255 255 / 0) 58%);box-shadow:inset 0 1px 0 rgb(255 255 255 / .18)}
+@media (prefers-reduced-motion:no-preference){
+  /* À l'apparition du verdict, la lumière balaie une fois la carte */
+  .v-sheen{animation:sheen-in 1.3s .35s cubic-bezier(.3,.6,.2,1) backwards}
+  @keyframes sheen-in{from{--gx:-30%;--gy:-20%}to{--gx:28%;--gy:0%}}
+}
+@media (prefers-reduced-motion:reduce){.v-tilt{transform:none!important}}
+
+/* 2 · Verre dépoli : onglets de la fiche (le contenu passe dessous), messages */
+.ptabs{background:color-mix(in srgb,var(--tint) 72%,transparent);box-shadow:0 0 0 1px var(--line);
+  backdrop-filter:saturate(1.8) blur(18px);-webkit-backdrop-filter:saturate(1.8) blur(18px)}
+:root[data-theme="dark"] .ptabs{background:rgb(28 37 32 / .72)}
+.toast{background:rgb(21 33 26 / .86);backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px)}
+:root[data-theme="dark"] .toast{background:rgb(236 242 238 / .9)}
+
+/* 3 · Mêmes mouvements partout : une seule courbe, des durées courtes */
+:root{--ease-out:cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:no-preference){
+  .toast:not([hidden]){animation:toast-in .26s var(--ease-out)}
+  @keyframes toast-in{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
+  details[open] > :not(summary){animation:fade-up .24s var(--ease-out)}
+  .add-rows > .add-row,.add-rows2 > *,.feature-grid > .feature,.set-list > *{animation:cascade .36s var(--ease-out) both}
+  :is(.add-rows > .add-row,.add-rows2 > *,.feature-grid > .feature,.set-list > *):nth-child(2){animation-delay:.03s}
+  :is(.add-rows > .add-row,.add-rows2 > *,.feature-grid > .feature,.set-list > *):nth-child(3){animation-delay:.06s}
+  :is(.add-rows > .add-row,.add-rows2 > *,.feature-grid > .feature,.set-list > *):nth-child(4){animation-delay:.09s}
+  :is(.add-rows > .add-row,.add-rows2 > *,.feature-grid > .feature,.set-list > *):nth-child(5){animation-delay:.12s}
+  :is(.add-rows > .add-row,.add-rows2 > *,.feature-grid > .feature,.set-list > *):nth-child(n+6){animation-delay:.15s}
+  @keyframes fade-up{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @keyframes cascade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+}
+
+/* 5 · Symbole du scan en 3D : une pièce qui se retourne de temps en temps (code-barres / bouclier) */
+.hero-scan-art{background:transparent!important;overflow:visible;perspective:260px;display:block;padding:0}
+.coin{position:absolute;inset:0;transform-style:preserve-3d}
+.coin-face,.coin-edge{position:absolute;inset:0;border-radius:inherit;border-radius:13px}
+.coin-face{display:flex;align-items:center;justify-content:center;gap:2.5px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.coin-front{background:#E3F3EB;box-shadow:inset 0 1px 0 rgb(255 255 255 / .8),inset 0 -1px 0 rgb(15 101 69 / .12)}
+.coin-back{background:linear-gradient(150deg,#1B8A5E,#0F6545);transform:translateZ(-4px) rotateY(180deg);box-shadow:inset 0 1px 0 rgb(255 255 255 / .25)}
+.coin-back svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.coin-edge{background:#0F6545;transform:translateZ(-1px)}
+.coin-edge.e2{transform:translateZ(-2px)}
+.coin-edge.e3{transform:translateZ(-3px);background:#0B4D35}
+.coin-front i{display:block;width:2px;height:24px;background:#0F6545;border-radius:1px}
+.coin-front i:nth-child(3n){width:4px}
+.coin-front i:nth-child(4n+1){width:1px}
+.coin-front b{position:absolute;left:8px;right:8px;top:50%;height:2px;border-radius:2px;background:#E0423A;box-shadow:0 0 6px #FF6B61}
+:root[data-theme="dark"] .coin-front{background:#E3F3EB}
+@media (prefers-reduced-motion:no-preference){
+  .coin{animation:coin-turn 8s 1.2s cubic-bezier(.65,0,.25,1) infinite}
+  @keyframes coin-turn{0%,58%{transform:rotateY(0) rotateX(0)}
+    50%{transform:rotateY(-10deg) rotateX(6deg)}
+    68%,86%{transform:rotateY(180deg)}
+    96%,100%{transform:rotateY(360deg)}}
+  .coin-front b{animation:cta 2.4s ease-in-out infinite alternate}
+}
+.ptabs{background:color-mix(in srgb,var(--tint) 88%,transparent)}
+:root[data-theme="dark"] .ptabs{background:rgb(28 37 32 / .88)}
