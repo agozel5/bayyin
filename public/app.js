@@ -17,7 +17,6 @@ import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
-import { LIST_KEY, textItem, productItem, tickFor, shareText } from "./lib/shoplist.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -212,16 +211,11 @@ function productTop(p) {
   const addPhoto = !p.image && !p.local && code && kindOf(p) !== "medicine"
     ? `<a class="p-addphoto" href="${esc(`https://world.open${kindOf(p) === "beauty" ? "beauty" : "food"}facts.org/cgi/product.pl?type=edit&code=${code}`)}" target="_blank" rel="noopener">${svg('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>')}${t("detail.add_photo")}</a>`
     : "";
-  // Ajouter à la liste de courses (aliments et cosmétiques avec un code-barres)
-  const inList = code && kindOf(p) !== "medicine" && listItems().some((x) => x.code === p.code && !x.done);
-  const addList = code && kindOf(p) !== "medicine"
-    ? `<button type="button" class="p-addlist" data-list-add-product="${esc(code)}" aria-pressed="${!!inList}">${svg(inList ? I.check : LIST_ICO)}<span>${esc(t(inList ? "list.in" : "list.add_product"))}</span></button>`
-    : "";
   return `<div class="p-top">${img}<div class="p-text">
     <span class="p-name">${esc(nameOf(p))}</span>
     ${meta ? `<span class="p-meta">${meta}</span>` : ""}
     ${code ? `<span class="p-code" dir="ltr">${esc(code)}</span>` : ""}
-    ${addPhoto}${addList}
+    ${addPhoto}
   </div></div>`;
 }
 
@@ -1422,7 +1416,7 @@ async function openSheet(code, { fromScan = false, replace = false, revealed = f
 
   if (fresh) {
     renderSheetProduct(cached);
-    if (fromScan) { if (!revealed) verdictHaptic(cached); verdictBurst(); tickOnScan(cached); }
+    if (fromScan) { if (!revealed) verdictHaptic(cached); verdictBurst(); }
     if (fromScan || !store.get(code)) store.add(cached);
     refreshFav();
     if (!cached.local) loadAlternatives(cached, code);
@@ -1437,7 +1431,7 @@ async function openSheet(code, { fromScan = false, replace = false, revealed = f
       return;
     }
     renderSheetProduct(p);
-    if (fromScan) { if (!revealed) verdictHaptic(p); verdictBurst(); tickOnScan(p); }
+    if (fromScan) { if (!revealed) verdictHaptic(p); verdictBurst(); }
     store.add(p);
     refreshFav();
     if (!p.local) loadAlternatives(p, code);
@@ -3711,7 +3705,6 @@ async function basketScan(code) {
     if (p) {
       store.add(p);
       basket.add(p);
-      tickOnScan(p);
       const st = verdictOf(p).status;
       const al = profileOf(p).alert;
       flash.className = `cam-flash v-${st}`;
@@ -3794,196 +3787,6 @@ function renderBasket() {
     </div>`;
   requestAnimationFrame(() => animateGauges());
 }
-
-// ===========================================================================
-// Liste de courses : ce qu'on veut acheter, des idées halal pour chaque ligne
-// (les mieux notées des classements, et ce qu'on a déjà scanné), cochée au scan en magasin
-// ===========================================================================
-const listItems = () => readJson(LIST_KEY, []);
-function saveList(items) {
-  writeJson(LIST_KEY, items);
-  renderListCard();
-}
-const LIST_ICO = '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 5.5l1 1 2-2M4 11.5l1 1 2-2"/><circle cx="5" cy="18" r="1.2"/>';
-// Rayons des classements d'un produit (d'après ses catégories Open Food Facts)
-const catsOf = (p) => RANK_CATEGORIES.filter((c) => c.tags.some((tag) => (p.categories || []).includes(tag))).map((c) => c.id);
-const suits = (p) => ["halal_certifie", "halal_probable"].includes(verdictOf(p).status) && !profileOf(p).alert;
-function renderListCard() {
-  const n = listItems().filter((x) => !x.done).length;
-  $("listPromo").textContent = n ? tn("list.promo", n) : t("list.promo_empty");
-}
-function openList({ replace = false } = {}) {
-  sheetCode = "list";
-  resetSheetHeader();
-  sheetProduct = null;
-  $("sheetTitle").textContent = t("list.title");
-  $("sheetCompare").hidden = true;
-  $("sheetShare").hidden = true;
-  showSheet({ replace });
-  refreshFav();
-  renderList();
-}
-const known = (code) => memo.get(code) || (store.get(code) && store.get(code).p) || null;
-function listItemHtml(x) {
-  const p = x.code ? known(x.code) : null;
-  const label = x.name || x.text;
-  const check = `<button type="button" class="scheck" role="checkbox" aria-checked="${x.done}" data-list-toggle="${esc(x.id)}" aria-label="${esc(t("list.tick", { x: label }))}">${svg(I.check)}</button>`;
-  const del = `<button type="button" class="sdel" data-list-del="${esc(x.id)}" aria-label="${esc(t("list.remove", { x: label }))}">${svg(I.cross)}</button>`;
-  let body;
-  if (x.code) {
-    const s = p && scoreOf(p);
-    const tags = p && !x.done ? `<span class="row-tags">${statusPill(verdictOf(p).status)}${s ? `<span class="mini-sc g-${s.grade}" dir="ltr">${s.score}/100</span>` : ""}${alertTag(p)}</span>` : "";
-    body = `<button type="button" class="sname link" data-open="${esc(x.code)}" dir="auto">${esc(label)}</button>
-      <small dir="auto">${esc([x.brand, x.text !== label ? t("list.for", { x: x.text }) : ""].filter(Boolean).join(" · "))}</small>${tags}`;
-  } else {
-    body = `<span class="sname" dir="auto">${esc(x.text)}</span>` + (x.done ? "" : x.cat
-      ? `<div class="sideas" data-ideas="${esc(x.id)}" data-cat="${esc(x.cat)}"><p class="sideas-t">${esc(t("list.ideas"))}</p><div class="sideas-row">${[0, 1, 2].map(() => '<span class="sidea skel"></span>').join("")}</div></div>`
-      : `<small class="snone">${esc(t("list.no_idea"))} <button type="button" class="link-btn" data-list-search="${esc(x.text)}">${esc(t("list.search"))}</button></small>`);
-  }
-  return `<li class="sitem${x.done ? " done" : ""}">${check}<div class="sbody">${body}</div>${del}</li>`;
-}
-function renderList({ focus = false } = {}) {
-  if (sheetCode !== "list") return;
-  const items = listItems();
-  const open = items.filter((x) => !x.done), done = items.filter((x) => x.done);
-  const form = `<form class="list-add" id="listAdd" autocomplete="off">
-      <label class="sr-only" for="listInput">${esc(t("list.add"))}</label>
-      <input class="field" id="listInput" type="text" maxlength="80" enterkeyhint="done" placeholder="${esc(t("list.ph"))}">
-      <button class="btn btn-primary" type="submit">${esc(t("list.add"))}</button></form>`;
-  if (!items.length) {
-    $("sheetBody").innerHTML = `${form}<div class="empty">${emptyArt("teach")}<strong>${esc(t("list.empty.t"))}</strong><p>${esc(t("list.empty.p"))}</p>
-      <p class="label">${esc(t("list.try"))}</p><div class="chips">${t("list.ex").split("|").map((w) => `<button type="button" class="chip" data-list-quick="${esc(w)}">${esc(w)}</button>`).join("")}</div></div>`;
-  } else {
-    $("sheetBody").innerHTML = `${form}
-      ${open.length ? `<ul class="slist">${open.map(listItemHtml).join("")}</ul>` : ""}
-      ${done.length ? `<p class="label slist-t">${esc(tn("list.done", done.length))}</p><ul class="slist">${done.map(listItemHtml).join("")}</ul>` : ""}
-      <div class="list-actions">
-        <button class="btn btn-soft" type="button" data-list-share>${svg('<path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/>')}${esc(t("list.share"))}</button>
-        ${done.length ? `<button class="link-btn" type="button" data-list-clear>${esc(t("list.clear_done"))}</button>` : ""}
-      </div>
-      <p class="fineprint start">${esc(t("list.note"))}</p>`;
-    $("sheetBody").querySelectorAll("[data-ideas]").forEach(fillIdeas);
-  }
-  if (focus) $("listInput").focus();
-}
-// Idées pour une ligne : déjà scannés qui conviennent, puis les mieux notés du rayon
-const ideaCache = new Map();
-async function ideasFor(cat) {
-  const mine = store.all().map((e) => e.p).filter((p) => catsOf(p).includes(cat) && suits(p))
-    .sort((a, b) => ((scoreOf(b) || {}).score || 0) - ((scoreOf(a) || {}).score || 0));
-  let ranked = [];
-  const c = RANK_BY_ID[cat];
-  if (c && !rankLocked(c)) {
-    if (!ideaCache.has(cat)) {
-      ideaCache.set(cat, rankProducts(cat).then((raws) => rankList(raws, {
-        present: (raw) => { const p = present(raw, prefs()); memo.set(p.code, p); return p; },
-        scoreOf: (p) => scoreOf(p),
-        alertOf: (p) => profileOf(p).alert,
-      })).catch(() => { ideaCache.delete(cat); return []; }));
-    }
-    ranked = await ideaCache.get(cat);
-  }
-  const seen = new Set();
-  return { list: [...mine, ...ranked].filter((p) => !seen.has(p.code) && seen.add(p.code)).slice(0, 3), locked: !!(c && rankLocked(c)) };
-}
-async function fillIdeas(box) {
-  const { list, locked } = await ideasFor(box.dataset.cat);
-  if (!box.isConnected) return;
-  const row = box.querySelector(".sideas-row");
-  if (!list.length) {
-    row.outerHTML = `<small class="snone">${esc(t(locked ? "list.locked" : "list.no_idea"))}</small>`;
-    return;
-  }
-  row.innerHTML = list.map((p) => {
-    const s = scoreOf(p);
-    const img = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : phArt(p, "sidea-ph");
-    return `<button type="button" class="sidea" data-list-pick="${esc(box.dataset.ideas)}" data-code="${esc(p.code)}">${img}
-      <span><strong dir="auto">${esc(nameOf(p))}</strong><small><i class="dot s-${verdictOf(p).status}"></i>${s ? `<span dir="ltr">${s.score}/100</span>` : esc(S(verdictOf(p).status, "short"))}</small></span></button>`;
-  }).join("");
-}
-function addToList(text) {
-  const it = textItem(text);
-  if (!it) return;
-  const items = listItems();
-  if (items.some((x) => !x.done && (x.text || "").toLowerCase() === it.text.toLowerCase())) return renderList({ focus: true });
-  items.unshift(it);
-  saveList(items);
-  tapHaptic();
-  renderList({ focus: true });
-}
-function addProductToList(p) {
-  const items = listItems();
-  if (!items.some((x) => x.code === p.code && !x.done)) {
-    items.unshift(productItem(p));
-    saveList(items);
-  }
-  toast(t("list.added"));
-}
-// Produit scanné : la ligne qui y répond est cochée
-function tickOnScan(p) {
-  if (!p) return;
-  const items = listItems();
-  if (!items.some((x) => !x.done)) return;
-  const hit = tickFor(items, p, { ok: suits(p), catsOf });
-  if (!hit) return;
-  saveList(items);
-  toast(t("list.ticked", { x: hit.name || hit.text }));
-}
-// Fiche produit : « Ajouter à ma liste » ; déjà dans la liste : ouvre la liste
-sheet.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-list-add-product]");
-  if (!b || !sheetProduct) return;
-  if (b.getAttribute("aria-pressed") === "true") return openList({ replace: true });
-  addProductToList(sheetProduct);
-  tapHaptic();
-  b.setAttribute("aria-pressed", "true");
-  b.innerHTML = `${svg(I.check)}<span>${esc(t("list.in"))}</span>`;
-});
-sheet.addEventListener("submit", (e) => {
-  if (e.target.id !== "listAdd") return;
-  e.preventDefault();
-  addToList($("listInput").value);
-});
-sheet.addEventListener("click", async (e) => {
-  if (sheetCode !== "list") return;
-  const q = e.target.closest("[data-list-quick]");
-  if (q) return addToList(q.dataset.listQuick);
-  const tg = e.target.closest("[data-list-toggle]");
-  if (tg) {
-    const items = listItems();
-    const x = items.find((i) => i.id === tg.dataset.listToggle);
-    if (x) { x.done = !x.done; saveList(items); tapHaptic(); renderList(); }
-    return;
-  }
-  const del = e.target.closest("[data-list-del]");
-  if (del) { saveList(listItems().filter((i) => i.id !== del.dataset.listDel)); return renderList(); }
-  const pick = e.target.closest("[data-list-pick]");
-  if (pick) {
-    const p = known(pick.dataset.code);
-    if (!p) return;
-    const items = listItems();
-    const i = items.findIndex((x) => x.id === pick.dataset.listPick);
-    if (i >= 0) { items[i] = productItem(p, items[i]); saveList(items); tapHaptic(); renderList(); }
-    return;
-  }
-  const srch = e.target.closest("[data-list-search]");
-  if (srch) {
-    closeSheet();
-    location.hash = "#search";
-    $("searchInput").value = srch.dataset.listSearch;
-    return runSearch(srch.dataset.listSearch);
-  }
-  if (e.target.closest("[data-list-clear]")) { saveList(listItems().filter((x) => !x.done)); return renderList(); }
-  if (e.target.closest("[data-list-share]")) {
-    const text = shareText(listItems(), `${t("list.title")} · Bayyin`);
-    try {
-      if (navigator.share) await navigator.share({ title: t("list.title"), text });
-      else { await navigator.clipboard.writeText(text); toast(t("list.copied")); }
-    } catch { /* partage annulé */ }
-  }
-});
-$("openList").addEventListener("click", () => openList());
-renderListCard();
 
 // ===========================================================================
 // Comparer deux produits
