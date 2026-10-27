@@ -1928,6 +1928,8 @@ async function morphScan(code) {
   } catch { p = undefined; }
   if (run !== morphRun || cameraEl.hidden) return;
   if (!p) return open(false); // lent, introuvable ou erreur : la fiche s'en charge
+  // La photo se télécharge pendant l'animation du verdict : elle est prête quand la fiche s'ouvre
+  if (p.image) { const im = new Image(); im.referrerPolicy = "no-referrer"; im.decoding = "async"; im.src = p.image; }
   const st = verdictOf(p).status;
   const al = profileOf(p).alert;
   const look = al === "no" ? ["no", BURST_COLOR.haram, t(`alert.${al}`)]
