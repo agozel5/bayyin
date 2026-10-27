@@ -2315,3 +2315,22 @@ h2,.sub{font-size:1.1rem;font-weight:700;letter-spacing:-.005em}
   .set-flash{animation:set-flash .8s ease-out}
   @keyframes set-flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--brand) 55%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
 }
+
+/* ===== Finitions : accueil allégé, icônes d'une même famille, fiche plus courte ===== */
+.feature-grid{grid-template-columns:1fr;gap:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--lift);overflow:hidden}
+.feature{flex-direction:row;align-items:center;gap:14px;padding:13px 16px;border-radius:0;background:transparent;box-shadow:none}
+.feature + .feature{border-top:1px solid var(--line)}
+.feature strong{font-size:.97rem}
+.feature p{font-size:.84rem;line-height:1.35;margin-top:1px}
+.f-ico{flex:none;margin:0;width:36px;height:36px;border-radius:9px;background:var(--tint)!important;color:var(--brand)!important}
+.f-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+:root[data-theme="dark"] .f-ico{color:#5FD08F!important}
+/* Lever le doute : un geste principal, deux actions discrètes */
+.ask-actions{gap:6px}
+.ask-actions .btn-primary{flex:1 1 100%;justify-content:center}
+.ask-actions .btn-soft{flex:1 1 0;justify-content:center;white-space:nowrap;padding:9px 8px;font-size:.86rem}
+/* Fiche sans photo : on rend la place */
+.p-img.ph{width:76px;height:76px;border-radius:16px}
+.p-img.ph svg{width:28px;height:28px}
+.p-img.ph.cat svg{width:34px;height:34px}
+.ask-actions .btn-soft{width:auto;flex:1 1 calc(50% - 4px);min-width:0}

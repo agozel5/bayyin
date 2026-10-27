@@ -862,9 +862,11 @@ async function loadAlternatives(p, code) {
       ? `<div class="alts">${alts.map(altCard).join("")}</div>`
       : found.best
         ? `<p class="alt-best">${svg(I.check)}<span>${t("detail.alt_best")}</span></p>`
-        : `<p class="notes">${t(p.categories && p.categories.length ? "detail.alt_none" : "detail.alt_nocat")}</p>`;
+        : "";
+    // Rien à proposer : on n'affiche pas une section vide
+    if (!alts.length && !found.best) $("altSection")?.remove();
   } catch {
-    if (sheetCode === code && $("altBox")) $("altBox").innerHTML = `<p class="notes">${t("detail.alt_error")}</p>`;
+    if (sheetCode === code) $("altSection")?.remove();
   }
 }
 
