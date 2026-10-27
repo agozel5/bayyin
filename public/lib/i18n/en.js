@@ -1558,4 +1558,15 @@ export default {
   "env.origin_none": "The manufacturer hasn't stated where the ingredients come from on Open Food Facts.",
   "env.map_label": "Map of countries of origin",
   "env.bench": "Rough benchmarks: beef, chocolate, chicken, pizza, vegetables, fruit.",
+  // ---------- réglages : confirmation ----------
+  "set.applying": "Updating your verdicts…",
+  "set.diet": "Diet saved: {x}",
+  "set.allergen_on": "Allergy added: {x}",
+  "set.allergen_off": "Allergy removed: {x}",
+  "set.school": "Opinion saved: {x}",
+  "set.topic": "Setting saved: {x}",
+  "set.member": "{name}'s profile saved: {x}",
+  "set.changed_one": "1 product in your history changes",
+  "set.changed_other": "{n} products in your history change",
+  "set.unchanged": "no product in your history changes",
 };

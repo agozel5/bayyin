@@ -2302,3 +2302,16 @@ h2,.sub{font-size:1.1rem;font-weight:700;letter-spacing:-.005em}
 .env-olist small{color:var(--muted);font-size:.85rem}
 .env-origin .env-note{margin-inline-start:0}
 :root[data-theme="dark"] .env-map path.on{fill:var(--brand)}
+
+/* ---------- Réglage pris en compte : « mise à jour… » puis la confirmation ---------- */
+.toast.busy,.toast.ok{display:flex;align-items:center;gap:10px;text-align:start;padding:11px 16px 11px 12px;border-radius:16px;width:max-content}
+.toast .spinner{width:18px;height:18px;flex:none}
+.toast .t-ok{flex:none;display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff}
+.toast .t-ok svg{width:13px;height:13px;stroke-width:3}
+:root[data-theme="dark"] .toast .spinner{color:var(--bg)}
+@media (prefers-reduced-motion:no-preference){
+  .toast.ok .t-ok{animation:t-pop .3s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes t-pop{from{transform:scale(.3)}}
+  .set-flash{animation:set-flash .8s ease-out}
+  @keyframes set-flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--brand) 55%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
+}

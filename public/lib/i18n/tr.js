@@ -1558,4 +1558,15 @@ export default {
   "env.origin_none": "Üretici, içeriklerin kökenini Open Food Facts'te belirtmemiş.",
   "env.map_label": "Menşe ülkeler haritası",
   "env.bench": "Yaklaşık karşılaştırmalar: sığır eti, çikolata, tavuk, pizza, sebze, meyve.",
+  // ---------- réglages : confirmation ----------
+  "set.applying": "Kararlarınız güncelleniyor…",
+  "set.diet": "Beslenme tercihi kaydedildi: {x}",
+  "set.allergen_on": "Alerji eklendi: {x}",
+  "set.allergen_off": "Alerji kaldırıldı: {x}",
+  "set.school": "Görüş kaydedildi: {x}",
+  "set.topic": "Ayar kaydedildi: {x}",
+  "set.member": "{name} profili kaydedildi: {x}",
+  "set.changed_one": "Geçmişinizdeki 1 ürün değişiyor",
+  "set.changed_other": "Geçmişinizdeki {n} ürün değişiyor",
+  "set.unchanged": "geçmişinizdeki hiçbir ürün değişmiyor",
 };

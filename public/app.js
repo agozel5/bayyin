@@ -3265,13 +3265,50 @@ $("langGrid").addEventListener("click", (e) => {
   const b = e.target.closest("[data-lang]");
   if (b) settings.set({ lang: b.dataset.lang });
 });
+// ---------------------------------------------------------------------------
+// Réglage modifié : on montre qu'il a bien été pris en compte. Un court « mise à jour… »,
+// puis ce qui a été enregistré et combien de produits déjà scannés changent de verdict.
+// ---------------------------------------------------------------------------
+const verdictKey = (p) => { const pr = profileOf(p); return `${verdictOf(p).status}|${pr.alert || ""}|${pr.who || ""}`; };
+const historySnapshot = () => new Map(store.all().slice(0, 300).map((e) => [e.code, verdictKey(e.p)]));
+let settingTimer = 0;
+function toastState(state, text) {
+  const el = $("toast");
+  el.className = `toast ${state}`;
+  el.innerHTML = `${state === "busy" ? '<span class="spinner light"></span>' : `<span class="t-ok">${svg(I.check)}</span>`}<span>${esc(text)}</span>`;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  if (state !== "busy") toastTimer = setTimeout(() => { el.hidden = true; el.className = "toast"; }, 3200);
+}
+function applySetting(change, { saved, flash }) {
+  const before = historySnapshot();
+  change();
+  // La commande touchée s'illumine (elle vient d'être redessinée)
+  requestAnimationFrame(() => {
+    const el = flash && document.querySelector(flash);
+    if (el) { el.classList.remove("set-flash"); void el.offsetWidth; el.classList.add("set-flash"); }
+  });
+  tapHaptic(10);
+  toastState("busy", t("set.applying"));
+  clearTimeout(settingTimer);
+  settingTimer = setTimeout(() => {
+    let n = 0;
+    store.all().slice(0, 300).forEach((e) => { if (before.has(e.code) && before.get(e.code) !== verdictKey(e.p)) n++; });
+    const effect = before.size ? (n ? tn("set.changed", n) : t("set.unchanged")) : "";
+    toastState("ok", effect ? `${saved} · ${effect}` : saved);
+  }, REDUCED() ? 0 : 650);
+}
 $("dietList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-diet]");
-  if (b) settings.setDiet(b.dataset.diet || null);
+  if (!b || b.getAttribute("aria-checked") === "true") return;
+  const d = b.dataset.diet || null;
+  applySetting(() => settings.setDiet(d), { saved: t("set.diet", { x: t(d ? `diet.${d}` : "diet.none") }), flash: `#dietList [data-diet="${d || ""}"]` });
 });
 $("allergenList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-allergen]");
-  if (b) settings.toggleAllergen(b.dataset.allergen);
+  if (!b) return;
+  const a = b.dataset.allergen, on = b.getAttribute("aria-checked") !== "true";
+  applySetting(() => settings.toggleAllergen(a), { saved: t(on ? "set.allergen_on" : "set.allergen_off", { x: t(`allergen.${a}`) }), flash: `#allergenList [data-allergen="${a}"]` });
 });
 // Profils de la famille
 let familyOpen = null;
@@ -3301,10 +3338,18 @@ $("familyList").addEventListener("click", (e) => {
   const box = e.target.closest("[data-member]");
   if (!box) return;
   const id = box.dataset.member;
+  const name = (prefs().members.find((m) => m.id === id) || {}).name || "";
   const d = e.target.closest("[data-mdiet]");
-  if (d) return settings.setMemberDiet(id, d.dataset.mdiet || null);
+  if (d) {
+    if (d.getAttribute("aria-checked") === "true") return;
+    const v = d.dataset.mdiet || null;
+    return applySetting(() => settings.setMemberDiet(id, v), { saved: t("set.member", { name, x: t(v ? `diet.${v}` : "diet.none") }), flash: `[data-member="${id}"] [data-mdiet="${v || ""}"]` });
+  }
   const a = e.target.closest("[data-mallergen]");
-  if (a) return settings.toggleMemberAllergen(id, a.dataset.mallergen);
+  if (a) {
+    const al = a.dataset.mallergen, on = a.getAttribute("aria-checked") !== "true";
+    return applySetting(() => settings.toggleMemberAllergen(id, al), { saved: t("set.member", { name, x: `${on ? "+" : "−"} ${t(`allergen.${al}`)}` }), flash: `[data-member="${id}"] [data-mallergen="${al}"]` });
+  }
   if (e.target.closest("[data-mremove]")) settings.removeMember(id);
 });
 $("familyAdd").addEventListener("submit", (e) => {
@@ -3320,11 +3365,16 @@ $("familyAdd").addEventListener("submit", (e) => {
 
 $("schoolList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-school]");
-  if (b && b.dataset.school !== "custom") settings.setSchool(b.dataset.school);
+  if (!b || b.dataset.school === "custom" || b.getAttribute("aria-checked") === "true") return;
+  const sc = b.dataset.school;
+  applySetting(() => settings.setSchool(sc), { saved: t("set.school", { x: schoolName(sc) }), flash: `#schoolList [data-school="${sc}"]` });
 });
 $("topicList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-topic]");
-  if (b) settings.setTopic(b.dataset.topic, b.dataset.decision);
+  if (!b || b.getAttribute("aria-checked") === "true") return;
+  const { topic, decision } = b.dataset;
+  applySetting(() => settings.setTopic(topic, decision), { saved: t("set.topic", { x: `${t(`topic.${topic}`)} → ${t(`decision.${decision}`).toLowerCase()}` }),
+    flash: `#topicList [data-topic="${topic}"][data-decision="${decision}"]` });
 });
 
 // Pack hors connexion
@@ -3505,6 +3555,7 @@ if ("serviceWorker" in navigator) {
 let toastTimer;
 function toast(text) {
   const el = $("toast");
+  el.className = "toast";
   el.textContent = text;
   el.hidden = false;
   clearTimeout(toastTimer);

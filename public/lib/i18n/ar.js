@@ -1558,4 +1558,15 @@ export default {
   "env.origin_none": "لم يذكر المصنّع مصدر المكوّنات على Open Food Facts.",
   "env.map_label": "خريطة بلدان المنشأ",
   "env.bench": "مراجع تقريبية: لحم البقر، الشوكولاتة، الدجاج، البيتزا، الخضار، الفواكه.",
+  // ---------- réglages : confirmation ----------
+  "set.applying": "جارٍ تحديث أحكامك…",
+  "set.diet": "تم حفظ النظام الغذائي: {x}",
+  "set.allergen_on": "أُضيفت الحساسية: {x}",
+  "set.allergen_off": "أُزيلت الحساسية: {x}",
+  "set.school": "تم حفظ الرأي: {x}",
+  "set.topic": "تم حفظ الإعداد: {x}",
+  "set.member": "تم حفظ ملف {name}: {x}",
+  "set.changed_one": "منتج واحد في سجلك يتغيّر",
+  "set.changed_other": "{n} منتجات في سجلك تتغيّر",
+  "set.unchanged": "لا يتغيّر أي منتج في سجلك",
 };

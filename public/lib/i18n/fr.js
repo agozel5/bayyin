@@ -1572,4 +1572,15 @@ export default {
   "env.origin_none": "Le fabricant n'a pas indiqué l'origine des ingrédients sur Open Food Facts.",
   "env.map_label": "Carte des pays d'origine",
   "env.bench": "Repères indicatifs : bœuf, chocolat, poulet, pizza, légumes, fruits.",
+  // ---------- réglages : confirmation ----------
+  "set.applying": "Mise à jour de vos verdicts…",
+  "set.diet": "Régime enregistré : {x}",
+  "set.allergen_on": "Allergie ajoutée : {x}",
+  "set.allergen_off": "Allergie retirée : {x}",
+  "set.school": "Avis enregistré : {x}",
+  "set.topic": "Réglage enregistré : {x}",
+  "set.member": "Profil de {name} enregistré : {x}",
+  "set.changed_one": "1 produit de votre historique change",
+  "set.changed_other": "{n} produits de votre historique changent",
+  "set.unchanged": "aucun produit de votre historique ne change",
 };
