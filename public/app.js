@@ -3267,10 +3267,8 @@ $("langGrid").addEventListener("click", (e) => {
 });
 // ---------------------------------------------------------------------------
 // Réglage modifié : on montre qu'il a bien été pris en compte. Un court « mise à jour… »,
-// puis ce qui a été enregistré et combien de produits déjà scannés changent de verdict.
+// puis ce qui a été enregistré.
 // ---------------------------------------------------------------------------
-const verdictKey = (p) => { const pr = profileOf(p); return `${verdictOf(p).status}|${pr.alert || ""}|${pr.who || ""}`; };
-const historySnapshot = () => new Map(store.all().slice(0, 300).map((e) => [e.code, verdictKey(e.p)]));
 let settingTimer = 0;
 function toastState(state, text) {
   const el = $("toast");
@@ -3281,7 +3279,6 @@ function toastState(state, text) {
   if (state !== "busy") toastTimer = setTimeout(() => { el.hidden = true; el.className = "toast"; }, 3200);
 }
 function applySetting(change, { saved, flash }) {
-  const before = historySnapshot();
   change();
   // La commande touchée s'illumine (elle vient d'être redessinée)
   requestAnimationFrame(() => {
@@ -3291,12 +3288,7 @@ function applySetting(change, { saved, flash }) {
   tapHaptic(10);
   toastState("busy", t("set.applying"));
   clearTimeout(settingTimer);
-  settingTimer = setTimeout(() => {
-    let n = 0;
-    store.all().slice(0, 300).forEach((e) => { if (before.has(e.code) && before.get(e.code) !== verdictKey(e.p)) n++; });
-    const effect = before.size ? (n ? tn("set.changed", n) : t("set.unchanged")) : "";
-    toastState("ok", effect ? `${saved} · ${effect}` : saved);
-  }, REDUCED() ? 0 : 650);
+  settingTimer = setTimeout(() => toastState("ok", saved), REDUCED() ? 0 : 650);
 }
 $("dietList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-diet]");

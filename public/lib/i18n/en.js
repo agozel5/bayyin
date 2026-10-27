@@ -1566,7 +1566,4 @@ export default {
   "set.school": "Opinion saved: {x}",
   "set.topic": "Setting saved: {x}",
   "set.member": "{name}'s profile saved: {x}",
-  "set.changed_one": "1 product in your history changes",
-  "set.changed_other": "{n} products in your history change",
-  "set.unchanged": "no product in your history changes",
 };

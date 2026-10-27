@@ -1580,7 +1580,4 @@ export default {
   "set.school": "Avis enregistré : {x}",
   "set.topic": "Réglage enregistré : {x}",
   "set.member": "Profil de {name} enregistré : {x}",
-  "set.changed_one": "1 produit de votre historique change",
-  "set.changed_other": "{n} produits de votre historique changent",
-  "set.unchanged": "aucun produit de votre historique ne change",
 };

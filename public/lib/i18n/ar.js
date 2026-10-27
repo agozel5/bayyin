@@ -1566,7 +1566,4 @@ export default {
   "set.school": "تم حفظ الرأي: {x}",
   "set.topic": "تم حفظ الإعداد: {x}",
   "set.member": "تم حفظ ملف {name}: {x}",
-  "set.changed_one": "منتج واحد في سجلك يتغيّر",
-  "set.changed_other": "{n} منتجات في سجلك تتغيّر",
-  "set.unchanged": "لا يتغيّر أي منتج في سجلك",
 };

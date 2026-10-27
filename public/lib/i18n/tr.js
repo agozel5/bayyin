@@ -1566,7 +1566,4 @@ export default {
   "set.school": "Görüş kaydedildi: {x}",
   "set.topic": "Ayar kaydedildi: {x}",
   "set.member": "{name} profili kaydedildi: {x}",
-  "set.changed_one": "Geçmişinizdeki 1 ürün değişiyor",
-  "set.changed_other": "Geçmişinizdeki {n} ürün değişiyor",
-  "set.unchanged": "geçmişinizdeki hiçbir ürün değişmiyor",
 };
