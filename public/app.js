@@ -234,14 +234,14 @@ function verdictHero(p, v) {
          <span class="grade-dot g-${s.grade}" aria-hidden="true"></span>`
       : `<span class="ring" style="--p:0"><span>?</span></span>
          <span class="v-foot-text"><span>${scoreLabel}</span><strong>${t(kind === "beauty" ? "detail.cosmetic_none_short" : "detail.not_rated")}</strong></span>`;
-  return `<div class="v-tilt"><div class="verdict v-${v.status}" role="status">
+  return `<div class="verdict v-${v.status}" role="status">
     <div class="v-main">
       <span class="v-ico">${svg(STATUS_ICON[v.status])}</span>
       <span class="v-text"><span class="v-kicker">${t("detail.halal")}</span><strong class="v-label">${S(v.status, "label")}</strong><span class="v-lead">${S(v.status, "lead")}</span></span>
     </div>
     <div class="v-foot">${foot}</div>
     <span class="v-sheen" aria-hidden="true"></span>
-  </div></div>${confidenceHtml(p, v)}`;
+  </div>${confidenceHtml(p, v)}`;
 }
 
 // Fiabilité du verdict : niveau, puis le détail de ce qui a été vérifié
@@ -1465,57 +1465,6 @@ function closeSheet({ fromPop = false } = {}) {
   lockScroll();
   if (!fromPop && history.state && history.state.sheet) history.back();
 }
-
-// Relief du verdict : la carte s'incline vers le doigt (ou avec le téléphone) et un reflet la suit.
-// iPhone : l'accès aux mouvements demande une autorisation, on ne la demande pas pour un effet ;
-// la carte suit alors seulement le doigt.
-const TILT_MAX = 6;
-const clamp1 = (n) => Math.max(-1, Math.min(1, n));
-function tiltTo(el, x, y) {
-  el.style.setProperty("--rx", `${(-y * TILT_MAX).toFixed(2)}deg`);
-  el.style.setProperty("--ry", `${(x * TILT_MAX).toFixed(2)}deg`);
-  el.style.setProperty("--gx", `${(50 + x * 50).toFixed(1)}%`);
-  el.style.setProperty("--gy", `${(50 + y * 50).toFixed(1)}%`);
-}
-function tiltReset(el) {
-  if (!el) return;
-  el.classList.remove("tilting");
-  for (const k of ["--rx", "--ry", "--gx", "--gy"]) el.style.removeProperty(k);
-}
-function tiltFromPointer(e) {
-  const el = e.target.closest?.(".v-tilt");
-  if (!el || REDUCED()) return;
-  const r = el.getBoundingClientRect();
-  el.classList.add("tilting");
-  tiltTo(el, clamp1(((e.clientX - r.left) / r.width) * 2 - 1), clamp1(((e.clientY - r.top) / r.height) * 2 - 1));
-}
-$("sheetBody").addEventListener("pointerdown", tiltFromPointer, { passive: true });
-$("sheetBody").addEventListener("pointermove", (e) => {
-  const el = e.target.closest?.(".v-tilt");
-  if (e.pointerType === "mouse") return el ? tiltFromPointer(e) : tiltReset($("sheetBody").querySelector(".v-tilt.tilting"));
-  if (el?.classList.contains("tilting")) tiltFromPointer(e);
-}, { passive: true });
-for (const ev of ["pointerup", "pointercancel", "pointerleave"]) {
-  $("sheetBody").addEventListener(ev, () => tiltReset($("sheetBody").querySelector(".v-tilt.tilting")), { passive: true });
-}
-(() => {
-  if (!("DeviceOrientationEvent" in window) || typeof DeviceOrientationEvent.requestPermission === "function") return;
-  if (!matchMedia("(pointer: coarse)").matches) return;
-  let base = null, raf = 0;
-  window.addEventListener("deviceorientation", (e) => {
-    if (e.beta == null || sheet.hidden || REDUCED()) { base = null; return; }
-    if (!base) base = { b: e.beta, g: e.gamma };
-    // La position « neutre » suit lentement la main : seuls les petits mouvements font bouger la carte
-    base.b += (e.beta - base.b) * 0.03;
-    base.g += (e.gamma - base.g) * 0.03;
-    const x = clamp1((e.gamma - base.g) / 14), y = clamp1((e.beta - base.b) / 14);
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      const el = $("sheetBody").querySelector(".v-tilt");
-      if (el && !el.classList.contains("tilting")) tiltTo(el, x, y);
-    });
-  });
-})();
 
 $("sheetBody").addEventListener("click", (e) => {
   const b = e.target.closest("[data-ptab]");
