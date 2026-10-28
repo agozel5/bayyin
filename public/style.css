@@ -2551,3 +2551,7 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .cadd-t strong{font-size:.95rem;font-weight:700;overflow-wrap:anywhere}
 .cadd-t small{font-size:.78rem;color:var(--muted)}
 .cadd .ae-badges{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.cadd-list{box-shadow:none;background:transparent;border-radius:0;margin-inline:-4px}
+.cadd-list .ae:first-child{border-top:none}
+.cadd-list .ae summary,.cadd-list .ae-sum{padding:11px 4px}
+.ae-static .ae-sum{display:flex;align-items:center;gap:12px}

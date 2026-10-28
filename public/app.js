@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-02";
+const APP_BUILD = "2026-10-29-03";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -818,32 +818,38 @@ function allAdditivesSection(p, v) {
   const rows = shown.map((k) => {
     const flag = v.flags.find((f) => f.id === k || f.id === baseOf(k));
     const risk = (p.health && p.health.additives || []).find((a) => a.code.toLowerCase() === k || a.code.toLowerCase() === baseOf(k));
+    const it = dbItem(k);
+    const label = k.toUpperCase().replace(/([A-Z])$/, (l) => (/\d/.test(k.slice(-2, -1)) ? l.toLowerCase() : l));
+    if (it) {
+      // Même ligne dépliable que dans l'onglet Additifs : fonction, origine, halal selon le réglage, santé, sources
+      it.k = eFunctions(it);
+      const code = it.e.toLowerCase();
+      let halal = eHalal(k);
+      if (halal.level === "ok" && k !== baseOf(k)) halal = eHalal(baseOf(k));
+      if (halal.level === "ok" && flag && (flag.severity === "haram" || flag.severity === "mashbouh")) halal = { level: flag.severity, reason: flagLabel(flag).replace(/^E\w+ · /, ""), topic: flag.topic };
+      let health = eHealth(code, it);
+      if (!health.level && risk) health = { level: risk.level, reason: t(`risk.reason.${risk.key}`) };
+      if (halal.level === "haram" || halal.level === "mashbouh") nHalal++;
+      if (health.level) nRisk++;
+      const raw = it.n[lang] || it.n.fr || it.n.en || "";
+      return aeRow({ it, code: k, label, name: raw.charAt(0).toUpperCase() + raw.slice(1), halal, health, origin: eOrigin(it), mine: 0 });
+    }
     if (flag && (flag.severity === "haram" || flag.severity === "mashbouh")) nHalal++;
     if (risk) nRisk++;
-    const it = dbItem(k);
-    const raw = it ? it.n[lang] || it.n.fr || it.n.en || "" : "";
-    const name = raw ? raw.charAt(0).toUpperCase() + raw.slice(1)
-      : risk ? t(`addname.${risk.code.toLowerCase()}`) : flag ? flagLabel(flag).replace(/^E\w+ · /, "") : "";
-    const fn = it ? eFunctions(it).map((x) => t(`fn.${x}`)).join(", ") : "";
-    const origin = it ? eOrigin(it) : null;
-    const art = origin ? ORIGIN_ART[origin === "animal" && /^e(120|904)/.test(k) ? "insect" : origin] : "";
+    const name = risk ? t(`addname.${risk.code.toLowerCase()}`) : flag ? flagLabel(flag).replace(/^E\w+ · /, "") : "";
     const pills = [
       flag ? `<span class="pill ${flag.severity === "haram" ? "s-haram" : flag.severity === "mashbouh" ? "s-mashbouh" : "r-info"}">${t(`sev.${flag.severity}`)}</span>` : "",
       risk ? `<span class="pill r-${risk.level}">${t(`risk.short.${risk.level}`)}</span>` : "",
     ].join("");
-    const label = k.toUpperCase().replace(/([A-Z])$/, (l) => (/\d/.test(k.slice(-2, -1)) ? l.toLowerCase() : l));
-    return `<div class="cadd">
-      <span class="ae-org"${origin ? ` title="${esc(t(`add.origin.${origin}`))}"` : ""}>${art || ""}</span>
-      <span class="ae-code" dir="ltr">${esc(label)}</span>
-      <span class="cadd-t"><strong dir="auto">${esc(name || label)}</strong>${fn || (origin && origin !== "plant") ? `<small>${esc([fn, origin && origin !== "plant" ? t(`add.origin.${origin}`) : ""].filter(Boolean).join(" · "))}</small>` : ""}</span>
-      <span class="ae-badges">${pills || `<span class="ae-ok" aria-label="${esc(t("detail.add_ok"))}">${svg(I.check)}</span>`}</span>
-    </div>`;
+    return `<div class="ae ae-static"><div class="ae-sum"><span class="ae-org"></span><span class="ae-code" dir="ltr">${esc(label)}</span>
+      <span class="ae-name"><strong dir="auto">${esc(name || label)}</strong></span>
+      <span class="ae-badges">${pills || `<span class="ae-ok" aria-label="${esc(t("detail.add_ok"))}">${svg(I.check)}</span>`}</span></div></div>`;
   });
   const sum = nHalal || nRisk
     ? [nHalal ? `<span class="pill s-mashbouh">${esc(tn("compo.halal", nHalal))}</span>` : "", nRisk ? `<span class="pill r-modere">${esc(tn("compo.risk", nRisk))}</span>` : ""].join("")
     : `<span class="cadd-allok">${svg(I.check)}${esc(t("compo.all_ok"))}</span>`;
   return `<section class="sec" id="allAddSec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3><small>${shown.length}</small></div>
-    <div class="cadd-sum">${sum}</div><div class="cadd-rows">${rows.join("")}</div></section>`;
+    <div class="cadd-sum">${sum}</div><div class="ae-list cadd-list">${rows.join("")}</div></section>`;
 }
 
 // Lien de signalement prérempli (ticket GitHub du projet)
@@ -2989,6 +2995,27 @@ const ORIGIN_ICO = {
   unknown: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7"/><path d="M12 17h.01"/>',
 };
 const eOrigin = (it) => (it.g === "n" ? "animal" : it.v === "n" ? "animal_product" : it.v === "m" || it.g === "m" ? "maybe" : it.v === "y" ? "plant" : "unknown");
+// Une ligne d'additif dépliable (onglet Additifs et onglet Composition de la fiche)
+const halalPill = (h) => (h.level === "haram" || h.level === "mashbouh" ? `<span class="pill ${h.level === "haram" ? "s-haram" : "s-mashbouh"}">${t(`sev.${h.level}`)}</span>` : "");
+const healthPill = (h) => (h.level ? `<span class="pill r-${h.level}">${t(`risk.short.${h.level}`)}</span>` : "");
+const aeRow = (r) => {
+  const fn = r.it.k.map((k) => t(`fn.${k}`)).join(", ");
+  const okAll = !halalPill(r.halal) && !healthPill(r.health);
+  return `<details class="ae">
+    <summary><span class="ae-org" title="${esc(t(`add.origin.${r.origin}`))}">${ORIGIN_ART[r.origin === "animal" && /^e(120|904)/.test(r.code) ? "insect" : r.origin] || ""}</span><span class="ae-code" dir="ltr">${esc(r.label)}</span><span class="ae-name"><strong dir="auto">${esc(r.name || r.label)}</strong>${fn ? `<small>${esc(fn)}</small>` : ""}</span>
+      <span class="ae-badges">${halalPill(r.halal)}${healthPill(r.health)}${okAll ? `<span class="ae-ok" aria-label="${esc(t("add.no_concern"))}">${svg(I.check)}</span>` : ""}</span></summary>
+    <dl class="ae-body">
+      ${fn ? `<div><dt>${t("add.e_fn")}</dt><dd>${esc(fn)}</dd></div>` : ""}
+      <div><dt>${t("add.e_origin")}</dt><dd class="ae-origin"><span class="ae-org" aria-hidden="true">${ORIGIN_ART[r.origin === "animal" && /^e(120|904)/.test(r.code) ? "insect" : r.origin] || svg(ORIGIN_ICO[r.origin])}</span><span>${t(`add.origin.${r.origin}`)}</span></dd></div>
+      <div><dt>${t("add.e_halal")}</dt><dd>${r.halal.reason ? `${halalPill(r.halal) || `<span class="pill r-info">${t("sev.info")}</span>`} ${esc(r.halal.reason)}` : esc(t("add.halal_ok"))}
+        ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
+      <div><dt>${t("add.e_health")}</dt><dd>${riskScale(r.health.level || "none")}${r.health.level ? esc(r.health.reason) : esc(t("add.health_ok"))}
+        ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
+        ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
+      ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}
+    </dl>
+  </details>`;
+};
 function myAdditiveCounts() {
   const counts = new Map();
   for (const e of store.all()) for (const tag of (e.p.raw && e.p.raw.additives_tags) || []) {
@@ -3046,28 +3073,8 @@ function renderECodes() {
     const rank = (r) => (norm(r.name) === q ? 2 : norm(r.name).startsWith(q) ? 1 : 0);
     list.sort((a, b) => rank(b) - rank(a));
   }
-  const halalPill = (h) => (h.level === "haram" || h.level === "mashbouh" ? `<span class="pill ${h.level === "haram" ? "s-haram" : "s-mashbouh"}">${t(`sev.${h.level}`)}</span>` : "");
-  const healthPill = (h) => (h.level ? `<span class="pill r-${h.level}">${t(`risk.short.${h.level}`)}</span>` : "");
-  const row = (r) => {
-    const fn = r.it.k.map(fnName).join(", ");
-    const okAll = !halalPill(r.halal) && !healthPill(r.health);
-    return `<details class="ae">
-      <summary><span class="ae-org" title="${esc(t(`add.origin.${r.origin}`))}">${ORIGIN_ART[r.origin === "animal" && /^e(120|904)/.test(r.code) ? "insect" : r.origin] || ""}</span><span class="ae-code" dir="ltr">${esc(r.label)}</span><span class="ae-name"><strong dir="auto">${esc(r.name || r.label)}</strong>${fn ? `<small>${esc(fn)}</small>` : ""}</span>
-        <span class="ae-badges">${halalPill(r.halal)}${healthPill(r.health)}${okAll ? `<span class="ae-ok" aria-label="${esc(t("add.no_concern"))}">${svg(I.check)}</span>` : ""}</span></summary>
-      <dl class="ae-body">
-        ${fn ? `<div><dt>${t("add.e_fn")}</dt><dd>${esc(fn)}</dd></div>` : ""}
-        <div><dt>${t("add.e_origin")}</dt><dd class="ae-origin"><span class="origin-ico o-${r.origin}" aria-hidden="true">${svg(ORIGIN_ICO[r.origin])}</span><span>${t(`add.origin.${r.origin}`)}</span></dd></div>
-        <div><dt>${t("add.e_halal")}</dt><dd>${r.halal.reason ? `${halalPill(r.halal) || `<span class="pill r-info">${t("sev.info")}</span>`} ${esc(r.halal.reason)}` : esc(t("add.halal_ok"))}
-          ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
-        <div><dt>${t("add.e_health")}</dt><dd>${riskScale(r.health.level || "none")}${r.health.level ? esc(r.health.reason) : esc(t("add.health_ok"))}
-          ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
-          ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
-        ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}
-      </dl>
-    </details>`;
-  };
   $("addList").innerHTML = list.length
-    ? `<p class="search-count">${esc(tn("add.count", list.length))}</p><div class="ae-list">${list.slice(0, eShown).map(row).join("")}</div>` +
+    ? `<p class="search-count">${esc(tn("add.count", list.length))}</p><div class="ae-list">${list.slice(0, eShown).map(aeRow).join("")}</div>` +
       (list.length > eShown ? `<button class="btn btn-soft btn-block" type="button" data-e-more>${esc(t("add.more", { n: list.length - eShown }))}</button>` : "") +
       `<p class="fineprint">${t("add.e_source")}</p>`
     : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t("add.e_none")}</p></div>`;
