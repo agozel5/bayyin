@@ -242,3 +242,81 @@ export const RANK_ART = {
     <path d="M16 13V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" fill="none" stroke="#6A4BB8" stroke-width="2.4"/>
     <path d="M24 28l1.6 3.4 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#F3C6E0"/>`)
 };
+
+// Familles d'aliments, pour les produits sans photo hors des rayons ci-dessus
+export const FAMILY_ART = {
+  poultry: S(`
+    <path d="M30 6a12 12 0 0 1 0 24c-2.4 0-4.6-.7-6.4-1.9L17 34.6" fill="#C9813F"/>
+    <circle cx="29" cy="18" r="12" fill="#D9934E"/>
+    <path d="M22 26l-6 6" stroke="#F4EEE2" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="13" cy="33" r="3.6" fill="#F4EEE2"/><circle cx="16.5" cy="37.5" r="3.6" fill="#F4EEE2"/>
+    <path d="M24 12c2-2.6 6-3.2 9-1.6" fill="none" stroke="#F2B878" stroke-width="2.2" stroke-linecap="round"/>`),
+  meat: S(`
+    <path d="M10 15c7-7 22-7 28 1 5 7 1 19-10 20-5 .4-7-2.6-11-3-5-.4-9-3.5-8.6-9 .3-4 .6-6.6 1.6-9z" fill="#C2473C"/>
+    <path d="M10 15c7-7 22-7 28 1" fill="none" stroke="#F3E1D2" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="28" cy="21" r="4.6" fill="#F3E1D2"/><circle cx="28" cy="21" r="2" fill="#E4C7B0"/>
+    <path d="M15 24c3 1 5 3 6 6" fill="none" stroke="#E0786A" stroke-width="1.8" stroke-linecap="round"/>`),
+  fish: S(`
+    <path d="M4 24c7-10 21-12 30-3l9-7v20l-9-7c-9 9-23 7-30-3z" fill="#5FA8D3"/>
+    <path d="M4 24c7 10 21 12 30 3" fill="#8CC5E6"/>
+    <circle cx="13" cy="22" r="1.8" fill="#24415A"/>
+    <path d="M21 17c2 3 2 11 0 14" fill="none" stroke="#3E86B5" stroke-width="1.8" stroke-linecap="round"/>`),
+  dairy: S(`
+    <path d="M16 6h16v5l4 6v24a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V17l4-6z" fill="#FFFFFF" stroke="#D9D3C4" stroke-width="1.2"/>
+    <path d="M12 17h24v6H12z" fill="#4C8DD9"/>
+    <rect x="16" y="4" width="16" height="4" rx="1" fill="#3A76BF"/>
+    <path d="M17 30c2-2 4-2 6 0s4 2 6 0" fill="none" stroke="#8CB8EC" stroke-width="2" stroke-linecap="round"/>`),
+  drink: S(`
+    <rect x="19" y="4" width="10" height="5" rx="1.5" fill="#3A76BF"/>
+    <path d="M18 9h12v4l3 5v21a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4V18l3-5z" fill="#BFE3F5"/>
+    <path d="M15 24h18v15a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4z" fill="#8ACFF0"/>
+    <rect x="15" y="19" width="18" height="6" fill="#4C8DD9"/>
+    <rect x="18" y="28" width="2.4" height="10" rx="1.2" fill="#fff" opacity=".5"/>`),
+  plant: S(`
+    <path d="M24 14c-7-4-16 0-14 11 1.4 8 6.6 15 14 13 7.4 2 12.6-5 14-13 2-11-7-15-14-11z" fill="#6FB04F"/>
+    <path d="M24 14c0-4 1.6-7 5-9" fill="none" stroke="#7A4A2C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M26 10c4-3 9-2 11 1-4 2-8 2-11-1z" fill="#4E8E37"/>
+    <path d="M15 20c-1.6 2-2 5-1.4 7.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>`)
+};
+
+// Onglet Santé : un dessin par nutriment (le niveau reste donné par le point et la barre)
+export const NUT_ART = {
+  energy: S(`
+    <path d="M24 5c2 7 11 11 11 21a11 11 0 0 1-22 0c0-5 2.6-8 5-10 .6 3.4 2 5.6 4.4 6.6C21.6 16 22 10 24 5z" fill="#F7A531"/>
+    <path d="M24 25c1 3 5 5 5 9a5 5 0 0 1-10 0c0-2.4 1.4-3.8 2.6-4.6.4 1.4 1 2.2 2 2.6-.4-2.4-.2-4.8.4-7z" fill="#FFD25A"/>`),
+  sugars: S(`
+    <path d="M8 22l10-5 10 5v12l-10 5-10-5z" fill="#FFFFFF" stroke="#C9D2DA" stroke-width="1.2"/>
+    <path d="M8 22l10 5 10-5-10-5z" fill="#F1F4F7"/><path d="M18 27v12" stroke="#C9D2DA" stroke-width="1.2"/>
+    <path d="M22 13l9-4.5 9 4.5v10l-9 4.5-9-4.5z" fill="#FFFFFF" stroke="#C9D2DA" stroke-width="1.2"/>
+    <path d="M22 13l9 4.5 9-4.5-9-4.5z" fill="#F1F4F7"/><path d="M31 17.5v10" stroke="#C9D2DA" stroke-width="1.2"/>`),
+  "saturated-fat": S(`
+    <path d="M6 30l8-8h28v10l-6 6H6z" fill="#E3B437"/>
+    <path d="M6 30l8-8h28l-8 8z" fill="#F8D96A"/>
+    <path d="M6 30h28v8H6z" fill="#F2C94C"/>
+    <path d="M34 30l8-8v10l-8 6z" fill="#D9A62C"/>
+    <rect x="9" y="32" width="10" height="2" rx="1" fill="#fff" opacity=".5"/>`),
+  salt: S(`
+    <path d="M16 18h16l-2 24H18z" fill="#FFFFFF" stroke="#C9D2DA" stroke-width="1.2"/>
+    <path d="M16 18c0-6 3.6-10 8-10s8 4 8 10z" fill="#B3BAC1"/>
+    <circle cx="21" cy="13" r="1.1" fill="#6E7781"/><circle cx="24" cy="11" r="1.1" fill="#6E7781"/><circle cx="27" cy="13" r="1.1" fill="#6E7781"/>
+    <rect x="15" y="17" width="18" height="3" rx="1" fill="#8E969F"/>
+    <path d="M20 26l8 8M28 26l-8 8" stroke="#E6EAEE" stroke-width="1.4"/>`),
+  proteins: S(`
+    <path d="M24 6c8 0 14 9 14 19a14 14 0 0 1-28 0C10 15 16 6 24 6z" fill="#E8C49A"/>
+    <path d="M17 16c1.6-3.4 4-5.4 6.6-5.8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>`),
+  fiber: S(`
+    <path d="M24 44V12" stroke="#B98A26" stroke-width="2.4" stroke-linecap="round"/>
+    <g fill="#E8B964"><ellipse cx="24" cy="9" rx="3" ry="5"/>
+    <ellipse cx="19" cy="17" rx="3" ry="5" transform="rotate(-30 19 17)"/><ellipse cx="29" cy="17" rx="3" ry="5" transform="rotate(30 29 17)"/>
+    <ellipse cx="19" cy="25" rx="3" ry="5" transform="rotate(-30 19 25)"/><ellipse cx="29" cy="25" rx="3" ry="5" transform="rotate(30 29 25)"/>
+    <ellipse cx="19" cy="33" rx="3" ry="5" transform="rotate(-30 19 33)"/><ellipse cx="29" cy="33" rx="3" ry="5" transform="rotate(30 29 33)"/></g>`),
+  fruits: S(`
+    <path d="M24 15c-6-3.6-14 0-12.6 10 1.2 7.4 6 13.6 12.6 11.8 6.6 1.8 11.4-4.4 12.6-11.8C38 15 30 11.4 24 15z" fill="#E0455A"/>
+    <path d="M24 15c0-4 1.4-6.4 4.4-8.4" fill="none" stroke="#7A4A2C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M26 11c3.4-3 8-2.4 10 .4-3.6 2-7 2-10-.4z" fill="#5E9B45"/>
+    <path d="M16 21c-1.4 2-1.8 4.6-1.2 7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>`),
+  additives: S(`
+    <path d="M19 6h10M20 6v11L10 36a3 3 0 0 0 2.6 4.5h22.8A3 3 0 0 0 38 36L28 17V6" fill="#F0F6FA" stroke="#B8C4CE" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M14.6 28h18.8L38 36a3 3 0 0 1-2.6 4.5H12.6A3 3 0 0 1 10 36z" fill="#9B7BE0"/>
+    <circle cx="21" cy="34" r="1.8" fill="#D6C8F6"/><circle cx="27" cy="31.5" r="1.3" fill="#D6C8F6"/>`)
+};

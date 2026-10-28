@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-14";
+const APP_BUILD = "2026-10-28-15";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -29,7 +29,7 @@ import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
-import { RANK_ART } from "./lib/rank-art.js";
+import { RANK_ART, FAMILY_ART, NUT_ART } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -229,7 +229,23 @@ const catArt = (p) => {
   return tags ? CAT_ART.find((c) => c.re.test(tags)) : CAT_ART.find((c) => c.re.test(name));
 };
 // Vignette sans photo : illustration de catégorie (aliments), sinon icône du type de produit
+// Illustration en couleur : le rayon des classements s'il correspond, sinon la famille d'aliments
+const FAMILY_TO_ART = { sweet: RANK_ART.candies, bakery: RANK_ART.breads, meal: RANK_ART.meals, sauce: RANK_ART.sauces };
+function colorArt(p) {
+  if (!p || p.local) return null;
+  const kind = kindOf(p);
+  if (kind === "medicine") return null;
+  const tags = p.categories || (p.raw && p.raw.categories_tags) || [];
+  if (tags.length) {
+    const cat = RANK_CATEGORIES.find((c) => c.kind === kind && c.tags.some((tg) => tags.includes(tg)));
+    if (cat && RANK_ART[cat.id]) return RANK_ART[cat.id];
+  }
+  const fam = catArt(p);
+  return fam ? FAMILY_ART[fam.id] || FAMILY_TO_ART[fam.id] || null : null;
+}
 function phArt(p, cls) {
+  const color = colorArt(p);
+  if (color) return `<span class="${cls} ph art" aria-hidden="true">${color}</span>`;
   const art = catArt(p);
   return art
     ? `<span class="${cls} ph cat cat-${art.id}" aria-hidden="true">${svg(art.path)}</span>`
@@ -661,7 +677,7 @@ function breakdownHtml(s) {
 function nutRow(n) {
   const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
   return `<details class="nut-d lv-${n.level}"${n.t ? " open" : ""}><summary class="nut lv-${n.level}">
-    <span class="nut-ico">${svg(I[n.id] || I.box)}</span>
+    ${NUT_ART[n.id] ? `<span class="nut-ico art">${NUT_ART[n.id]}</span>` : `<span class="nut-ico">${svg(I[n.id] || I.box)}</span>`}
     <span class="nut-text"><strong>${t(`nut.${n.id}`)}</strong><small>${t(`nut.${n.id}.${textKey}`)}</small></span>
     <span class="nut-val" dir="ltr">${fmt(n.value)} ${esc(n.unit)}<span class="dot"></span>${n.t ? svg(I.chev, "nut-chev") : ""}</span>
   </summary>${gaugeHtml(n)}</details>`;
@@ -686,7 +702,7 @@ function healthSection(p) {
   const lead = s ? healthSummaryHtml(s, h, risky) : esc(t("detail.health_none"));
   const list = (items) => `<div class="nut-list">${items.map(nutRow).join("")}</div>`;
   const addRow = (bad) =>
-    `<div class="nut ${bad ? "lv-eleve" : "lv-bon"}"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.additives")}</strong><small>${bad ? tn("detail.additives_risky", risky) : t("detail.additives_none")}</small></span><span class="nut-val">${bad ? risky : ""}<span class="dot"></span></span></div>`;
+    `<div class="nut ${bad ? "lv-eleve" : "lv-bon"}"><span class="nut-ico art">${NUT_ART.additives}</span><span class="nut-text"><strong>${t("detail.additives")}</strong><small>${bad ? tn("detail.additives_risky", risky) : t("detail.additives_none")}</small></span><span class="nut-val">${bad ? risky : ""}<span class="dot"></span></span></div>`;
   const hasNut = neg.length || pos.length;
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.health")}</h3><small>${t("detail.per", { u: t(h.nutrition.drink ? "unit.100ml" : "unit.100g") })}</small></div>
     <p class="lead">${lead}</p>

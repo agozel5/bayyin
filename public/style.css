@@ -2504,3 +2504,11 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .rank-ico.art{width:48px;height:48px;border-radius:14px;background:#F4EFE4}
 .rank-ico.art svg{width:36px;height:36px;fill:initial;stroke:none}
 :root[data-theme="dark"] .rank-ico.art{background:#232C27}
+
+/* Produits sans photo et nutriments : illustrations en couleur */
+.ph.art{display:flex;align-items:center;justify-content:center;background:#F4EFE4!important;border-color:transparent}
+:root[data-theme="dark"] .ph.art{background:#232C27!important}
+.ph.art svg{width:62%;height:62%;max-width:64px;max-height:64px;fill:initial;stroke:none}
+.nut-ico.art{background:#F4EFE4}
+:root[data-theme="dark"] .nut-ico.art{background:#232C27}
+.nut-ico.art svg{width:26px;height:26px;fill:initial;stroke:none}
