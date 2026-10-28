@@ -2401,3 +2401,17 @@ img.img-wait{background:var(--tint)!important}
   img.img-wait{animation:img-pulse 1.1s ease-in-out infinite alternate!important}
   @keyframes img-pulse{from{opacity:.5}to{opacity:1}}
 }
+
+/* Bilan : semaine précédente / suivante (flèches ou glisser) */
+.wk-row{display:flex;align-items:center;gap:4px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.wk-row .days{flex:1;min-width:0}
+.wk-btn{flex:none;width:28px;height:28px;margin-bottom:18px;border:none;border-radius:50%;background:var(--tint);color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wk-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wk-btn:disabled{opacity:.28;cursor:default}
+.wk-btn:not(:disabled):active{transform:scale(.9)}
+@media (prefers-reduced-motion:no-preference){
+  .days.wk-from-left{animation:wk-left .32s cubic-bezier(.2,.8,.2,1)}
+  .days.wk-from-right{animation:wk-right .32s cubic-bezier(.2,.8,.2,1)}
+  @keyframes wk-left{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+  @keyframes wk-right{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+}

@@ -1567,4 +1567,8 @@ export default {
   "premium.f.history": "Bir yıllık geçmiş",
   "premium.f.history.d": "30 gün yerine son 12 ayın ürünleri.",
   "premium.history_more_p": "{days} günden eski: telefonunuzda saklanır, Premium ile görünür (bir yıla kadar).",
+  // ---------- Bilan : semaines ----------
+  "bilan.week_range": "Kontrol edilen ürünler · {range}",
+  "bilan.prev_week": "Önceki hafta",
+  "bilan.next_week": "Sonraki hafta",
 };

@@ -2545,9 +2545,10 @@ function legendHtml(counts, total) {
     `<li><i class="dot" style="--c:${STATUS_COLOR[s]}"></i><span>${S(s, "label")}</span><b dir="ltr">${counts[s]}</b><small dir="ltr">${pct(counts[s], total)} %</small></li>`).join("")}</ul>`;
 }
 // Barres des 7 derniers jours, chaque barre partagée entre les verdicts
-function daysHtml(entries) {
+function daysHtml(entries, weeksAgo = 0) {
   const lang = getLang();
   const day0 = new Date(); day0.setHours(0, 0, 0, 0);
+  day0.setDate(day0.getDate() - 7 * weeksAgo);
   const days = Array.from({ length: 7 }, (_, i) => {
     const start = day0.getTime() - (6 - i) * 864e5;
     const list = entries.filter((e) => e.at >= start && e.at < start + 864e5).map((e) => e.p);
@@ -2559,7 +2560,7 @@ function daysHtml(entries) {
   return `<div class="days viz" dir="ltr">${days.map((d, i) => {
     const n = d.list.length;
     const segs = STATUS_ORDER.filter((s) => d.counts[s]).map((s) => `<i style="flex:${d.counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("");
-    return `<div class="day${i === 6 ? " today" : ""}" style="--i:${i}" title="${esc(`${full.format(d.start)} : ${n}`)}">
+    return `<div class="day${i === 6 && !weeksAgo ? " today" : ""}" style="--i:${i}" title="${esc(`${full.format(d.start)} : ${n}`)}">
       <span class="day-n">${n || ""}</span>
       <span class="day-bar"><span class="day-fill${n ? "" : " zero"}" style="--h:${n ? Math.max(8, (n / max) * 100) : 4}%">${segs}</span></span>
       <span class="day-l">${esc(wd.format(d.start).replace(/\.$/, ""))}</span></div>`;
@@ -2580,6 +2581,70 @@ const avgScore = (products) => {
 };
 
 // « Mon bilan » en tête de l'historique
+// Bloc « 7 jours » : on remonte d'une semaine en glissant vers la droite, on revient en glissant vers la gauche
+let bilanWeek = 0;
+let bilanEntries = [];
+function weekBounds(weeksAgo) {
+  const end = new Date(); end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + 1 - 7 * weeksAgo); // fin (exclue) : lendemain du dernier jour affiché
+  const start = new Date(end); start.setDate(start.getDate() - 7);
+  return { start: start.getTime(), end: end.getTime() };
+}
+function weekSecHtml(all) {
+  bilanEntries = all;
+  const oldest = all.length ? Math.min(...all.map((e) => e.at)) : Date.now();
+  const maxWeeks = Math.max(0, Math.ceil((weekBounds(0).start - oldest) / (7 * 864e5)));
+  bilanWeek = Math.min(bilanWeek, maxWeeks);
+  const { start, end } = weekBounds(bilanWeek);
+  const n = all.filter((e) => e.at >= start && e.at < end).length;
+  let title = t("bilan.week");
+  if (bilanWeek) {
+    const f = new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" });
+    const range = f.formatRange ? f.formatRange(start, end - 864e5) : `${f.format(start)} – ${f.format(end - 864e5)}`;
+    title = t("bilan.week_range", { range });
+  }
+  const nav = (dir, off, label) => `<button type="button" class="wk-btn" data-wk="${dir}" aria-label="${esc(label)}"${off ? " disabled" : ""}>${svg(dir === "prev" ? '<path d="M15 5l-7 7 7 7"/>' : '<path d="M9 5l7 7-7 7"/>')}</button>`;
+  return `<div class="bilan-sec bilan-week" id="bilanWeek">
+    <div class="bilan-sub"><span>${esc(title)}</span><b dir="ltr">${n}</b></div>
+    <div class="wk-row" dir="ltr">${nav("prev", bilanWeek >= maxWeeks, t("bilan.prev_week"))}${daysHtml(all, bilanWeek)}${nav("next", bilanWeek === 0, t("bilan.next_week"))}</div>
+  </div>`;
+}
+function setBilanWeek(n) {
+  const el = $("bilanWeek");
+  if (!el || n < 0 || n === bilanWeek) return;
+  const back = n > bilanWeek;
+  bilanWeek = n;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = weekSecHtml(bilanEntries);
+  const fresh = tmp.firstElementChild;
+  el.replaceWith(fresh);
+  tapHaptic(8);
+  if (!REDUCED()) fresh.querySelector(".days").classList.add(back ? "wk-from-left" : "wk-from-right");
+  requestAnimationFrame(() => fresh.querySelector(".viz")?.classList.add("in"));
+}
+$("historyStats").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-wk]");
+  if (!b || b.disabled) return;
+  setBilanWeek(bilanWeek + (b.dataset.wk === "prev" ? 1 : -1));
+});
+(() => {
+  let sx = 0, sy = 0, on = false;
+  $("historyStats").addEventListener("pointerdown", (e) => {
+    if (!e.target.closest(".wk-row") || e.target.closest("[data-wk]")) return;
+    on = true; sx = e.clientX; sy = e.clientY;
+  }, { passive: true });
+  const end = (e) => {
+    if (!on) return;
+    on = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    const prev = $("bilanWeek")?.querySelector(dx > 0 ? "[data-wk=prev]" : "[data-wk=next]");
+    if (prev && !prev.disabled) setBilanWeek(bilanWeek + (dx > 0 ? 1 : -1));
+  };
+  $("historyStats").addEventListener("pointerup", end, { passive: true });
+  $("historyStats").addEventListener("pointercancel", () => { on = false; }, { passive: true });
+})();
+
 function bilanHtml(all, counts) {
   const avg = avgScore(all.map((e) => e.p));
   const week = all.filter((e) => e.at > Date.now() - 7 * 864e5).length;
@@ -2589,7 +2654,7 @@ function bilanHtml(all, counts) {
       ${donutHtml(counts, all.length, `<b>${all.length}</b><small>${t(all.length === 1 ? "history.count_one" : "history.count_other")}</small>`)}
       ${legendHtml(counts, all.length)}
     </div>
-    <div class="bilan-sec"><div class="bilan-sub"><span>${esc(t("bilan.week"))}</span><b dir="ltr">${week}</b></div>${daysHtml(all)}</div>
+    ${weekSecHtml(all)}
     ${avg !== null ? `<div class="bilan-sec">${scoreGaugeHtml(avg, t("bilan.avg"))}</div>` : ""}
   </div>`;
 }
@@ -2642,6 +2707,7 @@ $("historyKind").addEventListener("click", (e) => {
   if (!b || b.dataset.hk === historyKind) return;
   historyKind = b.dataset.hk;
   historyFilter = "all";
+  bilanWeek = 0;
   renderHistory();
 });
 $("historyFilter").addEventListener("click", (e) => {

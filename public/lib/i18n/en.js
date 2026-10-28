@@ -1567,4 +1567,8 @@ export default {
   "premium.f.history": "A year of history",
   "premium.f.history.d": "Your products from the last 12 months, instead of 30 days.",
   "premium.history_more_p": "Older than {days} days: kept on your phone, shown with Premium (up to a year).",
+  // ---------- Bilan : semaines ----------
+  "bilan.week_range": "Products checked · {range}",
+  "bilan.prev_week": "Previous week",
+  "bilan.next_week": "Next week",
 };

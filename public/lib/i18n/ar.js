@@ -1567,4 +1567,8 @@ export default {
   "premium.f.history": "سجل لمدة سنة",
   "premium.f.history.d": "منتجاتك خلال آخر 12 شهرًا بدل 30 يومًا.",
   "premium.history_more_p": "أقدم من {days} يومًا: محفوظة على هاتفك وتظهر مع بريميوم (حتى سنة).",
+  // ---------- Bilan : semaines ----------
+  "bilan.week_range": "المنتجات التي تم فحصها · {range}",
+  "bilan.prev_week": "الأسبوع السابق",
+  "bilan.next_week": "الأسبوع التالي",
 };
