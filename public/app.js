@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-12";
+const APP_BUILD = "2026-10-28-13";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -279,7 +279,7 @@ function verdictHero(p, v) {
       <span class="v-ico">${svg(STATUS_ICON[v.status])}</span>
       <span class="v-text"><span class="v-kicker">${esc(verdictKicker())}</span><strong class="v-label">${S(v.status, "label")}</strong><span class="v-lead">${S(v.status, "lead")}</span></span>
     </div>
-    <div class="v-foot">${foot}</div>
+    <div class="v-foot${s && kind !== "medicine" ? ` g-${s.grade}` : ""}">${foot}</div>
     <span class="v-sheen" aria-hidden="true"></span>
   </div>${confidenceHtml(p, v)}`;
 }
@@ -4377,7 +4377,7 @@ async function renderRankings(sub) {
       ${rankKind === "makeup" ? `<p class="rank-note">${esc(t("rank.makeup_note"))}</p>` : ""}
       ${cats.length ? "" : `<div class="empty">${emptyArt("teach")}<p>${esc(t("rank.preparing"))}</p></div>`}
       <div class="rank-cats">${cats.map((c) => `<a class="rank-cat${rankLocked(c) ? " locked" : ""}" href="#rankings/${c.id}" data-rank-cat="${c.id}">${rankIco(c.id)}
-        <span class="rank-cat-t"><strong>${esc(t(`rank.cat.${c.id}`))}</strong>${index ? `<small>${esc(tn("rank.n", index.categories[c.id]))}</small>` : ""}</span>
+        <span class="rank-cat-t"><strong>${esc(t(`rank.cat.${c.id}`))}</strong></span>
         ${rankLocked(c) ? `<span class="rank-lock" aria-label="${esc(t("premium.only"))}">${svg(I.crown)}</span>` : svg(I.chev, "flip rank-chev")}</a>`).join("")}</div>
       ${index ? `<p class="fineprint start">${esc(t("rank.source", { d: longDate(index.updated) }))}</p>` : ""}`;
     return;

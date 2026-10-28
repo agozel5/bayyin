@@ -2245,7 +2245,7 @@ h2,.sub{font-size:1.1rem;font-weight:700;letter-spacing:-.005em}
   --c-haram:#F0675D; --c-doubt:#F0A04A; --c-cert:#3FC27C; --c-info:#6FA6DE;
 }
 /* Verdict : mêmes couleurs, un ton plus bas, pour ne pas éblouir */
-:root[data-theme="dark"] .verdict{filter:saturate(.88) brightness(.9)}
+:root[data-theme="dark"] .verdict{filter:none}
 :root[data-theme="dark"] .alt-band{filter:saturate(.88) brightness(.92)}
 /* Photos sur fond blanc : légèrement atténuées */
 :root[data-theme="dark"] :is(.row-img,.p-img,.alt img,.off-photo img):not(.ph){filter:brightness(.88)}
@@ -2490,3 +2490,12 @@ img.img-wait{background:var(--tint)!important}
 :root[data-theme="dark"] .tabbar{background:rgb(20 27 23 / .94)!important}
 /* Sous la barre d'onglets flottante : un fondu cache le contenu qui défile dans l'espace libre */
 body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(safe-area-inset-bottom,0px) + 34px);background:linear-gradient(to top,var(--bg) 55%,color-mix(in srgb,var(--bg) 0%,transparent));pointer-events:none;z-index:29}
+
+/* Verdict plus lumineux, bandeau de la note teinté par la note */
+.verdict::before{background:linear-gradient(160deg,color-mix(in srgb,var(--vc) 82%,#fff) 0%,var(--vc) 45%,color-mix(in srgb,var(--vc) 70%,#000) 100%)}
+.v-foot[class*="g-"]{background:color-mix(in srgb,var(--c) 15%,var(--surface))!important;border-top:1px solid color-mix(in srgb,var(--c) 35%,transparent)}
+.v-foot[class*="g-"] .ring span{background:color-mix(in srgb,var(--c) 15%,var(--surface))!important}
+.v-foot[class*="g-"] .v-foot-text strong{color:color-mix(in srgb,var(--c) 75%,var(--fg))}
+:root[data-theme="dark"] .v-foot[class*="g-"]{background:color-mix(in srgb,var(--c) 20%,var(--surface))!important}
+:root[data-theme="dark"] .v-foot[class*="g-"] .ring span{background:color-mix(in srgb,var(--c) 20%,var(--surface))!important}
+.v-foot[class*="g-"] .grade-dot{box-shadow:0 0 10px var(--c)}
