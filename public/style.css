@@ -2488,3 +2488,5 @@ img.img-wait{background:var(--tint)!important}
 /* Barre d'onglets : fond presque opaque, le contenu qui passe dessous ne se lit plus (audit) */
 .tabbar{background:rgb(255 255 255 / .93)!important;backdrop-filter:saturate(1.8) blur(28px);-webkit-backdrop-filter:saturate(1.8) blur(28px)}
 :root[data-theme="dark"] .tabbar{background:rgb(20 27 23 / .94)!important}
+/* Sous la barre d'onglets flottante : un fondu cache le contenu qui défile dans l'espace libre */
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(safe-area-inset-bottom,0px) + 34px);background:linear-gradient(to top,var(--bg) 55%,color-mix(in srgb,var(--bg) 0%,transparent));pointer-events:none;z-index:29}
