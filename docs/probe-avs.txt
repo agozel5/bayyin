@@ -1,0 +1,34 @@
+FR03185002CE https://world.openfoodfacts.org/facets/packager-codes/fr-03- erreur HTTP Error 503: Service Temporarily Unavailable
+FR03185002CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR03315001CE https://world.openfoodfacts.org/facets/packager-codes/fr-03- erreur HTTP Error 503: Service Temporarily Unavailable
+FR03315001CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR19246001CE https://world.openfoodfacts.org/facets/packager-codes/fr-19- erreur HTTP Error 503: Service Temporarily Unavailable
+FR19246001CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR21663001CE https://world.openfoodfacts.org/facets/packager-codes/fr-21- erreur HTTP Error 503: Service Temporarily Unavailable
+FR21663001CE https://world.openfoodfacts.org/cgi/search.pl?action=process -> 1 produits (count 1)
+FR29232006CE https://world.openfoodfacts.org/facets/packager-codes/fr-29- erreur HTTP Error 503: Service Temporarily Unavailable
+FR29232006CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR35068002CE https://world.openfoodfacts.org/facets/packager-codes/fr-35- erreur HTTP Error 503: Service Temporarily Unavailable
+FR35068002CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR50147002CE https://world.openfoodfacts.org/facets/packager-codes/fr-50- erreur HTTP Error 503: Service Temporarily Unavailable
+FR50147002CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR59178001CE https://world.openfoodfacts.org/facets/packager-codes/fr-59- erreur HTTP Error 503: Service Temporarily Unavailable
+FR59178001CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR61138001CE https://world.openfoodfacts.org/facets/packager-codes/fr-61- erreur HTTP Error 503: Service Temporarily Unavailable
+FR61138001CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR71157028CE https://world.openfoodfacts.org/facets/packager-codes/fr-71- erreur HTTP Error 503: Service Temporarily Unavailable
+FR71157028CE https://world.openfoodfacts.org/cgi/search.pl?action=process -> 31 produits (count 31)
+FR72080002CE https://world.openfoodfacts.org/facets/packager-codes/fr-72- erreur HTTP Error 503: Service Temporarily Unavailable
+FR72080002CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR76410004EU https://world.openfoodfacts.org/facets/packager-codes/fr-76- erreur HTTP Error 503: Service Temporarily Unavailable
+FR76410004EU https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR77237006CE https://world.openfoodfacts.org/facets/packager-codes/fr-77- erreur HTTP Error 503: Service Temporarily Unavailable
+FR77237006CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR77284015CE https://world.openfoodfacts.org/facets/packager-codes/fr-77- erreur HTTP Error 503: Service Temporarily Unavailable
+FR77284015CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR79329001CE https://world.openfoodfacts.org/facets/packager-codes/fr-79- erreur HTTP Error 503: Service Temporarily Unavailable
+FR79329001CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR86165002CE https://world.openfoodfacts.org/facets/packager-codes/fr-86- erreur HTTP Error 503: Service Temporarily Unavailable
+FR86165002CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
+FR89257007CE https://world.openfoodfacts.org/facets/packager-codes/fr-89- erreur HTTP Error 503: Service Temporarily Unavailable
+FR89257007CE https://world.openfoodfacts.org/cgi/search.pl?action=process erreur HTTP Error 503: Service Temporarily Unavailable
