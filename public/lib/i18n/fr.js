@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-28-9", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-10", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -1609,7 +1609,6 @@ export default {
   "hsum.ns": "Nutri-Score {g}",
   "hsum.nova1": "brut ou peu transformé",
   "hsum.nova2": "ingrédient culinaire",
-  "hsum.nova3": "transformé",
   "hsum.nova4": "ultra-transformé",
   "hsum.add0": "aucun additif à risque",
   "hsum.add_one": "1 additif à risque",
@@ -1620,4 +1619,6 @@ export default {
   "home.no_allergy": "aucune allergie",
   // ---------- Audit : additifs ----------
   "add.fn": "Fonction :",
+  // ---------- Audit 2 : NOVA ----------
+  "hsum.nova3": "transformation modérée",
 };

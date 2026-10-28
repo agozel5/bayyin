@@ -96,10 +96,10 @@ TITLES = {
   "tr": ["Tara, bir saniyede öğren", "Helal etiketi okunur ve açıklanır", "Sağlığınız 100 üzerinden", "Etiket kelime kelime işaretlenir", "534 katkı maddesi açıklandı"],
 }
 SUBS = {
-  "fr": ["Halal, santé, allergies — gratuit et sans pub", "AVS, Achahada, HMC : vérifiés sur leur liste officielle", "Nutri-Score, additifs, bio", "Ce qui est douteux, et pourquoi, selon votre école", "Origine, risques, sources officielles"],
-  "en": ["Halal, health, allergies — free, no ads", "AVS, Achahada, HMC: checked against their official list", "Nutri-Score, additives, organic", "What is doubtful and why, by your school", "Origin, risks, official sources"],
-  "ar": ["حلال، صحة، حساسية — مجاني وبلا إعلانات", "AVS وAchahada وHMC: تُطابَق مع قائمتها الرسمية", "Nutri-Score، المضافات، العضوي", "ما المشكوك فيه ولماذا، حسب مذهبك", "المصدر والمخاطر والمراجع الرسمية"],
-  "tr": ["Helal, sağlık, alerji — ücretsiz ve reklamsız", "AVS, Achahada, HMC: resmî listelerinden doğrulanır", "Nutri-Score, katkı maddeleri, organik", "Şüpheli olan ve nedeni, mezhebinize göre", "Köken, riskler, resmî kaynaklar"],
+  "fr": ["Halal, santé, allergies — gratuit et sans pub", "L'organisme nommé ; vérifié quand il publie sa liste", "Nutri-Score, additifs, bio", "Ce qui est douteux, et pourquoi, selon votre école", "Origine, risques, sources officielles"],
+  "en": ["Halal, health, allergies — free, no ads", "The certifier named; checked when it publishes its list", "Nutri-Score, additives, organic", "What is doubtful and why, by your school", "Origin, risks, official sources"],
+  "ar": ["حلال، صحة، حساسية — مجاني وبلا إعلانات", "اسم الجهة المانحة، ويُتحقَّق منها حين تنشر قائمتها", "Nutri-Score، المضافات، العضوي", "ما المشكوك فيه ولماذا، حسب مذهبك", "المصدر والمخاطر والمراجع الرسمية"],
+  "tr": ["Helal, sağlık, alerji — ücretsiz ve reklamsız", "Kuruluşun adı; listesini yayınlıyorsa doğrulanır", "Nutri-Score, katkı maddeleri, organik", "Şüpheli olan ve nedeni, mezhebinize göre", "Köken, riskler, resmî kaynaklar"],
 }
 TAGLINE = {
   "fr": ("Halal, santé, additifs.", "Tout en un scan."),

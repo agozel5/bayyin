@@ -1,4 +1,4 @@
-import { createClient, OffError, present, classifyAny } from "./lib/off.js";
+import { createClient, OffError, present, classifyAny, normQuantity } from "./lib/off.js";
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
 import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS, THEMES, TEXT_SIZES } from "./lib/settings.js";
@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-9";
+const APP_BUILD = "2026-10-28-10";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -240,7 +240,7 @@ function productTop(p) {
     ? `<button type="button" class="p-img-btn" data-zoom aria-label="${esc(t("zoom.open"))}"><img class="p-img" src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">${
         nPhotos > 1 ? `<span class="p-img-count" dir="ltr">${svg('<rect x="4" y="6" width="13" height="13" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v11"/>')}${nPhotos}</span>` : `<span class="p-img-zoom">${svg('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5"/>')}</span>`}</button>`
     : phArt(p, "p-img");
-  const meta = [p.brand, p.quantity].filter(Boolean).map(esc).join(" · ");
+  const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).map(esc).join(" · "); // fiches gardées avant la normalisation aussi
   const code = /^\d+$/.test(p.code) ? p.code : "";
   // Fiche publique sans photo : lien direct pour en ajouter une sur Open Food Facts / Open Beauty Facts
   const addPhoto = !p.image && !p.local && code && kindOf(p) !== "medicine"

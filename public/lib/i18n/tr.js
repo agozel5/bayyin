@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-9", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-10", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1595,7 +1595,6 @@ export default {
   "hsum.ns": "Nutri-Score {g}",
   "hsum.nova1": "işlenmemiş veya az işlenmiş",
   "hsum.nova2": "mutfak malzemesi",
-  "hsum.nova3": "işlenmiş",
   "hsum.nova4": "ultra işlenmiş",
   "hsum.add0": "riskli katkı maddesi yok",
   "hsum.add_one": "1 riskli katkı maddesi",
@@ -1606,4 +1605,6 @@ export default {
   "home.no_allergy": "alerji yok",
   // ---------- Audit : additifs ----------
   "add.fn": "İşlev:",
+  // ---------- Audit 2 : NOVA ----------
+  "hsum.nova3": "orta düzeyde işlenmiş",
 };

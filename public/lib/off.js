@@ -109,7 +109,7 @@ export function present(p, prefs = DEFAULT_PREFS) {
     name: p.product_name_fr || p.product_name || p.product_name_en || "",
     names: { fr: p.product_name_fr, en: p.product_name_en, ar: p.product_name_ar, tr: p.product_name_tr, any: p.product_name },
     brand: (p.brands || "").split(",")[0].trim(),
-    quantity: p.quantity || null,
+    quantity: normQuantity(p.quantity),
     image: p.image_front_small_url || p.image_front_url || null,
     // Photos en grand (visionneuse) : face avant, ingrédients, valeurs nutritionnelles
     photos: [["front", p.image_front_url || p.image_front_small_url], ["ingredients", p.image_ingredients_url], ["nutrition", p.image_nutrition_url]]
@@ -474,3 +474,20 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
     },
   };
 }
+
+/**
+ * Quantité lisible : « 110gr » -> « 110 g », « 1,5L » -> « 1,5 L », « 6x23,5g » -> « 6 × 23,5 g ».
+ * Texte libre d'Open Food Facts ; ce qui n'est pas reconnu est gardé tel quel.
+ */
+export function normQuantity(q) {
+  if (q == null) return null;
+  const s = String(q).trim();
+  if (!s) return null;
+  const UNITS = { g: "g", gr: "g", grs: "g", gramme: "g", grammes: "g", gram: "g", grams: "g", kg: "kg", kilo: "kg", kilos: "kg",
+    mg: "mg", ml: "ml", cl: "cl", dl: "dl", l: "L", litre: "L", litres: "L", liter: "L", liters: "L", lt: "L", oz: "oz", lb: "lb" };
+  return s
+    .replace(/(\d)\s*[x×*]\s*(\d)/gi, "$1 × $2")
+    .replace(/(\d+(?:[.,]\d+)?)\s*([a-zA-Zé]+)\.?(?=$|[\s,;)(/×-])/g, (m, n, u) => (UNITS[u.toLowerCase()] ? `${n} ${UNITS[u.toLowerCase()]}` : m))
+    .replace(/\s{2,}/g, " ");
+}
+

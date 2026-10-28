@@ -2485,3 +2485,6 @@ img.img-wait{background:var(--tint)!important}
 .fn-select select:focus-visible{outline:none}
 .fn-select:focus-within{box-shadow:0 0 0 2px var(--brand)}
 .setting-chips .set-line{flex:1 1 100%;min-width:0;max-width:100%}
+/* Barre d'onglets : fond presque opaque, le contenu qui passe dessous ne se lit plus (audit) */
+.tabbar{background:rgb(255 255 255 / .93)!important;backdrop-filter:saturate(1.8) blur(28px);-webkit-backdrop-filter:saturate(1.8) blur(28px)}
+:root[data-theme="dark"] .tabbar{background:rgb(20 27 23 / .94)!important}
