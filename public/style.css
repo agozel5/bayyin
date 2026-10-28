@@ -2514,3 +2514,19 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .nut-ico.art svg{width:26px;height:26px;fill:initial;stroke:none}
 .env-bench.art{height:28px}
 .env-bench.art svg{width:24px;height:24px;fill:initial;stroke:none}
+
+/* Additifs : picto d'origine devant le code */
+.ae-org{flex:none;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#F4EFE4;margin-inline-end:-4px}
+:root[data-theme="dark"] .ae-org{background:#232C27}
+.ae-org svg{width:28px;height:28px;fill:initial;stroke:none}
+/* Réglages : tuiles colorées en dégradé, léger relief, icône blanche */
+.set-ico[class*="si-"]{--t:#5A6472;color:#fff!important;border-radius:11px;width:34px;height:34px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--t) 72%,#fff) 0%,var(--t) 55%,color-mix(in srgb,var(--t) 85%,#000) 100%)!important;
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .35),0 3px 8px -3px color-mix(in srgb,var(--t) 70%,transparent)}
+.set-ico[class*="si-"] svg{width:19px;height:19px;stroke-width:2.1;filter:drop-shadow(0 1px 1px rgb(0 0 0 / .18))}
+.set-ico.si-lang{--t:#3D84DB}.set-ico.si-profile{--t:#E0457B}.set-ico.si-religion{--t:#1FA597}.set-ico.si-appearance{--t:#5A6472}
+.set-ico.si-offline{--t:#2F6FC0}.set-ico.si-data{--t:#71809A}.set-ico.si-notes{--t:#8A63DA}.set-ico.si-how{--t:#E2A812}
+.set-ico.si-sources{--t:#4C64D6}.set-ico.si-privacy{--t:#46526A}.set-ico.si-limits{--t:#F0BC33;color:#4A3A10!important}
+.set-ico.si-feedback{--t:#1897D6}.set-ico.si-off{--t:#8B5A3C}.set-ico.si-report{--t:#5A6472}.set-ico.si-demo{--t:#E0457B}
+:root[data-theme="dark"] .set-ico.si-privacy{--t:#5A6782}
+:root[data-theme="dark"] .set-ico[class*="si-"]{box-shadow:inset 0 1px 0 rgb(255 255 255 / .25)}

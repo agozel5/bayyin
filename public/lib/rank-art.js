@@ -356,3 +356,44 @@ export const ENV_ART = {
     <path d="M15 12l18 8v6" fill="none" stroke="#F4E3C6" stroke-width="3"/>
     <path d="M30 32l3-2 3 2M33 30v6" fill="none" stroke="#5E9B45" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`)
 };
+
+// Additifs : origine en un coup d'œil (deux tons et un reflet, pour rester lisible en petit)
+export const ORIGIN_ART = {
+  plant: S(`
+    <path d="M8 40C6 22 18 8 41 7c1 21-12 34-33 33z" fill="#5FA845"/>
+    <path d="M8 40C6 22 18 8 41 7 30 18 18 29 8 40z" fill="#86C764"/>
+    <path d="M8 40C17 30 26 21 35 13" fill="none" stroke="#3B7429" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M17 31l-1-7M23 25l-1-6M21 29l7 1M27 23l6 .5" stroke="#3B7429" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>`),
+  animal: S(`
+    <path d="M24 23c6 0 11 6 11 11 0 4-3 6-6 6-2 0-3-1-5-1s-3 1-5 1c-3 0-6-2-6-6 0-5 5-11 11-11z" fill="#8A5A3C"/>
+    <path d="M24 23c6 0 11 6 11 11-6-4-16-4-22 0 0-5 5-11 11-11z" fill="#A9744F"/>
+    <g fill="#8A5A3C"><ellipse cx="10.5" cy="21" rx="4.2" ry="5.4" transform="rotate(-20 10.5 21)"/><ellipse cx="18.5" cy="12" rx="4.2" ry="5.6" transform="rotate(-8 18.5 12)"/>
+    <ellipse cx="29.5" cy="12" rx="4.2" ry="5.6" transform="rotate(8 29.5 12)"/><ellipse cx="37.5" cy="21" rx="4.2" ry="5.4" transform="rotate(20 37.5 21)"/></g>
+    <g fill="#C08B63"><circle cx="17.4" cy="10" r="1.4"/><circle cx="28.4" cy="10" r="1.4"/><circle cx="9.6" cy="19" r="1.3"/><circle cx="36.4" cy="19" r="1.3"/></g>`),
+  insect: S(`
+    <path d="M18 9l3 4M30 9l-3 4" stroke="#5C5C74" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M11 23l-5-3M10 31H5M13 38l-4 4M37 23l5-3M38 31h5M35 38l4 4" stroke="#5C5C74" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="24" cy="16" r="5.5" fill="#3A3A4C"/>
+    <path d="M24 18c8 0 14 6 14 13s-6 12-14 12-14-5-14-12 6-13 14-13z" fill="#D63A4F"/>
+    <path d="M24 18v25" stroke="#3A3A4C" stroke-width="1.8"/>
+    <g fill="#3A3A4C"><circle cx="17.5" cy="27" r="2.6"/><circle cx="30.5" cy="27" r="2.6"/><circle cx="18.5" cy="36" r="2.2"/><circle cx="29.5" cy="36" r="2.2"/></g>
+    <path d="M14 26c1-3 3-5 6-6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55"/>`),
+  animal_product: S(`
+    <path d="M19 7c6.6 0 12 9.6 12 18a12 12 0 0 1-24 0c0-8.4 5.4-18 12-18z" fill="#F1D9B5"/>
+    <path d="M19 7c6.6 0 12 9.6 12 18 0 6.6-5.4 12-12 12 4-3 6-8 6-13 0-8-3-14.4-6-17z" fill="#E2C193"/>
+    <path d="M12 17c1-3 3-5.4 5-6.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".7"/>
+    <path d="M35 21c3.6 4.6 6.6 8 6.6 12a6.6 6.6 0 0 1-13.2 0c0-4 3-7.4 6.6-12z" fill="#FFFFFF"/>
+    <path d="M35 21c3.6 4.6 6.6 8 6.6 12a6.6 6.6 0 0 1-6.6 6.6c2-1.6 3-4 3-6.6 0-4-1.4-8-3-12z" fill="#DCE6EE"/>`),
+  maybe: S(`
+    <circle cx="24" cy="24" r="19" fill="#EDE6D8"/>
+    <path d="M24 5a19 19 0 0 0 0 38z" fill="#DDEBD3"/>
+    <path d="M9 33c-1-10 5-17 14-17 1 10-5 17-14 17z" fill="#5FA845"/>
+    <path d="M9 33c4-5 8-9 13-13" fill="none" stroke="#3B7429" stroke-width="1.8" stroke-linecap="round"/>
+    <ellipse cx="33" cy="32" rx="5.2" ry="4.6" fill="#8A5A3C"/>
+    <g fill="#8A5A3C"><ellipse cx="26.5" cy="25.5" rx="2.2" ry="2.8"/><ellipse cx="31" cy="21.5" rx="2.2" ry="2.8"/><ellipse cx="36" cy="21.5" rx="2.2" ry="2.8"/><ellipse cx="40" cy="25.5" rx="2.2" ry="2.8"/></g>`),
+  unknown: S(`
+    <circle cx="24" cy="24" r="18" fill="#7C858F"/>
+    <path d="M24 6a18 18 0 0 1 0 36 22 22 0 0 0 0-36z" fill="#6A737D"/>
+    <path d="M18.5 19a5.5 5.5 0 1 1 7.6 5.1c-1.4.6-2.1 1.8-2.1 3.4v1" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="24" cy="34.5" r="2.2" fill="#fff"/>`)
+};
