@@ -11,7 +11,9 @@ const RECHECK = 3 * 864e5; // revérification tous les 3 jours
 const GRACE = 45 * 864e5; // hors connexion : Premium gardé 45 jours sans vérification
 
 export const FEATURES = ["rankings", "aisle", "basket", "compare", "offline", "history", "family"];
-export const FREE_HISTORY = 30;
+// Historique visible : 30 jours sans Premium, un an avec (tout reste gardé sur le téléphone)
+export const FREE_HISTORY_DAYS = 30;
+export const PREMIUM_HISTORY_DAYS = 365;
 
 const read = () => {
   try {

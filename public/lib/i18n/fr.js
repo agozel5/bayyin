@@ -1050,8 +1050,6 @@ export default {
   "premium.f.family.d": "Les allergies et le régime de chacun, avec une alerte au nom de la personne concernée.",
   "premium.f.offline": "Hors connexion",
   "premium.f.offline.d": "Les produits les plus vendus téléchargés pour scanner sans réseau.",
-  "premium.f.history": "Historique illimité",
-  "premium.f.history.d": "Tous vos produits visibles, au-delà des 30 derniers.",
   "premium.need.aisle": "Le mode rayon fait partie de Premium.",
   "premium.need.basket": "Le mode courses fait partie de Premium.",
   "premium.need.compare": "La comparaison de produits fait partie de Premium.",
@@ -1096,7 +1094,6 @@ export default {
   "premium.card_on": "Merci pour votre soutien",
   "premium.history_more_one": "1 produit plus ancien",
   "premium.history_more_other": "{n} produits plus anciens",
-  "premium.history_more_p": "Gardés sur votre téléphone : tout l'historique s'affiche avec Premium.",
   // ---------- profils de la famille ----------
   "family.title": "Profils de la famille",
   "family.intro": "Ajoutez les personnes pour qui vous faites les courses : l'alerte indique qui est concerné.",
@@ -1580,4 +1577,8 @@ export default {
   "set.school": "Avis enregistré : {x}",
   "set.topic": "Réglage enregistré : {x}",
   "set.member": "Profil de {name} enregistré : {x}",
+  // ---------- Historique : durée et bilan ----------
+  "premium.f.history": "Un an d'historique",
+  "premium.f.history.d": "Vos produits des 12 derniers mois, au lieu de 30 jours.",
+  "premium.history_more_p": "Plus de {days} jours : gardés sur votre téléphone, ils s'affichent avec Premium (jusqu'à un an).",
 };

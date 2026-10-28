@@ -1036,8 +1036,6 @@ export default {
   "premium.f.family.d": "Everyone's allergies and diet, with an alert naming the person concerned.",
   "premium.f.offline": "Offline",
   "premium.f.offline.d": "Best-selling products downloaded to scan without signal.",
-  "premium.f.history": "Unlimited history",
-  "premium.f.history.d": "All your products visible, beyond the last 30.",
   "premium.need.aisle": "Aisle mode is part of Premium.",
   "premium.need.basket": "Shopping mode is part of Premium.",
   "premium.need.compare": "Product comparison is part of Premium.",
@@ -1082,7 +1080,6 @@ export default {
   "premium.card_on": "Thank you for your support",
   "premium.history_more_one": "1 older product",
   "premium.history_more_other": "{n} older products",
-  "premium.history_more_p": "Kept on your phone: the full history shows with Premium.",
   // ---------- profils de la famille ----------
   "family.title": "Family profiles",
   "family.intro": "Add the people you shop for: the alert shows who is concerned.",
@@ -1566,4 +1563,8 @@ export default {
   "set.school": "Opinion saved: {x}",
   "set.topic": "Setting saved: {x}",
   "set.member": "{name}'s profile saved: {x}",
+  // ---------- Historique : durée et bilan ----------
+  "premium.f.history": "A year of history",
+  "premium.f.history.d": "Your products from the last 12 months, instead of 30 days.",
+  "premium.history_more_p": "Older than {days} days: kept on your phone, shown with Premium (up to a year).",
 };

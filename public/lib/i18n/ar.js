@@ -1036,8 +1036,6 @@ export default {
   "premium.f.family.d": "حساسية كل فرد ونظامه الغذائي، مع تنبيه باسم الشخص المعني.",
   "premium.f.offline": "دون اتصال",
   "premium.f.offline.d": "تنزيل المنتجات الأكثر مبيعًا للمسح دون شبكة.",
-  "premium.f.history": "سجل غير محدود",
-  "premium.f.history.d": "كل منتجاتك ظاهرة، لا آخر 30 فقط.",
   "premium.need.aisle": "وضع الرف جزء من Premium.",
   "premium.need.basket": "وضع التسوق جزء من Premium.",
   "premium.need.compare": "مقارنة المنتجات جزء من Premium.",
@@ -1082,7 +1080,6 @@ export default {
   "premium.card_on": "شكرًا لدعمك",
   "premium.history_more_one": "منتج أقدم واحد",
   "premium.history_more_other": "{n} منتجات أقدم",
-  "premium.history_more_p": "محفوظة على هاتفك: يظهر السجل كاملًا مع Premium.",
   // ---------- profils de la famille ----------
   "family.title": "ملفات العائلة",
   "family.intro": "أضف الأشخاص الذين تتسوق لهم: يُظهر التنبيه من المعني.",
@@ -1566,4 +1563,8 @@ export default {
   "set.school": "تم حفظ الرأي: {x}",
   "set.topic": "تم حفظ الإعداد: {x}",
   "set.member": "تم حفظ ملف {name}: {x}",
+  // ---------- Historique : durée et bilan ----------
+  "premium.f.history": "سجل لمدة سنة",
+  "premium.f.history.d": "منتجاتك خلال آخر 12 شهرًا بدل 30 يومًا.",
+  "premium.history_more_p": "أقدم من {days} يومًا: محفوظة على هاتفك وتظهر مع بريميوم (حتى سنة).",
 };

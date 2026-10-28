@@ -26,7 +26,7 @@ import { CERTIFIER_INFO, searchUrl } from "./lib/certifiers.js";
 import { verdictConfidence } from "./lib/confidence.js";
 import { contribute, contributed, offAccountReady, addUrl } from "./lib/contribute.js";
 import { APP } from "./app-config.js";
-import { isPremium, premiumEnabled, premiumConfig, premiumState, activate as activatePremium, refresh as refreshPremium, deactivate as deactivatePremium, onPremiumChange, maskKey, FREE_HISTORY } from "./lib/premium.js";
+import { isPremium, premiumEnabled, premiumConfig, premiumState, activate as activatePremium, refresh as refreshPremium, deactivate as deactivatePremium, onPremiumChange, maskKey, FREE_HISTORY_DAYS, PREMIUM_HISTORY_DAYS } from "./lib/premium.js";
 
 // Mode démo (produits d'exemple, sans connexion) : ajouter ?demo à l'adresse.
 const DEMO = new URLSearchParams(location.search).has("demo");
@@ -97,7 +97,18 @@ const LEGEND_ORDER = ["halal_certifie", "halal_probable", "mashbouh", "haram", "
 const S = (st, part) => t(`status.${st}.${part}`);
 
 // Le verdict est recalculé à l'affichage : il suit toujours les réglages actuels.
-const verdictOf = (p) => (p.raw ? classifyAny(p.raw, prefs()) : p.verdict);
+// Verdict gardé en mémoire tant que la fiche et les réglages n'ont pas changé : l'historique
+// en affiche des centaines, et le recalcul (règles sur toute la liste d'ingrédients) est coûteux.
+const verdictMemo = new WeakMap();
+const verdictOf = (p) => {
+  if (!p.raw) return p.verdict;
+  const s = prefs();
+  const m = verdictMemo.get(p.raw);
+  if (m && m.s === s) return m.v;
+  const v = classifyAny(p.raw, s);
+  verdictMemo.set(p.raw, { s, v });
+  return v;
+};
 const nameOf = (p) => {
   const n = p.names || {};
   return n[getLang()] || p.name || n.any || n.en || t("product.unnamed");
@@ -119,7 +130,17 @@ const KIND_ICON = { food: I.box, beauty: I.drop, medicine: I.pill };
 // Profil : le vôtre, et ceux de la famille (Premium). L'alerte la plus forte passe en premier,
 // avec le prénom de la personne concernée.
 const familyOn = () => prefs().members.length > 0 && isPremium();
+const profileMemo = new WeakMap();
 const profileOf = (p) => {
+  const key = p.raw || p;
+  const s = prefs();
+  const m = profileMemo.get(key);
+  if (m && m.s === s && m.fam === familyOn()) return m.r;
+  const r = profileCalc(p);
+  profileMemo.set(key, { s, fam: familyOn(), r });
+  return r;
+};
+const profileCalc = (p) => {
   const v = verdictOf(p);
   const mine = checkProfile(p.raw, v, prefs().profile);
   if (!familyOn()) return mine;
@@ -2573,12 +2594,17 @@ function bilanHtml(all, counts) {
   </div>`;
 }
 
+// Durée visible : 30 jours sans Premium, un an avec. Les favoris restent toujours visibles.
+const historyDays = () => (premiumEnabled() && !isPremium() ? FREE_HISTORY_DAYS : PREMIUM_HISTORY_DAYS);
 function renderHistory() {
-  const everything = store.all();
+  const stored = store.all();
+  const since = Date.now() - historyDays() * 864e5;
+  const everything = stored.filter((e) => e.fav || e.at >= since);
+  const hiddenN = stored.length - everything.length; // plus anciens, gardés sur le téléphone
   const seg = kindSegHtml(everything, historyKind, "data-hk");
   if (!seg) historyKind = "all";
   $("historyKind").hidden = !seg;
-  $("historyKind").innerHTML = seg;
+  setHtml($("historyKind"), seg);
   const all = historyKind === "all" ? everything : everything.filter((e) => kindOf(e.p) === historyKind);
   const counts = {};
   all.forEach((e) => {
@@ -2591,19 +2617,19 @@ function renderHistory() {
   requestAnimationFrame(() => animateGauges($("historyStats")));
 
   $("historyFilter").hidden = !all.length;
-  $("historyFilter").innerHTML = HISTORY_FILTERS.map(
+  setHtml($("historyFilter"), HISTORY_FILTERS.map(
     (f) => `<button type="button" class="chip" role="tab" aria-selected="${f.id === historyFilter}" data-f="${f.id}">${t(`history.f.${f.id}`)}<span class="n">${all.filter(f.test).length}</span></button>`
-  ).join("");
+  ).join(""));
 
-  const matching = all.filter(HISTORY_FILTERS.find((f) => f.id === historyFilter).test);
-  // Sans Premium : les plus récents seulement (rien n'est effacé, tout revient avec Premium)
-  const shown = isPremium() ? matching : matching.slice(0, FREE_HISTORY);
-  const hiddenN = matching.length - shown.length;
-  $("historyList").innerHTML = !all.length
-    ? ""
+  const shown = all.filter(HISTORY_FILTERS.find((f) => f.id === historyFilter).test);
+  const more = hiddenN && historyKind === "all" && historyFilter === "all"
+    ? `<button type="button" class="premium-more" data-premium="history">${svg(I.crown)}<span><strong>${esc(tn("premium.history_more", hiddenN))}</strong><small>${esc(t("premium.history_more_p", { days: FREE_HISTORY_DAYS }))}</small></span>${svg(I.chev, "flip")}</button>`
+    : "";
+  setHtml($("historyList"), !all.length
+    ? more
     : shown.length
-      ? historyGroups(shown) + (hiddenN ? `<button type="button" class="premium-more" data-premium="history">${svg(I.crown)}<span><strong>${esc(tn("premium.history_more", hiddenN))}</strong><small>${t("premium.history_more_p")}</small></span>${svg(I.chev, "flip")}</button>` : "")
-      : `<div class="empty">${emptyArt()}<p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`;
+      ? historyGroups(shown) + more
+      : `<div class="empty">${emptyArt()}<p>${t(historyFilter === "fav" ? "history.empty_fav" : "history.empty_cat")}</p></div>`);
 
   $("historyClear").innerHTML = !all.length
     ? ""
@@ -4625,7 +4651,7 @@ $("sheetBody").addEventListener("submit", async (e) => {
     renderPremiumSheet();
   } else renderPremiumSheet(t(`premium.err.${r.error}`));
 });
-const applyHistoryLimit = () => store.setMaxRecent(premiumEnabled() && isPremium() ? 200 : 60);
+const applyHistoryLimit = () => store.setMaxRecent(800); // un an gardé pour tous ; l'affichage dépend de Premium
 applyHistoryLimit();
 onPremiumChange(() => {
   applyHistoryLimit();

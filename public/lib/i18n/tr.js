@@ -1036,8 +1036,6 @@ export default {
   "premium.f.family.d": "Herkesin alerjileri ve diyeti, ilgili kişinin adıyla uyarı.",
   "premium.f.offline": "Çevrimdışı",
   "premium.f.offline.d": "Çok satan ürünler indirilir, şebekesiz tarayın.",
-  "premium.f.history": "Sınırsız geçmiş",
-  "premium.f.history.d": "Son 30'un ötesinde tüm ürünleriniz görünür.",
   "premium.need.aisle": "Raf modu Premium'a dahildir.",
   "premium.need.basket": "Alışveriş modu Premium'a dahildir.",
   "premium.need.compare": "Ürün karşılaştırma Premium'a dahildir.",
@@ -1082,7 +1080,6 @@ export default {
   "premium.card_on": "Desteğiniz için teşekkürler",
   "premium.history_more_one": "1 eski ürün",
   "premium.history_more_other": "{n} eski ürün",
-  "premium.history_more_p": "Telefonunuzda saklanıyor: tüm geçmiş Premium ile görünür.",
   // ---------- profils de la famille ----------
   "family.title": "Aile profilleri",
   "family.intro": "Alışveriş yaptığınız kişileri ekleyin: uyarı kimin ilgili olduğunu gösterir.",
@@ -1566,4 +1563,8 @@ export default {
   "set.school": "Görüş kaydedildi: {x}",
   "set.topic": "Ayar kaydedildi: {x}",
   "set.member": "{name} profili kaydedildi: {x}",
+  // ---------- Historique : durée et bilan ----------
+  "premium.f.history": "Bir yıllık geçmiş",
+  "premium.f.history.d": "30 gün yerine son 12 ayın ürünleri.",
+  "premium.history_more_p": "{days} günden eski: telefonunuzda saklanır, Premium ile görünür (bir yıla kadar).",
 };
