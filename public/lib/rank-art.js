@@ -245,6 +245,10 @@ export const RANK_ART = {
 
 // Familles d'aliments, pour les produits sans photo hors des rayons ci-dessus
 export const FAMILY_ART = {
+  vegetable: S(`
+    <path d="M30 14L8 40c-1 1.2.6 2.8 1.8 1.8L36 20z" fill="#F28A1E"/>
+    <path d="M19 30l3 1M24 25l3 1M14 36l2.4.6" stroke="#C7641A" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M31 15c0-5 2-9 6-10-1 4-2 7-4 9M33 17c4-1 8 0 10 3-4 1-7 0-9-1M32 15c-3-3-4-7-2-10 2 3 3 6 3 9" fill="#5E9B45"/>`),
   poultry: S(`
     <path d="M30 6a12 12 0 0 1 0 24c-2.4 0-4.6-.7-6.4-1.9L17 34.6" fill="#C9813F"/>
     <circle cx="29" cy="18" r="12" fill="#D9934E"/>
@@ -319,4 +323,36 @@ export const NUT_ART = {
     <path d="M19 6h10M20 6v11L10 36a3 3 0 0 0 2.6 4.5h22.8A3 3 0 0 0 38 36L28 17V6" fill="#F0F6FA" stroke="#B8C4CE" stroke-width="1.6" stroke-linejoin="round"/>
     <path d="M14.6 28h18.8L38 36a3 3 0 0 1-2.6 4.5H12.6A3 3 0 0 1 10 36z" fill="#9B7BE0"/>
     <circle cx="21" cy="34" r="1.8" fill="#D6C8F6"/><circle cx="27" cy="31.5" r="1.3" fill="#D6C8F6"/>`)
+};
+
+// Onglet Planète : un dessin par critère
+export const ENV_ART = {
+  origin: S(`
+    <circle cx="24" cy="24" r="18" fill="#4C8DD9"/>
+    <path d="M14 13c3 0 4 2 7 2s3 3 1 5-5 1-6 4 2 5 0 7-6-1-7-4c-1-4 0-10 5-14z" fill="#6FB04F"/>
+    <path d="M29 9c3 1 6 3 7 6-2 1-4 0-5 2s1 4 3 5 4 4 2 8-6 5-7 2 1-6-1-8-4-3-3-7 2-5 4-8z" fill="#6FB04F"/>
+    <path d="M12 18c1.6-3.6 4.4-6.2 8-7.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".45"/>`),
+  prod: S(`
+    <path d="M6 42V24l9 5v-5l9 5v-5l9 5V14h7v28z" fill="#8E969F"/>
+    <rect x="33" y="10" width="7" height="4" fill="#6E7781"/>
+    <circle cx="38" cy="6" r="3" fill="#D5DADF"/><circle cx="43" cy="5" r="2.4" fill="#E3E7EB"/>
+    <g fill="#F2C94C"><rect x="10" y="32" width="4" height="4" rx="1"/><rect x="19" y="32" width="4" height="4" rx="1"/><rect x="28" y="32" width="4" height="4" rx="1"/></g>`),
+  bio: S(`
+    <path d="M10 38C8 22 18 9 40 8c1 20-11 32-26 30" fill="#6FB04F"/>
+    <path d="M10 38C16 30 24 22 34 14" fill="none" stroke="#3F7A2C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M20 29l-1-7M26 23l-1-6M24 27l7 1M18 33l6 1" stroke="#3F7A2C" stroke-width="1.6" stroke-linecap="round"/>`),
+  palm: S(`
+    <path d="M23 20c-1 8-1 16 1 24h5c-2-8-2-16-1-24z" fill="#9B6A3E"/>
+    <path d="M24 26h4M24 32h4.5M24 38h5" stroke="#7A4A2C" stroke-width="1.4"/>
+    <path d="M26 20c-4-6-11-8-19-5 6 0 11 2 14 6z" fill="#4E8E37"/>
+    <path d="M26 20c4-6 11-8 19-5-6 0-11 2-14 6z" fill="#5E9B45"/>
+    <path d="M26 20c-1-6-6-11-14-12 5 3 8 7 10 12z" fill="#6FB04F"/>
+    <path d="M26 20c1-6 6-11 14-12-5 3-8 7-10 12z" fill="#4E8E37"/>
+    <circle cx="24.5" cy="22" r="2" fill="#C7641A"/><circle cx="28" cy="22.5" r="2" fill="#D9762A"/>`),
+  pack: S(`
+    <path d="M6 16l18-8 18 8v18l-18 8-18-8z" fill="#D9A35B"/>
+    <path d="M6 16l18 8 18-8-18-8z" fill="#E8BC7C"/>
+    <path d="M24 24v18" stroke="#B9803A" stroke-width="1.4"/>
+    <path d="M15 12l18 8v6" fill="none" stroke="#F4E3C6" stroke-width="3"/>
+    <path d="M30 32l3-2 3 2M33 30v6" fill="none" stroke="#5E9B45" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`)
 };

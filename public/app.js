@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-15";
+const APP_BUILD = "2026-10-28-16";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -29,7 +29,7 @@ import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
-import { RANK_ART, FAMILY_ART, NUT_ART } from "./lib/rank-art.js";
+import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -494,7 +494,8 @@ function halalSection(p, v) {
 const GS_GRADES = ["a-plus", "a", "b", "c", "d", "e", "f"];
 const envCache = new Map();
 function envRow(ico, title, sub, right, extra = "") {
-  return `<div class="env-row"><span class="nut-ico">${svg(ico)}</span><span class="nut-text"><strong>${esc(title)}</strong><small>${sub}</small></span><span class="env-right">${right}</span>${extra}</div>`;
+  const art = Object.keys(ENV_ICO).find((k) => ENV_ICO[k] === ico);
+  return `<div class="env-row">${art && ENV_ART[art] ? `<span class="nut-ico art">${ENV_ART[art]}</span>` : `<span class="nut-ico">${svg(ico)}</span>`}<span class="nut-text"><strong>${esc(title)}</strong><small>${sub}</small></span><span class="env-right">${right}</span>${extra}</div>`;
 }
 const ENV_ICO = {
   prod: '<path d="M4 20h16"/><path d="M6 20v-6l4-3 4 3v6"/><path d="M14 11l3-2 3 2v9"/><circle cx="8" cy="6" r="2"/>',
@@ -520,7 +521,8 @@ const BENCH = [
   [80, '<path d="M12 21v-7"/><path d="M8 14.5a4 4 0 1 1 2.3-7.3 4 4 0 0 1 7.2 1.3 3.5 3.5 0 0 1-1.5 6z"/>'],
   [96, '<path d="M12 7.5c-3-2-7 0-7 4.8 0 4.5 3 8.7 5 8.7.9 0 1.4-.5 2-.5s1.1.5 2 .5c2 0 5-4.2 5-8.7 0-4.8-4-6.8-7-4.8z"/><path d="M12 7.5c0-2 1-3.3 3-4"/>'],
 ];
-const benchHtml = () => `<div class="env-bench" dir="ltr" aria-hidden="true">${BENCH.map(([x, ico]) => `<span style="left:${x}%">${svg(ico)}</span>`).join("")}</div>
+const BENCH_ART = [FAMILY_ART.meat, RANK_ART.chocolates, FAMILY_ART.poultry, RANK_ART.pizzas, FAMILY_ART.vegetable, NUT_ART.fruits];
+const benchHtml = () => `<div class="env-bench art" dir="ltr" aria-hidden="true">${BENCH.map(([x, ico], i) => `<span style="left:${x}%">${BENCH_ART[i] || svg(ico)}</span>`).join("")}</div>
   <p class="env-bench-t">${esc(t("env.bench"))}</p>`;
 // Nom d'une origine dans la langue choisie : pays (Intl), région, ou le mot tel quel
 function originName(o) {

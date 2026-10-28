@@ -2512,3 +2512,5 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .nut-ico.art{background:#F4EFE4}
 :root[data-theme="dark"] .nut-ico.art{background:#232C27}
 .nut-ico.art svg{width:26px;height:26px;fill:initial;stroke:none}
+.env-bench.art{height:28px}
+.env-bench.art svg{width:24px;height:24px;fill:initial;stroke:none}
