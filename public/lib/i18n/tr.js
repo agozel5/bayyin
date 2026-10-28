@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-6", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -985,7 +985,6 @@ export default {
   "search.idea_chicken": "Tavuk",
   // ---------- photo des ingrédients : cadre ----------
   "ocr.crop_t": "İçindekiler listesini çerçeveleyin",
-  "ocr.crop_hint": "Yalnızca içindekiler kalsın diye çerçeveyi ve köşelerini sürükleyin: logo veya besin tablosu tuhaf karakterler ekler.",
   "ocr.crop_read": "Çerçevedeki metni oku",
   "ocr.low_conf": "Okuma belirsiz: bazı kelimeler yanlış olabilir. Düzeltin ya da fotoğrafı daha yakından ve iyi ışıkta yeniden çekin.",
   "ocr.empty.p": "Hiç metin okunamadı. İçindekiler listesini yakından (metin net okunmalı), düz ve parlama olmadan çekin.",
@@ -1573,7 +1572,6 @@ export default {
   "bilan.prev_week": "Önceki hafta",
   "bilan.next_week": "Sonraki hafta",
   // ---------- Lecture de photo : conseils ----------
-  "ocr.crop_tip": "İpucu: iyi ışık, düz ve parlamasız etiket, net bir yazı. Liste yan yazılmışsa telefonu çevirmeniz gerekmez.",
   "ocr.retrying": "Daha ayrıntılı okunuyor… %{n}",
   "ocr.bad.t": "Liste okunamadı",
   "ocr.bad.p": "Bulunan metin bir içindekiler listesine benzemiyor. Size rastgele karakterler göstermek yerine fotoğrafı yeniden çekin:",
@@ -1586,4 +1584,7 @@ export default {
   "ocr.manual_t": "İçindekiler listesini yazın",
   "ocr.manual_hint": "Listeyi ambalajda yazdığı gibi yazın, sonra analizi başlatın.",
   "ocr.manual_ph": "Örn. buğday unu, şeker, ayçiçek yağı, E471…",
+  // ---------- Lecture de photo : cadrage ----------
+  "ocr.crop_hint": "Çerçeveyi logo ve besin tablosu olmadan içindekiler listesine yerleştirin.",
+  "ocr.crop_tip": "İyi ışık, düz etiket, parlama yok. Liste yan mı yazılmış? Telefonu çevirmeye gerek yok.",
 };

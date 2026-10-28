@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-6", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -985,7 +985,6 @@ export default {
   "search.idea_chicken": "Chicken",
   // ---------- photo des ingrédients : cadre ----------
   "ocr.crop_t": "Frame the ingredient list",
-  "ocr.crop_hint": "Drag the frame and its corners to keep only the ingredients: the logo or nutrition table would add stray characters.",
   "ocr.crop_read": "Read the framed text",
   "ocr.low_conf": "Uncertain reading: some words may be wrong. Fix them, or retake the photo closer and well lit.",
   "ocr.empty.p": "No text could be read. Photograph the ingredient list up close (the text must be clearly legible), flat and without glare.",
@@ -1573,7 +1572,6 @@ export default {
   "bilan.prev_week": "Previous week",
   "bilan.next_week": "Next week",
   // ---------- Lecture de photo : conseils ----------
-  "ocr.crop_tip": "Tip: good light, the label flat and free of glare, the text sharp. If the list is printed sideways, no need to turn your phone.",
   "ocr.retrying": "Taking a closer look… {n}%",
   "ocr.bad.t": "The list could not be read",
   "ocr.bad.p": "The text found does not look like an ingredient list. Rather than showing you random characters, please retake the photo:",
@@ -1586,4 +1584,7 @@ export default {
   "ocr.manual_t": "Type the ingredient list",
   "ocr.manual_hint": "Copy the list as it appears on the pack, then run the analysis.",
   "ocr.manual_ph": "E.g. wheat flour, sugar, sunflower oil, E471…",
+  // ---------- Lecture de photo : cadrage ----------
+  "ocr.crop_hint": "Fit the frame to the ingredient list, leaving out the logo and nutrition table.",
+  "ocr.crop_tip": "Good light, label flat, no glare. List printed sideways? No need to turn your phone.",
 };

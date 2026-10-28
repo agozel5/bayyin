@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-28-6", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -999,7 +999,6 @@ export default {
   "search.idea_chicken": "Poulet",
   // ---------- photo des ingrédients : cadre ----------
   "ocr.crop_t": "Encadrez la liste d'ingrédients",
-  "ocr.crop_hint": "Faites glisser le cadre et ses coins pour ne garder que les ingrédients : le logo ou le tableau nutritionnel feraient apparaître des caractères parasites.",
   "ocr.crop_read": "Lire le texte encadré",
   "ocr.low_conf": "Lecture incertaine : certains mots peuvent être faux. Corrigez-les, ou reprenez la photo plus près et bien éclairée.",
   "ocr.empty.p": "Aucun texte n'a pu être lu. Prenez la liste d'ingrédients de près (le texte doit être bien lisible), à plat et sans reflet.",
@@ -1587,7 +1586,6 @@ export default {
   "bilan.prev_week": "Semaine précédente",
   "bilan.next_week": "Semaine suivante",
   // ---------- Lecture de photo : conseils ----------
-  "ocr.crop_tip": "Astuce : une bonne lumière, l'étiquette à plat et sans reflet, le texte bien net. Si la liste est écrite de côté, pas besoin de tourner le téléphone.",
   "ocr.retrying": "Lecture plus poussée… {n} %",
   "ocr.bad.t": "La liste n'a pas pu être lue",
   "ocr.bad.p": "Le texte trouvé ne ressemble pas à une liste d'ingrédients. Plutôt que de vous montrer des caractères au hasard, reprenez la photo :",
@@ -1600,4 +1598,7 @@ export default {
   "ocr.manual_t": "Tapez la liste d'ingrédients",
   "ocr.manual_hint": "Recopiez la liste telle qu'elle figure sur l'emballage, puis lancez l'analyse.",
   "ocr.manual_ph": "Ex. : farine de blé, sucre, huile de tournesol, E471…",
+  // ---------- Lecture de photo : cadrage ----------
+  "ocr.crop_hint": "Ajustez le cadre sur la liste d'ingrédients, sans le logo ni le tableau nutritionnel.",
+  "ocr.crop_tip": "Bonne lumière, étiquette à plat, sans reflet. Liste écrite de côté ? Inutile de tourner le téléphone.",
 };

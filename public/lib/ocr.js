@@ -97,6 +97,22 @@ export function binarize(gray, w, h, { k = 0.2, R = 128 } = {}) {
   return out;
 }
 
+/**
+ * Seuillage local qui choisit lui-même le sens du texte : du texte occupe une petite part de l'image.
+ * Si le résultat est surtout noir, c'est que le texte était clair sur fond foncé (sac rouge, étagère blanche
+ * à côté) : on inverse et on garde la version la plus claire.
+ */
+export function binarizeAuto(gray, w, h) {
+  const darkShare = (b) => { let n = 0; for (let i = 0; i < b.length; i++) if (!b[i]) n++; return n / b.length; };
+  const a = binarize(gray, w, h);
+  const da = darkShare(a);
+  if (da < 0.22) return a;
+  const inv = new Uint8ClampedArray(gray.length);
+  for (let i = 0; i < gray.length; i++) inv[i] = 255 - gray[i];
+  const b = binarize(inv, w, h);
+  return darkShare(b) < da ? b : a;
+}
+
 /** Taille de travail : agrandie quand le texte est petit, réduite quand la photo est énorme. */
 export const workScale = (sw, sh) => {
   const longest = Math.max(sw, sh);
@@ -134,7 +150,7 @@ async function preprocess(file, crop, mode = "local", rot = 0) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
     let g = grayStretch(data.data);
-    if (mode === "local") g = binarize(g, canvas.width, canvas.height);
+    if (mode === "local") g = binarizeAuto(g, canvas.width, canvas.height);
     const px = data.data;
     for (let i = 0, j = 0; i < px.length; i += 4, j++) px[i] = px[i + 1] = px[i + 2] = g[j];
     ctx.putImageData(data, 0, 0);
@@ -222,6 +238,11 @@ citrate citrates ascorbate acide acides lactique citrique ascorbique sorbique be
 carraghenanes carraghenane gomme guar xanthane pectine agar alginate cellulose glycerol mono diglycerides gras
 alcool vin rhum biere vinaigre malt orge enzymes presure carmin cochenille shellac
 sans avec dont total teneur minimum maximum issu issus issue
+avoine epeautre sarrasin quinoa millet complete complet certifie certifiee durable morceaux morceau pepites eclats
+pate matiere matieres sechee seche seches deshydrate deshydratee proportions proportion variables variable
+karite mangue melasse noix coco datte dattes raisin raisins figue abricot banane cerise framboise myrtille
+allergenes allergene contenir provenant autres coque coques consommer preference conserver endroit frais sec
+recette nature cuit cuite fume fumee pasteurise pasteurisee sale salee sucre sucree cru crue bio biologique
 water sugar salt flour wheat milk cream butter eggs egg oil palm sunflower rapeseed starch syrup cocoa chocolate
 emulsifier emulsifiers lecithin lecithins flavouring flavourings flavoring natural colour color preservative
 antioxidant stabiliser stabilizer thickener raising agent agents acid powder whole skimmed vegetable fat
@@ -244,9 +265,9 @@ const known = (w) => {
  */
 export function ocrQuality(text) {
   const words = fold(String(text || "")).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 || /^e\d/.test(w));
-  if (!words.length) return { score: 0, words: 0 };
+  if (!words.length) return { score: 0, words: 0, hits: 0 };
   const hits = words.filter(known).length;
-  return { score: Math.round((hits / words.length) * 100) / 100, words: words.length };
+  return { score: Math.round((hits / words.length) * 100) / 100, words: words.length, hits };
 }
 // Seuils : au-dessus de GOOD, on ne fait pas de deuxième lecture ; en dessous de MIN, on ne montre pas le texte
 export const OCR_GOOD = 0.45, OCR_MIN = 0.22;
@@ -273,9 +294,11 @@ export const OCR_ATTEMPTS = [
 export function needsAnotherTry(best, next) {
   if (!best) return true;
   if (best.quality >= OCR_GOOD) return false;
-  if (next.rot && best.quality >= OCR_MIN) return false; // lisible à l'endroit : inutile de tourner l'image
+  if (next.rot && isReadable(best)) return false; // lisible à l'endroit : inutile de tourner l'image
   return true;
 }
+/** Lisible : une part suffisante de vocabulaire d'ingrédients, et au moins trois mots reconnus. */
+export const isReadable = (r) => !!r && r.quality >= OCR_MIN && (r.hits ?? 0) >= 3;
 /** Le meilleur de deux essais : la note de vocabulaire d'abord, puis la longueur du texte. */
 export const betterRead = (a, b) => (!a || b.quality > a.quality || (b.quality === a.quality && b.text.length > a.text.length) ? b : a);
 
@@ -307,10 +330,10 @@ export async function readIngredients(file, { lang = "fr", langs = null, crop = 
       const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
       const r = cleanOcrLines(linesOf(data || {}));
       const q = ocrQuality(r.text);
-      best = betterRead(best, { ...r, quality: q.score, words: q.words, rot: a.rot });
+      best = betterRead(best, { ...r, quality: q.score, words: q.words, hits: q.hits, rot: a.rot });
       attempt++;
     }
-    return { ...best, readable: best.quality >= OCR_MIN && best.words >= 3 };
+    return { ...best, readable: isReadable(best) };
   } finally {
     worker.terminate().catch(() => {});
   }

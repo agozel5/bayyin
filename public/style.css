@@ -2426,3 +2426,8 @@ img.img-wait{background:var(--tint)!important}
 .ocr-tips li{display:flex;gap:10px;align-items:flex-start;font-size:.93rem;line-height:1.4}
 .ocr-tips svg{width:18px;height:18px;flex:none;color:var(--brand);margin-top:2px}
 :root[data-theme="dark"] .ocr-tips svg,:root[data-theme="dark"] .ocr-tip svg{color:#5FD08F}
+/* Cadrage : la photo laisse toujours la place aux boutons, collés en bas de l'écran */
+.crop-stage img{max-height:max(200px,calc(100dvh - 430px))}
+.ocr-actions{position:sticky;bottom:0;z-index:3;display:flex;flex-direction:column;gap:8px;margin:0 -20px;padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 10px);
+  background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line)}
+.ocr-actions .btn{margin:0}
