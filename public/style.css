@@ -2530,3 +2530,10 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .set-ico.si-feedback{--t:#1897D6}.set-ico.si-off{--t:#8B5A3C}.set-ico.si-report{--t:#5A6472}.set-ico.si-demo{--t:#E0457B}
 :root[data-theme="dark"] .set-ico.si-privacy{--t:#5A6782}
 :root[data-theme="dark"] .set-ico[class*="si-"]{box-shadow:inset 0 1px 0 rgb(255 255 255 / .25)}
+
+/* Santé et Planète : tuiles un peu plus grandes, dessins plus lisibles */
+.nut-ico.art{width:40px;height:40px;border-radius:12px;box-shadow:inset 0 1px 0 rgb(255 255 255 / .6)}
+:root[data-theme="dark"] .nut-ico.art{box-shadow:inset 0 1px 0 rgb(255 255 255 / .06)}
+.nut-ico.art svg{width:30px;height:30px}
+.env-bench.art{height:30px}
+.env-bench.art svg{width:26px;height:26px}

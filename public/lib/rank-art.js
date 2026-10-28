@@ -286,75 +286,91 @@ export const FAMILY_ART = {
 // Onglet Santé : un dessin par nutriment (le niveau reste donné par le point et la barre)
 export const NUT_ART = {
   energy: S(`
-    <path d="M24 5c2 7 11 11 11 21a11 11 0 0 1-22 0c0-5 2.6-8 5-10 .6 3.4 2 5.6 4.4 6.6C21.6 16 22 10 24 5z" fill="#F7A531"/>
-    <path d="M24 25c1 3 5 5 5 9a5 5 0 0 1-10 0c0-2.4 1.4-3.8 2.6-4.6.4 1.4 1 2.2 2 2.6-.4-2.4-.2-4.8.4-7z" fill="#FFD25A"/>`),
+    <path d="M24 4c2.4 7.6 12 11.6 12 22a12 12 0 0 1-24 0c0-5.4 2.8-8.6 5.4-10.8.6 3.6 2.2 6 4.8 7.2C20.8 15.4 21.6 9.4 24 4z" fill="#F59A2C"/>
+    <path d="M24 4c2.4 7.6 12 11.6 12 22a12 12 0 0 1-12 12c5-2 8-6 8-12 0-9-6-13-8-22z" fill="#E07F16"/>
+    <path d="M24 24c1.2 3.4 5.6 5.4 5.6 10a5.6 5.6 0 0 1-11.2 0c0-2.6 1.6-4.2 2.8-5 .4 1.6 1.2 2.6 2.2 3-.4-2.8-.2-5.4.6-8z" fill="#FFD45E"/>
+    <path d="M16 22c.6-2 1.6-3.6 2.8-4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55"/>`),
   sugars: S(`
-    <path d="M8 22l10-5 10 5v12l-10 5-10-5z" fill="#FFFFFF" stroke="#C9D2DA" stroke-width="1.2"/>
-    <path d="M8 22l10 5 10-5-10-5z" fill="#F1F4F7"/><path d="M18 27v12" stroke="#C9D2DA" stroke-width="1.2"/>
-    <path d="M22 13l9-4.5 9 4.5v10l-9 4.5-9-4.5z" fill="#FFFFFF" stroke="#C9D2DA" stroke-width="1.2"/>
-    <path d="M22 13l9 4.5 9-4.5-9-4.5z" fill="#F1F4F7"/><path d="M31 17.5v10" stroke="#C9D2DA" stroke-width="1.2"/>`),
+    <path d="M6 23l11-5.5L28 23v13l-11 5.5L6 36z" fill="#FFFFFF"/>
+    <path d="M6 23l11 5.5V41.5L6 36z" fill="#E6EBF0"/><path d="M28 23l-11 5.5v13l11-5.5z" fill="#CFD8E1"/>
+    <path d="M21 12.5L31 7.5l10 5v11.5l-10 5-10-5z" fill="#FFFFFF"/>
+    <path d="M21 12.5l10 5v11.5l-10-5z" fill="#E6EBF0"/><path d="M41 12.5l-10 5v11.5l10-5z" fill="#CFD8E1"/>
+    <g fill="#BAC6D2"><circle cx="11" cy="30" r=".9"/><circle cx="13.5" cy="34" r=".9"/><circle cx="23" cy="31" r=".9"/><circle cx="35" cy="21" r=".9"/><circle cx="26" cy="18" r=".9"/></g>`),
   "saturated-fat": S(`
-    <path d="M6 30l8-8h28v10l-6 6H6z" fill="#E3B437"/>
-    <path d="M6 30l8-8h28l-8 8z" fill="#F8D96A"/>
-    <path d="M6 30h28v8H6z" fill="#F2C94C"/>
-    <path d="M34 30l8-8v10l-8 6z" fill="#D9A62C"/>
-    <rect x="9" y="32" width="10" height="2" rx="1" fill="#fff" opacity=".5"/>`),
+    <path d="M5 28l9-9h29v11l-7 7H5z" fill="#E8B530"/>
+    <path d="M5 28l9-9h29l-9 9z" fill="#FBE07A"/>
+    <path d="M5 28h29v9H5z" fill="#F4CB47"/>
+    <path d="M34 28l9-9v11l-9 7z" fill="#D29A1E"/>
+    <path d="M13 22h18" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+    <path d="M9 31h11" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".45"/>`),
   salt: S(`
-    <path d="M16 18h16l-2 24H18z" fill="#FFFFFF" stroke="#C9D2DA" stroke-width="1.2"/>
-    <path d="M16 18c0-6 3.6-10 8-10s8 4 8 10z" fill="#B3BAC1"/>
-    <circle cx="21" cy="13" r="1.1" fill="#6E7781"/><circle cx="24" cy="11" r="1.1" fill="#6E7781"/><circle cx="27" cy="13" r="1.1" fill="#6E7781"/>
-    <rect x="15" y="17" width="18" height="3" rx="1" fill="#8E969F"/>
-    <path d="M20 26l8 8M28 26l-8 8" stroke="#E6EAEE" stroke-width="1.4"/>`),
+    <path d="M15 19h18l-2.4 23H17.4z" fill="#FFFFFF"/>
+    <path d="M24 19h9l-2.4 23H24z" fill="#E2E8EE"/>
+    <path d="M15 19c0-6.6 4-11 9-11s9 4.4 9 11z" fill="#A9B2BC"/>
+    <path d="M24 8c5 0 9 4.4 9 11h-9z" fill="#8E98A3"/>
+    <g fill="#5E6873"><circle cx="20.5" cy="13.5" r="1.2"/><circle cx="24" cy="11.4" r="1.2"/><circle cx="27.5" cy="13.5" r="1.2"/></g>
+    <rect x="14" y="17.6" width="20" height="3" rx="1.2" fill="#7D8792"/>
+    <path d="M19 25v12" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9"/>`),
   proteins: S(`
-    <path d="M24 6c8 0 14 9 14 19a14 14 0 0 1-28 0C10 15 16 6 24 6z" fill="#E8C49A"/>
-    <path d="M17 16c1.6-3.4 4-5.4 6.6-5.8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>`),
+    <path d="M24 5c8.4 0 15 9.8 15 20a15 15 0 0 1-30 0C9 14.8 15.6 5 24 5z" fill="#EBC79C"/>
+    <path d="M24 5c8.4 0 15 9.8 15 20a15 15 0 0 1-15 15c6-3 9-9 9-16 0-9-4-16-9-19z" fill="#D9AE7E"/>
+    <path d="M16 16c1.6-3.6 4.2-6 7-6.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".65"/>`),
   fiber: S(`
-    <path d="M24 44V12" stroke="#B98A26" stroke-width="2.4" stroke-linecap="round"/>
-    <g fill="#E8B964"><ellipse cx="24" cy="9" rx="3" ry="5"/>
-    <ellipse cx="19" cy="17" rx="3" ry="5" transform="rotate(-30 19 17)"/><ellipse cx="29" cy="17" rx="3" ry="5" transform="rotate(30 29 17)"/>
-    <ellipse cx="19" cy="25" rx="3" ry="5" transform="rotate(-30 19 25)"/><ellipse cx="29" cy="25" rx="3" ry="5" transform="rotate(30 29 25)"/>
-    <ellipse cx="19" cy="33" rx="3" ry="5" transform="rotate(-30 19 33)"/><ellipse cx="29" cy="33" rx="3" ry="5" transform="rotate(30 29 33)"/></g>`),
+    <path d="M24 45V13" stroke="#B5852A" stroke-width="2.6" stroke-linecap="round"/>
+    <g fill="#EBC06C"><ellipse cx="24" cy="9" rx="3.2" ry="5.4"/>
+    <ellipse cx="18.6" cy="17" rx="3.2" ry="5.4" transform="rotate(-32 18.6 17)"/><ellipse cx="18.6" cy="25.4" rx="3.2" ry="5.4" transform="rotate(-32 18.6 25.4)"/><ellipse cx="18.6" cy="33.8" rx="3.2" ry="5.4" transform="rotate(-32 18.6 33.8)"/></g>
+    <g fill="#D9A44A"><ellipse cx="29.4" cy="17" rx="3.2" ry="5.4" transform="rotate(32 29.4 17)"/><ellipse cx="29.4" cy="25.4" rx="3.2" ry="5.4" transform="rotate(32 29.4 25.4)"/><ellipse cx="29.4" cy="33.8" rx="3.2" ry="5.4" transform="rotate(32 29.4 33.8)"/></g>
+    <path d="M22.6 6.6c.4-1 1-1.6 1.6-2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>`),
   fruits: S(`
-    <path d="M24 15c-6-3.6-14 0-12.6 10 1.2 7.4 6 13.6 12.6 11.8 6.6 1.8 11.4-4.4 12.6-11.8C38 15 30 11.4 24 15z" fill="#E0455A"/>
-    <path d="M24 15c0-4 1.4-6.4 4.4-8.4" fill="none" stroke="#7A4A2C" stroke-width="2.4" stroke-linecap="round"/>
-    <path d="M26 11c3.4-3 8-2.4 10 .4-3.6 2-7 2-10-.4z" fill="#5E9B45"/>
-    <path d="M16 21c-1.4 2-1.8 4.6-1.2 7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>`),
+    <path d="M24 15c-6.4-3.8-14.6 0-13.2 10.4 1.2 7.8 6.4 14.2 13.2 12.4 6.8 1.8 12-4.6 13.2-12.4C38.6 15 30.4 11.2 24 15z" fill="#E2465A"/>
+    <path d="M24 15c6.4-3.8 14.6 0 13.2 10.4-1.2 7.8-6.4 14.2-13.2 12.4 4-3 7-8 7-14 0-5-2-7.4-7-8.8z" fill="#C4324A"/>
+    <path d="M24 15c0-4.2 1.4-6.8 4.6-8.8" fill="none" stroke="#7A4A2C" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M26.4 10.6c3.6-3.2 8.4-2.6 10.6.4-3.8 2.2-7.4 2.2-10.6-.4z" fill="#5FA845"/>
+    <path d="M15.4 20.4c-1.4 2.2-1.8 4.8-1.2 7.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>`),
   additives: S(`
-    <path d="M19 6h10M20 6v11L10 36a3 3 0 0 0 2.6 4.5h22.8A3 3 0 0 0 38 36L28 17V6" fill="#F0F6FA" stroke="#B8C4CE" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="M14.6 28h18.8L38 36a3 3 0 0 1-2.6 4.5H12.6A3 3 0 0 1 10 36z" fill="#9B7BE0"/>
-    <circle cx="21" cy="34" r="1.8" fill="#D6C8F6"/><circle cx="27" cy="31.5" r="1.3" fill="#D6C8F6"/>`)
+    <path d="M19 6h10M20 6v11L10 36a3 3 0 0 0 2.6 4.5h22.8A3 3 0 0 0 38 36L28 17V6" fill="#EEF4F8" stroke="#B2BFCA" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M14.4 28h19.2L38 36a3 3 0 0 1-2.6 4.5H12.6A3 3 0 0 1 10 36z" fill="#9B79E2"/>
+    <path d="M24 28h9.6L38 36a3 3 0 0 1-2.6 4.5H24z" fill="#7F5FD0"/>
+    <circle cx="19" cy="34" r="2" fill="#E3D8FA"/><circle cx="25" cy="31.5" r="1.4" fill="#E3D8FA"/><circle cx="29" cy="36" r="1.1" fill="#E3D8FA"/>
+    <path d="M22.4 9v8.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`)
 };
 
 // Onglet Planète : un dessin par critère
 export const ENV_ART = {
   origin: S(`
-    <circle cx="24" cy="24" r="18" fill="#4C8DD9"/>
-    <path d="M14 13c3 0 4 2 7 2s3 3 1 5-5 1-6 4 2 5 0 7-6-1-7-4c-1-4 0-10 5-14z" fill="#6FB04F"/>
-    <path d="M29 9c3 1 6 3 7 6-2 1-4 0-5 2s1 4 3 5 4 4 2 8-6 5-7 2 1-6-1-8-4-3-3-7 2-5 4-8z" fill="#6FB04F"/>
-    <path d="M12 18c1.6-3.6 4.4-6.2 8-7.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".45"/>`),
+    <circle cx="24" cy="24" r="18" fill="#3D84DB"/>
+    <path d="M24 6a18 18 0 0 1 0 36c8-4 12-11 12-18S32 10 24 6z" fill="#2F6FC0"/>
+    <path d="M14 13c3 0 4 2 7 2s3 3 1 5-5 1-6 4 2 5 0 7-6-1-7-4c-1-4 0-10 5-14z" fill="#6DB24E"/>
+    <path d="M29 9c3 1 6 3 7 6-2 1-4 0-5 2s1 4 3 5 4 4 2 8-6 5-7 2 1-6-1-8-4-3-3-7 2-5 4-8z" fill="#5A9C3E"/>
+    <path d="M12 18c1.6-3.6 4.4-6.2 8-7.4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".5"/>`),
   prod: S(`
-    <path d="M6 42V24l9 5v-5l9 5v-5l9 5V14h7v28z" fill="#8E969F"/>
-    <rect x="33" y="10" width="7" height="4" fill="#6E7781"/>
-    <circle cx="38" cy="6" r="3" fill="#D5DADF"/><circle cx="43" cy="5" r="2.4" fill="#E3E7EB"/>
-    <g fill="#F2C94C"><rect x="10" y="32" width="4" height="4" rx="1"/><rect x="19" y="32" width="4" height="4" rx="1"/><rect x="28" y="32" width="4" height="4" rx="1"/></g>`),
+    <path d="M6 42V24l9 5v-5l9 5v-5l9 5V14h7v28z" fill="#909AA5"/>
+    <path d="M33 14h7v28h-7z" fill="#76808B"/>
+    <path d="M6 42h34v2H6z" fill="#6A737D"/>
+    <rect x="32" y="10" width="9" height="4" rx="1" fill="#6A737D"/>
+    <circle cx="38" cy="6" r="3.2" fill="#D9DEE3"/><circle cx="43" cy="4.6" r="2.4" fill="#E8EBEE"/><circle cx="34.5" cy="5" r="2" fill="#E8EBEE"/>
+    <g fill="#F4CB47"><rect x="10" y="32" width="4" height="4" rx="1"/><rect x="19" y="32" width="4" height="4" rx="1"/><rect x="28" y="32" width="4" height="4" rx="1"/></g>`),
   bio: S(`
-    <path d="M10 38C8 22 18 9 40 8c1 20-11 32-26 30" fill="#6FB04F"/>
-    <path d="M10 38C16 30 24 22 34 14" fill="none" stroke="#3F7A2C" stroke-width="2.4" stroke-linecap="round"/>
-    <path d="M20 29l-1-7M26 23l-1-6M24 27l7 1M18 33l6 1" stroke="#3F7A2C" stroke-width="1.6" stroke-linecap="round"/>`),
+    <path d="M9 39C7 22 18 8 41 7c1 21-12 34-32 32z" fill="#5FA845"/>
+    <path d="M9 39C7 22 18 8 41 7 30 18 19 29 9 39z" fill="#86C764"/>
+    <path d="M9 39C17 30 26 21 35 13" fill="none" stroke="#3B7429" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M18 30l-1-7M24 24l-1-6M22 28l7 1M28 22l6 .5" stroke="#3B7429" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>`),
   palm: S(`
-    <path d="M23 20c-1 8-1 16 1 24h5c-2-8-2-16-1-24z" fill="#9B6A3E"/>
-    <path d="M24 26h4M24 32h4.5M24 38h5" stroke="#7A4A2C" stroke-width="1.4"/>
+    <path d="M22.4 20c-1 8-1 16 1.4 24h5.6c-2.4-8-2.4-16-1.4-24z" fill="#A06E40"/>
+    <path d="M25.6 20h2.4c-1 8-1 16 1.4 24h-3c-1.6-8-1.6-16-.8-24z" fill="#865830"/>
+    <path d="M24 27h4M24 33h4.6M24.4 39h5" stroke="#6E4524" stroke-width="1.4"/>
     <path d="M26 20c-4-6-11-8-19-5 6 0 11 2 14 6z" fill="#4E8E37"/>
-    <path d="M26 20c4-6 11-8 19-5-6 0-11 2-14 6z" fill="#5E9B45"/>
-    <path d="M26 20c-1-6-6-11-14-12 5 3 8 7 10 12z" fill="#6FB04F"/>
-    <path d="M26 20c1-6 6-11 14-12-5 3-8 7-10 12z" fill="#4E8E37"/>
-    <circle cx="24.5" cy="22" r="2" fill="#C7641A"/><circle cx="28" cy="22.5" r="2" fill="#D9762A"/>`),
+    <path d="M26 20c4-6 11-8 19-5-6 0-11 2-14 6z" fill="#3F7A2C"/>
+    <path d="M26 20c-1-6-6-11-14-12 5 3 8 7 10 12z" fill="#6DB24E"/>
+    <path d="M26 20c1-6 6-11 14-12-5 3-8 7-10 12z" fill="#5A9C3E"/>
+    <circle cx="24.4" cy="22" r="2.2" fill="#C7641A"/><circle cx="28.2" cy="22.6" r="2.2" fill="#DB7A2C"/>`),
   pack: S(`
-    <path d="M6 16l18-8 18 8v18l-18 8-18-8z" fill="#D9A35B"/>
-    <path d="M6 16l18 8 18-8-18-8z" fill="#E8BC7C"/>
-    <path d="M24 24v18" stroke="#B9803A" stroke-width="1.4"/>
-    <path d="M15 12l18 8v6" fill="none" stroke="#F4E3C6" stroke-width="3"/>
-    <path d="M30 32l3-2 3 2M33 30v6" fill="none" stroke="#5E9B45" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`)
+    <path d="M6 16l18-8 18 8v18l-18 8-18-8z" fill="#D49E57"/>
+    <path d="M24 24l18-8v18l-18 8z" fill="#BD8541"/>
+    <path d="M6 16l18 8 18-8-18-8z" fill="#E9C285"/>
+    <path d="M15 12l18 8v6" fill="none" stroke="#F6E6CB" stroke-width="3.2"/>
+    <path d="M10 22v7" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+    <path d="M30 32l3-2.2 3 2.2M33 29.8V37" fill="none" stroke="#3F7A2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`)
 };
 
 // Additifs : origine en un coup d'œil (deux tons et un reflet, pour rester lisible en petit)
