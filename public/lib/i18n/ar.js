@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -1587,4 +1587,6 @@ export default {
   // ---------- Lecture de photo : cadrage ----------
   "ocr.crop_hint": "اضبط الإطار على قائمة المكونات، دون الشعار أو جدول القيم الغذائية.",
   "ocr.crop_tip": "إضاءة جيدة، ملصق مسطّح، بلا انعكاس. القائمة مكتوبة بشكل جانبي؟ لا داعي لتدوير الهاتف.",
+  // ---------- Lecture de photo : boutons ----------
+  "ocr.retake_short": "إعادة",
 };

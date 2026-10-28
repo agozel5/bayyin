@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1587,4 +1587,6 @@ export default {
   // ---------- Lecture de photo : cadrage ----------
   "ocr.crop_hint": "Çerçeveyi logo ve besin tablosu olmadan içindekiler listesine yerleştirin.",
   "ocr.crop_tip": "İyi ışık, düz etiket, parlama yok. Liste yan mı yazılmış? Telefonu çevirmeye gerek yok.",
+  // ---------- Lecture de photo : boutons ----------
+  "ocr.retake_short": "Yeniden çek",
 };

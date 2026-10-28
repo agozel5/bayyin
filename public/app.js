@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-7";
+const APP_BUILD = "2026-10-28-8";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -1523,7 +1523,7 @@ $("sheetClose").addEventListener("click", () => closeSheet());
   sheet.addEventListener("touchstart", (e) => {
     if (e.touches.length !== 1 || sheet.classList.contains("closing")) return;
     const inBar = e.target.closest(".sheet-bar, .sheet-grab");
-    const atTop = $("sheetBody").scrollTop <= 0 && e.target.closest("#sheetBody") && !e.target.closest(".alts, .ptabs, .gauge, input, textarea");
+    const atTop = $("sheetBody").scrollTop <= 0 && e.target.closest("#sheetBody") && !e.target.closest(".alts, .ptabs, .gauge, input, textarea, .crop-stage, .wk-row");
     if (!inBar && !atTop) return;
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0; t0 = Date.now(); active = false;
   }, { passive: true });
@@ -1731,10 +1731,9 @@ function startOcr(file, code, opts = {}) {
         <img id="cropImg" src="${url}" alt="">
         <div class="crop-box" id="cropBox"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
       </div>
-      <p class="ocr-tip">${svg('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>')}<span>${esc(t("ocr.crop_tip"))}</span></p>
-      <div class="ocr-actions">
-      <button class="btn btn-primary btn-block" type="button" id="ocrRead">${t("ocr.crop_read")}</button>
-      <label class="btn btn-soft btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
+      <div class="ocr-actions row">
+      <label class="btn btn-soft" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake_short")}</label>
+      <button class="btn btn-primary" type="button" id="ocrRead">${t("ocr.crop_read")}</button>
       </div>
     </div>`;
   showSheet({ replace: !sheet.hidden });

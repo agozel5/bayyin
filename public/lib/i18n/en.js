@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -1587,4 +1587,6 @@ export default {
   // ---------- Lecture de photo : cadrage ----------
   "ocr.crop_hint": "Fit the frame to the ingredient list, leaving out the logo and nutrition table.",
   "ocr.crop_tip": "Good light, label flat, no glare. List printed sideways? No need to turn your phone.",
+  // ---------- Lecture de photo : boutons ----------
+  "ocr.retake_short": "Retake",
 };

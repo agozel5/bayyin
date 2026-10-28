@@ -2431,3 +2431,14 @@ img.img-wait{background:var(--tint)!important}
 .ocr-actions{position:sticky;bottom:0;z-index:3;display:flex;flex-direction:column;gap:8px;margin:0 -20px;padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 10px);
   background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line)}
 .ocr-actions .btn{margin:0}
+/* Cadrage : la photo prend toute la place disponible, les deux boutons tiennent sur une ligne */
+.ocr-crop{gap:10px}
+.ocr-crop .crop-stage{margin:2px auto}
+.crop-stage img{max-height:max(240px,calc(100dvh - 330px))}
+.ocr-actions.row{flex-direction:row}
+.ocr-actions.row .btn{flex:1 1 0;justify-content:center;padding-inline:10px;white-space:nowrap}
+.ocr-actions.row .btn-primary{flex:1.6 1 0}
+.ocr-actions.row > .btn{width:auto;max-width:none;min-width:0}
+.ocr-actions.row > .btn-soft{flex:1 1 0}
+.ocr-actions.row > .btn-primary{flex:1.7 1 0}
+.ocr-actions{margin-inline:0;padding-inline:0}

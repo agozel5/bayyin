@@ -66,7 +66,8 @@ test("contraste : fond foncé inversé (texte clair sur rouge)", () => {
 
 test("essais : on s'arrête dès que c'est lisible, on ne tourne l'image que si rien n'est lisible", () => {
   assert.equal(needsAnotherTry(null, { rot: 0 }), true);
-  assert.equal(needsAnotherTry({ quality: 0.9 }, { rot: 0 }), false);
+  assert.equal(needsAnotherTry({ quality: 0.9, hits: 8 }, { rot: 0 }), false);
+  assert.equal(needsAnotherTry({ quality: 0.9, hits: 0 }, { rot: 90 }), true, "des « mots » sans vocabulaire : on continue");
   assert.equal(needsAnotherTry({ quality: 0.3 }, { rot: 0 }), true, "lecture moyenne : autre traitement");
   assert.equal(needsAnotherTry({ quality: 0.3, hits: 6 }, { rot: 90 }), false, "lisible à l'endroit : pas de rotation");
   assert.equal(needsAnotherTry({ quality: 0.3, hits: 1 }, { rot: 90 }), true, "un seul mot reconnu : on tourne l'image");

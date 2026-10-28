@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-28-7", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -1601,4 +1601,6 @@ export default {
   // ---------- Lecture de photo : cadrage ----------
   "ocr.crop_hint": "Ajustez le cadre sur la liste d'ingrédients, sans le logo ni le tableau nutritionnel.",
   "ocr.crop_tip": "Bonne lumière, étiquette à plat, sans reflet. Liste écrite de côté ? Inutile de tourner le téléphone.",
+  // ---------- Lecture de photo : boutons ----------
+  "ocr.retake_short": "Reprendre",
 };

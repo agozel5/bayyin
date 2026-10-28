@@ -212,7 +212,10 @@ export function cleanOcrText(text) {
     .replace(/\s{2,}/g, " ")
     .trim();
   // On garde à partir du mot « ingrédients » s'il apparaît (le reste est souvent du marketing).
-  const m = s.match(/(ingr[ée]dients?|ingredients?|i̇çindekiler|içindekiler|icindekiler|المكونات|مكونات)\s*[:：]?\s*/i);
+  // (le mot suivi de deux-points d'abord : « Ingrédients actifs (pour 1 comprimé) » est un titre de tableau)
+  const re = /(ingr[ée]dients?|ingredients?|i̇çindekiler|içindekiler|icindekiler|المكونات|مكونات)\s*([:：]?)\s*/gi;
+  const all = [...s.matchAll(re)];
+  const m = all.find((x) => x[2]) || all[0];
   if (m && m.index < s.length * 0.6) s = s.slice(m.index + m[0].length);
   return s;
 }
@@ -243,6 +246,17 @@ pate matiere matieres sechee seche seches deshydrate deshydratee proportions pro
 karite mangue melasse noix coco datte dattes raisin raisins figue abricot banane cerise framboise myrtille
 allergenes allergene contenir provenant autres coque coques consommer preference conserver endroit frais sec
 recette nature cuit cuite fume fumee pasteurise pasteurisee sale salee sucre sucree cru crue bio biologique
+oxyde oxydes magnesium marine marin agent agents charge sorbitol mannitol xylitol maltitol isomalt erythritol
+methylcellulose hydroxypropylmethylcellulose hypromellose cellulose microcristalline agglomerant antiagglomerant sels
+chlorhydrate pyridoxine thiamine riboflavine niacine biotine folique cobalamine cholecalciferol tocopherol tocopherols
+retinol ascorbique stearate stearique silice dioxyde talc titane gelule gelules capsule comprime comprimes pellicule
+enrobage enrobant complement complements alimentaire alimentaires nutriment nutriments actif actifs dose journaliere
+aqua water glycerin glycerine parfum fragrance alcohol denat cetearyl cetyl stearyl laureth lauryl sulfate coco glucoside
+betaine cocamidopropyl dimethicone cyclopentasiloxane paraffinum liquidum petrolatum cera alba beeswax lanolin squalane
+butyrospermum parkii shea simmondsia chinensis prunus amygdalus dulcis cocos nucifera argania spinosa aloe barbadensis
+leaf juice seed flower extract hydrolyzed keratin collagen panthenol allantoin tocopheryl acetate niacinamide hyaluronate
+benzyl phenoxyethanol ethylhexylglycerin methylparaben propylparaben sorbate benzoate chloride hydroxide citric lactic
+limonene linalool citral geraniol citronellol eugenol coumarin carbomer xanthan polysorbate peg ppg
 water sugar salt flour wheat milk cream butter eggs egg oil palm sunflower rapeseed starch syrup cocoa chocolate
 emulsifier emulsifiers lecithin lecithins flavouring flavourings flavoring natural colour color preservative
 antioxidant stabiliser stabilizer thickener raising agent agents acid powder whole skimmed vegetable fat
@@ -264,10 +278,17 @@ const known = (w) => {
  * Un texte d'étiquette réel dépasse 0,4 ; du « bruit » d'image reste presque à 0.
  */
 export function ocrQuality(text) {
-  const words = fold(String(text || "")).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 || /^e\d/.test(w));
+  const folded = fold(String(text || ""));
+  const words = folded.split(/[^a-z0-9]+/).filter((w) => w.length >= 3 || /^e\d/.test(w));
   if (!words.length) return { score: 0, words: 0, hits: 0 };
   const hits = words.filter(known).length;
-  return { score: Math.round((hits / words.length) * 100) / 100, words: words.length, hits };
+  const lex = hits / words.length;
+  // Forme de vrais mots, même absents du vocabulaire (« pyridoxine », un nom de marque…) : au moins quatre
+  // lettres avec une voyelle. Le bruit d'image donne surtout des bribes de une à trois lettres.
+  const all = folded.split(/[^a-z0-9]+/).filter(Boolean);
+  const wordy = all.filter((w) => /^[a-z]{4,}$/.test(w) && /[aeiouy]/.test(w)).length / all.length;
+  const score = Math.max(lex, 0.75 * wordy);
+  return { score: Math.round(score * 100) / 100, words: words.length, hits };
 }
 // Seuils : au-dessus de GOOD, on ne fait pas de deuxième lecture ; en dessous de MIN, on ne montre pas le texte
 export const OCR_GOOD = 0.45, OCR_MIN = 0.22;
@@ -293,7 +314,7 @@ export const OCR_ATTEMPTS = [
 /** Faut-il tenter l'essai suivant ? */
 export function needsAnotherTry(best, next) {
   if (!best) return true;
-  if (best.quality >= OCR_GOOD) return false;
+  if (best.quality >= OCR_GOOD && isReadable(best)) return false;
   if (next.rot && isReadable(best)) return false; // lisible à l'endroit : inutile de tourner l'image
   return true;
 }
