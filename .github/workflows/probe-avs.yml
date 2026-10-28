@@ -1,0 +1,39 @@
+name: Sonde produits AVS (temporaire)
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chercher les produits dont l'estampille est sur la liste AVS
+        run: |
+          python3 - <<'PY'
+          import json, re, time, urllib.request
+          d = json.load(open("public/data/certified.json"))["orgs"]["avs"]
+          fields = "code,product_name,product_name_fr,brands,quantity,image_front_small_url,image_front_url,emb_codes,emb_codes_tags,labels,labels_tags,ingredients_text,ingredients_text_fr,categories_tags,nutriscore_grade,nova_group,nutriments,additives_tags,allergens_tags,traces_tags,ingredients_analysis_tags,countries_tags,lang"
+          out = []
+          for st in d["stamps"]:
+              m = re.match(r"^([A-Z]{2})(\d{2})(\d{3})(\d{3})(CE|EU)$", st)
+              if not m: continue
+              tag = f"{m.group(1).lower()}-{m.group(2)}-{m.group(3)}-{m.group(4)}-{m.group(5).lower()}"
+              url = f"https://world.openfoodfacts.org/api/v2/search?emb_codes_tags={tag}&fields={fields}&page_size=40"
+              req = urllib.request.Request(url, headers={"User-Agent": "Bayyin/1.0 (store screenshots probe)"})
+              try:
+                  res = json.load(urllib.request.urlopen(req, timeout=40))
+              except Exception as e:
+                  print(st, "erreur", e); time.sleep(6); continue
+              for p in res.get("products", []):
+                  ok = p.get("image_front_small_url") and (p.get("ingredients_text_fr") or p.get("ingredients_text"))
+                  print(st, p.get("code"), p.get("product_name_fr") or p.get("product_name"), "|", p.get("brands"), "| img", bool(p.get("image_front_small_url")), "| ingr", bool(ok), "| halal", any("halal" in t or "avs" in t for t in p.get("labels_tags", [])))
+                  if ok: out.append({"stamp": st, **p})
+              time.sleep(6)
+          json.dump(out, open("docs/probe-avs.json", "w"), ensure_ascii=False, indent=1)
+          print(len(out), "candidats")
+          PY
+      - name: Enregistrer
+        run: |
+          git add docs/probe-avs.json
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Sonde AVS" || exit 0
+          git pull --rebase origin main && git push origin HEAD:main
