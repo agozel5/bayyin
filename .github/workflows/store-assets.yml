@@ -40,7 +40,7 @@ jobs:
           python scripts/store-assets.py --shots
       - name: Enregistrer
         run: |
-          git add -A docs/store public/splash public/icon.svg public/icon-180.png public/icon-192.png public/icon-512.png
+          git add -A docs/store public/splash public/og.jpg public/screenshots public/icon.svg public/icon-180.png public/icon-192.png public/icon-512.png
           if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
           git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Images des stores régénérées"
           for i in 1 2 3; do

@@ -13,11 +13,14 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 PUB, STORE = ROOT / "public", ROOT / "docs" / "store"
 MASTER = (STORE / "icon-master.svg").read_text()
-# Sur GitHub Actions, Google Fonts est joignable : vraies polices de l'app (Figtree, IBM Plex Sans Arabic).
+# Sur GitHub Actions, Google Fonts est joignable : vraies polices de l'app (IBM Plex Sans et Plex Sans Arabic).
 # En local hors ligne, on bloque ces requêtes (Inter à défaut).
 ONLINE = bool(os.environ.get("CI"))
-FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800'
-         '&family=IBM+Plex+Sans+Arabic:wght@600;700&display=block">') if ONLINE else ""
+FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700'
+         '&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=block">') if ONLINE else ""
+FAMILY = "'IBM Plex Sans','IBM Plex Sans Arabic',Inter,system-ui,sans-serif"
+# Couleurs de l'app (direction « clinique et précise »)
+GREEN, GREEN_DARK, INK, MUTED, PAPER = "#14805A", "#0E5F43", "#10251B", "#4D6157", "#F2F5F3"
 
 # iPhone : (largeur CSS, hauteur CSS, densité)
 IPHONES = [(440, 956, 3), (430, 932, 3), (428, 926, 3), (402, 874, 3), (393, 852, 3), (390, 844, 3), (375, 812, 3), (414, 896, 2), (375, 667, 2)]
@@ -34,12 +37,12 @@ def shot(page, html, w, h, scale=1):
     return Image.open(io.BytesIO(page.screenshot()))
 
 def splash_html(w, h):
-    icon = min(w, h) * 0.30
-    return f'''<div style="width:{w}px;height:{h}px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:{icon*0.16}px;
-      background:radial-gradient(120% 70% at 50% 30%,#1FA371 0%,#14805A 55%,#0B5A3F 100%);font-family:Figtree,Inter,system-ui,sans-serif;color:#fff">
-      <div style="width:{icon}px;height:{icon}px;border-radius:{icon*0.225}px;overflow:hidden;box-shadow:0 {icon*0.08}px {icon*0.25}px rgb(0 0 0 / .25)">{svg_sized(int(icon), "s")}</div>
-      <div style="font-size:{icon*0.30}px;font-weight:800;letter-spacing:-.02em;margin-top:{icon*0.05}px">Bayyin</div>
-      <div style="font-size:{icon*0.12}px;font-weight:600;opacity:.8">بيّن · Halal &amp; santé</div></div>'''
+    icon = min(w, h) * 0.28
+    return f'''<div style="width:{w}px;height:{h}px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:{icon*0.14}px;
+      background:{GREEN};font-family:{FAMILY};color:#fff">
+      <div style="width:{icon}px;height:{icon}px;border-radius:{icon*0.225}px;overflow:hidden;box-shadow:0 0 0 {max(1, icon*0.006)}px rgb(255 255 255 / .18)">{svg_sized(int(icon), "s")}</div>
+      <div style="font-size:{icon*0.28}px;font-weight:700;letter-spacing:-.01em;margin-top:{icon*0.06}px">Bayyin</div>
+      <div style="font-size:{icon*0.11}px;font-weight:500;opacity:.78">بيّن · Halal &amp; santé</div></div>'''
 
 def icons(page):
     full = lambda n: shot(page, svg_sized(n), n, n).convert("RGB")
@@ -76,19 +79,31 @@ DEMO = {
 }
 DB = {"meta": {"updated": "2026-10-12"}, "orgs": {"avs": {"updated": "2026-10-12", "names": ["SOCOPA GUINGAMP"], "stamps": ["FR22070001CE"], "url": "https://avs.fr/"}}}
 TITLES = {
-  "fr": ["Scannez, sachez en une seconde", "Halal vérifié sur la liste officielle", "Votre santé, notée sur 100", "Douteux ? On vous dit pourquoi", "534 additifs expliqués"],
-  "en": ["Scan it, know in a second", "Halal checked against the official list", "Your health, scored out of 100", "Doubtful? We tell you why", "534 additives explained"],
+  "fr": ["Scannez, sachez en une seconde", "Halal vérifié sur la liste officielle", "Votre santé, notée sur 100", "L'étiquette surlignée, mot par mot", "534 additifs expliqués"],
+  "en": ["Scan it, know in a second", "Halal checked against the official list", "Your health, scored out of 100", "The label, highlighted word by word", "534 additives explained"],
+  "ar": ["امسح المنتج واعرف في ثانية", "حلال موثَّق من القائمة الرسمية", "صحتك، بتقييم من 100", "الملصق مُظلَّل كلمةً بكلمة", "534 مادة مضافة مشروحة"],
+  "tr": ["Tara, bir saniyede öğren", "Resmî listeden doğrulanmış helal", "Sağlığınız 100 üzerinden", "Etiket kelime kelime işaretlenir", "534 katkı maddesi açıklandı"],
 }
 SUBS = {
-  "fr": ["Halal, santé, allergies — gratuit et sans pub", "AVS, Achahada, HMC", "Nutri-Score, additifs, bio", "Selon votre école et vos réglages", "Origine, risques, sources officielles"],
-  "en": ["Halal, health, allergies — free, no ads", "AVS, Achahada, HMC", "Nutri-Score, additives, organic", "Based on your school and settings", "Origin, risks, official sources"],
+  "fr": ["Halal, santé, allergies — gratuit et sans pub", "AVS · Achahada · HMC", "Nutri-Score, additifs, bio", "Ce qui est douteux, et pourquoi, selon votre école", "Origine, risques, sources officielles"],
+  "en": ["Halal, health, allergies — free, no ads", "AVS · Achahada · HMC", "Nutri-Score, additives, organic", "What is doubtful and why, by your school", "Origin, risks, official sources"],
+  "ar": ["حلال، صحة، حساسية — مجاني وبلا إعلانات", "AVS · Achahada · HMC", "Nutri-Score، المضافات، العضوي", "ما المشكوك فيه ولماذا، حسب مذهبك", "المصدر والمخاطر والمراجع الرسمية"],
+  "tr": ["Helal, sağlık, alerji — ücretsiz ve reklamsız", "AVS · Achahada · HMC", "Nutri-Score, katkı maddeleri, organik", "Şüpheli olan ve nedeni, mezhebinize göre", "Köken, riskler, resmî kaynaklar"],
 }
+TAGLINE = {
+  "fr": ("Halal, santé, additifs.", "Tout en un scan."),
+  "en": ("Halal, health, additives.", "All in one scan."),
+  "ar": ("حلال، صحة، مضافات.", "كل ذلك في مسح واحد."),
+  "tr": ("Helal, sağlık, katkı maddeleri.", "Hepsi tek taramada."),
+}
+PROMISE = {"fr": "Gratuit · sans pub · sans pistage", "en": "Free · no ads · no tracking", "ar": "مجاني · بلا إعلانات · بلا تتبّع", "tr": "Ücretsiz · reklamsız · takipsiz"}
 
 def app_screens(b, lang):
     ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=3, service_workers="block")
     ctx.add_init_script(f'localStorage.setItem("halalscan_settings_v1", {json.dumps(json.dumps({"lang": lang, "onboarded": True, "tourDone": True, "sheetTourDone": True}))})')
+    ctx.add_init_script('localStorage.setItem("bayyin_intro", "1")')  # sans l'animation d'ouverture
     if not ONLINE:
-        ctx.route(re.compile(r"https://fonts\..*"), lambda r: r.abort())  # hors ligne : Inter à défaut de Figtree
+        ctx.route(re.compile(r"https://fonts\..*"), lambda r: r.abort())  # hors ligne : Inter à défaut d'IBM Plex
     ctx.route(re.compile(r".*/data/certified\.json"), lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(DB)))
     def prod(r):
         code = next((c for c in DEMO if c in r.request.url), None)
@@ -111,7 +126,7 @@ def app_screens(b, lang):
     out.append(p.screenshot())
     p.click('[data-ptab="halal"]'); p.click("#sheetClose"); p.wait_for_timeout(300)
     open_code("3000000000024")
-    p.evaluate("document.getElementById('sheetBody').scrollTop = document.querySelector('.ptabs').offsetTop - 330"); p.wait_for_timeout(300)
+    p.evaluate("(() => { const r = document.querySelector('#sheetBody .reader') || document.querySelector('.ptabs'); document.getElementById('sheetBody').scrollTop = r.offsetTop - 150; })()"); p.wait_for_timeout(400)
     out.append(p.screenshot())
     p.click("#sheetClose"); p.wait_for_timeout(300)
     p.goto("http://localhost:3123/#additives"); p.wait_for_timeout(1500)
@@ -119,27 +134,87 @@ def app_screens(b, lang):
     ctx.close()
     return out
 
-def frame_html(png_b64, title, sub, W, H):
+def phone(png_b64, pw, ph, crop_top=True):
+    return f'''<div style="width:{pw}px;height:{ph}px;border-radius:{pw*0.13}px;padding:{pw*0.026}px;background:{INK};box-sizing:border-box;flex:none">
+      <img src="data:image/png;base64,{png_b64}" style="width:100%;height:100%;object-fit:cover;object-position:{"top" if crop_top else "center"};border-radius:{pw*0.105}px;display:block"></div>'''
+
+def frame_html(png_b64, title, sub, W, H, rtl=False):
     phone_h = H * 0.70
     phone_w = phone_h * 390 / 844
-    return f'''<div style="width:{W}px;height:{H}px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;
-      padding-top:{H*0.06}px;background:radial-gradient(120% 60% at 50% 0%,#1FA371,#14805A 55%,#0B5A3F);font-family:Figtree,Inter,system-ui,sans-serif;color:#fff;text-align:center">
-      <div style="font-size:{W*0.068}px;font-weight:800;line-height:1.12;letter-spacing:-.02em;max-width:{W*0.86}px">{title}</div>
-      <div style="font-size:{W*0.036}px;font-weight:600;opacity:.85;margin-top:{H*0.014}px">{sub}</div>
-      <div style="margin-top:{H*0.045}px;width:{phone_w}px;height:{phone_h}px;border-radius:{phone_w*0.13}px;padding:{phone_w*0.028}px;background:#0A1F17;box-shadow:0 {H*0.02}px {H*0.05}px rgb(0 0 0 / .35)">
-        <img src="data:image/png;base64,{png_b64}" style="width:100%;height:100%;object-fit:cover;object-position:top;border-radius:{phone_w*0.105}px;display:block"></div></div>'''
+    return f'''<div dir="{"rtl" if rtl else "ltr"}" style="width:{W}px;height:{H}px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;
+      padding-top:{H*0.065}px;background:{PAPER};font-family:{FAMILY};color:{INK};text-align:center">
+      <div style="font-size:{W*0.066}px;font-weight:700;line-height:1.14;letter-spacing:-.015em;max-width:{W*0.86}px">{title}</div>
+      <div style="font-size:{W*0.034}px;font-weight:500;color:{MUTED};margin-top:{H*0.014}px;max-width:{W*0.86}px">{sub}</div>
+      <div style="margin-top:{H*0.045}px">{phone(png_b64, phone_w, phone_h)}</div></div>'''
+
+def banner_html(png_b64, lang, W, H, phone_scale=0.92):
+    """Bannière horizontale (Google Play, aperçu de partage, réseaux) : marque à gauche, l'app à droite."""
+    rtl = lang == "ar"
+    a, b = TAGLINE[lang]
+    icon = H * 0.20
+    ph = H * phone_scale * 1.35
+    pw = ph * 390 / 844
+    return f'''<div dir="{"rtl" if rtl else "ltr"}" style="width:{W}px;height:{H}px;box-sizing:border-box;overflow:hidden;position:relative;background:{GREEN};font-family:{FAMILY};color:#fff">
+      <div style="position:absolute;inset-block:0;inset-inline-start:{W*0.06}px;width:{W*0.52}px;display:flex;flex-direction:column;justify-content:center;gap:{H*0.035}px">
+        <div style="display:flex;align-items:center;gap:{icon*0.32}px">
+          <div style="width:{icon}px;height:{icon}px;border-radius:{icon*0.225}px;overflow:hidden;box-shadow:0 0 0 {max(1, icon*0.012)}px rgb(255 255 255 / .2)">{svg_sized(int(icon), "b")}</div>
+          <div style="font-size:{icon*0.62}px;font-weight:700;letter-spacing:-.01em">Bayyin <span style="font-weight:500;opacity:.75;font-family:'IBM Plex Sans Arabic',sans-serif">بيّن</span></div></div>
+        <div style="font-size:{H*0.095}px;font-weight:700;line-height:1.12;letter-spacing:-.015em">{a}<br>{b}</div>
+        <div style="font-size:{H*0.045}px;font-weight:500;opacity:.82">{PROMISE[lang]}</div></div>
+      <div style="position:absolute;top:{H*0.16}px;inset-inline-end:{W*0.07}px">{phone(png_b64, pw, ph)}</div></div>'''
+
+def square_html(png_b64, lang, W, H):
+    """Publication carrée ou story : titre en haut, l'app en dessous, coupée par le bas."""
+    rtl = lang == "ar"
+    a, b = TAGLINE[lang]
+    icon = W * 0.10
+    ph = H * (0.80 if H > W * 1.4 else 0.95)
+    pw = ph * 390 / 844
+    return f'''<div dir="{"rtl" if rtl else "ltr"}" style="width:{W}px;height:{H}px;box-sizing:border-box;overflow:hidden;position:relative;background:{GREEN};font-family:{FAMILY};color:#fff;text-align:center">
+      <div style="padding-top:{W*0.08}px;display:flex;flex-direction:column;align-items:center;gap:{W*0.025}px">
+        <div style="display:flex;align-items:center;gap:{icon*0.3}px"><div style="width:{icon}px;height:{icon}px;border-radius:{icon*0.225}px;overflow:hidden">{svg_sized(int(icon), "q")}</div>
+          <div style="font-size:{icon*0.6}px;font-weight:700">Bayyin</div></div>
+        <div style="font-size:{W*0.075}px;font-weight:700;line-height:1.12;letter-spacing:-.015em">{a}<br>{b}</div>
+        <div style="font-size:{W*0.034}px;font-weight:500;opacity:.82">{PROMISE[lang]}</div></div>
+      <div style="position:absolute;left:50%;transform:translateX(-50%);top:{H*(0.36 if H > W * 1.4 else 0.44)}px">{phone(png_b64, pw, ph)}</div></div>'''
 
 def store_shots(b, page):
     import base64
+    homes = {}
     for lang in TITLES:
         d = STORE / "screenshots" / lang
         d.mkdir(parents=True, exist_ok=True)
-        for i, raw in enumerate(app_screens(b, lang)):
+        raws = app_screens(b, lang)
+        homes[lang] = raws
+        for i, raw in enumerate(raws):
             b64 = base64.b64encode(raw).decode()
             for tag, (W, H) in {"ios-6.9": (1290, 2796), "android": (1080, 1920)}.items():
-                img = shot(page, frame_html(b64, TITLES[lang][i], SUBS[lang][i], W, H), W, H).convert("RGB")
+                img = shot(page, frame_html(b64, TITLES[lang][i], SUBS[lang][i], W, H, rtl=lang == "ar"), W, H).convert("RGB")
                 img.save(d / f"{i+1}-{tag}.jpg", quality=86, optimize=True)
         print("captures", lang, "ok")
+    return homes
+
+def banners(page, homes):
+    """Google Play (bannière obligatoire), aperçu de partage du site, réseaux sociaux, captures du manifeste."""
+    import base64
+    social = STORE / "social"
+    social.mkdir(exist_ok=True)
+    for lang, raws in homes.items():
+        home = base64.b64encode(raws[0]).decode()
+        shot(page, banner_html(home, lang, 1024, 500), 1024, 500).convert("RGB").save(STORE / f"play-feature-{lang}.png", optimize=True)
+        shot(page, square_html(home, lang, 1080, 1080), 1080, 1080).convert("RGB").save(social / f"post-{lang}.jpg", quality=88, optimize=True)
+        shot(page, square_html(home, lang, 1080, 1920), 1080, 1920).convert("RGB").save(social / f"story-{lang}.jpg", quality=88, optimize=True)
+        if lang in ("fr", "en"):
+            shot(page, banner_html(home, lang, 1500, 500, 0.95), 1500, 500).convert("RGB").save(social / f"header-x-{lang}.jpg", quality=88, optimize=True)
+            shot(page, banner_html(home, lang, 1584, 396, 0.95), 1584, 396).convert("RGB").save(social / f"header-linkedin-{lang}.jpg", quality=88, optimize=True)
+    # Aperçu quand on partage le lien du site (WhatsApp, Messages, réseaux)
+    shot(page, banner_html(base64.b64encode(homes["fr"][0]).decode(), "fr", 1200, 630), 1200, 630).convert("RGB").save(PUB / "og.jpg", quality=86, optimize=True)
+    # Captures montrées par Android et Chrome au moment d'installer la version web
+    (PUB / "screenshots").mkdir(exist_ok=True)
+    for i, name in ((0, "home"), (1, "halal"), (2, "health")):
+        im = Image.open(io.BytesIO(homes["fr"][i])).convert("RGB").resize((780, 1688))
+        im.save(PUB / "screenshots" / f"{name}.jpg", quality=80, optimize=True)
+    print("bannières ok")
 
 if __name__ == "__main__":
     with sync_playwright() as pw:
@@ -149,6 +224,6 @@ if __name__ == "__main__":
         links = splashes(page)
         (STORE / "splash-links.html").write_text("\n".join(links) + "\n")
         if "--shots" in sys.argv:
-            store_shots(b, page)
+            banners(page, store_shots(b, page))
         b.close()
     print("ok")

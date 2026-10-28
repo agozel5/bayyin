@@ -1,7 +1,7 @@
 {
   "name": "Bayyin — Halal & santé",
   "short_name": "Bayyin",
-  "description": "Halal, douteux ou haram selon votre école, note santé, additifs et alternatives. Gratuit, sans pub, sans pistage.",
+  "description": "Halal, douteux ou haram selon votre école, note santé, additifs et alternatives, pour les aliments, cosmétiques et médicaments. Gratuit, sans pub, sans pistage.",
   "start_url": "./#scan",
   "display": "standalone",
   "background_color": "#14805A",
@@ -73,6 +73,29 @@
           "type": "image/png"
         }
       ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/home.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Accueil : scanner un produit"
+    },
+    {
+      "src": "screenshots/halal.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Verdict halal vérifié sur la liste officielle"
+    },
+    {
+      "src": "screenshots/health.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Note santé sur 100"
     }
   ]
 }
