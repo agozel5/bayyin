@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-01", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-02", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -416,6 +416,11 @@ export default {
   "privacy.badge": "Ücretsiz · reklamsız · takipsiz",
   "detail.all_additives": "Tüm katkı maddeleri",
   "detail.add_none": "Bu ürün için beyan edilmiş katkı maddesi yok.",
+  "compo.halal_one": "{n} helal açısından kontrol edilmeli",
+  "compo.halal_other": "{n} helal açısından kontrol edilmeli",
+  "compo.risk_one": "{n} sağlık riski taşıyor",
+  "compo.risk_other": "{n} sağlık riski taşıyor",
+  "compo.all_ok": "Kaçınılacak katkı maddesi yok",
   "detail.add_ok": "Bilinen sorun yok",
   "detail.report": "Bu üründe hata bildir ↗",
   "report.title": "Hatalı karar: {name} ({code})",

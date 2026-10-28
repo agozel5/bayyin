@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-01", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-02", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -416,6 +416,11 @@ export default {
   "privacy.badge": "مجاني · بلا إعلانات · بلا تتبع",
   "detail.all_additives": "جميع المضافات",
   "detail.add_none": "لم يُصرَّح بأي مضاف لهذا المنتج.",
+  "compo.halal_one": "{n} للتحقق من الحلال",
+  "compo.halal_other": "{n} للتحقق من الحلال",
+  "compo.risk_one": "{n} بخطر صحي",
+  "compo.risk_other": "{n} بخطر صحي",
+  "compo.all_ok": "لا يوجد مضاف يجب تجنبه",
   "detail.add_ok": "لا مشكلة معروفة",
   "detail.report": "الإبلاغ عن خطأ في هذا المنتج ↗",
   "report.title": "حكم خاطئ: {name} ({code})",

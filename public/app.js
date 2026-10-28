@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-01";
+const APP_BUILD = "2026-10-29-02";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -802,26 +802,48 @@ function additivesSection(p) {
       .join("")}</div></section>`;
 }
 
-// Tous les additifs déclarés, avec leur statut halal (selon le réglage) et leur risque santé.
+// Tous les additifs déclarés, avec leur origine, leur fonction, leur statut halal (selon le réglage) et leur risque santé.
 function allAdditivesSection(p, v) {
   if (!p.raw || p.local) return "";
   const keys = [...new Set((p.raw.additives_tags || []).map((tag) => String(tag).replace(/^\w+:/, "").toLowerCase()))]
     .filter((k) => /^e\d{3,4}[a-z]*$/.test(k));
-  if (!keys.length) return `<section class="sec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3></div><p class="notes">${t("detail.add_none")}</p></section>`;
+  if (!keys.length) return `<section class="sec" id="allAddSec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3></div><p class="notes">${t("detail.add_none")}</p></section>`;
+  if (!eDb) loadEDb();
   const baseOf = (k) => k.match(/^e\d+/)[0];
   // OFF donne aussi les sous-codes (E322 et E322i) : on garde le plus précis seulement s'il est seul
   const shown = keys.filter((k) => !(k === baseOf(k) && keys.some((o) => o !== k && baseOf(o) === k)));
+  const lang = getLang();
+  const dbItem = (k) => eDb && (eDb.items.find((it) => it.e.toLowerCase() === k) || eDb.items.find((it) => it.e.toLowerCase() === baseOf(k)));
+  let nHalal = 0, nRisk = 0;
   const rows = shown.map((k) => {
     const flag = v.flags.find((f) => f.id === k || f.id === baseOf(k));
     const risk = (p.health && p.health.additives || []).find((a) => a.code.toLowerCase() === k || a.code.toLowerCase() === baseOf(k));
+    if (flag && (flag.severity === "haram" || flag.severity === "mashbouh")) nHalal++;
+    if (risk) nRisk++;
+    const it = dbItem(k);
+    const raw = it ? it.n[lang] || it.n.fr || it.n.en || "" : "";
+    const name = raw ? raw.charAt(0).toUpperCase() + raw.slice(1)
+      : risk ? t(`addname.${risk.code.toLowerCase()}`) : flag ? flagLabel(flag).replace(/^E\w+ · /, "") : "";
+    const fn = it ? eFunctions(it).map((x) => t(`fn.${x}`)).join(", ") : "";
+    const origin = it ? eOrigin(it) : null;
+    const art = origin ? ORIGIN_ART[origin === "animal" && /^e(120|904)/.test(k) ? "insect" : origin] : "";
     const pills = [
-      flag ? `<span class="pill ${flag.severity === "haram" ? "s-haram" : flag.severity === "mashbouh" ? "s-mashbouh" : "r-info"}">${t("detail.halal")} · ${t(`sev.${flag.severity}`)}</span>` : "",
+      flag ? `<span class="pill ${flag.severity === "haram" ? "s-haram" : flag.severity === "mashbouh" ? "s-mashbouh" : "r-info"}">${t(`sev.${flag.severity}`)}</span>` : "",
       risk ? `<span class="pill r-${risk.level}">${t(`risk.short.${risk.level}`)}</span>` : "",
     ].join("");
-    const name = risk ? t(`addname.${risk.code.toLowerCase()}`) : flag ? flagLabel(flag).replace(/^E\w+ · /, "") : "";
-    return `<div class="add-row"><span class="add-code" dir="ltr">${esc(k.toUpperCase())}</span><span class="add-row-name">${esc(name)}</span>${pills || `<span class="add-ok">${t("detail.add_ok")}</span>`}</div>`;
+    const label = k.toUpperCase().replace(/([A-Z])$/, (l) => (/\d/.test(k.slice(-2, -1)) ? l.toLowerCase() : l));
+    return `<div class="cadd">
+      <span class="ae-org"${origin ? ` title="${esc(t(`add.origin.${origin}`))}"` : ""}>${art || ""}</span>
+      <span class="ae-code" dir="ltr">${esc(label)}</span>
+      <span class="cadd-t"><strong dir="auto">${esc(name || label)}</strong>${fn || (origin && origin !== "plant") ? `<small>${esc([fn, origin && origin !== "plant" ? t(`add.origin.${origin}`) : ""].filter(Boolean).join(" · "))}</small>` : ""}</span>
+      <span class="ae-badges">${pills || `<span class="ae-ok" aria-label="${esc(t("detail.add_ok"))}">${svg(I.check)}</span>`}</span>
+    </div>`;
   });
-  return `<section class="sec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3><small>${shown.length}</small></div><div class="add-rows">${rows.join("")}</div></section>`;
+  const sum = nHalal || nRisk
+    ? [nHalal ? `<span class="pill s-mashbouh">${esc(tn("compo.halal", nHalal))}</span>` : "", nRisk ? `<span class="pill r-modere">${esc(tn("compo.risk", nRisk))}</span>` : ""].join("")
+    : `<span class="cadd-allok">${svg(I.check)}${esc(t("compo.all_ok"))}</span>`;
+  return `<section class="sec" id="allAddSec"><div class="sec-head"><h3>${t("detail.all_additives")}</h3><small>${shown.length}</small></div>
+    <div class="cadd-sum">${sum}</div><div class="cadd-rows">${rows.join("")}</div></section>`;
 }
 
 // Lien de signalement prérempli (ticket GitHub du projet)
@@ -2925,6 +2947,8 @@ function loadEDb() {
     .then((d) => {
       eDb = d;
       if (current === "additives") renderAdditives();
+      const sec = $("allAddSec");
+      if (sec && sheetProduct) sec.outerHTML = allAdditivesSection(sheetProduct, verdictOf(sheetProduct));
     })
     .catch(() => { eDbLoading = null; });
   return eDbLoading;

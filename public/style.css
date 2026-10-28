@@ -2537,3 +2537,17 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .nut-ico.art svg{width:30px;height:30px}
 .env-bench.art{height:30px}
 .env-bench.art svg{width:26px;height:26px}
+
+/* Composition : additifs avec origine, fonction et statut */
+.cadd-sum{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 10px}
+.cadd-allok{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.88rem;color:var(--c-cert)}
+.cadd-allok svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.cadd-rows{border-top:1px solid var(--line)}
+.cadd{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.cadd:last-child{border-bottom:none}
+.cadd .ae-org{margin:0}
+.cadd .ae-code{min-width:54px}
+.cadd-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cadd-t strong{font-size:.95rem;font-weight:700;overflow-wrap:anywhere}
+.cadd-t small{font-size:.78rem;color:var(--muted)}
+.cadd .ae-badges{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}

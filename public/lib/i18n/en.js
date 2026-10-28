@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-01", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-02", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -416,6 +416,11 @@ export default {
   "privacy.badge": "Free · no ads · no tracking",
   "detail.all_additives": "All additives",
   "detail.add_none": "No additives declared for this product.",
+  "compo.halal_one": "{n} to check for halal",
+  "compo.halal_other": "{n} to check for halal",
+  "compo.risk_one": "{n} with a health risk",
+  "compo.risk_other": "{n} with a health risk",
+  "compo.all_ok": "No additive to avoid",
   "detail.add_ok": "No known issue",
   "detail.report": "Report a mistake on this product ↗",
   "report.title": "Wrong verdict: {name} ({code})",

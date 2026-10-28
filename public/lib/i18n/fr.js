@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-29-01", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-02", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -430,6 +430,11 @@ export default {
   "privacy.badge": "Gratuit · sans pub · sans pistage",
   "detail.all_additives": "Tous les additifs",
   "detail.add_none": "Aucun additif déclaré sur la fiche.",
+  "compo.halal_one": "{n} à vérifier pour le halal",
+  "compo.halal_other": "{n} à vérifier pour le halal",
+  "compo.risk_one": "{n} à risque pour la santé",
+  "compo.risk_other": "{n} à risque pour la santé",
+  "compo.all_ok": "Aucun additif à éviter",
   "detail.add_ok": "Aucun problème connu",
   "detail.report": "Signaler une erreur sur ce produit ↗",
   "report.title": "Erreur de classement : {name} ({code})",
