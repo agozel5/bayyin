@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-5";
+const APP_BUILD = "2026-10-28-6";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -17,7 +17,7 @@ if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_
     }
   } catch { /* stockage bloqué : on continue */ }
 }
-import { readIngredients, additivesFromText } from "./lib/ocr.js";
+import { readIngredients, additivesFromText, OCR_GOOD } from "./lib/ocr.js";
 import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
 import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profile.js";
 import { BEAUTY_RULES } from "./lib/beauty.js";
@@ -1731,13 +1731,14 @@ function startOcr(file, code, opts = {}) {
         <img id="cropImg" src="${url}" alt="">
         <div class="crop-box" id="cropBox"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
       </div>
+      <p class="ocr-tip">${svg('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>')}<span>${esc(t("ocr.crop_tip"))}</span></p>
       <button class="btn btn-primary btn-block" type="button" id="ocrRead">${t("ocr.crop_read")}</button>
       <label class="btn btn-soft btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
     </div>`;
   showSheet({ replace: !sheet.hidden });
   refreshFav();
   // Photo d'Open Food Facts : déjà recadrée sur la liste, le cadre prend toute l'image
-  const box = opts.fromOff ? { x: 0.02, y: 0.02, w: 0.96, h: 0.96 } : { x: 0.06, y: 0.22, w: 0.88, h: 0.5 };
+  const box = opts.fromOff ? { x: 0.02, y: 0.02, w: 0.96, h: 0.96 } : { x: 0.03, y: 0.18, w: 0.94, h: 0.6 };
   const el = $("cropBox");
   const draw = () => Object.assign(el.style, { left: box.x * 100 + "%", top: box.y * 100 + "%", width: box.w * 100 + "%", height: box.h * 100 + "%" });
   draw();
@@ -1785,36 +1786,55 @@ async function readOcr(file, code, crop, opts = {}) {
   if (code && !opts.fromOff) ocrPhotos.set(code, file); // (photo déjà sur Open Food Facts : rien à renvoyer)
   $("sheetBody").innerHTML = `<div class="ocr-progress"><span class="spinner"></span><p id="ocrStep">${t("ocr.loading")}</p><small>${t("ocr.loading_note")}</small><div class="progress"><i id="ocrBar"></i></div></div>`;
   try {
-    const { text, confidence } = await readIngredients(file, {
+    const { text, confidence, quality, readable } = await readIngredients(file, {
       lang: getLang(),
       // Photo d'Open Food Facts : souvent un produit importé, l'allemand est lu en plus
       langs: opts.fromOff ? "fra+deu+eng" : null,
       crop,
-      onProgress: (n) => {
+      onProgress: (n, attempt) => {
         if (ticket !== ocrTicket || !$("ocrStep")) return;
-        $("ocrStep").textContent = t("ocr.reading", { n });
+        // Deuxième essai et suivants : autre traitement de l'image, puis photo tournée d'un quart de tour
+        $("ocrStep").textContent = attempt ? t("ocr.retrying", { n }) : t("ocr.reading", { n });
         $("ocrBar").style.width = n + "%";
       },
     });
     if (ticket !== ocrTicket) return;
-    if (!text || text.replace(/[^\p{L}]/gu, "").length < 6) {
-      $("sheetBody").innerHTML = messageHtml(t("ocr.empty.t"), t("ocr.empty.p"),
-        `<label class="btn btn-primary" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>`);
-      return;
-    }
-    $("sheetBody").innerHTML = `<div class="ocr-review">
-      <h3>${t("ocr.review")}</h3><p class="muted">${t("ocr.review_hint")}</p>
-      ${confidence < 70 ? `<p class="ocr-warn">${svg(I.alert)}<span>${t("ocr.low_conf")}</span></p>` : ""}
-      <textarea id="ocrText" class="field area" rows="8" spellcheck="false">${esc(text)}</textarea>
+    // Rien qui ressemble à une liste d'ingrédients : on ne montre pas de caractères au hasard
+    if (!readable) return ocrUnreadable(file, code, opts);
+    ocrReview(text, code, opts, quality < OCR_GOOD || confidence < 70);
+  } catch {
+    if (ticket === ocrTicket) $("sheetBody").innerHTML = messageHtml(t("msg.reader_error.t"), t("ocr.error.p"));
+  }
+}
+
+// Texte à vérifier (ou à taper soi-même), puis analyse
+function ocrReview(text, code, opts = {}, warn = false) {
+  $("sheetBody").innerHTML = `<div class="ocr-review">
+      <h3>${t(text ? "ocr.review" : "ocr.manual_t")}</h3><p class="muted">${t(text ? "ocr.review_hint" : "ocr.manual_hint")}</p>
+      ${warn ? `<p class="ocr-warn">${svg(I.alert)}<span>${t("ocr.low_conf")}</span></p>` : ""}
+      <textarea id="ocrText" class="field area" rows="8" spellcheck="${text ? "false" : "true"}" placeholder="${esc(t("ocr.manual_ph"))}">${esc(text)}</textarea>
       <label class="muted small" for="ocrName">${t("ocr.name")}</label>
       <input id="ocrName" class="field" type="text" autocomplete="off" value="${esc(opts.name || "")}">
       <button class="btn btn-primary btn-block" type="button" id="ocrAnalyze">${t("ocr.analyze")}</button>
       <label class="btn btn-soft btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
     </div>`;
-    $("ocrAnalyze").addEventListener("click", () => analyzeOcr(code, opts));
-  } catch {
-    if (ticket === ocrTicket) $("sheetBody").innerHTML = messageHtml(t("msg.reader_error.t"), t("ocr.error.p"));
-  }
+  $("ocrAnalyze").addEventListener("click", () => analyzeOcr(code, opts));
+  if (!text) $("ocrText").focus();
+}
+
+// Photo illisible : ce qui s'est passé, comment réussir la suivante, et deux autres chemins
+function ocrUnreadable(file, code, opts = {}) {
+  const tips = ["ocr.tip_light", "ocr.tip_flat", "ocr.tip_close", "ocr.tip_frame"];
+  $("sheetBody").innerHTML = `<div class="ocr-bad">
+      ${emptyArt()}
+      <h3>${t("ocr.bad.t")}</h3><p class="muted">${t("ocr.bad.p")}</p>
+      <ul class="ocr-tips">${tips.map((k) => `<li>${svg(I.check)}<span>${esc(t(k))}</span></li>`).join("")}</ul>
+      <label class="btn btn-primary btn-block" for="ocrInput" data-ocr-code="${esc(code || "")}">${t("ocr.retake")}</label>
+      <button class="btn btn-soft btn-block" type="button" id="ocrReframe">${t("ocr.reframe")}</button>
+      <button class="btn btn-soft btn-block" type="button" id="ocrManual">${t("ocr.manual")}</button>
+    </div>`;
+  $("ocrReframe").addEventListener("click", () => startOcr(file, code, opts));
+  $("ocrManual").addEventListener("click", () => ocrReview("", code, opts));
 }
 
 function analyzeOcr(code, opts = {}) {

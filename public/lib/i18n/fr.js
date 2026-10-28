@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-28-5", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-6", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -1586,4 +1586,18 @@ export default {
   "bilan.week_range": "Produits vérifiés · {range}",
   "bilan.prev_week": "Semaine précédente",
   "bilan.next_week": "Semaine suivante",
+  // ---------- Lecture de photo : conseils ----------
+  "ocr.crop_tip": "Astuce : une bonne lumière, l'étiquette à plat et sans reflet, le texte bien net. Si la liste est écrite de côté, pas besoin de tourner le téléphone.",
+  "ocr.retrying": "Lecture plus poussée… {n} %",
+  "ocr.bad.t": "La liste n'a pas pu être lue",
+  "ocr.bad.p": "Le texte trouvé ne ressemble pas à une liste d'ingrédients. Plutôt que de vous montrer des caractères au hasard, reprenez la photo :",
+  "ocr.tip_light": "Une bonne lumière, sans ombre sur l'étiquette",
+  "ocr.tip_flat": "L'emballage bien à plat, sans reflet sur le plastique",
+  "ocr.tip_close": "Assez près pour que le texte soit net, sans être flou",
+  "ocr.tip_frame": "Le cadre posé sur la liste seulement, pas sur le logo ou le tableau nutritionnel",
+  "ocr.reframe": "Ajuster le cadre sur la même photo",
+  "ocr.manual": "Taper la liste moi-même",
+  "ocr.manual_t": "Tapez la liste d'ingrédients",
+  "ocr.manual_hint": "Recopiez la liste telle qu'elle figure sur l'emballage, puis lancez l'analyse.",
+  "ocr.manual_ph": "Ex. : farine de blé, sucre, huile de tournesol, E471…",
 };

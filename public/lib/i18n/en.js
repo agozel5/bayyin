@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-5", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-6", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -1572,4 +1572,18 @@ export default {
   "bilan.week_range": "Products checked · {range}",
   "bilan.prev_week": "Previous week",
   "bilan.next_week": "Next week",
+  // ---------- Lecture de photo : conseils ----------
+  "ocr.crop_tip": "Tip: good light, the label flat and free of glare, the text sharp. If the list is printed sideways, no need to turn your phone.",
+  "ocr.retrying": "Taking a closer look… {n}%",
+  "ocr.bad.t": "The list could not be read",
+  "ocr.bad.p": "The text found does not look like an ingredient list. Rather than showing you random characters, please retake the photo:",
+  "ocr.tip_light": "Good light, with no shadow on the label",
+  "ocr.tip_flat": "The pack held flat, with no glare on the plastic",
+  "ocr.tip_close": "Close enough for the text to be sharp, not blurry",
+  "ocr.tip_frame": "The frame on the list only, not on the logo or the nutrition table",
+  "ocr.reframe": "Adjust the frame on the same photo",
+  "ocr.manual": "Type the list myself",
+  "ocr.manual_t": "Type the ingredient list",
+  "ocr.manual_hint": "Copy the list as it appears on the pack, then run the analysis.",
+  "ocr.manual_ph": "E.g. wheat flour, sugar, sunflower oil, E471…",
 };

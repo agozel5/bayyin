@@ -29,14 +29,85 @@ function loadTesseract() {
   return loading;
 }
 
+// ---------------------------------------------------------------------------
+// Traitement de l'image (fonctions pures, testées hors navigateur)
+// ---------------------------------------------------------------------------
+
+/** RVBA -> niveaux de gris, contraste étiré (1 % - 99 %), et inversé quand le fond est foncé. */
+export function grayStretch(px) {
+  const n = px.length / 4;
+  const gray = new Uint8ClampedArray(n);
+  const hist = new Uint32Array(256);
+  for (let i = 0, j = 0; i < px.length; i += 4, j++) {
+    const g = (px[i] * 299 + px[i + 1] * 587 + px[i + 2] * 114) / 1000;
+    gray[j] = g;
+    hist[gray[j]]++;
+  }
+  let lo = 0, hi = 255, acc = 0;
+  while (lo < 255 && (acc += hist[lo]) < n * 0.01) lo++;
+  acc = 0;
+  while (hi > 0 && (acc += hist[hi]) < n * 0.01) hi--;
+  // Fond foncé (la valeur médiane est sombre) : texte clair, on inverse
+  let median = 0;
+  acc = 0;
+  while (median < 255 && (acc += hist[median]) < n / 2) median++;
+  const invert = median < 110;
+  const range = Math.max(1, hi - lo);
+  for (let j = 0; j < n; j++) {
+    const v = Math.max(0, Math.min(255, ((gray[j] - lo) * 255) / range));
+    gray[j] = invert ? 255 - v : v;
+  }
+  return gray;
+}
+
 /**
- * Image -> canvas prêt pour la lecture :
- * - seulement la zone encadrée par l'utilisateur (crop en fractions 0..1), pour ne pas lire le logo,
- *   le tableau nutritionnel ou le code-barres ;
- * - agrandie quand le texte est petit, réduite quand la photo est énorme ;
- * - niveaux de gris, contraste étiré, et couleurs inversées pour un texte clair sur fond foncé.
+ * Seuillage local (méthode de Sauvola) : chaque point est comparé à son voisinage, et non à toute l'image.
+ * Une ombre, un reflet ou un dégradé de l'emballage ne font plus disparaître le texte, comme le fait
+ * le seuillage global de Tesseract. Entrée : niveaux de gris (texte foncé sur fond clair).
  */
-async function preprocess(file, crop) {
+export function binarize(gray, w, h, { k = 0.2, R = 128 } = {}) {
+  const r = Math.max(7, Math.round(Math.min(w, h) / 40)); // demi-fenêtre : quelques hauteurs de lettre
+  const W1 = w + 1;
+  const sum = new Float64Array(W1 * (h + 1));
+  const sq = new Float64Array(W1 * (h + 1));
+  for (let y = 0; y < h; y++) {
+    let rs = 0, rq = 0;
+    for (let x = 0; x < w; x++) {
+      const v = gray[y * w + x];
+      rs += v; rq += v * v;
+      sum[(y + 1) * W1 + x + 1] = sum[y * W1 + x + 1] + rs;
+      sq[(y + 1) * W1 + x + 1] = sq[y * W1 + x + 1] + rq;
+    }
+  }
+  const out = new Uint8ClampedArray(w * h);
+  for (let y = 0; y < h; y++) {
+    const y0 = Math.max(0, y - r), y1 = Math.min(h, y + r + 1);
+    for (let x = 0; x < w; x++) {
+      const x0 = Math.max(0, x - r), x1 = Math.min(w, x + r + 1);
+      const a = (x1 - x0) * (y1 - y0);
+      const s = sum[y1 * W1 + x1] - sum[y0 * W1 + x1] - sum[y1 * W1 + x0] + sum[y0 * W1 + x0];
+      const q = sq[y1 * W1 + x1] - sq[y0 * W1 + x1] - sq[y1 * W1 + x0] + sq[y0 * W1 + x0];
+      const m = s / a;
+      const sd = Math.sqrt(Math.max(0, q / a - m * m));
+      // Zone presque uniforme (fond, aplat de couleur) : blanc, sans bruit
+      const t = sd < 6 ? -1 : m * (1 + k * (sd / R - 1));
+      out[y * w + x] = gray[y * w + x] <= t ? 0 : 255;
+    }
+  }
+  return out;
+}
+
+/** Taille de travail : agrandie quand le texte est petit, réduite quand la photo est énorme. */
+export const workScale = (sw, sh) => {
+  const longest = Math.max(sw, sh);
+  return longest > 2400 ? 2400 / longest : longest < 1600 ? Math.min(3, 1600 / longest) : 1;
+};
+
+/**
+ * Image -> canvas prêt pour la lecture : seulement la zone encadrée par l'utilisateur (crop en
+ * fractions 0..1), à la bonne taille, en niveaux de gris contrastés ; mode « local » : seuillage local.
+ */
+async function preprocess(file, crop, mode = "local", rot = 0) {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((resolve, reject) => {
@@ -48,39 +119,24 @@ async function preprocess(file, crop) {
     const c = crop || { x: 0, y: 0, w: 1, h: 1 };
     const sx = Math.round(c.x * img.naturalWidth), sy = Math.round(c.y * img.naturalHeight);
     const sw = Math.max(1, Math.round(c.w * img.naturalWidth)), sh = Math.max(1, Math.round(c.h * img.naturalHeight));
-    const longest = Math.max(sw, sh);
-    const scale = longest > 2400 ? 2400 / longest : longest < 1600 ? Math.min(3, 1600 / longest) : 1;
+    const scale = workScale(sw, sh);
+    const dw = Math.round(sw * scale), dh = Math.round(sh * scale);
+    // Liste imprimée sur le côté de l'emballage : on fait tourner l'image d'un quart de tour (ou plus)
+    const side = rot === 90 || rot === 270;
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(sw * scale);
-    canvas.height = Math.round(sh * scale);
+    canvas.width = side ? dh : dw;
+    canvas.height = side ? dw : dh;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rot * Math.PI) / 180);
+    ctx.drawImage(img, sx, sy, sw, sh, -dw / 2, -dh / 2, dw, dh);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let g = grayStretch(data.data);
+    if (mode === "local") g = binarize(g, canvas.width, canvas.height);
     const px = data.data;
-    // Niveaux de gris + histogramme pour étirer le contraste (1 % - 99 %)
-    const hist = new Uint32Array(256);
-    for (let i = 0; i < px.length; i += 4) {
-      const g = (px[i] * 299 + px[i + 1] * 587 + px[i + 2] * 114) / 1000;
-      px[i] = px[i + 1] = px[i + 2] = g;
-      hist[g | 0]++;
-    }
-    const total = px.length / 4;
-    let lo = 0, hi = 255, acc = 0;
-    while (lo < 255 && (acc += hist[lo]) < total * 0.01) lo++;
-    acc = 0;
-    while (hi > 0 && (acc += hist[hi]) < total * 0.01) hi--;
-    // Fond foncé (la valeur médiane est sombre) : texte clair, on inverse
-    let median = 0;
-    acc = 0;
-    while (median < 255 && (acc += hist[median]) < total / 2) median++;
-    const invert = median < 110;
-    const range = Math.max(1, hi - lo);
-    for (let i = 0; i < px.length; i += 4) {
-      let v = Math.max(0, Math.min(255, ((px[i] - lo) * 255) / range));
-      if (invert) v = 255 - v;
-      px[i] = px[i + 1] = px[i + 2] = v;
-    }
+    for (let i = 0, j = 0; i < px.length; i += 4, j++) px[i] = px[i + 1] = px[i + 2] = g[j];
     ctx.putImageData(data, 0, 0);
     return canvas;
   } finally {
@@ -145,6 +201,56 @@ export function cleanOcrText(text) {
   return s;
 }
 
+// ---------------------------------------------------------------------------
+// Le texte lu ressemble-t-il à une liste d'ingrédients ? (sinon : photo à reprendre, pas de texte bizarre)
+// ---------------------------------------------------------------------------
+const LEXICON = new Set(`
+ingredients ingredient composition contient peut traces trace origine
+eau sucre sucres sel farine ble froment seigle orge avoine riz mais soja colza tournesol palme palmiste olive coco
+huile huiles graisse graisses beurre creme lait laits lactose lactoserum fromage yaourt ferments lactiques oeuf oeufs
+cacao chocolat noisette noisettes amande amandes arachide arachides noix sesame lupin moutarde celeri
+amidon amidons modifie modifiee fecule sirop glucose fructose dextrose maltodextrine miel caramel
+gelatine porc boeuf poulet dinde veau agneau viande viandes poisson saumon thon crevette
+emulsifiant emulsifiants lecithine lecithines epaississant epaississants gelifiant gelifiants stabilisant stabilisants
+conservateur conservateurs antioxydant antioxydants colorant colorants correcteur acidite acidifiant acidifiants
+arome aromes naturel naturels naturelle naturelles artificiel vanille vanilline extrait extraits levure levures
+poudre lever levain gluten fibres proteines proteine vegetale vegetales vegetal animale entier entiere ecreme ecremee
+demi concentre concentree jus fruit fruits fraise fraises pomme pommes citron orange tomate tomates oignon ail epices
+epice herbes poivre paprika curcuma cannelle gingembre persil basilic legumes carotte pomme terre pommes
+sodium potassium calcium magnesium fer zinc vitamine vitamines carbonate carbonates bicarbonate phosphate phosphates
+citrate citrates ascorbate acide acides lactique citrique ascorbique sorbique benzoate nitrite nitrate sulfite sulfites
+carraghenanes carraghenane gomme guar xanthane pectine agar alginate cellulose glycerol mono diglycerides gras
+alcool vin rhum biere vinaigre malt orge enzymes presure carmin cochenille shellac
+sans avec dont total teneur minimum maximum issu issus issue
+water sugar salt flour wheat milk cream butter eggs egg oil palm sunflower rapeseed starch syrup cocoa chocolate
+emulsifier emulsifiers lecithin lecithins flavouring flavourings flavoring natural colour color preservative
+antioxidant stabiliser stabilizer thickener raising agent agents acid powder whole skimmed vegetable fat
+yeast extract spices pork beef chicken gelatin gelatine glucose fructose dextrose contains may
+su seker tuz un bugday sut tereyagi yag yumurta nisasta kakao aroma emulgator koruyucu renklendirici icindekiler
+wasser zucker salz mehl weizen milch sahne butter eier pflanzliches fett starke kakao emulgator aroma zutaten
+`.trim().split(/\s+/));
+const fold = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/ı/g, "i");
+const known = (w) => {
+  if (LEXICON.has(w)) return true;
+  if (w.length > 4 && LEXICON.has(w.replace(/s$/, ""))) return true;
+  if (/^e\d{3,4}[a-f]?$/.test(w)) return true;
+  // Début de mot connu (« emulsifiant » coupé, « poudres »…)
+  if (w.length >= 6) for (let n = w.length - 1; n >= 5; n--) if (LEXICON.has(w.slice(0, n))) return true;
+  return false;
+};
+/**
+ * Note de 0 à 1 : part des mots reconnus comme vocabulaire d'ingrédients (et codes E).
+ * Un texte d'étiquette réel dépasse 0,4 ; du « bruit » d'image reste presque à 0.
+ */
+export function ocrQuality(text) {
+  const words = fold(String(text || "")).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 || /^e\d/.test(w));
+  if (!words.length) return { score: 0, words: 0 };
+  const hits = words.filter(known).length;
+  return { score: Math.round((hits / words.length) * 100) / 100, words: words.length };
+}
+// Seuils : au-dessus de GOOD, on ne fait pas de deuxième lecture ; en dessous de MIN, on ne montre pas le texte
+export const OCR_GOOD = 0.45, OCR_MIN = 0.22;
+
 // Lignes et confiances d'un résultat Tesseract.js (selon la version : lines, ou blocks > paragraphs > lines)
 function linesOf(data) {
   if (Array.isArray(data.lines) && data.lines.length) return data.lines;
@@ -154,28 +260,57 @@ function linesOf(data) {
   return String(data.text || "").split("\n").map((text) => ({ text }));
 }
 
+// Essais successifs, du plus courant au plus rare : on s'arrête dès qu'une lecture ressemble à une liste
+// d'ingrédients. Les quarts de tour ne sont tentés que si rien de lisible n'a été trouvé à l'endroit.
+export const OCR_ATTEMPTS = [
+  { mode: "local", rot: 0 },
+  { mode: "gray", rot: 0 },
+  { mode: "local", rot: 90 },
+  { mode: "local", rot: 270 },
+  { mode: "local", rot: 180 },
+];
+/** Faut-il tenter l'essai suivant ? */
+export function needsAnotherTry(best, next) {
+  if (!best) return true;
+  if (best.quality >= OCR_GOOD) return false;
+  if (next.rot && best.quality >= OCR_MIN) return false; // lisible à l'endroit : inutile de tourner l'image
+  return true;
+}
+/** Le meilleur de deux essais : la note de vocabulaire d'abord, puis la longueur du texte. */
+export const betterRead = (a, b) => (!a || b.quality > a.quality || (b.quality === a.quality && b.text.length > a.text.length) ? b : a);
+
 /**
- * Lit le texte d'une photo. crop : zone à lire (fractions de l'image). onProgress(0..100).
- * -> { text, confidence }
+ * Lit le texte d'une photo. crop : zone à lire (fractions de l'image). onProgress(0..100, essai).
+ * -> { text, confidence, quality (0..1), readable } ; readable faux : ne pas montrer ce texte, faire reprendre la photo.
  */
 export async function readIngredients(file, { lang = "fr", langs = null, crop = null, onProgress } = {}) {
-  const [Tesseract, canvas] = await Promise.all([loadTesseract(), preprocess(file, crop)]);
+  const Tesseract = await loadTesseract();
+  let attempt = 0;
   const worker = await Tesseract.createWorker(langs || OCR_LANGS[lang] || OCR_LANGS.fr, 1, {
     logger: (m) => {
-      if (m && m.status === "recognizing text" && onProgress) onProgress(Math.round((m.progress || 0) * 100));
+      if (m && m.status === "recognizing text" && onProgress) onProgress(Math.round((m.progress || 0) * 100), attempt);
     },
   });
   try {
     if (worker.setParameters) {
       await worker.setParameters({
-        // Zone encadrée : un bloc de texte ; photo entière : mise en page automatique
-        tessedit_pageseg_mode: crop ? "6" : "3",
+        // Zone encadrée : un bloc de texte ; photo presque entière : mise en page automatique
+        tessedit_pageseg_mode: crop && crop.w * crop.h < 0.85 ? "6" : "3",
         tessedit_char_blacklist: BLACKLIST,
         preserve_interword_spaces: "1",
       });
     }
-    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
-    return cleanOcrLines(linesOf(data || {}));
+    let best = null;
+    for (const a of OCR_ATTEMPTS) {
+      if (!needsAnotherTry(best, a)) break;
+      const canvas = await preprocess(file, crop, a.mode, a.rot);
+      const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+      const r = cleanOcrLines(linesOf(data || {}));
+      const q = ocrQuality(r.text);
+      best = betterRead(best, { ...r, quality: q.score, words: q.words, rot: a.rot });
+      attempt++;
+    }
+    return { ...best, readable: best.quality >= OCR_MIN && best.words >= 3 };
   } finally {
     worker.terminate().catch(() => {});
   }

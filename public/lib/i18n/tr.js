@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-5", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-6", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1572,4 +1572,18 @@ export default {
   "bilan.week_range": "Kontrol edilen ürünler · {range}",
   "bilan.prev_week": "Önceki hafta",
   "bilan.next_week": "Sonraki hafta",
+  // ---------- Lecture de photo : conseils ----------
+  "ocr.crop_tip": "İpucu: iyi ışık, düz ve parlamasız etiket, net bir yazı. Liste yan yazılmışsa telefonu çevirmeniz gerekmez.",
+  "ocr.retrying": "Daha ayrıntılı okunuyor… %{n}",
+  "ocr.bad.t": "Liste okunamadı",
+  "ocr.bad.p": "Bulunan metin bir içindekiler listesine benzemiyor. Size rastgele karakterler göstermek yerine fotoğrafı yeniden çekin:",
+  "ocr.tip_light": "Etiket üzerinde gölge olmadan iyi ışık",
+  "ocr.tip_flat": "Ambalaj düz, plastikte parlama olmadan",
+  "ocr.tip_close": "Yazının net olacağı kadar yakın, bulanık değil",
+  "ocr.tip_frame": "Çerçeve yalnızca listede, logoda veya besin tablosunda değil",
+  "ocr.reframe": "Aynı fotoğrafta çerçeveyi ayarla",
+  "ocr.manual": "Listeyi kendim yazayım",
+  "ocr.manual_t": "İçindekiler listesini yazın",
+  "ocr.manual_hint": "Listeyi ambalajda yazdığı gibi yazın, sonra analizi başlatın.",
+  "ocr.manual_ph": "Örn. buğday unu, şeker, ayçiçek yağı, E471…",
 };
