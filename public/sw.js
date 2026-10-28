@@ -1,14 +1,14 @@
 // Service worker : l'app fonctionne hors connexion.
 //
 // - Fichiers de l'app : réseau d'abord (mises à jour immédiates), cache si pas de réseau.
-// - Bibliothèques et polices (jsDelivr, Google Fonts, modèles OCR) : cache d'abord,
+// - Bibliothèques (jsDelivr, modèles OCR) : cache d'abord,
 //   leurs adresses sont versionnées donc ne changent jamais.
 // - Fiches produits Open Food Facts : réseau d'abord ; au-delà de 4 s ou hors ligne,
 //   la fiche en cache. Le « pack » de produits populaires est rangé dans le même cache.
 // - Photos des produits : gardées sur le téléphone (leur adresse change avec chaque nouvelle photo,
 //   donc une photo gardée n'est jamais périmée) ; sur un réseau instable, nouvel essai automatique.
 
-const VERSION = "2026-10-28-4"; // même numéro que APP_BUILD (app.js) et _build (traductions)
+const VERSION = "2026-10-28-5"; // même numéro que APP_BUILD (app.js) et _build (traductions)
 const APP_CACHE = `hs-app-${VERSION}`;
 const CDN_CACHE = "hs-cdn-v1";
 const PRODUCT_CACHE = "hs-products-v1";
@@ -27,6 +27,7 @@ const APP_FILES = [
   "lib/store.js", "lib/settings.js", "lib/i18n.js", "lib/ocr.js", "lib/sources.js",
   "lib/beauty.js", "lib/medicine.js", "lib/profile.js", "lib/sharecard.js", "lib/aisle.js", "lib/cosmetic.js", "lib/places.js", "lib/search.js", "lib/recalls.js", "lib/certifiers.js", "lib/confidence.js", "lib/contribute.js", "lib/certcheck.js", "lib/rankings.js", "lib/mascot.js", "lib/highlight.js", "lib/ramadan.js", "lib/qr.js", "lib/world.js", "app-config.js", "lib/premium.js", "premium-config.js",
   "lib/i18n/fr.js", "lib/i18n/en.js", "lib/i18n/ar.js", "lib/i18n/tr.js",
+  "fonts/fonts.css", "fonts/ibm-plex-mono-latin-500-normal.woff2", "fonts/ibm-plex-mono-latin-600-normal.woff2", "fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2", "fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2", "fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2", "fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2", "fonts/ibm-plex-sans-latin-400-italic.woff2", "fonts/ibm-plex-sans-latin-400-normal.woff2", "fonts/ibm-plex-sans-latin-500-normal.woff2", "fonts/ibm-plex-sans-latin-600-normal.woff2", "fonts/ibm-plex-sans-latin-700-normal.woff2", "fonts/ibm-plex-sans-latin-ext-400-italic.woff2", "fonts/ibm-plex-sans-latin-ext-400-normal.woff2", "fonts/ibm-plex-sans-latin-ext-500-normal.woff2", "fonts/ibm-plex-sans-latin-ext-600-normal.woff2", "fonts/ibm-plex-sans-latin-ext-700-normal.woff2",
 ];
 
 const CDN_HOSTS = ["cdn.jsdelivr.net", "fastly.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com", "tessdata.projectnaptha.com"];

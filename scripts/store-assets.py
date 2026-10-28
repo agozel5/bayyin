@@ -13,11 +13,9 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 PUB, STORE = ROOT / "public", ROOT / "docs" / "store"
 MASTER = (STORE / "icon-master.svg").read_text()
-# Sur GitHub Actions, Google Fonts est joignable : vraies polices de l'app (IBM Plex Sans et Plex Sans Arabic).
-# En local hors ligne, on bloque ces requêtes (Inter à défaut).
+# Polices de l'app (IBM Plex), servies par le serveur local depuis public/fonts : rendu identique partout.
 ONLINE = bool(os.environ.get("CI"))
-FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700'
-         '&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=block">') if ONLINE else ""
+FONTS = '<link rel="stylesheet" href="http://localhost:3123/fonts/fonts.css">'
 FAMILY = "'IBM Plex Sans','IBM Plex Sans Arabic',Inter,system-ui,sans-serif"
 # Couleurs de l'app (direction « clinique et précise »)
 GREEN, GREEN_DARK, INK, MUTED, PAPER = "#14805A", "#0E5F43", "#10251B", "#4D6157", "#F2F5F3"
