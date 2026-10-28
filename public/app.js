@@ -4,7 +4,19 @@ import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS, THEMES, TEXT_SIZES } from "./lib/settings.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
-import { t, tn, setLang, getLang, locale, applyStatic, LANG_NAMES } from "./lib/i18n.js";
+import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
+// Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
+const APP_BUILD = "2026-10-28-3";
+// Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
+// traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
+if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
+  try {
+    if (sessionStorage.getItem("bayyin_build_reload") !== APP_BUILD) {
+      sessionStorage.setItem("bayyin_build_reload", APP_BUILD);
+      setTimeout(() => location.reload(), 400);
+    }
+  } catch { /* stockage bloqué : on continue */ }
+}
 import { readIngredients, additivesFromText } from "./lib/ocr.js";
 import { SOURCES, SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES } from "./lib/sources.js";
 import { checkProfile, hasProfile, PROFILE_ALLERGENS, DIETS } from "./lib/profile.js";
@@ -171,7 +183,7 @@ const miniScore = (p) => {
 // Ingrédient couvert par la certification : on ne l'appelle plus « non certifié »
 const coveredText = (f, part) => {
   const k = `flag.${f.id}.covered_${part}`;
-  return f.covered && t(k) !== k ? t(k) : null;
+  return f.covered && hasT(k) ? t(k) : null;
 };
 function flagLabel(f) {
   if (f.group === "gras") return `${f.code} · ${t("flag.fatty.label")}`;
@@ -470,7 +482,7 @@ const ENV_ICO = {
 const envWord = (kind, w) => {
   if (!w) return "";
   const base = w.replace(/^(pp|pet|pe|hdpe|ldpe|ps|pvc)-/, "$1:").split(":")[0];
-  for (const k of [w, base]) { const key = `env.${kind}.${k}`; if (t(key) !== key) return t(key); }
+  for (const k of [w, base]) { const key = `env.${kind}.${k}`; if (hasT(key)) return t(key); }
   return w.replace(/-/g, " ");
 };
 const okIco = (ok) => ok === null ? `<span class="env-na">—</span>` : `<span class="env-ok ${ok ? "yes" : "no"}">${svg(ok ? I.check : I.cross)}</span>`;
@@ -491,7 +503,7 @@ function originName(o) {
   if (o.region) return t(`env.region.${o.region}`);
   if (o.iso) return countryName(o.iso, getLang());
   const k = `env.origin.${o.tag}`;
-  return t(k) !== k ? t(k) : o.tag.replace(/-/g, " ");
+  return hasT(k) ? t(k) : o.tag.replace(/-/g, " ");
 }
 function originBlock(e, world) {
   const R = (tag) => resolveOrigin(tag, world);
@@ -710,8 +722,7 @@ function cosmeticSection(p) {
 // Liste complète des ingrédients d'un cosmétique : rôle (CosIng) et niveau de risque dans ce produit
 const fnLabel = (f) => {
   const k = "fn." + f.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-  const v = t(k);
-  return v === k ? f.charAt(0) + f.slice(1).toLowerCase() : v;
+  return hasT(k) ? t(k) : f.charAt(0) + f.slice(1).toLowerCase();
 };
 // Rôles les plus parlants d'abord (CosIng les liste sans ordre) ; rôles secondaires à la fin
 const FN_FIRST = ["PRESERVATIVE", "UV FILTER", "UV ABSORBER", "COLORANT", "HAIR DYEING", "SURFACTANT - CLEANSING", "SURFACTANT - EMULSIFYING",

@@ -20,6 +20,12 @@ export function setLang(l) {
 export const getLang = () => lang;
 export const locale = () => LOCALES[lang];
 
+/** La clé existe-t-elle ? (pour les textes facultatifs, sans déclencher le rechargement ci-dessous) */
+export const has = (key) => DICTS[lang][key] !== undefined || fr[key] !== undefined;
+
+/** Numéro de version de chaque fichier de traduction (comparé à celui de l'app au démarrage) */
+export const dictBuilds = () => Object.values(DICTS).map((d) => d._build);
+
 export function t(key, vars) {
   let s = DICTS[lang][key];
   if (s === undefined) s = fr[key];
