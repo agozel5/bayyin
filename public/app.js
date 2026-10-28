@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-13";
+const APP_BUILD = "2026-10-28-14";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -29,6 +29,7 @@ import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
+import { RANK_ART } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -4351,7 +4352,9 @@ let rankKind = "food";
 let rankCertOnly = false;
 let rankJob = 0;
 const rankLocked = (c) => !c.free && premiumEnabled() && !isPremium();
-const rankIco = (id) => `<span class="rank-ico ri-${RANK_BY_ID[id].kind}">${svg(RANK_ICONS[id] || I.box)}</span>`;
+const rankIco = (id) => RANK_ART[id]
+  ? `<span class="rank-ico art">${RANK_ART[id]}</span>`
+  : `<span class="rank-ico ri-${RANK_BY_ID[id].kind}">${svg(RANK_ICONS[id] || I.box)}</span>`;
 
 async function renderRankings(sub) {
   const box = $("rankBody");

@@ -2499,3 +2499,8 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 :root[data-theme="dark"] .v-foot[class*="g-"]{background:color-mix(in srgb,var(--c) 20%,var(--surface))!important}
 :root[data-theme="dark"] .v-foot[class*="g-"] .ring span{background:color-mix(in srgb,var(--c) 20%,var(--surface))!important}
 .v-foot[class*="g-"] .grade-dot{box-shadow:0 0 10px var(--c)}
+
+/* Classements : illustrations en couleur des rayons */
+.rank-ico.art{width:48px;height:48px;border-radius:14px;background:#F4EFE4}
+.rank-ico.art svg{width:36px;height:36px;fill:initial;stroke:none}
+:root[data-theme="dark"] .rank-ico.art{background:#232C27}
