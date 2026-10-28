@@ -413,3 +413,105 @@ export const ORIGIN_ART = {
     <path d="M18.5 19a5.5 5.5 0 1 1 7.6 5.1c-1.4.6-2.1 1.8-2.1 3.4v1" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
     <circle cx="24" cy="34.5" r="2.2" fill="#fff"/>`)
 };
+
+// Allergènes du profil (les 14 allergènes à déclaration obligatoire en Europe)
+export const ALLERGEN_ART = {
+  "en:gluten": NUT_ART.fiber,
+  "en:milk": FAMILY_ART.dairy,
+  "en:eggs": NUT_ART.proteins,
+  "en:nuts": S(`
+    <path d="M24 16c8 0 13 6 13 13s-6 14-13 14-13-7-13-14 5-13 13-13z" fill="#B9763A"/>
+    <path d="M24 16c8 0 13 6 13 13s-6 14-13 14c5-3 7-8 7-14s-3-11-7-13z" fill="#9A5E2B"/>
+    <path d="M10 19c2-7 8-11 14-11s12 4 14 11c-9-4-19-4-28 0z" fill="#7A4A2C"/>
+    <path d="M24 8V4" stroke="#7A4A2C" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M16 26c.6-2 1.8-3.4 3.4-4.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".45"/>`),
+  "en:peanuts": S(`
+    <g transform="rotate(-35 24 24)">
+      <path d="M24 4c6 0 9 4.4 9 9 0 3-2 5-2 7s3 4 3 9c0 6-4.6 11-10 11s-10-5-10-11c0-5 3-7 3-9s-2-4-2-7c0-4.6 3-9 9-9z" fill="#E6C287"/>
+      <path d="M24 4c6 0 9 4.4 9 9 0 3-2 5-2 7s3 4 3 9c0 6-4.6 11-10 11 3-3 5-7 5-11 0-5-3-7-3-9s2-4 2-7c0-4.6-1-7-4-9z" fill="#CFA768"/>
+      <g fill="#B98C4E"><circle cx="21" cy="12" r="1"/><circle cx="26" cy="15" r="1"/><circle cx="20" cy="30" r="1"/><circle cx="25" cy="34" r="1"/><circle cx="27" cy="27" r="1"/></g>
+    </g>`),
+  "en:soybeans": S(`
+    <path d="M8 34C10 18 24 8 40 10c2 14-12 28-32 24z" fill="#7DBE45"/>
+    <path d="M8 34C10 18 24 8 40 10 30 18 20 26 8 34z" fill="#9BD162"/>
+    <g fill="#E3EFA8"><ellipse cx="17" cy="27" rx="4.2" ry="3.6"/><ellipse cx="24.5" cy="21.5" rx="4.2" ry="3.6"/><ellipse cx="32" cy="16" rx="4" ry="3.4"/></g>`),
+  "en:fish": FAMILY_ART.fish,
+  "en:crustaceans": S(`
+    <path d="M36 12c-12-4-26 4-26 16 0 6 4 10 9 10l4-4c-4 0-7-2-7-6 0-8 10-13 18-10z" fill="#F07C4A"/>
+    <path d="M36 12c4 2 6 6 4 9l-6 1c1-3 0-6-2-7z" fill="#E0623A"/>
+    <path d="M14 30c-3 2-6 6-5 10 4 0 7-3 8-6" fill="#F59A6B"/>
+    <path d="M17 20l-3 3M22 15.6l-1.6 3.8M28 13.6l-.4 4" stroke="#C94F2C" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M38 13c3-3 6-5 9-5M38 15c4-1 7-1 9 1" fill="none" stroke="#C94F2C" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="35" cy="16" r="1.4" fill="#3A3A4C"/>`),
+  "en:molluscs": S(`
+    <path d="M24 40L8 18c4-8 28-8 32 0z" fill="#F3B6A0"/>
+    <path d="M24 40L8 18c3-6 10-8 16-8z" fill="#F7CBB9"/>
+    <path d="M24 40L14 14M24 40V11M24 40l10-26M24 40L9.5 20M24 40l14.5-20" stroke="#E08E74" stroke-width="1.6"/>
+    <path d="M18 40h12l-2 4h-8z" fill="#E08E74"/>`),
+  "en:celery": S(`
+    <path d="M17 44l2-22M24 44V20M31 44l-2-22" stroke="#8CC062" stroke-width="5" stroke-linecap="round"/>
+    <path d="M17 44l2-22M24 44V20M31 44l-2-22" stroke="#B5DA8E" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M19 22c-6-2-9-8-6-13 4 0 7 4 7 8 1-5 4-9 8-9 2 4 0 9-4 11 4-2 9-1 11 3-3 3-8 3-11 1" fill="#5FA845"/>`),
+  "en:mustard": S(`
+    <rect x="15" y="6" width="18" height="7" rx="2" fill="#5A6472"/>
+    <path d="M14 13h20l2 6v18a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5V19z" fill="#E9B824"/>
+    <path d="M24 13h10l2 6v18a5 5 0 0 1-5 5h-7z" fill="#D4A010"/>
+    <rect x="15" y="22" width="18" height="11" rx="2.5" fill="#FFF4CF"/>
+    <g fill="#C98F12"><circle cx="20" cy="27.5" r="1.6"/><circle cx="24" cy="26" r="1.6"/><circle cx="28" cy="28" r="1.6"/></g>`),
+  "en:sesame-seeds": S(`
+    <g fill="#F1E1B8" stroke="#D7BE85" stroke-width="1.2">
+      <path d="M14 10c3 3 3 9 0 12-3-3-3-9 0-12z"/><path d="M30 8c3 3 3 9 0 12-3-3-3-9 0-12z" transform="rotate(30 30 14)"/>
+      <path d="M22 20c3 3 3 9 0 12-3-3-3-9 0-12z" transform="rotate(-25 22 26)"/><path d="M36 24c3 3 3 9 0 12-3-3-3-9 0-12z" transform="rotate(15 36 30)"/>
+      <path d="M13 30c3 3 3 9 0 12-3-3-3-9 0-12z" transform="rotate(40 13 36)"/><path d="M27 34c3 3 3 9 0 12-3-3-3-9 0-12z" transform="rotate(-10 27 40)"/>
+    </g>`),
+  "en:sulphur-dioxide-and-sulphites": S(`
+    <path d="M14 30L24 20l10 10" stroke="#B2BFCA" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="24" cy="19" r="9" fill="#F2C94C"/><circle cx="24" cy="19" r="9" fill="none" stroke="#D9A82A" stroke-width="1.4"/>
+    <circle cx="12" cy="32" r="7" fill="#E0566A"/><circle cx="36" cy="32" r="7" fill="#E0566A"/>
+    <path d="M20 15c1-1.6 2.6-2.4 4.4-2.4M9 29.4c.8-1.2 2-1.8 3.4-1.8M33 29.4c.8-1.2 2-1.8 3.4-1.8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>`),
+  "en:lupin": S(`
+    <path d="M24 44V8" stroke="#5E9B45" stroke-width="2.4" stroke-linecap="round"/>
+    <g fill="#8A6FDB"><ellipse cx="24" cy="8" rx="3" ry="3.4"/><ellipse cx="20" cy="14" rx="3.4" ry="3"/><ellipse cx="28" cy="14" rx="3.4" ry="3"/>
+    <ellipse cx="19" cy="21" rx="3.8" ry="3.2"/><ellipse cx="29" cy="21" rx="3.8" ry="3.2"/></g>
+    <g fill="#A992EA"><ellipse cx="18.4" cy="28" rx="4" ry="3.4"/><ellipse cx="29.6" cy="28" rx="4" ry="3.4"/><ellipse cx="24" cy="24.5" rx="3" ry="3"/></g>
+    <path d="M24 44c-4-4-9-5-13-3 3 3 8 4 13 3zM24 40c4-4 9-5 13-3-3 3-8 4-13 3z" fill="#6DB24E"/>`)
+};
+
+// Commerces halal : un dessin par type de commerce
+export const PLACE_ART = {
+  butcher: S(`
+    <path d="M8 24c5-7 18-8 24-2 4 5 1 14-8 15-4 .3-6-2-9-2.4-4-.3-7.4-2.8-7.2-6.8.1-1.6.2-2.8.2-3.8z" fill="#C2473C"/>
+    <path d="M8 24c5-7 18-8 24-2" fill="none" stroke="#F3E1D2" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="25" cy="27" r="3.6" fill="#F3E1D2"/>
+    <path d="M30 6l12 12-6 6-12-12z" fill="#C9D2DA"/><path d="M30 6l12 12-3 3-12-12z" fill="#E6EBEF"/>
+    <path d="M36 24l6 6" stroke="#5A3E2B" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="35" cy="11" r="1.4" fill="#8E969F"/>`),
+  restaurant: S(`
+    <ellipse cx="24" cy="37" rx="19" ry="4" fill="#9AA6B2"/>
+    <path d="M7 35a17 17 0 0 1 34 0z" fill="#C3CCD5"/>
+    <path d="M24 18a17 17 0 0 1 17 17h-8c0-9-4-16-9-17z" fill="#A3AEB9"/>
+    <rect x="21.5" y="12" width="5" height="6" rx="2.5" fill="#8794A1"/>
+    <path d="M13 28c1.4-3 3.6-5 6-6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+    <path d="M40 8v8M43 8v8M46 8v8M40 16h6M43 16v10" stroke="#8794A1" stroke-width="1.6" stroke-linecap="round" opacity="0"/>`),
+  grocery: S(`
+    <path d="M14 18l6-10M34 18l-6-10" stroke="#8B5A3C" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="18" cy="16" r="5" fill="#E2465A"/><circle cx="26" cy="13" r="5" fill="#F7A531"/><circle cx="32" cy="17" r="4.6" fill="#7DBE45"/>
+    <path d="M6 18h36l-4 22a3 3 0 0 1-3 2.4H13A3 3 0 0 1 10 40z" fill="#D49E57"/>
+    <path d="M24 18h18l-4 22a3 3 0 0 1-3 2.4H24z" fill="#BD8541"/>
+    <path d="M15 24l1.4 13M24 24v13M33 24l-1.4 13" stroke="#A36F31" stroke-width="1.8" stroke-linecap="round"/>`),
+  bakery: S(`
+    <path d="M4 30c2-8 8-14 14-15l6 14-8 9c-6 0-11-3-12-8z" fill="#E0A04F"/>
+    <path d="M44 30c-2-8-8-14-14-15l-6 14 8 9c6 0 11-3 12-8z" fill="#E0A04F"/>
+    <path d="M18 15c4-2 8-2 12 0l-6 14z" fill="#F0BC6C"/>
+    <path d="M16 38l8-9 8 9c-5 3-11 3-16 0z" fill="#C9813F"/>
+    <path d="M12 22l5 7M36 22l-5 7" stroke="#B56F2E" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M20 17c2.4-1 5-1.2 8-.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".5"/>`),
+  other: S(`
+    <path d="M8 20h32v22H8z" fill="#F4EEE2"/>
+    <path d="M24 20h16v22H24z" fill="#E3DBCB"/>
+    <path d="M6 12h36l2 8H4z" fill="#1FA597"/>
+    <path d="M6 12h6l-1 8H4zM18 12h6v8h-7zM30 12h6l2 8h-7z" fill="#E8F5F3"/>
+    <path d="M4 20c0 3 7 3 7 0 0 3 6.4 3 6.4 0 0 3 6.6 3 6.6 0 0 3 6.6 3 6.6 0 0 3 6.4 3 6.4 0 0 3 7 3 7 0z" fill="#1A8C80"/>
+    <rect x="13" y="28" width="9" height="14" rx="1" fill="#8B5A3C"/>
+    <rect x="27" y="27" width="9" height="7" rx="1" fill="#BFE3F5"/>`)
+};

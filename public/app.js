@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-04";
+const APP_BUILD = "2026-10-29-05";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -29,7 +29,7 @@ import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
-import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART, ORIGIN_ART } from "./lib/rank-art.js";
+import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART, ORIGIN_ART, ALLERGEN_ART, PLACE_ART } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -3227,7 +3227,7 @@ function renderSettings() {
     (d) => `<button type="button" role="radio" class="d-diet" aria-checked="${(st.profile.diet || null) === d}" data-diet="${d || ""}">${t(d ? `diet.${d}` : "diet.none")}</button>`
   ).join("");
   $("allergenList").innerHTML = PROFILE_ALLERGENS.map(
-    (a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${st.profile.allergens.includes(a)}" data-allergen="${a}">${esc(t(`allergen.${a}`))}</button>`
+    (a) => `<button type="button" role="checkbox" class="chip allergen-chip" aria-checked="${st.profile.allergens.includes(a)}" data-allergen="${a}">${ALLERGEN_ART[a] ? `<span class="al-art" aria-hidden="true">${ALLERGEN_ART[a]}</span>` : ""}${esc(t(`allergen.${a}`))}</button>`
   ).join("");
 
   renderFamily();
@@ -4221,7 +4221,7 @@ function placeCard(p) {
     p.cert ? `<span class="pill r-info">${esc(t("places.cert", { c: p.cert }))}</span>` : "",
   ].join("");
   return `<article class="place${placesState.selected === p.id ? " is-selected" : ""}" data-place="${esc(p.id)}">
-    <span class="place-ico pc-${p.cat}">${svg(PLACE_ICON[p.cat])}</span>
+    <span class="place-ico pc-${p.cat}${PLACE_ART[p.cat] ? " art" : ""}">${PLACE_ART[p.cat] || svg(PLACE_ICON[p.cat])}</span>
     <div class="place-body">
       <button type="button" class="place-head" data-focus="${esc(p.id)}"><strong>${esc(title)}</strong><small>${t(`places.cat.${p.cat}`)} · <span dir="ltr">${fmtDistance(p.distance)}</span></small></button>
       <div class="place-tags">${tags}</div>
