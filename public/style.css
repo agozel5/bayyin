@@ -2555,3 +2555,12 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .cadd-list .ae:first-child{border-top:none}
 .cadd-list .ae summary,.cadd-list .ae-sum{padding:11px 4px}
 .ae-static .ae-sum{display:flex;align-items:center;gap:12px}
+
+/* Premium : mêmes tuiles colorées en dégradé que les Réglages */
+.pm-ico[class*="pi-"]{--t:#5A6472;color:#fff!important;border-radius:11px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--t) 72%,#fff) 0%,var(--t) 55%,color-mix(in srgb,var(--t) 85%,#000) 100%)!important;
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .35),0 3px 8px -3px color-mix(in srgb,var(--t) 70%,transparent)}
+.pm-ico[class*="pi-"] svg{stroke:#fff;stroke-width:2.1;filter:drop-shadow(0 1px 1px rgb(0 0 0 / .18))}
+.pm-ico.pi-rankings{--t:#E2A812}.pm-ico.pi-aisle{--t:#1FA597}.pm-ico.pi-basket{--t:#E0457B}.pm-ico.pi-compare{--t:#4C64D6}
+.pm-ico.pi-family{--t:#8A63DA}.pm-ico.pi-offline{--t:#2F6FC0}.pm-ico.pi-history{--t:#71809A}
+:root[data-theme="dark"] .pm-ico[class*="pi-"]{box-shadow:inset 0 1px 0 rgb(255 255 255 / .25)}

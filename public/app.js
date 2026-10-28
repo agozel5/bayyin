@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-03";
+const APP_BUILD = "2026-10-29-04";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -4726,7 +4726,7 @@ function renderPremiumSheet(msg = "") {
   const st = premiumState();
   const active = premiumEnabled() && isPremium() && st;
   const ready = premiumEnabled();
-  const features = `<ul class="pm-features">${PREMIUM_LIST.map(([id, ico]) => `<li class="${premiumFocus === id ? "focus" : ""}"><span class="pm-ico">${svg(ico)}</span><span><strong>${t(`premium.f.${id}`)}</strong><small>${t(`premium.f.${id}.d`)}</small></span></li>`).join("")}</ul>`;
+  const features = `<ul class="pm-features">${PREMIUM_LIST.map(([id, ico]) => `<li class="${premiumFocus === id ? "focus" : ""}"><span class="pm-ico pi-${id}">${svg(ico)}</span><span><strong>${t(`premium.f.${id}`)}</strong><small>${t(`premium.f.${id}.d`)}</small></span></li>`).join("")}</ul>`;
   const free = `<div class="pm-free">${svg(I.shield)}<p><strong>${t("premium.free_t")}</strong> ${t("premium.free_p")}</p></div>`;
   const legal = [cfg.legal.cgv && `<a href="${esc(cfg.legal.cgv)}" target="_blank" rel="noopener">${t("premium.cgv")}</a>`, cfg.legal.mentions && `<a href="${esc(cfg.legal.mentions)}" target="_blank" rel="noopener">${t("premium.mentions")}</a>`].filter(Boolean).join(" · ");
   const manage = cfg.portal ? `<a class="btn btn-soft btn-block" href="${esc(cfg.portal)}" target="_blank" rel="noopener">${t("premium.manage")}</a>` : "";
