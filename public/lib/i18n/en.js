@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-9", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -1589,4 +1589,21 @@ export default {
   "ocr.crop_tip": "Good light, label flat, no glare. List printed sideways? No need to turn your phone.",
   // ---------- Lecture de photo : boutons ----------
   "ocr.retake_short": "Retake",
+  // ---------- Audit : fiche produit ----------
+  "detail.kicker": "Based on your setting: {s}",
+  "detail.disclaimer": "Bayyin is a decision aid, not a certification or a religious ruling. When in doubt, rely on a certifier's label and the advice of a trusted scholar.",
+  "hsum.ns": "Nutri-Score {g}",
+  "hsum.nova1": "unprocessed or minimally processed",
+  "hsum.nova2": "culinary ingredient",
+  "hsum.nova3": "processed",
+  "hsum.nova4": "ultra-processed",
+  "hsum.add0": "no risky additive",
+  "hsum.add_one": "1 risky additive",
+  "hsum.add_other": "{n} risky additives",
+  "hsum.bio": "organic",
+  // ---------- Audit : accueil ----------
+  "home.setting_line": "My setting:",
+  "home.no_allergy": "no allergy",
+  // ---------- Audit : additifs ----------
+  "add.fn": "Function:",
 };

@@ -2442,3 +2442,46 @@ img.img-wait{background:var(--tint)!important}
 .ocr-actions.row > .btn-soft{flex:1 1 0}
 .ocr-actions.row > .btn-primary{flex:1.7 1 0}
 .ocr-actions{margin-inline:0;padding-inline:0}
+
+/* =====================================================================
+   Audit : la couleur de la carte ne vaut que pour le halal ; la note santé est posée sur un fond neutre
+   ===================================================================== */
+.v-foot{background:var(--surface)!important;color:var(--fg);padding:12px 18px 13px}
+.v-foot .ring{background:conic-gradient(var(--c,var(--muted)) calc(var(--p)*1%),var(--tint-2) 0)!important}
+.v-foot .ring span{background:var(--surface)!important;color:var(--fg)}
+.v-foot .ring small{color:var(--muted)!important}
+.v-foot-text span{color:var(--muted);opacity:1}
+.v-foot-text strong{color:var(--fg)}
+.v-foot .grade-dot{box-shadow:none}
+.v-foot .kind-ico{background:var(--tint);color:var(--brand)}
+.v-kicker{font-weight:500;opacity:.9}
+/* Onglet Santé : « Bio » ne se confond plus avec le vert du halal et de la nutrition */
+.bd-bio{--bc:#7B5BC9}
+:root[data-theme="dark"] .bd-bio{--bc:#A68BEB}
+/* En-tête compact de la fiche : seulement la vignette, le titre n'est plus tronqué */
+.sheet-mini img{display:block}
+.ph.cat-poultry{--cat:#C4523F}
+/* Rappel sur chaque fiche : une aide, pas une certification */
+.v-disclaimer{display:flex;gap:8px;align-items:flex-start;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.82rem;line-height:1.4;color:var(--muted)}
+.v-disclaimer svg{width:16px;height:16px;flex:none;margin-top:1px}
+
+/* Accueil (audit) : scanner, puis les derniers produits, outils en ligne compacte, réglage en une ligne */
+#view-scan .tool{min-height:0;padding:9px 4px 8px;gap:5px}
+#view-scan .tool-ico{width:30px;height:30px}
+#view-scan .tool-ico svg{width:18px;height:18px}
+#view-scan .tool-t{font-size:.78rem;line-height:1.2}
+.set-line{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--r-md);background:var(--surface);box-shadow:var(--lift);color:var(--fg);text-decoration:none;font-size:.9rem}
+.set-line > svg:first-child{width:18px;height:18px;flex:none;color:var(--brand)}
+.set-line span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.set-line strong{color:var(--fg);font-weight:600}
+.set-line > svg:last-child{width:16px;height:16px;flex:none;color:var(--faint,var(--muted))}
+:root[data-theme="dark"] .set-line > svg:first-child{color:#5FD08F}
+/* Additifs : la fonction se choisit dans un menu, sous les filtres */
+.add-fn{display:block}
+.fn-select{position:relative;display:flex;align-items:center;gap:8px;padding:0 12px;height:40px;border-radius:var(--r-md);background:var(--surface);box-shadow:var(--lift);font-size:.88rem;color:var(--muted)}
+.fn-select span{flex:none}
+.fn-select select{flex:1;min-width:0;height:100%;border:none;background:transparent;color:var(--fg);font:inherit;font-weight:600;appearance:none;-webkit-appearance:none;padding-inline-end:22px;cursor:pointer}
+.fn-select .fn-chev{position:absolute;inset-inline-end:12px;width:16px;height:16px;transform:rotate(90deg);pointer-events:none;color:var(--muted)}
+.fn-select select:focus-visible{outline:none}
+.fn-select:focus-within{box-shadow:0 0 0 2px var(--brand)}
+.setting-chips .set-line{flex:1 1 100%;min-width:0;max-width:100%}

@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-28-8";
+const APP_BUILD = "2026-10-28-9";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -209,7 +209,9 @@ const noteText = (n) => (/\s/.test(n) ? n : t(`note.${n}`)); // anciennes entré
 // ===========================================================================
 // Produit sans photo : une illustration selon la catégorie plutôt qu'une boîte grise
 const CAT_ART = [
-  { id: "meat", re: /meats|sausages|poultr|charcuter|hams|beef|chicken|lamb|kebab|merguez/, path: '<path d="M15 3a6 6 0 0 1 0 12c-1 0-2-.2-2.8-.6L9 17.6a2.5 2.5 0 1 1-2.6 2.9 2.5 2.5 0 1 1-2.9-2.6l3.2-3.2A6 6 0 0 1 15 3z"/>' },
+  // Volaille : une cuisse ; les autres viandes (bœuf, agneau, merguez, charcuterie) : une pièce de viande
+  { id: "poultry", re: /poultr|chicken|turkey|volaille|poulet|dinde|nugget/, path: '<path d="M15 3a6 6 0 0 1 0 12c-1 0-2-.2-2.8-.6L9 17.6a2.5 2.5 0 1 1-2.6 2.9 2.5 2.5 0 1 1-2.9-2.6l3.2-3.2A6 6 0 0 1 15 3z"/>' },
+  { id: "meat", re: /meats|sausages|charcuter|hams|beef|lamb|kebab|merguez|boeuf|bœuf|agneau|viande/, path: '<path d="M6.5 6.2C10.4 3.4 17.6 3.7 19.6 8.4c1.9 4.5-1.4 10.4-6.8 10.4-2.6 0-3.6-1.6-5.6-1.8-2.3-.2-3.9-1.6-3.7-4.3.2-2.6 1-4.9 3-6.5z"/><circle cx="14.2" cy="10.6" r="2.3"/>' },
   { id: "fish", re: /fish|seafood|tuna|salmon|sardine|shrimp|crustacean/, path: '<path d="M3 12c3.2-4.8 9.4-6 14-2l4-3v10l-4-3c-4.6 4-10.8 2.8-14-2z"/><circle cx="8" cy="11" r=".9" fill="currentColor"/>' },
   { id: "dairy", re: /dair|chees|milk|yogurt|yoghurt|cream|butter/, path: '<path d="M8 3h8v3l2 3v12H6V9l2-3z"/><path d="M6 12h12M8 6h8"/>' },
   { id: "drink", re: /beverage|drink|juice|water|soda|coffee|tea/, path: '<path d="M6 4h12l-1.6 16H7.6z"/><path d="M6.6 9h10.8"/><path d="M13 4l2-2"/>' },
@@ -253,6 +255,11 @@ function productTop(p) {
 }
 
 // Verdict en grand : la réponse se lit en une demi-seconde, la note santé juste en dessous.
+// Au-dessus du verdict : l'avis suivi (« Selon : Avis courant »), plutôt que « Halal » au-dessus de « Halal certifié »
+function verdictKicker() {
+  const school = prefs().school;
+  return t("detail.kicker", { s: school && hasT(`school.${school}`) ? t(`school.${school}`) : t("detail.halal") });
+}
 function verdictHero(p, v) {
   const s = scoreOf(p);
   const kind = kindOf(p);
@@ -262,7 +269,7 @@ function verdictHero(p, v) {
     ? `<span class="kind-ico">${svg(KIND_ICON[kind])}</span>
        <span class="v-foot-text"><span>${t(`kind.${kind}`)}</span><strong>${esc(p.form || t("kind.medicine"))}</strong></span>`
     : s
-      ? `<span class="ring" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
+      ? `<span class="ring g-${s.grade}" style="--p:${s.score}" dir="ltr"><span>${s.score}<small>/100</small></span></span>
          <span class="v-foot-text"><span>${scoreLabel}</span><strong>${t(`grade.${s.grade}`)}</strong></span>
          <span class="grade-dot g-${s.grade}" aria-hidden="true"></span>`
       : `<span class="ring" style="--p:0"><span>?</span></span>
@@ -270,7 +277,7 @@ function verdictHero(p, v) {
   return `<div class="verdict v-${v.status}" role="status">
     <div class="v-main">
       <span class="v-ico">${svg(STATUS_ICON[v.status])}</span>
-      <span class="v-text"><span class="v-kicker">${t("detail.halal")}</span><strong class="v-label">${S(v.status, "label")}</strong><span class="v-lead">${S(v.status, "lead")}</span></span>
+      <span class="v-text"><span class="v-kicker">${esc(verdictKicker())}</span><strong class="v-label">${S(v.status, "label")}</strong><span class="v-lead">${S(v.status, "lead")}</span></span>
     </div>
     <div class="v-foot">${foot}</div>
     <span class="v-sheen" aria-hidden="true"></span>
@@ -460,7 +467,8 @@ function halalSection(p, v) {
   return `<section class="sec"><div class="sec-head"><h3>${t("detail.halal")}</h3></div>
     ${chainHtml(p, v)}${cert}${ignored}
     ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
-    ${labelReader(p, v)}${flags}${askBrand(p, v)}${ocrCta}${twins}</section>`;
+    ${labelReader(p, v)}${flags}${askBrand(p, v)}${ocrCta}${twins}
+    <p class="v-disclaimer">${svg(I.shield)}<span>${esc(t("detail.disclaimer"))}</span></p></section>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -658,6 +666,14 @@ function nutRow(n) {
   </summary>${gaugeHtml(n)}</details>`;
 }
 
+// « Médiocre : Nutri-Score E, ultra-transformé, aucun additif à risque. »
+function healthSummaryHtml(s, h, risky) {
+  const bits = [t("hsum.ns", { g: s.nutriscore.toUpperCase() })];
+  if (h.nova && h.nova.group) bits.push(t(`hsum.nova${h.nova.group}`));
+  bits.push(risky ? tn("hsum.add", risky) : t("hsum.add0"));
+  if (h.organic) bits.push(t("hsum.bio"));
+  return `<strong>${esc(t(`grade.${s.grade}`))}</strong> : ${esc(bits.join(", "))}.`;
+}
 function healthSection(p) {
   const h = healthOf(p);
   if (!h) return "";
@@ -665,9 +681,8 @@ function healthSection(p) {
   const risky = h.additives.length;
   const neg = h.nutrition.negatives;
   const pos = h.nutrition.positives;
-  const lead = s
-    ? t(s.parts.novaKnown ? "detail.health_lead_html" : "detail.health_lead_nonova_html", { n: s.score, g: s.nutriscore.toUpperCase(), a: s.parts.nutrition, b: s.parts.additives, c: s.parts.bio, d: s.parts.nova })
-    : esc(t("detail.health_none"));
+  // Résumé en mots ; le détail chiffré est dans la barre juste en dessous
+  const lead = s ? healthSummaryHtml(s, h, risky) : esc(t("detail.health_none"));
   const list = (items) => `<div class="nut-list">${items.map(nutRow).join("")}</div>`;
   const addRow = (bad) =>
     `<div class="nut ${bad ? "lv-eleve" : "lv-bon"}"><span class="nut-ico">${svg(I.flask)}</span><span class="nut-text"><strong>${t("detail.additives")}</strong><small>${bad ? tn("detail.additives_risky", risky) : t("detail.additives_none")}</small></span><span class="nut-val">${bad ? risky : ""}<span class="dot"></span></span></div>`;
@@ -1097,10 +1112,8 @@ document.addEventListener("toggle", (e) => {
 // En-tête compact : quand le grand bandeau du verdict sort de l'écran, la réponse reste visible en haut
 let heroObserver = null;
 function sheetMiniHtml(p) {
-  const st = verdictOf(p).status;
-  const s = scoreOf(p);
   const img = p.image ? `<img src="${esc(p.image)}" alt="" referrerpolicy="no-referrer">` : "";
-  return `${img}<span class="mini-st s-${st}">${svg(STATUS_ICON[st])}</span>${s ? `<span class="mini-sc g-${s.grade}" dir="ltr">${s.score}</span>` : ""}`;
+  return img; // verdict et note restent visibles dans les onglets collés en haut
 }
 // Écrans de la fiche qui ne sont pas un produit (comparaison, Premium, panier) : pas d'en-tête compact
 function resetSheetHeader() {
@@ -2177,9 +2190,9 @@ function renderHome() {
     ? [prof.diet ? t(`diet.${prof.diet}`) : null, ...prof.allergens.slice(0, 2).map((x) => t(`allergen.${x}`)), prof.allergens.length > 2 ? `+${prof.allergens.length - 2}` : null]
         .filter(Boolean).join(" · ")
     : null;
+  // Une seule ligne : l'avis suivi et le profil, qui mène au profil dans les Réglages
   $("homeChips").innerHTML =
-    `<a class="set-chip" href="#settings" data-goto-settings="school">${svg(I.shield)}<span>${esc(t("home.school_chip", { s: t(`school.${st.school}`) }))}</span></a>` +
-    `<a class="set-chip${profText ? "" : " accent"}" href="#settings" data-goto-settings="profile">${svg(I.user)}<span>${esc(profText ? t("home.profile_chip", { p: profText }) : t("home.profile_add"))}</span></a>`;
+    `<a class="set-line" href="#settings" data-goto-settings="profile">${svg(I.user)}<span><strong>${esc(t("home.setting_line"))}</strong> ${esc(t(`school.${st.school}`))} · ${esc(profText || t("home.no_allergy"))}</span>${svg(I.chev, "flip")}</a>`;
   $("homeTip").textContent = t(`home.tip.${1 + (today() % TIP_COUNT)}`); // une astuce par jour
   $("homeTipBox").hidden = tipHiddenToday();
   $("homeTipBox").classList.remove("closing");
@@ -2945,6 +2958,7 @@ function renderECodes() {
   if (!eDb) {
     $("addFilter").innerHTML = "";
     $("addFn").innerHTML = "";
+    delete $("addFn").dataset.html;
     $("addList").innerHTML = rowsSkeleton(6);
     loadEDb();
     return;
@@ -2975,8 +2989,10 @@ function renderECodes() {
   rows.forEach((r) => r.it.k.forEach((k) => fnCount.set(k, (fnCount.get(k) || 0) + 1)));
   const fns = [...fnCount].sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const fnName = (k) => t(`fn.${k}`);
-  $("addFn").innerHTML = [`<button type="button" class="chip mini" aria-selected="${!eFn}" data-fn="">${t("add.fn_all")}</button>`,
-    ...fns.map((k) => `<button type="button" class="chip mini" aria-selected="${eFn === k}" data-fn="${esc(k)}">${esc(fnName(k))}</button>`)].join("");
+  // Fonctions dans un menu (une seule rangée de filtres à l'écran, plus de bouton coupé au bord)
+  const fnHtml = `<label class="fn-select"><span>${esc(t("add.fn"))}</span><select data-fn-select>${[`<option value="">${esc(t("add.fn_all"))}</option>`,
+    ...fns.map((k) => `<option value="${esc(k)}"${eFn === k ? " selected" : ""}>${esc(fnName(k))}</option>`)].join("")}</select>${svg(I.chev, "fn-chev")}</label>`;
+  if ($("addFn").dataset.html !== fnHtml) { $("addFn").dataset.html = fnHtml; $("addFn").innerHTML = fnHtml; }
   const q = norm($("addInput").value || "");
   const qCode = q.replace(/^e-?/, "");
   const list = rows.filter((r) => FILTERS[addFilter](r) && (!eFn || r.it.k.includes(eFn)) &&
@@ -3013,10 +3029,10 @@ function renderECodes() {
       `<p class="fineprint">${t("add.e_source")}</p>`
     : `<div class="empty">${emptyArt()}<strong>${t("add.empty.t")}</strong><p>${t("add.e_none")}</p></div>`;
 }
-$("addFn").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-fn]");
-  if (!b) return;
-  eFn = b.dataset.fn;
+$("addFn").addEventListener("change", (e) => {
+  const sel = e.target.closest("[data-fn-select]");
+  if (!sel) return;
+  eFn = sel.value;
   eShown = 80;
   renderAdditives();
 });

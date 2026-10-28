@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-9", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -1589,4 +1589,21 @@ export default {
   "ocr.crop_tip": "إضاءة جيدة، ملصق مسطّح، بلا انعكاس. القائمة مكتوبة بشكل جانبي؟ لا داعي لتدوير الهاتف.",
   // ---------- Lecture de photo : boutons ----------
   "ocr.retake_short": "إعادة",
+  // ---------- Audit : fiche produit ----------
+  "detail.kicker": "حسب إعدادك: {s}",
+  "detail.disclaimer": "بيّن أداة مساعدة على القرار، وليست شهادة ولا فتوى. عند الشك، اعتمد على علامة جهة معتمدة ورأي عالم تثق به.",
+  "hsum.ns": "Nutri-Score {g}",
+  "hsum.nova1": "طبيعي أو قليل المعالجة",
+  "hsum.nova2": "مكوّن طبخ",
+  "hsum.nova3": "مُعالَج",
+  "hsum.nova4": "فائق المعالجة",
+  "hsum.add0": "بلا مضافات خطرة",
+  "hsum.add_one": "مادة مضافة خطرة واحدة",
+  "hsum.add_other": "{n} مواد مضافة خطرة",
+  "hsum.bio": "عضوي",
+  // ---------- Audit : accueil ----------
+  "home.setting_line": "إعدادي:",
+  "home.no_allergy": "بلا حساسية",
+  // ---------- Audit : additifs ----------
+  "add.fn": "الوظيفة:",
 };

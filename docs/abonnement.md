@@ -12,7 +12,7 @@ n'est pas rempli, toutes les fonctions restent ouvertes à tout le monde. Rien n
 | Rappels de produits (fiche + surveillance de l'historique) | Comparer deux produits |
 | Alertes allergies et régime (votre profil) | Profils de la famille |
 | Photo des ingrédients, recherche, carte des commerces | Téléchargement hors connexion |
-| Organismes de certification, avis religieux point par point | Historique complet (au-delà des 30 derniers) |
+| Organismes de certification, avis religieux point par point | Historique sur 12 mois (30 jours sans Premium) |
 
 Principe : ce qui touche à la sécurité (rappels, allergies) et au verdict halal reste gratuit.
 Premium vend du confort et des outils.

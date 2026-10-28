@@ -75,23 +75,31 @@ def splashes(page):
 # ---------------------------------------------------------------------------
 # Captures des stores : l'app réelle (données d'exemple) dans un cadre avec un titre
 # ---------------------------------------------------------------------------
-NUT = {"energy-kcal_100g": 120, "sugars_100g": 4, "saturated-fat_100g": 1.2, "salt_100g": 0.3, "proteins_100g": 6, "fiber_100g": 3}
-DEMO = {
- "3000000000017": {"product_name": "Merguez de bœuf", "brands": "Socopa", "quantity": "400 g", "labels": "Halal, AVS", "labels_tags": ["en:halal", "fr:avs"], "emb_codes": "FR 22.070.001 CE", "categories_tags": ["en:meats", "en:sausages"], "ingredients_text_fr": "viande de bœuf 85 %, eau, sel, épices, ail", "nutriscore_grade": "c", "nutriments": {**NUT, "saturated-fat_100g": 7, "salt_100g": 1.8, "proteins_100g": 16}, "nova_group": 3},
- "3000000000024": {"product_name": "Biscuits fourrés chocolat", "brands": "Exemple", "categories_tags": ["en:biscuits", "en:sweet-snacks"], "ingredients_text_fr": "farine de blé, sucre, huile de palme, cacao, émulsifiant E471, E322, arôme", "additives_tags": ["en:e471", "en:e322"], "nutriscore_grade": "e", "nutriments": {**NUT, "sugars_100g": 38, "saturated-fat_100g": 9}},
-}
-DB = {"meta": {"updated": "2026-10-12"}, "orgs": {"avs": {"updated": "2026-10-12", "names": ["SOCOPA GUINGAMP"], "stamps": ["FR22070001CE"], "url": "https://avs.fr/"}}}
+# Vrais produits Open Food Facts (copie déjà gardée par l'app dans public/data/rankings), avec leur photo :
+# halal certifié, bon score santé, douteux (E471). Les photos viennent d'Open Food Facts au moment du rendu.
+SHOT_CODES = {"halal": "3291980533795", "health": "6111250471695", "doubt": "3256224124870"}
+def _ranked():
+    out = {}
+    for f in (PUB / "data" / "rankings").glob("*.json"):
+        d = json.loads(f.read_text())
+        if isinstance(d, list):
+            for x in d:
+                if isinstance(x, dict) and x.get("code") in SHOT_CODES.values(): out[x["code"]] = x
+    return out
+DEMO = _ranked()
+assert len(DEMO) == len(SHOT_CODES), "produits des captures introuvables dans public/data/rankings"
+# Listes des organismes : le vrai fichier de l'app (public/data/certified.json)
 TITLES = {
-  "fr": ["Scannez, sachez en une seconde", "Halal vérifié sur la liste officielle", "Votre santé, notée sur 100", "L'étiquette surlignée, mot par mot", "534 additifs expliqués"],
-  "en": ["Scan it, know in a second", "Halal checked against the official list", "Your health, scored out of 100", "The label, highlighted word by word", "534 additives explained"],
-  "ar": ["امسح المنتج واعرف في ثانية", "حلال موثَّق من القائمة الرسمية", "صحتك، بتقييم من 100", "الملصق مُظلَّل كلمةً بكلمة", "534 مادة مضافة مشروحة"],
-  "tr": ["Tara, bir saniyede öğren", "Resmî listeden doğrulanmış helal", "Sağlığınız 100 üzerinden", "Etiket kelime kelime işaretlenir", "534 katkı maddesi açıklandı"],
+  "fr": ["Scannez, sachez en une seconde", "Le label halal, lu et expliqué", "Votre santé, notée sur 100", "L'étiquette surlignée, mot par mot", "534 additifs expliqués"],
+  "en": ["Scan it, know in a second", "The halal label, read and explained", "Your health, scored out of 100", "The label, highlighted word by word", "534 additives explained"],
+  "ar": ["امسح المنتج واعرف في ثانية", "علامة الحلال، مقروءة ومشروحة", "صحتك، بتقييم من 100", "الملصق مُظلَّل كلمةً بكلمة", "534 مادة مضافة مشروحة"],
+  "tr": ["Tara, bir saniyede öğren", "Helal etiketi okunur ve açıklanır", "Sağlığınız 100 üzerinden", "Etiket kelime kelime işaretlenir", "534 katkı maddesi açıklandı"],
 }
 SUBS = {
-  "fr": ["Halal, santé, allergies — gratuit et sans pub", "AVS · Achahada · HMC", "Nutri-Score, additifs, bio", "Ce qui est douteux, et pourquoi, selon votre école", "Origine, risques, sources officielles"],
-  "en": ["Halal, health, allergies — free, no ads", "AVS · Achahada · HMC", "Nutri-Score, additives, organic", "What is doubtful and why, by your school", "Origin, risks, official sources"],
-  "ar": ["حلال، صحة، حساسية — مجاني وبلا إعلانات", "AVS · Achahada · HMC", "Nutri-Score، المضافات، العضوي", "ما المشكوك فيه ولماذا، حسب مذهبك", "المصدر والمخاطر والمراجع الرسمية"],
-  "tr": ["Helal, sağlık, alerji — ücretsiz ve reklamsız", "AVS · Achahada · HMC", "Nutri-Score, katkı maddeleri, organik", "Şüpheli olan ve nedeni, mezhebinize göre", "Köken, riskler, resmî kaynaklar"],
+  "fr": ["Halal, santé, allergies — gratuit et sans pub", "AVS, Achahada, HMC : vérifiés sur leur liste officielle", "Nutri-Score, additifs, bio", "Ce qui est douteux, et pourquoi, selon votre école", "Origine, risques, sources officielles"],
+  "en": ["Halal, health, allergies — free, no ads", "AVS, Achahada, HMC: checked against their official list", "Nutri-Score, additives, organic", "What is doubtful and why, by your school", "Origin, risks, official sources"],
+  "ar": ["حلال، صحة، حساسية — مجاني وبلا إعلانات", "AVS وAchahada وHMC: تُطابَق مع قائمتها الرسمية", "Nutri-Score، المضافات، العضوي", "ما المشكوك فيه ولماذا، حسب مذهبك", "المصدر والمخاطر والمراجع الرسمية"],
+  "tr": ["Helal, sağlık, alerji — ücretsiz ve reklamsız", "AVS, Achahada, HMC: resmî listelerinden doğrulanır", "Nutri-Score, katkı maddeleri, organik", "Şüpheli olan ve nedeni, mezhebinize göre", "Köken, riskler, resmî kaynaklar"],
 }
 TAGLINE = {
   "fr": ("Halal, santé, additifs.", "Tout en un scan."),
@@ -107,7 +115,6 @@ def app_screens(b, lang):
     ctx.add_init_script('localStorage.setItem("bayyin_intro", "1")')  # sans l'animation d'ouverture
     if not ONLINE:
         ctx.route(re.compile(r"https://fonts\..*"), lambda r: r.abort())  # hors ligne : Inter à défaut d'IBM Plex
-    ctx.route(re.compile(r".*/data/certified\.json"), lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(DB)))
     def prod(r):
         code = next((c for c in DEMO if c in r.request.url), None)
         r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
@@ -117,23 +124,31 @@ def app_screens(b, lang):
     ctx.route(re.compile(r".*openbeautyfacts.*"), lambda r: r.fulfill(status=200, content_type="application/json", body='{"status":0}'))
     p = ctx.new_page()
     p.goto("http://localhost:3123/", wait_until="load"); p.evaluate("document.fonts.ready.then(() => true)"); p.wait_for_timeout(1200)
-    out = [p.screenshot()]
     def open_code(code):
         p.click("#focusManual"); p.fill("#manualInput", code); p.press("#manualInput", "Enter")
-        p.wait_for_selector(".ptabs", timeout=8000); p.wait_for_timeout(1800)
-    open_code("3000000000017")
-    p.evaluate("document.getElementById('sheetBody').scrollTop = document.querySelector('.ptabs').offsetTop - 330"); p.wait_for_timeout(300)
-    out.append(p.screenshot())
+        p.wait_for_selector(".ptabs", timeout=8000); p.wait_for_timeout(2200)
+    def close():
+        p.click("#sheetClose"); p.wait_for_timeout(500)
+    shots = {}
+    open_code(SHOT_CODES["health"])
     p.click('[data-ptab="health"]'); p.wait_for_timeout(500)
-    p.evaluate("document.getElementById('sheetBody').scrollTop = 0"); p.wait_for_timeout(200)
-    out.append(p.screenshot())
-    p.click('[data-ptab="halal"]'); p.click("#sheetClose"); p.wait_for_timeout(300)
-    open_code("3000000000024")
+    p.evaluate("document.getElementById('sheetBody').scrollTop = 0"); p.wait_for_timeout(300)
+    shots["health"] = p.screenshot()
+    p.click('[data-ptab="halal"]'); close()
+    open_code(SHOT_CODES["doubt"])
     p.evaluate("(() => { const r = document.querySelector('#sheetBody .reader') || document.querySelector('.ptabs'); document.getElementById('sheetBody').scrollTop = r.offsetTop - 150; })()"); p.wait_for_timeout(400)
-    out.append(p.screenshot())
-    p.click("#sheetClose"); p.wait_for_timeout(300)
+    shots["doubt"] = p.screenshot()
+    close()
+    open_code(SHOT_CODES["halal"])
+    p.evaluate("document.getElementById('sheetBody').scrollTop = document.querySelector('.ptabs').offsetTop - 330"); p.wait_for_timeout(400)
+    shots["halal"] = p.screenshot()
+    close()
+    # Accueil : derniers produits avec leurs photos ; l'astuce du jour, coupée par la barre d'onglets, est masquée
+    p.evaluate("(() => { const t = document.getElementById('homeTipBox'); if (t) t.hidden = true; window.scrollTo(0, 0); })()"); p.wait_for_timeout(800)
+    shots["home"] = p.screenshot()
     p.goto("http://localhost:3123/#additives"); p.wait_for_timeout(1500)
-    out.append(p.screenshot())
+    shots["additives"] = p.screenshot()
+    out = [shots[k] for k in ("home", "halal", "health", "doubt", "additives")]
     ctx.close()
     return out
 

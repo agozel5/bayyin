@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-28-8", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-28-9", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1589,4 +1589,21 @@ export default {
   "ocr.crop_tip": "İyi ışık, düz etiket, parlama yok. Liste yan mı yazılmış? Telefonu çevirmeye gerek yok.",
   // ---------- Lecture de photo : boutons ----------
   "ocr.retake_short": "Yeniden çek",
+  // ---------- Audit : fiche produit ----------
+  "detail.kicker": "Ayarınıza göre: {s}",
+  "detail.disclaimer": "Bayyin bir karar yardımcısıdır; sertifika ya da dinî görüş değildir. Şüphede, bir kuruluşun etiketine ve güvendiğiniz bir âlimin görüşüne başvurun.",
+  "hsum.ns": "Nutri-Score {g}",
+  "hsum.nova1": "işlenmemiş veya az işlenmiş",
+  "hsum.nova2": "mutfak malzemesi",
+  "hsum.nova3": "işlenmiş",
+  "hsum.nova4": "ultra işlenmiş",
+  "hsum.add0": "riskli katkı maddesi yok",
+  "hsum.add_one": "1 riskli katkı maddesi",
+  "hsum.add_other": "{n} riskli katkı maddesi",
+  "hsum.bio": "organik",
+  // ---------- Audit : accueil ----------
+  "home.setting_line": "Ayarım:",
+  "home.no_allergy": "alerji yok",
+  // ---------- Audit : additifs ----------
+  "add.fn": "İşlev:",
 };
