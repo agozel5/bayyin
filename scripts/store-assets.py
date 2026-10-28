@@ -15,7 +15,12 @@ PUB, STORE = ROOT / "public", ROOT / "docs" / "store"
 MASTER = (STORE / "icon-master.svg").read_text()
 # Polices de l'app (IBM Plex), servies par le serveur local depuis public/fonts : rendu identique partout.
 ONLINE = bool(os.environ.get("CI"))
-FONTS = '<link rel="stylesheet" href="http://localhost:3123/fonts/fonts.css">'
+def _inline_fonts():
+    # Les pages d'images sont créées hors du site : les polices y sont intégrées (data:) pour éviter tout blocage
+    import base64
+    css = (PUB / "fonts" / "fonts.css").read_text()
+    return "<style>" + re.sub(r"url\(\./([^)]+)\)", lambda m: "url(data:font/woff2;base64," + base64.b64encode((PUB / "fonts" / m.group(1)).read_bytes()).decode() + ")", css) + "</style>"
+FONTS = _inline_fonts()
 FAMILY = "'IBM Plex Sans','IBM Plex Sans Arabic',Inter,system-ui,sans-serif"
 # Couleurs de l'app (direction « clinique et précise »)
 GREEN, GREEN_DARK, INK, MUTED, PAPER = "#14805A", "#0E5F43", "#10251B", "#4D6157", "#F2F5F3"
@@ -157,7 +162,7 @@ def banner_html(png_b64, lang, W, H, phone_scale=0.92):
         <div style="display:flex;align-items:center;gap:{icon*0.32}px">
           <div style="width:{icon}px;height:{icon}px;border-radius:{icon*0.225}px;overflow:hidden;box-shadow:0 0 0 {max(1, icon*0.012)}px rgb(255 255 255 / .2)">{svg_sized(int(icon), "b")}</div>
           <div style="font-size:{icon*0.62}px;font-weight:700;letter-spacing:-.01em">Bayyin <span style="font-weight:500;opacity:.75;font-family:'IBM Plex Sans Arabic',sans-serif">بيّن</span></div></div>
-        <div style="font-size:{H*0.095}px;font-weight:700;line-height:1.12;letter-spacing:-.015em">{a}<br>{b}</div>
+        <div style="font-size:{H*0.095*min(1, 24/max(len(a), len(b)))}px;font-weight:700;line-height:1.12;letter-spacing:-.015em">{a}<br>{b}</div>
         <div style="font-size:{H*0.045}px;font-weight:500;opacity:.82">{PROMISE[lang]}</div></div>
       <div style="position:absolute;top:{H*0.16}px;inset-inline-end:{W*0.07}px">{phone(png_b64, pw, ph)}</div></div>'''
 
@@ -172,9 +177,9 @@ def square_html(png_b64, lang, W, H):
       <div style="padding-top:{W*0.08}px;display:flex;flex-direction:column;align-items:center;gap:{W*0.025}px">
         <div style="display:flex;align-items:center;gap:{icon*0.3}px"><div style="width:{icon}px;height:{icon}px;border-radius:{icon*0.225}px;overflow:hidden">{svg_sized(int(icon), "q")}</div>
           <div style="font-size:{icon*0.6}px;font-weight:700">Bayyin</div></div>
-        <div style="font-size:{W*0.075}px;font-weight:700;line-height:1.12;letter-spacing:-.015em">{a}<br>{b}</div>
+        <div style="font-size:{W*0.075*min(1, 26/max(len(a), len(b)))}px;font-weight:700;line-height:1.12;letter-spacing:-.015em">{a}<br>{b}</div>
         <div style="font-size:{W*0.034}px;font-weight:500;opacity:.82">{PROMISE[lang]}</div></div>
-      <div style="position:absolute;left:50%;transform:translateX(-50%);top:{H*(0.36 if H > W * 1.4 else 0.44)}px">{phone(png_b64, pw, ph)}</div></div>'''
+      <div style="position:absolute;left:50%;transform:translateX(-50%);top:{H*(0.36 if H > W * 1.4 else 0.5)}px">{phone(png_b64, pw, ph)}</div></div>'''
 
 def store_shots(b, page):
     import base64
