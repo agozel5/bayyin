@@ -1,0 +1,54 @@
+name: Polices hébergées avec l'app
+
+# IBM Plex (licence SIL OFL) copiées dans public/fonts depuis Fontsource : l'app n'appelle plus Google Fonts
+# (aucune adresse IP envoyée à Google, polices disponibles hors connexion). À lancer à la main.
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Télécharger et ne garder que l'utile
+        run: |
+          mkdir -p /tmp/f && cd /tmp/f && npm init -y > /dev/null
+          npm i @fontsource/ibm-plex-sans@5 @fontsource/ibm-plex-sans-arabic@5 @fontsource/ibm-plex-mono@5 > /dev/null
+          cd "$GITHUB_WORKSPACE"
+          python3 - <<'PY'
+          import re, shutil, pathlib
+          src = pathlib.Path("/tmp/f/node_modules/@fontsource")
+          out = pathlib.Path("public/fonts"); out.mkdir(parents=True, exist_ok=True)
+          want = {"ibm-plex-sans": ([400, 500, 600, 700], ["latin", "latin-ext"], True),
+                  "ibm-plex-sans-arabic": ([400, 500, 600, 700], ["arabic"], False),
+                  "ibm-plex-mono": ([500, 600], ["latin"], False)}
+          css = ["/* IBM Plex, licence SIL Open Font License 1.1 (github.com/IBM/plex). Fichiers issus de Fontsource. */"]
+          for pkg, (weights, subsets, italic) in want.items():
+              styles = ["normal", "italic"] if italic else ["normal"]
+              for w in weights:
+                  for st in styles:
+                      if st == "italic" and w != 400: continue
+                      f = src / pkg / (f"{w}-italic.css" if st == "italic" else f"{w}.css")
+                      for block in re.findall(r"/\*[^*]*\*/\s*@font-face\s*\{[^}]*\}", f.read_text()):
+                          sub = re.search(r"/\*\s*[^*]*?-([a-z-]+)-\d+-(?:normal|italic)\s*\*/", block)
+                          name = re.search(r"\./files/([^)]+?\.woff2)", block).group(1)
+                          if not any(name.startswith(f"{pkg}-{s}-{w}-") for s in subsets): continue
+                          shutil.copy(src / pkg / "files" / name, out / name)
+                          b = re.sub(r"src:[^;]+;", f"src:url(./{name}) format('woff2');", block)
+                          b = re.sub(r"/\*[^*]*\*/\s*", "", b)
+                          css.append(b.replace("font-display: swap", "font-display: swap"))
+          (out / "fonts.css").write_text("\n".join(css) + "\n")
+          print(len(css) - 1, "styles")
+          PY
+          ls -la public/fonts
+      - name: Enregistrer
+        run: |
+          git add public/fonts
+          if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Polices IBM Plex hébergées avec l'app"
+          git pull --rebase origin main && git push origin HEAD:main
