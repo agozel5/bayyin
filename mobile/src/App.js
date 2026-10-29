@@ -255,7 +255,7 @@ function Main() {
   if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} />;
   if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
-  if (tab === "settings") page = <SettingsScreen focus={focus} />;
+  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} />;
 
   const renderScreen = (item) => {
     if (item.type === "camera")

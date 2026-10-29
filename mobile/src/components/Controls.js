@@ -52,7 +52,7 @@ export function Segmented({ items, value, onChange }) {
       {items.map(([id, label]) => {
         const on = id === value;
         return (
-          <Pressable key={id} onPress={() => { haptic.tap(); onChange(id); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
+          <Pressable key={String(id)} onPress={() => { haptic.tap(); onChange(id); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
             style={[{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 12, backgroundColor: on ? (isDark() ? C.tint2 : C.surface) : "transparent" }, on && !isDark() ? lift() : null]}>
             <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: on ? "800" : "600", color: on ? C.fg : C.muted }}>{label}</Text>
           </Pressable>

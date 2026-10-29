@@ -50,6 +50,7 @@ export async function initStorage() {
     },
     onboarded: !!s.onboarded,
     theme: ["auto", "light", "dark"].includes(s.theme) ? s.theme : "auto",
+    distrust: Array.isArray(s.distrust) ? s.distrust : [],
   };
   history = Array.isArray(get(K.history)) ? get(K.history) : [];
   local = get(K.local) || {};
@@ -67,6 +68,15 @@ export function setSettings(patch) {
   settings = { ...settings, ...patch };
   save(K.settings, settings);
   emit("settings");
+}
+// Organismes de certification que l'utilisateur ne suit pas
+export function toggleDistrust(id) {
+  const d = settings.distrust || [];
+  setSettings({ distrust: d.includes(id) ? d.filter((x) => x !== id) : [...d, id] });
+}
+// Réglages d'origine (la langue et le thème sont gardés)
+export function resetSettings() {
+  setSettings({ school: DEFAULT_PREFS.school, topics: { ...SCHOOLS.standard }, profile: { allergens: [], diet: null }, distrust: [] });
 }
 export function setSchool(school) {
   if (SCHOOLS[school]) setSettings({ school, topics: { ...SCHOOLS[school] } });

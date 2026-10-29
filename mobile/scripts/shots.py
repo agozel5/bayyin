@@ -60,6 +60,11 @@ def run(lang, scheme):
         p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:
             p.evaluate(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
+        p.set_viewport_size({"width": 390, "height": 1700})
+        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"]:
+            p.evaluate(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
+        p.evaluate("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
+        p.set_viewport_size({"width": 390, "height": 844})
         b.close()
     return errs
 
