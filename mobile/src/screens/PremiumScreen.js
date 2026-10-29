@@ -13,7 +13,9 @@ import { mascot } from "../../../public/lib/mascot.js";
 
 const FEATS = [
   ["rankings", "#E2A812", '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>'],
-  ["basket", "#1FA597", '<path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>'],
+  ["aisle", "#1FA597", '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="8.5" cy="10" r="2.2"/><circle cx="15.5" cy="10" r="2.2"/><circle cx="12" cy="16" r="2.2"/>'],
+  ["compare", "#4C64D6", '<path d="M4 8h13l-3-3M20 16H7l3 3"/>'],
+  ["basket", "#E0457B", '<path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>'],
   ["offline", "#2F6FC0", '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>'],
   ["history", "#8A63DA", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
 ];

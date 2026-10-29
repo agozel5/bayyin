@@ -84,10 +84,17 @@ export function parsePlaces(json, lat, lon) {
 const ABS = "https://agozel5.github.io/bayyin/data/places/";
 export const PLACES_BASE =
   typeof location !== "undefined" && /^https?:/.test(location.protocol) ? new URL("data/places/", location.href).href : ABS;
+// AbortSignal.timeout n'existe pas partout (moteur de l'app mobile) : délai seulement s'il est disponible
+const timeoutOpt = (ms) => (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(ms) } : {});
+// Promise.any : le premier serveur qui répond (repli maison si le moteur ne l'a pas)
+const firstOk = (jobs) => (Promise.any ? Promise.any(jobs) : new Promise((ok, ko) => {
+  let left = jobs.length;
+  jobs.forEach((j) => j.then(ok, () => { if (--left === 0) ko(new Error("all failed")); }));
+}));
 const cache = new Map();
 function getJson(url, timeout = 8000) {
   if (!cache.has(url)) {
-    const job = fetch(url, { signal: AbortSignal.timeout(timeout) })
+    const job = fetch(url, timeoutOpt(timeout))
       .then((r) => (r.ok ? r.json() : r.status === 404 ? null : Promise.reject(new Error(`HTTP ${r.status}`))))
       .catch((e) => { cache.delete(url); throw e; });
     cache.set(url, job);
@@ -130,8 +137,8 @@ export async function livePlaces(lat, lon, radius) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 25000);
   try {
-    const json = await Promise.any(OVERPASS.map(async (url) => {
-      const res = await fetch(url, { method: "POST", body: new URLSearchParams({ data: q }), signal: ctl.signal });
+    const json = await firstOk(OVERPASS.map(async (url) => {
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q), signal: ctl.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     }));
@@ -158,7 +165,7 @@ export async function fetchPlaces(lat, lon, radius = 3000) {
 /** Ville ou adresse -> coordonnées (premier résultat) */
 export async function geocode(text, lang = "fr") {
   const url = `${NOMINATIM}?format=jsonv2&limit=1&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(text)}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  const res = await fetch(url, timeoutOpt(15000));
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const list = await res.json();
   if (!list.length) return null;

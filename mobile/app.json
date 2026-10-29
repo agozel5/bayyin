@@ -28,6 +28,8 @@
         "backgroundColor": "#14805A"
       },
       "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE"
@@ -132,6 +134,12 @@
               }
             }
           ]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Bayyin utilise votre position seulement pour trouver les commerces halal autour de vous. Elle n'est ni gardée ni envoyée à Bayyin."
         }
       ]
     ],

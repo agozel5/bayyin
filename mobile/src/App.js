@@ -16,6 +16,9 @@ import RankingsScreen from "./screens/RankingsScreen";
 import Tour, { tourRef } from "./components/Tour";
 import BasketScreen from "./screens/BasketScreen";
 import PremiumScreen from "./screens/PremiumScreen";
+import PlacesScreen from "./screens/PlacesScreen";
+import CompareScreen from "./screens/CompareScreen";
+import AisleScreen from "./screens/AisleScreen";
 import { initPremium, setPremiumAsk, canUse, onPremium, setPreview } from "./premium";
 import { loadBasket, onBasket, getBasket, addToBasket, setBasketProduct } from "./basket";
 import { fetchProduct } from "./api";
@@ -128,7 +131,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, children }) {
   }, [leaving]);
   const side = dir().rtl ? -1 : 1;
   const transform =
-    kind === "sheet" || kind === "rankings" || kind === "basket" || kind === "premium"
+    ["sheet", "rankings", "basket", "premium", "places", "compare"].includes(kind)
       ? [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }) }]
       : kind === "ocr"
         ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }]
@@ -139,7 +142,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, children }) {
       importantForAccessibility={hidden ? "no-hide-descendants" : "auto"}
       accessibilityElementsHidden={!!hidden}
       accessibilityViewIsModal={!hidden}
-      style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" ? "#000" : C.bg, opacity: v, transform }]}
+      style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: v, transform }]}
     >
       {children}
     </Animated.View>
@@ -332,6 +335,9 @@ function Main() {
         onGotoSettings={() => gotoSettings()}
         onGotoProfile={gotoProfile}
         onRankings={() => push({ type: "rankings" })}
+        onAisle={() => { if (canUse("aisle")) push({ type: "aisle" }); }}
+        onPlaces={() => push({ type: "places" })}
+        onCompare={() => { if (canUse("compare")) push({ type: "compare" }); }}
         onBasketMode={() => { if (!canUse("basket")) return; setBasketMode(true); openCamera(); }}
         onOpenBasket={() => push({ type: "basket" })}
         basketCount={basketCount}
@@ -378,9 +384,13 @@ function Main() {
           onOcr={openOcr}
           onGotoSettings={() => gotoSettings()}
           onGotoProfile={gotoProfile}
+          onCompare={(code, bp) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: bp }); }}
           toast={toast}
         />
       );
+    if (item.type === "places") return <PlacesScreen onClose={pop} />;
+    if (item.type === "compare") return <CompareScreen base={item.base} baseP={item.baseP} onClose={pop} onScan={() => openCamera({ replace: true })} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
+    if (item.type === "aisle") return <AisleScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;
     if (item.type === "basket")
       return <BasketScreen onClose={pop} toast={toast} onScan={() => { setBasketMode(true); openCamera({ replace: true }); }} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
@@ -403,15 +413,15 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)) };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)) };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.
-  const visible = stack.slice(-2).filter((item, i, arr) => item.type !== "camera" || i === arr.length - 1);
+  const visible = stack.slice(-2).filter((item, i, arr) => (item.type !== "camera" && item.type !== "aisle") || i === arr.length - 1);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <StatusBar style={(top && top.type === "camera" && leaving !== top.key) || isDark() ? "light" : "dark"} />
+      <StatusBar style={(top && (top.type === "camera" || top.type === "aisle") && leaving !== top.key) || isDark() ? "light" : "dark"} />
       <View key={getLang() + (isDark() ? "d" : "l")} style={{ flex: 1 }} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           {page}

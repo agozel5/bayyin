@@ -573,7 +573,7 @@ function LinkRow({ text, url, muted = false }) {
 
 // Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
 let lastTab = "halal";
-function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
+function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare }) {
   const v = verdictOf(p);
   const kind = kindOf(p);
   const food = kind === "food";
@@ -632,6 +632,14 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
       <SheetTabs tabs={tabs} cur={cur} onTab={setTab} />
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
       {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {onCompare && kind !== "medicine" ? (
+        <Pressable onPress={() => { haptic.tap(); onCompare(p.code, p); }} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+          <Tile color="#4C64D6" paths='<path d="M4 8h13l-3-3M20 16H7l3 3"/>' size={36} />
+          <Txt style={{ flex: 1, fontWeight: "800" }}>{t("cmp.title")}</Txt>
+          <Glyph name="chev" size={17} color={C.faint} />
+        </Pressable>
+      ) : null}
       <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
@@ -671,7 +679,7 @@ function SheetSkeleton() {
   );
 }
 
-export default function ProductSheet({ code, product, fromScan, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, toast }) {
+export default function ProductSheet({ code, product, fromScan, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
@@ -797,7 +805,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
             <Btn title={t("detail.photo_ingredients")} icon="doc" kind="white" onPress={() => onOcr(code)} />
           </Message>
         ) : p ? (
-          <ProductBody p={p} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} />
+          <ProductBody p={p} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} onCompare={onCompare} />
         ) : null}
       </Animated.ScrollView>
 

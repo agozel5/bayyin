@@ -47,6 +47,10 @@ def run(lang, scheme):
             r.fulfill(status=200 if f.exists() else 404, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
                       body=f.read_text() if f.exists() else "{}")
         ctx.route(re.compile(r".*/data/rankings/.*\.json.*"), ranks)
+        def places(r):
+            f = PUB / "data" / "places" / r.request.url.split("/data/places/")[1].split("?")[0]
+            r.fulfill(status=200 if f.exists() else 404, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"}, body=f.read_text() if f.exists() else "{}")
+        ctx.route(re.compile(r".*/data/places/.*\.json.*"), places)
         p = ctx.new_page()
         p.on("pageerror", lambda e: errs.append(str(e)))
         p.goto("http://127.0.0.1:8765/"); p.wait_for_function("!!window.__bayyin", timeout=30000); p.wait_for_timeout(1500)
@@ -89,6 +93,15 @@ def run(lang, scheme):
         for c in CODES: p.evaluate(f"window.__bayyin.basketAdd('{c}')")
         p.wait_for_timeout(2500); p.evaluate("window.__bayyin.openBasket()"); p.wait_for_timeout(1500); shot("basket")
         p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        # Commerces halal (centre de Paris) et comparaison de deux produits de l'historique
+        p.set_viewport_size({"width": 390, "height": 1700})
+        p.evaluate("window.__bayyinPlacesAt = { lat: 48.8566, lon: 2.3522 }; window.__bayyin.openPlaces()"); p.wait_for_timeout(1200)
+        p.evaluate("window.__bayyinPlacesLocate && window.__bayyinPlacesLocate()"); p.wait_for_timeout(6000); shot("places")
+        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        p.evaluate("window.__bayyin.openCompare()"); p.wait_for_timeout(900)
+        p.evaluate(f"window.__bayyinCompare && window.__bayyinCompare('{CODES[0]}', '{CODES[2]}')"); p.wait_for_timeout(1200); shot("compare")
+        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        p.set_viewport_size({"width": 390, "height": 844})
         # Alerte personnelle : lait et fruits à coque dans le profil (yaourt : contient du lait, traces de fruits à coque)
         p.evaluate("window.__bayyin.setSettings({ profile: { allergens: ['en:milk', 'en:nuts', 'en:eggs'], diet: null } })"); p.wait_for_timeout(400)
         p.evaluate(f"window.__bayyin.openProduct('{CODES[1]}')"); p.wait_for_timeout(2500); shot("alert")
