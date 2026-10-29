@@ -26,16 +26,17 @@ export function Tile({ color, icon, paths, size = 34, radius, iconSize, style })
   const r = radius ?? Math.round(size * 0.3);
   const top = mix(color, "#FFFFFF", 0.72), bottom = mix(color, "#000000", 0.85);
   const glyph = paths || I[icon] || "";
-  const xml = `<svg viewBox="0 0 ${size} ${size}"><defs><linearGradient id="t${color.slice(1)}" x1="0" y1="0" x2="0.55" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="0.55" stop-color="${color}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs>
-    <rect width="${size}" height="${size}" rx="${r}" fill="url(#t${color.slice(1)})"/>
-    <rect x="0.5" y="0.5" width="${size - 1}" height="${size - 1}" rx="${r - 0.5}" fill="none" stroke="#fff" stroke-opacity="${isDark() ? 0.18 : 0.3}"/></svg>`;
   const g = iconSize || Math.round(size * 0.56);
-  const icn = `<svg viewBox="0 0 24 24"><g fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`;
+  const k = g / 24, off = (size - g) / 2;
+  const id = "t" + color.slice(1);
+  // Un seul dessin : fond en dégradé, liseré clair et pictogramme blanc par-dessus
+  const xml = `<svg viewBox="0 0 ${size} ${size}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0.55" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="0.55" stop-color="${color}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs>
+    <rect width="${size}" height="${size}" rx="${r}" fill="url(#${id})"/>
+    <rect x="0.5" y="0.5" width="${size - 1}" height="${size - 1}" rx="${r - 0.5}" fill="none" stroke="#ffffff" stroke-opacity="${isDark() ? 0.18 : 0.3}"/>
+    <g transform="translate(${off} ${off}) scale(${k})" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`;
   return (
-    <View style={[{ width: size, height: size, alignItems: "center", justifyContent: "center",
-      shadowColor: color, shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2 }, style]}>
-      <SvgXml xml={xml} width={size} height={size} style={{ position: "absolute" }} />
-      <SvgXml xml={icn} width={g} height={g} color="#fff" />
+    <View style={[{ width: size, height: size, shadowColor: color, shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2 }, style]}>
+      <SvgXml xml={xml} width={size} height={size} color="#ffffff" />
     </View>
   );
 }

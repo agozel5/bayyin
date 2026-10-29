@@ -46,6 +46,16 @@ def run(lang, scheme):
             p.evaluate(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2500)
             shot(f"sheet-{c}")
             p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        # Fiche complète, onglet par onglet (fenêtre haute : la fiche défile dans son propre cadre)
+        p.set_viewport_size({"width": 390, "height": 2600})
+        for c, tabs in [(CODES[2], ["halal", "health", "compo"]), (CODES[0], ["halal"])]:
+            p.evaluate(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2200)
+            for tb in tabs:
+                p.evaluate(f"window.__bayyin.sheetTab && window.__bayyin.sheetTab('{tb}')"); p.wait_for_timeout(900)
+                shot(f"full-{c}-{tb}")
+            p.evaluate("window.__bayyin.sheetTab && window.__bayyin.sheetTab('halal')")
+            p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        p.set_viewport_size({"width": 390, "height": 844})
         p.evaluate("window.__bayyin.setTab('history')"); p.wait_for_timeout(500)
         p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:

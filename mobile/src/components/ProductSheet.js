@@ -6,12 +6,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
 import { Txt, H2, Muted, Label, Row, Btn, Pill, StatusPill, MiniScore, Loading, Message, Skeleton, FadeIn } from "./ui";
 import { haptic, ms, announce } from "../motion";
-import { C, R, ALERT_COLORS, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir } from "../theme";
+import { isDark, C, R, ALERT_COLORS, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir } from "../theme";
 import { t, tn, tPlain } from "../i18n";
 import { SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES, isMedicineCode } from "../core";
 import { fetchProduct, fetchAlternatives } from "../api";
 import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../storage";
 import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteText, fmt, errorText, kindOf, profileOf } from "../view";
+import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
+import { Glyph, Art } from "./Art";
+import { NUT_ART } from "../../../public/lib/rank-art.js";
 
 const STATUS_ICON = { halal_certifie: "check", halal_probable: "check", mashbouh: "question", haram: "cross", inconnu: "dash" };
 const open = (url) => Linking.openURL(url).catch(() => {});
@@ -22,7 +25,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // ---------------------------------------------------------------------------
 function Section({ title, sub, children }) {
   return (
-    <View style={{ gap: 10, paddingTop: 22, marginTop: 4, borderTopWidth: 1, borderTopColor: C.line }}>
+    <View style={{ gap: 10 }}>
       <Row style={{ justifyContent: "space-between" }}>
         <H2 style={{ flexShrink: 1 }}>{title}</H2>
         {sub ? <Muted style={{ fontSize: 13 }}>{sub}</Muted> : null}
@@ -269,28 +272,52 @@ function HalalSection({ p, v, onGotoSettings, onOcr }) {
   );
 }
 
+// Jauge tricolore avec repère du produit (comme la version web)
+function Gauge({ n }) {
+  if (!n.t) return null;
+  const [a, b] = n.t;
+  const top = Math.max(n.kind === "neg" ? b * 1.6 : b * 1.5, n.value * 1.05);
+  const pct = (x) => Math.max(0, Math.min(100, (x / top) * 100));
+  const segs = n.kind === "neg" ? ["#3FB46B", "#F0A23A", "#E2533F"] : ["#B9DFC6", "#3FB46B", "#1E8A4C"];
+  const r = (x) => fmt(x < 10 ? Math.round(x * 10) / 10 : Math.round(x));
+  const w = [pct(a), pct(b) - pct(a), 100 - pct(b)];
+  return (
+    <View style={{ marginStart: 52, marginTop: 4, direction: "ltr" }} accessible accessibilityLabel={`${fmt(n.value)} ${n.unit} · ${r(a)} / ${r(b)}`}>
+      <View style={{ height: 14, justifyContent: "flex-end" }}>
+        <View style={{ position: "absolute", left: `${pct(n.value)}%`, marginLeft: -6, top: 0, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+          borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} />
+      </View>
+      <View style={{ flexDirection: "row", height: 7, gap: 2, marginTop: 2 }}>
+        {segs.map((c, i) => <View key={i} style={{ width: `${w[i]}%`, backgroundColor: c, borderRadius: 4 }} />)}
+      </View>
+      <View style={{ height: 18, marginTop: 3 }}>
+        {[[0, "0"], [pct(a), r(a)], [pct(b), r(b)], [100, r(top)]].map(([x, l], i) => (
+          <Text key={i} style={{ position: "absolute", left: `${x}%`, transform: [{ translateX: i === 0 ? 0 : i === 3 ? -24 : -10 }], fontSize: 11.5, color: C.muted, fontVariant: ["tabular-nums"] }}>{l}</Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function NutRow({ n }) {
-  const pct = Math.max(4, Math.min(100, (n.value / n.max) * 100));
   const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
   const color = LEVEL_COLORS[n.level] || C.muted;
   return (
-    <View style={{ gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+    <View style={{ gap: 6, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: C.line }}>
       <Row gap={12}>
-        <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}>
-          <Icon name={n.id} size={20} color={C.fg} />
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
+          {NUT_ART[n.id] ? <Art xml={NUT_ART[n.id]} size={30} /> : <Icon name={n.id} size={20} color={C.fg} />}
         </View>
         <View style={{ flex: 1 }}>
           <Txt style={{ fontWeight: "700" }}>{t(`nut.${n.id}`)}</Txt>
           <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`nut.${n.id}.${textKey}`)}</Muted>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Text style={{ fontWeight: "700", color: C.fg }}>{fmt(n.value)} {n.unit}</Text>
+          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15.5 }}>{fmt(n.value)} {n.unit}</Text>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
         </View>
       </Row>
-      <View style={{ height: 5, borderRadius: 3, backgroundColor: C.tint, overflow: "hidden", flexDirection: dir().row }}>
-        <View style={{ width: `${pct}%`, backgroundColor: color, borderRadius: 3 }} />
-      </View>
+      <Gauge n={n} />
     </View>
   );
 }
@@ -299,8 +326,8 @@ function AdditivesRow({ count }) {
   const bad = count > 0;
   return (
     <Row gap={12} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-      <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}>
-        <Icon name="flask" size={20} color={C.fg} />
+      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
+        <Art xml={NUT_ART.additives} size={30} />
       </View>
       <View style={{ flex: 1 }}>
         <Txt style={{ fontWeight: "700" }}>{t("detail.additives")}</Txt>
@@ -322,12 +349,29 @@ function HealthSection({ p }) {
   const neg = h.nutrition.negatives;
   const pos = h.nutrition.positives;
   const hasNut = neg.length || pos.length;
-  const lead = s
-    ? tPlain("detail.health_lead_html", { n: s.score, g: s.nutriscore.toUpperCase(), a: s.parts.nutrition, b: s.parts.additives, c: s.parts.bio })
-    : t("detail.health_none");
+  const bits = s ? [t("hsum.ns", { g: s.nutriscore.toUpperCase() }), ...(h.nova && h.nova.group ? [t(`hsum.nova${h.nova.group}`)] : []),
+    risky ? tn("hsum.add", risky) : t("hsum.add0"), ...(h.organic ? [t("hsum.bio")] : [])] : [];
+  const lead = s ? <Txt><Text style={{ fontWeight: "800" }}>{t(`grade.${s.grade}`)}</Text> : {bits.join(", ")}.</Txt> : <Txt>{t("detail.health_none")}</Txt>;
+  const parts = s ? [["nutrition", 55, "#1E8F4E"], ["additives", 25, "#3F79B5"], ["nova", 10, "#E0912A"], ["bio", 10, isDark() ? "#A68BEB" : "#7B5BC9"]] : [];
   return (
     <Section title={t("detail.health")} sub={t("detail.per", { u: t(h.nutrition.drink ? "unit.100ml" : "unit.100g") })}>
-      <Txt>{lead}</Txt>
+      {lead}
+      {s ? (
+        <View style={{ gap: 8, direction: "ltr" }}>
+          <View style={{ flexDirection: "row", gap: 4, height: 8 }}>
+            {parts.map(([id, max, c]) => (
+              <View key={id} style={{ flex: max, backgroundColor: C.tint2, borderRadius: 4, overflow: "hidden" }}>
+                <View style={{ width: `${(s.parts[id] / max) * 100}%`, height: "100%", backgroundColor: c }} />
+              </View>
+            ))}
+          </View>
+          <View style={{ flexDirection: dir().row, flexWrap: "wrap", columnGap: 14, rowGap: 4 }}>
+            {parts.map(([id, max, c]) => (
+              <Row key={id} gap={5}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} /><Text style={{ fontSize: 12.5, color: C.muted }}>{t(`bd.${id}`)} <Text style={{ color: C.fg, fontWeight: "800" }}>{s.parts[id]}</Text>/{max}</Text></Row>
+            ))}
+          </View>
+        </View>
+      ) : null}
       {neg.length || risky ? (
         <View>
           <Label style={{ marginTop: 6 }}>{t("detail.defects")}</Label>
@@ -497,9 +541,16 @@ function LinkRow({ text, url, muted = false }) {
   );
 }
 
+// Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
+let lastTab = "halal";
 function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
   const v = verdictOf(p);
   const kind = kindOf(p);
+  const food = kind === "food";
+  const s = scoreOf(p);
+  const [tab, setTabState] = useState(lastTab);
+  const setTab = (x) => { lastTab = x; setTabState(x); };
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.sheetTab = setTab; // captures automatiques (web)
   const st = getSettings();
   const report = isBarcode(p.code)
     ? "https://github.com/agozel5/bayyin/issues/new?title=" +
@@ -507,34 +558,58 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
       "&body=" +
       encodeURIComponent(t("report.body", { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" }))
     : null;
+  const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
+  const halal = (
+    <Panel>
+      <Chain p={p} v={v} />
+      <CertCard v={v} />
+      {notes.map((n, i) => <Muted key={i}>{n}</Muted>)}
+      <Reader p={p} v={v} onGotoSettings={onGotoSettings} />
+      {v.flags.length ? <View style={{ gap: 10 }}>{v.flags.map((f, i) => <FlagCard2 key={f.id + i} f={f} onGotoSettings={onGotoSettings} />)}</View> : null}
+      {v.status === "inconnu" && isBarcode(p.code) && food ? <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(p.code)} /> : null}
+      <Disclaimer />
+    </Panel>
+  );
+  const health = food ? (
+    <View style={{ gap: 14 }}>
+      <Panel><HealthSection p={p} /></Panel>
+      <WatchSection p={p} />
+      <Panel><ExtraSections p={p} /></Panel>
+    </View>
+  ) : kind === "medicine" ? <Panel><MedicineSection p={p} /></Panel> : null;
+  const compo = (
+    <View style={{ gap: 14 }}>
+      {food ? <Panel><AllAdditivesSection p={p} v={v} /></Panel> : null}
+      {p.ingredients && !food ? <Panel><Section title={t("detail.ingredients")}><Muted>{p.ingredients.replace(/_/g, "")}</Muted></Section></Panel> : null}
+    </View>
+  );
+  const tabs = [
+    { id: "halal", label: t("detail.halal"), mark: <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: VERDICT_DOT(v.status) }} />, el: halal },
+    health ? { id: "health", label: t(food ? "detail.health" : "kind.medicine"), mark: s ? <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 99, backgroundColor: GRADE_COLORS[s.grade] }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>{s.score}</Text></View> : null, el: health } : null,
+    food ? { id: "compo", label: t("detail.compo_tab"), mark: null, el: compo } : null,
+  ].filter(Boolean);
+  const cur = tabs.some((x) => x.id === tab) ? tab : "halal";
   return (
-    <View style={{ gap: 18 }}>
-      <FadeIn><Top p={p} /></FadeIn>
+    <View style={{ gap: 14 }}>
+      <FadeIn><Top2 p={p} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
-      <FadeIn delay={60}><Tiles p={p} v={v} /></FadeIn>
-      <FadeIn delay={120}><HalalSection p={p} v={v} onGotoSettings={onGotoSettings} onOcr={onOcr} /></FadeIn>
-      {kind === "medicine" ? <FadeIn delay={180}><MedicineSection p={p} /></FadeIn> : null}
-      {kind === "food" ? <FadeIn delay={180}><HealthSection p={p} /></FadeIn> : null}
-      {kind === "food" ? <WatchSection p={p} /> : null}
-      {!p.local && kind === "food" ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
-      {kind === "food" ? <AllAdditivesSection p={p} v={v} /> : null}
-      <ExtraSections p={p} />
-      {p.ingredients ? (
-        <Section title={t("detail.ingredients")}>
-          <Muted>{p.ingredients.replace(/_/g, "")}</Muted>
-        </Section>
-      ) : null}
-      <View style={{ paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+      <FadeIn delay={60}><VerdictHero p={p} v={v} /></FadeIn>
+      {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
+      <SheetTabs tabs={tabs} cur={cur} onTab={setTab} />
+      <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
+      {!p.local && food ? <Panel><AlternativesSection p={p} onOpen={onOpen} /></Panel> : null}
+      <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
         ) : p.offUrl ? (
           <LinkRow text={t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")} url={p.offUrl} />
         ) : null}
         {report ? <LinkRow text={t("detail.report")} url={report} muted /> : null}
-      </View>
+      </Panel>
     </View>
   );
 }
+const VERDICT_DOT = (st) => ({ halal_certifie: "#169B57", halal_probable: "#3E8A49", mashbouh: "#EE8A1F", haram: "#E0423A", inconnu: "#97A39C" })[st];
 
 // ---------------------------------------------------------------------------
 // Fiche complète (chargement, en-tête, favoris, partage)
@@ -629,10 +704,10 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
     }).catch(() => {});
   };
 
-  const headBtn = { width: 44, height: 44, borderRadius: 22, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" };
+  const headBtn = { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" };
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 6 }}>
         <Pressable onPress={onClose} style={headBtn} accessibilityRole="button" accessibilityLabel={t("sheet.back")} hitSlop={6}>
           <Icon name="back" size={22} flip={dir().rtl} />
         </Pressable>
@@ -651,7 +726,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 30 + insets.bottom }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
           <SheetSkeleton />
         ) : state.notFound ? (
@@ -673,7 +748,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
       </ScrollView>
 
       {fromScan ? (
-        <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.bg }}>
           <Btn title={t("sheet.scan_again")} icon="scan" onPress={onScanAgain} />
         </View>
       ) : null}
