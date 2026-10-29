@@ -93,7 +93,7 @@ jobs:
         run: scripts/ci-run.sh "expo prebuild ios" npx expo prebuild --platform ios --no-install
       - name: Dépendances iOS (CocoaPods)
         working-directory: mobile/ios
-        run: ../scripts/ci-run.sh "pod install" pod install
+        run: ../scripts/ci-run.sh "pod install" pod install --repo-update
       - name: Compilation pour le simulateur
         run: |
           ws=$(ls -d ios/*.xcworkspace | head -1)
