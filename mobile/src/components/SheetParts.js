@@ -103,7 +103,7 @@ export function Confidence({ p, v }) {
           {[1, 2, 3].map((i) => <View key={i} style={{ width: 5, height: 6 + i * 4, borderRadius: 2, backgroundColor: i <= bars ? col : C.tint2 }} />)}
         </View>
         <Text style={{ flex: 1, color: C.fg, fontSize: 15, textAlign: dir().ta }}>{t("conf.title")} : <Text style={{ fontWeight: "800" }}>{t(`conf.${c.level}`)}</Text></Text>
-        <View style={{ transform: [{ rotate: openC ? "90deg" : dir().rtl ? "180deg" : "0deg" }] }}><Glyph name="chev" size={18} color={C.faint} /></View>
+        <View style={{ transform: [{ rotate: openC ? (dir().rtl ? "-90deg" : "90deg") : "0deg" }] }}><Glyph name="chev" size={18} color={C.faint} /></View>
       </Pressable>
       {openC ? (
         <View style={{ paddingHorizontal: 16, paddingBottom: 14, gap: 8 }}>

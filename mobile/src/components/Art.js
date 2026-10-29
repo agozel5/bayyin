@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { I } from "../../../public/lib/icons.js";
-import { C, mix, isDark } from "../theme";
+import { C, mix, isDark, dir } from "../theme";
 
 // Le moteur SVG de React Native est plus strict que celui des navigateurs : on normalise le texte
 export function clean(xml) {
@@ -53,5 +53,7 @@ export function ArtTile({ xml, size = 48, art, radius = 14, style }) {
 // Pictogramme au trait d'une couleur (barre d'onglets, boutons)
 export function Glyph({ name, paths, size = 22, color, width = 2 }) {
   const xml = `<svg viewBox="0 0 24 24"><g fill="none" stroke="${color || C.fg}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${paths || I[name] || ""}</g></svg>`;
-  return <SvgXml xml={xml} width={size} height={size} color={color || C.fg} />;
+  const g = <SvgXml xml={xml} width={size} height={size} color={color || C.fg} />;
+  // la flèche « suivant » pointe vers la fin de la ligne : à gauche en arabe
+  return name === "chev" && dir().rtl ? <View style={{ transform: [{ scaleX: -1 }] }}>{g}</View> : g;
 }

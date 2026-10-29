@@ -64,7 +64,7 @@ function RiskRow({ r, first }) {
         <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99, backgroundColor: bg }}>
           <Text style={{ fontSize: 12, fontWeight: "800", color: fg }}>{t(`risk.${r.level}`)}</Text>
         </View>
-        <View style={{ transform: [{ rotate: open ? "90deg" : dir().rtl ? "180deg" : "0deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
+        <View style={{ transform: [{ rotate: open ? (dir().rtl ? "-90deg" : "90deg") : "0deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
       </Pressable>
       {open ? (
         <View style={{ gap: 6, paddingBottom: 12, paddingStart: 16 }}>
@@ -138,7 +138,7 @@ export default function CosmeticSection({ p }) {
           style={{ padding: 12, borderRadius: R.md, backgroundColor: C.tint, gap: 4 }}>
           <Row gap={8}>
             <Txt style={{ flex: 1, fontWeight: "700", fontSize: 14.5 }}>{t("detail.cosmetic_safe_here", { n: safeHere.length })}</Txt>
-            <View style={{ transform: [{ rotate: safeOpen ? "90deg" : dir().rtl ? "180deg" : "0deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
+            <View style={{ transform: [{ rotate: safeOpen ? (dir().rtl ? "-90deg" : "90deg") : "0deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
           </Row>
           <Muted style={{ fontSize: 13, lineHeight: 18, writingDirection: "ltr" }}>{safeHere.map((r) => r.name).join(", ")}</Muted>
           {safeOpen ? <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("detail.cosmetic_safe_here_p")}</Muted> : null}

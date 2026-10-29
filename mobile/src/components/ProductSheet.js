@@ -206,7 +206,7 @@ function ProfileAlert({ p, onGotoProfile }) {
         <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("alert.note")}</Muted>
         <Pressable onPress={onGotoProfile} accessibilityRole="link" style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingVertical: 8 }}>
           <Text style={{ color: fg, fontWeight: "800", fontSize: 14.5 }}>{t("alert.edit")}</Text>
-          <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={15} color={fg} width={2.4} /></View>
+          <Glyph name="chev" size={15} color={fg} width={2.4} />
         </Pressable>
       </View>
     </View>
