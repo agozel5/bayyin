@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-12";
+const APP_BUILD = "2026-10-29-13";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -30,6 +30,8 @@ import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
 import { PAGE_ART } from "./lib/page-art.js";
+import { I } from "./lib/icons.js";
+import { productArtKey, artByKey } from "./lib/product-art.js";
 import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART, ORIGIN_ART, ALLERGEN_ART, PLACE_ART, LANG_FLAG } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
@@ -78,33 +80,6 @@ const fmt = (v) => Number(v).toLocaleString(locale(), { maximumFractionDigits: v
 // ===========================================================================
 // Icônes et statuts
 // ===========================================================================
-const I = {
-  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-  question: '<path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.4-1.5 1.2-1.5 2.2v.6M12 18v.1"/>',
-  cross: '<path d="M7 7l10 10M17 7L7 17"/>',
-  dash: '<path d="M7 12h10"/>',
-  star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>',
-  box: '<path d="M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10"/>',
-  chev: '<path d="M9 6l6 6-6 6"/>',
-  shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
-  flask: '<path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3"/>',
-  doc: '<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 12h6M9 15.5h6M9 19h4"/>',
-  energy: '<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.3 1.2-3.6 2.3-4.6.3 1.6 1 2.6 2 3.1C11 9 11.2 5.8 12 3z"/>',
-  sugars: '<path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/>',
-  "saturated-fat": '<path d="M12 3.5c3 4 6 7.4 6 10.5a6 6 0 0 1-12 0c0-3.1 3-6.5 6-10.5z"/>',
-  salt: '<path d="M8 9h8l-1 11H9zM9 9c0-3 1.3-5 3-5s3 2 3 5M11 6h.01M13 6.5h.01"/>',
-  proteins: '<path d="M12 4c3.3 0 6 3.4 6 8s-2.7 8-6 8-6-3.4-6-8 2.7-8 6-8z"/>',
-  fiber: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7"/>',
-  fruits: '<path d="M12 7c-4-2-8 1-7 6 .8 4 3.5 7 7 7s6.2-3 7-7c1-5-3-8-7-6zM12 7c0-2 1-3.5 3-4"/>',
-  pill: '<path d="M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7zM7 10.5l6.5 6.5"/>',
-  drop: '<path d="M12 3.5c3.3 4.2 6 7.5 6 10.8a6 6 0 0 1-12 0c0-3.3 2.7-6.6 6-10.8z"/><path d="M9.5 15a2.6 2.6 0 0 0 2.5 2.4"/>',
-  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>',
-  user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/>',
-  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
-  crown: '<path d="M3.5 8l4.2 3.6L12 5l4.3 6.6L20.5 8l-1.8 10H5.3z"/><path d="M5.5 21h13"/>',
-  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
-  family: '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M2.5 20c.6-3.6 2.8-5.5 5.5-5.5s4.9 1.9 5.5 5.5M13.6 14.6c.9-.6 1.8-.9 2.9-.9 2.3 0 4.1 1.6 4.6 4.8"/>',
-};
 const STATUS_ICON = { halal_certifie: I.check, halal_probable: I.check, mashbouh: I.question, haram: I.cross, inconnu: I.dash };
 const STATUS_ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
 const LEGEND_ORDER = ["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"];
@@ -232,20 +207,9 @@ const catArt = (p) => {
 // Vignette sans photo : illustration de catégorie (aliments), sinon icône du type de produit
 // Illustration en couleur : le rayon des classements s'il correspond, sinon la famille d'aliments
 function colorArtKey(p) {
-  if (!p || p.local) return "";
-  const kind = kindOf(p);
-  if (kind === "medicine") return "";
-  const tags = p.categories || (p.raw && p.raw.categories_tags) || [];
-  if (tags.length) {
-    const cat = RANK_CATEGORIES.find((c) => c.kind === kind && c.tags.some((tg) => tags.includes(tg)));
-    if (cat && RANK_ART[cat.id]) return "r:" + cat.id;
-  }
-  const fam = catArt(p);
-  if (!fam) return "";
-  return FAMILY_ART[fam.id] ? "f:" + fam.id : FAMILY_TO_KEY[fam.id] ? "r:" + FAMILY_TO_KEY[fam.id] : "";
+  if (!p) return "";
+  return productArtKey({ kind: kindOf(p), tags: p.categories || (p.raw && p.raw.categories_tags) || [], name: nameOf(p), local: !!p.local });
 }
-const FAMILY_TO_KEY = { sweet: "candies", bakery: "breads", meal: "meals", sauce: "sauces" };
-const artByKey = (k) => (k.startsWith("r:") ? RANK_ART[k.slice(2)] : k.startsWith("f:") ? FAMILY_ART[k.slice(2)] : "") || "";
 function colorArt(p) { const k = colorArtKey(p); return k ? artByKey(k) : null; }
 // Photo qui ne se charge pas (réseau, photo retirée) : l'illustration du rayon à la place d'un carré vide
 const phAttr = (p, cls, key = "") => ` data-ph="${esc(cls)}|${esc(key || colorArtKey(p))}"`;

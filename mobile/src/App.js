@@ -1,7 +1,7 @@
 // Bayyin — application native (iOS et Android).
 // Cinq onglets en bas, et une pile d'écrans par-dessus : caméra, fiche produit, lecture d'étiquette.
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform } from "react-native";
+import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform, Appearance } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -15,49 +15,71 @@ import SearchScreen from "./screens/SearchScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import AdditivesScreen from "./screens/AdditivesScreen";
 import SettingsScreen from "./screens/SettingsScreen";
-import { C, dir } from "./theme";
+import { C, dir, applyTheme, isDark } from "./theme";
+import { Glyph } from "./components/Art";
 import { t, setLang, getLang } from "./i18n";
 import { initStorage, getSettings, subscribe } from "./storage";
 import { normalizeScan } from "./core";
 import { FadeIn } from "./components/ui";
 import { haptic, ms, announce } from "./motion";
 
+// Même ordre que la version web : le scanner au centre, en relief
 const TABS = [
-  { id: "scan", icon: "scan" },
   { id: "search", icon: "search" },
   { id: "history", icon: "history" },
+  { id: "scan", icon: "scan" },
   { id: "additives", icon: "flask" },
   { id: "settings", icon: "gear" },
 ];
 const BARCODE_TYPES = ["ean13", "ean8", "upc_a", "upc_e"];
+const TAB_GLYPH = {
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  history: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M11 9v6M14 9v6M17 9v6"/>',
+  additives: '<path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3"/><path d="M7.5 15h9"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+};
 
+// Barre d'onglets flottante, arrondie, avec le bouton Scanner en relief au centre
 function TabBar({ tab, onTab }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flexDirection: dir().row, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: "#fff", paddingBottom: Math.max(insets.bottom, 8), paddingTop: 6 }}>
-      {TABS.map((it) => {
-        const on = tab === it.id;
-        return (
-          <Pressable
-            key={it.id}
-            onPress={() => {
-              if (!on) haptic.tap();
-              onTab(it.id);
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={t(`tab.${it.id}`)}
-            style={{ flex: 1, alignItems: "center", gap: 3, paddingVertical: 4 }}
-          >
-            <View style={{ paddingHorizontal: 16, paddingVertical: 4, borderRadius: 999, backgroundColor: on ? C.brandSoft : "transparent" }}>
-              <Icon name={it.icon} size={23} color={on ? C.brand : C.muted} width={on ? 2.3 : 2} />
-            </View>
-            <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: on ? "800" : "600", color: on ? C.brand : C.muted }}>
-              {t(`tab.${it.id}`)}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingBottom: Math.max(insets.bottom, 10) }}>
+      <View style={{ flexDirection: dir().row, alignItems: "flex-end", backgroundColor: C.tabbar, borderRadius: 30, paddingTop: 8, paddingBottom: 8,
+        borderWidth: 0.5, borderColor: isDark() ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+        shadowColor: "#000", shadowOpacity: isDark() ? 0.5 : 0.12, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
+        {TABS.map((it) => {
+          const on = tab === it.id;
+          const scan = it.id === "scan";
+          return (
+            <Pressable
+              key={it.id}
+              onPress={() => {
+                haptic.tap();
+                onTab(it.id);
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={t(`tab.${it.id}`)}
+              style={{ flex: 1, alignItems: "center", gap: 3 }}
+            >
+              {scan ? (
+                <View style={{ marginTop: -30, width: 62, height: 62, borderRadius: 31, backgroundColor: C.brand, alignItems: "center", justifyContent: "center",
+                  borderWidth: 4, borderColor: C.bg, shadowColor: C.brand, shadowOpacity: 0.45, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
+                  <Glyph paths={TAB_GLYPH.scan} size={28} color="#fff" width={2.2} />
+                </View>
+              ) : (
+                <View style={{ paddingHorizontal: 14, paddingVertical: 3, borderRadius: 999, backgroundColor: on ? C.brandSoft : "transparent" }}>
+                  <Glyph paths={TAB_GLYPH[it.id]} size={23} color={on ? C.brand : C.muted} width={on ? 2.2 : 1.9} />
+                </View>
+              )}
+              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: on || scan ? "700" : "600", color: on || scan ? C.brand : C.muted }}>
+                {t(`tab.${it.id}`)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -124,7 +146,7 @@ function Main() {
   useEffect(
     () =>
       subscribe((what) => {
-        if (what === "settings") setLang(getSettings().lang);
+        if (what === "settings") { setLang(getSettings().lang); applyTheme(getSettings().theme); }
         setTick((n) => n + 1);
       }),
     []
@@ -288,8 +310,8 @@ function Main() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <StatusBar style={top && top.type === "camera" && leaving !== top.key ? "light" : "dark"} />
-      <View key={getLang()} style={{ flex: 1 }} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
+      <StatusBar style={(top && top.type === "camera" && leaving !== top.key) || isDark() ? "light" : "dark"} />
+      <View key={getLang() + (isDark() ? "d" : "l")} style={{ flex: 1 }} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           {page}
         </FadeIn>
@@ -341,6 +363,16 @@ function SplashFade({ onDone }) {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [, setScheme] = useState(0);
+  // Thème « automatique » : suit le passage du téléphone en mode sombre
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(() => {
+      const s = getSettings();
+      applyTheme(s ? s.theme : "auto");
+      setScheme((n) => n + 1);
+    });
+    return () => sub.remove();
+  }, []);
   const [splash, setSplash] = useState(true);
   useEffect(() => {
     initStorage()
@@ -348,6 +380,7 @@ export default function App() {
       .finally(() => {
         const s = getSettings();
         setLang(s ? s.lang : "fr");
+        applyTheme(s ? s.theme : "auto");
         setReady(true);
       });
   }, []);

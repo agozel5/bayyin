@@ -49,6 +49,7 @@ export async function initStorage() {
       diet: s.profile && DIETS.includes(s.profile.diet) ? s.profile.diet : null,
     },
     onboarded: !!s.onboarded,
+    theme: ["auto", "light", "dark"].includes(s.theme) ? s.theme : "auto",
   };
   history = Array.isArray(get(K.history)) ? get(K.history) : [];
   local = get(K.local) || {};

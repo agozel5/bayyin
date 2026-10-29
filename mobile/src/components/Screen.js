@@ -9,7 +9,7 @@ export default function Screen({ children, gap = 20 }) {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
-      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 40, gap }}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap }}
       keyboardShouldPersistTaps="handled"
     >
       {children}

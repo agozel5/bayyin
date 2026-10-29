@@ -29,6 +29,7 @@ def run(lang, scheme):
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, color_scheme=scheme)
+        ctx.add_init_script("try{localStorage.setItem('bayyin:settings', %s)}catch(e){}" % json.dumps(json.dumps({"lang": lang, "theme": scheme, "onboarded": True})))
         def prod(r):
             code = next((c for c in PRODUCTS if c in r.request.url), None)
             r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
@@ -40,11 +41,13 @@ def run(lang, scheme):
         p.goto("http://127.0.0.1:8765/"); p.wait_for_function("!!window.__bayyin", timeout=30000); p.wait_for_timeout(1500)
         tag = f"{lang}-{scheme}"
         def shot(name, full=False): p.screenshot(path=str(OUT / f"{tag}-{name}.png"), full_page=full)
-        shot("home")
+        shot("home-first")
         for c in CODES:
             p.evaluate(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2500)
             shot(f"sheet-{c}")
             p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        p.evaluate("window.__bayyin.setTab('history')"); p.wait_for_timeout(500)
+        p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:
             p.evaluate(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
         b.close()
@@ -52,7 +55,7 @@ def run(lang, scheme):
 
 if __name__ == "__main__":
     report = {}
-    for lang, scheme in [("fr", "light")]:
+    for lang, scheme in [("fr", "light"), ("fr", "dark"), ("ar", "light")]:
         report[f"{lang}-{scheme}"] = run(lang, scheme)
     (OUT / "errors.json").write_text(json.dumps(report, ensure_ascii=False, indent=1))
     print(json.dumps(report, ensure_ascii=False)[:2000])
