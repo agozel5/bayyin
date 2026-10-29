@@ -4,7 +4,7 @@ const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
-config.watchFolders = [path.resolve(__dirname, "../public/lib")];
+config.watchFolders = [path.resolve(__dirname, "../public/lib"), path.resolve(__dirname, "../public/data")];
 config.resolver.nodeModulesPaths = [path.resolve(__dirname, "node_modules")];
 // Version web de contrôle (captures en CI) : les modules natifs sans équivalent web sont remplacés
 const WEB_SHIMS = { "react-native-webview": path.resolve(__dirname, "src/shims/webview.js") };
