@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-29-11", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-12", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -1117,12 +1117,16 @@ export default {
   "tour.photo.p": "Prenez la liste d'ingrédients en photo, ou tapez les chiffres du code-barres.",
   "tour.tools.t": "Vos outils",
   "tour.tools.p": "Mode rayon pour tout un rayon d'un coup, commerces halal autour de vous, mode courses et comparaison de deux produits.",
+  "tour.rankings.t": "Les classements",
+  "tour.rankings.p": "Les produits halal les mieux notés pour la santé, rayon par rayon : idéal pour choisir sans scanner.",
+  "tour.additives.t": "Le guide des additifs",
+  "tour.additives.p": "Tous les additifs autorisés en Europe : leur origine (végétale, animale, insecte…), leur statut halal selon vos réglages et leur risque santé.",
   "tour.search.t": "Cherchez sans scanner",
   "tour.search.p": "Par nom, marque ou code-barres, dans votre langue.",
   "tour.history.t": "Votre historique",
   "tour.history.p": "Vos produits et favoris. Si l'un d'eux est rappelé par les autorités, vous êtes prévenu.",
   "tour.settings.t": "Réglé pour vous",
-  "tour.settings.p": "Allergies, régime, école juridique et organismes de certification : le verdict suit vos choix.",
+  "tour.settings.p": "Allergies, régime, école juridique et organismes de certification : le verdict suit vos choix. Tout se règle dans Réglages.",
   "tour.end.t": "C'est parti !",
   "tour.end.p": "Scannez votre premier produit. Vous pouvez revoir cette visite dans Réglages › Comment ça marche.",
   "tour.next": "Suivant",

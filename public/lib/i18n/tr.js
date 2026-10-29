@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-11", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-12", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1103,12 +1103,16 @@ export default {
   "tour.photo.p": "İçindekiler listesinin fotoğrafını çekin veya barkod rakamlarını yazın.",
   "tour.tools.t": "Araçlarınız",
   "tour.tools.p": "Tüm rafı tek seferde tarayan raf modu, yakınınızdaki helal dükkanlar, alışveriş modu ve iki ürünü karşılaştırma.",
+  "tour.rankings.t": "Sıralamalar",
+  "tour.rankings.p": "Reyon reyon, sağlık puanı en yüksek helal ürünler: taramadan seçmenin kolay yolu.",
+  "tour.additives.t": "Katkı maddeleri rehberi",
+  "tour.additives.p": "Avrupa'da izin verilen tüm katkı maddeleri: kaynakları (bitkisel, hayvansal, böcek…), ayarlarınıza göre helal durumu ve sağlık riski.",
   "tour.search.t": "Taramadan arayın",
   "tour.search.p": "Ad, marka veya barkodla, kendi dilinizde.",
   "tour.history.t": "Geçmişiniz",
   "tour.history.p": "Ürünleriniz ve favorileriniz. Biri yetkililerce geri çağrılırsa uyarılırsınız.",
   "tour.settings.t": "Size göre ayarlı",
-  "tour.settings.p": "Alerjiler, diyet, mezhep ve sertifika kuruluşları: karar seçimlerinize uyar.",
+  "tour.settings.p": "Alerjiler, beslenme, mezhep ve sertifika kuruluşları: karar seçimlerinize uyar. Hepsi Ayarlar'da.",
   "tour.end.t": "Haydi başlayalım!",
   "tour.end.p": "İlk ürününüzü tarayın. Bu turu Ayarlar › Nasıl çalışır bölümünden yeniden izleyebilirsiniz.",
   "tour.next": "İleri",

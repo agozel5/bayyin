@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-11", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-12", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -1103,12 +1103,16 @@ export default {
   "tour.photo.p": "Take a photo of the ingredient list, or type the barcode digits.",
   "tour.tools.t": "Your tools",
   "tour.tools.p": "Aisle mode for a whole shelf at once, halal shops around you, shopping mode and side-by-side comparison.",
+  "tour.rankings.t": "Rankings",
+  "tour.rankings.p": "The healthiest halal products, aisle by aisle: a quick way to choose without scanning.",
+  "tour.additives.t": "The additives guide",
+  "tour.additives.p": "Every additive approved in Europe: their origin (plant, animal, insect…), their halal status under your settings and their health risk.",
   "tour.search.t": "Search without scanning",
   "tour.search.p": "By name, brand or barcode, in your language.",
   "tour.history.t": "Your history",
   "tour.history.p": "Your products and favourites. If one is recalled by the authorities, you are warned.",
   "tour.settings.t": "Set up for you",
-  "tour.settings.p": "Allergies, diet, school of law and certification bodies: the verdict follows your choices.",
+  "tour.settings.p": "Allergies, diet, school of law and certification bodies: the verdict follows your choices. Everything is in Settings.",
   "tour.end.t": "Let's go!",
   "tour.end.p": "Scan your first product. You can replay this tour in Settings › How it works.",
   "tour.next": "Next",

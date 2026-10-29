@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-11";
+const APP_BUILD = "2026-10-29-12";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -4612,12 +4612,14 @@ document.addEventListener("click", (e) => {
 // Visite guidée : une bulle par élément important de l'écran d'accueil
 // ===========================================================================
 const TOUR = [
-  { id: "scan", el: () => $("openCamera") },
-  { id: "photo", el: () => document.querySelector(".hero-links") },
-  { id: "tools", el: () => document.querySelector(".tool-row") },
-  { id: "search", el: () => document.querySelector('.tab[data-tab="search"]') },
-  { id: "history", el: () => document.querySelector('.tab[data-tab="history"]') },
-  { id: "settings", el: () => document.querySelector(".home-top .round-btn") },
+  { id: "scan", el: () => $("openCamera"), c: "#1A9C68", i: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M16 8v8"/>' },
+  { id: "photo", el: () => document.querySelector(".hero-links"), c: "#8A63DA", i: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.4"/>' },
+  { id: "tools", el: () => document.querySelector(".tool-row"), c: "#1FA597", i: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>' },
+  { id: "rankings", el: () => document.querySelector(".rank-promo"), c: "#E2A812", i: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>' },
+  { id: "search", el: () => document.querySelector('.tab[data-tab="search"]'), c: "#3D84DB", i: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' },
+  { id: "history", el: () => document.querySelector('.tab[data-tab="history"]'), c: "#2F6FC0", i: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' },
+  { id: "additives", el: () => document.querySelector('.tab[data-tab="additives"]'), c: "#9B79E2", i: '<path d="M9 3h6M10 3v6.2L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.2V3"/><path d="M7.5 15h9"/>' },
+  { id: "settings", el: () => document.querySelector('.tab[data-tab="settings"]'), c: "#5A6472", i: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>' },
   { id: "end", el: () => null },
 ];
 // Au premier produit ouvert : le verdict, les onglets et la photo qu'on peut agrandir
@@ -4672,6 +4674,12 @@ function renderTour() {
   const el = step.el();
   const spot = $("tourSpot"), card = $("tourCard");
   $("tourTitle").textContent = t(`tour.${step.id}.t`);
+  // Repère visuel : la tuile de couleur de l'élément montré, la mascotte pour finir
+  const ico = $("tourIco");
+  ico.className = "tour-ico" + (step.c ? " gt" : step.id === "end" ? " tour-mascot" : "");
+  ico.style.setProperty("--t", step.c || "");
+  ico.innerHTML = step.c ? svg(step.i) : step.id === "end" ? mascot("bravo", { size: 64 }) : "";
+  ico.hidden = !step.c && step.id !== "end";
   $("tourText").textContent = t(`tour.${step.id}.p`);
   const last = tourStep === TOUR.length - 1;
   $("tourNext").textContent = t(last ? (isSheetTour() ? "tour.got_it" : "tour.go") : "tour.next");

@@ -2671,3 +2671,17 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .lang-flag{flex:none;width:42px;height:30px;border-radius:8px;overflow:hidden;display:inline-flex;box-shadow:0 0 0 .5px rgb(0 0 0 / .18),0 3px 8px -4px rgb(0 0 0 / .45)}
 .lang-flag svg{width:100%;height:100%;display:block}
 .lang-flag svg{fill:initial;stroke:none;stroke-width:initial}
+
+/* Visite guidée : bulle plus soignée, avec la tuile de l'élément montré */
+.tour-card{border-radius:26px!important;padding:18px 18px 14px!important;gap:10px!important;
+  box-shadow:0 0 0 .5px color-mix(in srgb,var(--fg) 12%,transparent),0 24px 50px -18px rgb(0 0 0 / .55)!important}
+.tour-head{display:flex;align-items:center;gap:12px}
+.tour-ico.gt{width:40px;height:40px;border-radius:12px}
+.tour-ico.gt svg{width:22px;height:22px}
+.tour-mascot{display:flex;flex:none}
+.tour-card.center .tour-head{flex-direction:column;text-align:center;gap:6px}
+.tour-card.center p{text-align:center}
+.tour-card p{font-size:.98rem;line-height:1.5}
+.tour-dots i.on{background:var(--brand)!important;width:18px!important}
+.tour-spot::after{border-color:#fff!important;border-width:2px!important;box-shadow:0 0 0 6px rgb(255 255 255 / .12)}
+@media (prefers-reduced-motion:no-preference){.tour-card{transition:top .3s ease}.tour-ico{animation:hero-in .35s ease both}}
