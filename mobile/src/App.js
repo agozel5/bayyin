@@ -265,6 +265,7 @@ function Main() {
         <CameraScanner
           onCode={(code) => openProduct(code, { fromScan: true, replace: true })}
           onClose={pop}
+          onPhoto={Platform.OS !== "web" ? () => { pop(); photoBarcode(); } : undefined}
           onManual={() => {
             clearStack();
             setTab("scan");

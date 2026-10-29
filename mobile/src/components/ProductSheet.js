@@ -15,6 +15,7 @@ import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteTe
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
 import { Glyph, Art } from "./Art";
 import { CompositionAdditives } from "./Additives";
+import PlanetSection from "./Planet";
 import { NUT_ART } from "../../../public/lib/rank-art.js";
 
 const STATUS_ICON = { halal_certifie: "check", halal_probable: "check", mashbouh: "question", haram: "cross", inconnu: "dash" };
@@ -601,6 +602,8 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
     { id: "halal", label: t("detail.halal"), mark: <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: VERDICT_DOT(v.status) }} />, el: halal },
     health ? { id: "health", label: t(food ? "detail.health" : "kind.medicine"), mark: s ? <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 99, backgroundColor: GRADE_COLORS[s.grade] }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>{s.score}</Text></View> : null, el: health } : null,
     food ? { id: "compo", label: t("detail.compo_tab"), mark: null, el: compo } : null,
+    // Environnement : chargé à l'ouverture de l'onglet (aliments d'Open Food Facts seulement)
+    food && !p.local && isBarcode(p.code) ? { id: "planet", label: t("env.tab"), mark: null, el: <Panel><PlanetSection p={p} /></Panel> } : null,
   ].filter(Boolean);
   const cur = tabs.some((x) => x.id === tab) ? tab : "halal";
   return (

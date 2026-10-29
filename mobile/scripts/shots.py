@@ -27,10 +27,11 @@ threading.Thread(target=srv.serve_forever, daemon=True).start()
 def run(lang, scheme):
     errs = []
     with sync_playwright() as pw:
-        b = pw.chromium.launch()
-        ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, color_scheme=scheme)
+        b = pw.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
+        ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, color_scheme=scheme, permissions=["camera"])
         ctx.add_init_script("try{localStorage.setItem('bayyin:settings', %s)}catch(e){}" % json.dumps(json.dumps({"lang": lang, "theme": scheme, "onboarded": True})))
         def prod(r):
+            if "ecoscore" in r.request.url: return r.continue_()  # onglet Planète : vraies données d'Open Food Facts
             code = next((c for c in PRODUCTS if c in r.request.url), None)
             r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
                       body=json.dumps({"status": 1, "product": {"code": code, **PRODUCTS[code]}} if code else {"status": 0}))
@@ -53,7 +54,7 @@ def run(lang, scheme):
             p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Fiche complète, onglet par onglet (fenêtre haute : la fiche défile dans son propre cadre)
         p.set_viewport_size({"width": 390, "height": 2600})
-        for c, tabs in [(CODES[2], ["halal", "health", "compo"]), (CODES[0], ["halal"])]:
+        for c, tabs in [(CODES[2], ["halal", "health", "compo", "planet"]), (CODES[0], ["halal", "planet"])]:
             p.evaluate(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2200)
             for tb in tabs:
                 p.evaluate(f"window.__bayyin.sheetTab && window.__bayyin.sheetTab('{tb}')"); p.wait_for_timeout(900)
@@ -69,6 +70,9 @@ def run(lang, scheme):
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"]:
             p.evaluate(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         p.evaluate("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
+        # Caméra (flux de test de Chromium)
+        p.evaluate("window.__bayyin.openCamera()"); p.wait_for_timeout(3000); shot("camera")
+        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Classements : liste des rayons, puis deux rayons
         p.set_viewport_size({"width": 390, "height": 2600})
         p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)

@@ -1,5 +1,5 @@
 // Accès à Open Food Facts depuis l'app, avec repli hors connexion.
-import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny } from "./core";
+import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny, greenScore } from "./core";
 import { getSettings, getCachedRaw, cacheRaw, getLocal, setPack, getEntry } from "./storage";
 
 const HEADERS = { "User-Agent": "Bayyin/1.0 (https://github.com/agozel5/bayyin)", Accept: "application/json" };
@@ -132,4 +132,17 @@ export async function downloadPack(onProgress, pages = 5, pageSize = 100) {
   }
   setPack(all);
   return Object.keys(all).length;
+}
+
+// Impact environnemental (Green-Score d'Open Food Facts), chargé seulement à l'ouverture de l'onglet Planète.
+const envMemo = new Map();
+export async function fetchEnvironment(code) {
+  if (!/^\d+$/.test(String(code))) return null;
+  if (envMemo.has(code)) return envMemo.get(code);
+  const fields = "ecoscore_grade,ecoscore_score,ecoscore_data,environmental_score_grade,environmental_score_score,environmental_score_data," +
+    "labels_tags,ingredients_analysis_tags,origins_tags,origin_fr,origin,ingredients,manufacturing_places,packaging_materials_tags,packaging_recycling_tags";
+  const data = await getJson(`${OFF_BASE}/api/v2/product/${code}.json?fields=${fields}`, 15000);
+  const e = data && data.product ? greenScore(data.product) : null;
+  envMemo.set(code, e);
+  return e;
 }

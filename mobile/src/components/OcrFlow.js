@@ -6,9 +6,10 @@ import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Pla
 import { WebView } from "react-native-webview";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Icon from "./Icon";
+import { Art, Glyph } from "./Art";
+import { mascot } from "../../../public/lib/mascot.js";
 import { Txt, H2, Muted, Btn, Message } from "./ui";
-import { C, R, dir } from "../theme";
+import { C, R, dir, lift } from "../theme";
 import { t, getLang } from "../i18n";
 import { present, additivesFromText, cleanOcrText } from "../core";
 import { getSettings, setLocal, addToHistory } from "../storage";
@@ -142,28 +143,27 @@ export default function OcrFlow({ code, onDone, onClose }) {
   };
 
   const field = {
-    borderWidth: 1.5, borderColor: C.line, borderRadius: R.md, padding: 14, fontSize: 16, color: C.fg, backgroundColor: "#fff",
+    borderWidth: 1, borderColor: C.line, borderRadius: R.md, padding: 14, fontSize: 16, color: C.fg, backgroundColor: C.surface,
     textAlign: dir().ta, writingDirection: dir().rtl ? "rtl" : "ltr",
   };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <View style={{ paddingTop: insets.top, flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <Pressable onPress={onClose} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }} accessibilityLabel={t("sheet.back")}>
-          <Icon name="back" size={22} flip={dir().rtl} />
+      <View style={{ paddingTop: insets.top + 8, flexDirection: dir().row, alignItems: "center", gap: 6, paddingHorizontal: 16, paddingBottom: 6 }}>
+        <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
+          <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
         </Pressable>
-        <Txt style={{ flex: 1, fontWeight: "800", fontSize: 17 }}>{t("ocr.title")}</Txt>
+        <Text accessibilityRole="header" numberOfLines={1} style={{ flex: 1, fontSize: 22, fontWeight: "800", letterSpacing: -0.3, color: C.fg, textAlign: dir().ta }}>{t("ocr.title")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 18, gap: 14, paddingBottom: 30 + insets.bottom }} keyboardShouldPersistTaps="handled">
-        {step === "photo" ? <Muted>{t("ocr.loading")}</Muted> : null}
-
-        {step === "reading" ? (
-          <View style={{ backgroundColor: C.tint, borderRadius: R.lg, padding: 22, gap: 12 }}>
-            <Txt style={{ fontWeight: "800", fontSize: 17 }}>{progress ? t("ocr.reading", { n: progress }) : t("ocr.loading")}</Txt>
-            <Muted style={{ fontSize: 14 }}>{t("ocr.loading_note")}</Muted>
-            <View style={{ height: 8, borderRadius: 4, backgroundColor: C.line, overflow: "hidden", flexDirection: dir().row }}>
-              <View style={{ width: `${Math.max(3, progress)}%`, backgroundColor: C.brand }} />
+        {step === "photo" || step === "reading" ? (
+          <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 22, gap: 12, alignItems: "center" }, lift()]}>
+            <Art xml={mascot("search", { size: 120 })} size={120} />
+            <Txt style={{ fontWeight: "800", fontSize: 17, textAlign: "center" }}>{progress ? t("ocr.reading", { n: progress }) : t("ocr.loading")}</Txt>
+            <Muted style={{ fontSize: 14, textAlign: "center" }}>{t("ocr.loading_note")}</Muted>
+            <View style={{ alignSelf: "stretch", height: 8, borderRadius: 4, backgroundColor: C.tint2, overflow: "hidden", flexDirection: dir().row }}>
+              <View style={{ width: `${Math.max(3, progress)}%`, backgroundColor: C.brand, borderRadius: 4 }} />
             </View>
           </View>
         ) : null}
