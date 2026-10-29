@@ -22,8 +22,8 @@ export function Top({ p }) {
   const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).join(" · ");
   return (
     <Row gap={14} style={{ alignItems: "center" }}>
-      <View style={[{ borderRadius: 20, backgroundColor: p.image ? "#fff" : C.artBg, padding: p.image ? 6 : 0 }, lift()]}>
-        <Thumb p={p} size={p.image ? 96 : 108} radius={16} />
+      <View style={[{ borderRadius: 20, backgroundColor: C.surface, padding: 6 }, lift()]}>
+        <Thumb p={p} size={96} radius={16} />
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <Txt style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }} numberOfLines={3}>{nameOf(p)}</Txt>

@@ -41,7 +41,7 @@ def run(lang, scheme):
             ok = BEAUTY in r.request.url and BEAUTY in PRODUCTS
             r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
                       body=json.dumps({"status": 1, "product": {"code": BEAUTY, **PRODUCTS[BEAUTY]}} if ok else {"status": 0}))
-        ctx.route(re.compile(r".*openbeautyfacts.*"), beauty)
+        ctx.route(re.compile(r".*world\.openbeautyfacts\.org/api/.*"), beauty)
         def ranks(r):
             f = PUB / "data" / "rankings" / r.request.url.split("/data/rankings/")[1].split("?")[0]
             r.fulfill(status=200 if f.exists() else 404, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},

@@ -31,9 +31,14 @@ export function Khatam({ opacity = 0.22 }) {
 }
 
 // Vignette : la photo, sinon l'illustration du rayon, sinon une icône
+// Photos qui n'ont pas pu se charger : on passe au dessin du rayon (comme la version web)
+const broken = new Set();
 export function Thumb({ p, size = 56, radius = 14 }) {
   const art = artOf(p);
-  if (p.image) return <Image source={{ uri: p.image }} accessible={false} resizeMode="contain" style={{ width: size, height: size, borderRadius: radius, backgroundColor: "#fff" }} />;
+  const [, setFail] = React.useState(0);
+  if (p.image && !broken.has(p.image))
+    return <Image source={{ uri: p.image }} accessible={false} resizeMode="contain" onError={() => { broken.add(p.image); setFail((n) => n + 1); }}
+      style={{ width: size, height: size, borderRadius: radius, backgroundColor: "#fff" }} />;
   return (
     <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: art ? C.artBg : C.tint, alignItems: "center", justifyContent: "center" }}>
       {art ? <Art xml={art} size={Math.round(size * 0.66)} /> : <Glyph name={p.local ? "doc" : "box"} size={Math.round(size * 0.42)} color={C.faint} />}
