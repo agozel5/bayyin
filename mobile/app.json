@@ -63,6 +63,10 @@
       "requestHeaders": {
         "expo-channel-name": "production"
       }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }

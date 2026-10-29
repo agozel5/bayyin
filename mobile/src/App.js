@@ -1,7 +1,7 @@
 // Bayyin — application native (iOS et Android).
 // Cinq onglets en bas, et une pile d'écrans par-dessus : caméra, fiche produit, lecture d'étiquette.
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet } from "react-native";
+import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -277,6 +277,11 @@ function Main() {
       );
     return null;
   };
+
+  // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop };
+  }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.
   const visible = stack.slice(-2).filter((item, i, arr) => item.type !== "camera" || i === arr.length - 1);

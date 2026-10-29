@@ -1,0 +1,45 @@
+name: App mobile — captures
+
+# Compile l'app React Native en version web de contrôle et prend des captures des écrans,
+# déposées sur la branche mobile-shots (sert au suivi du portage, pas à la publication).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-shots
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dépendances
+        run: |
+          scripts/ci-run.sh "Installation des dépendances" npm run setup
+          scripts/ci-run.sh "Dépendances web" npx expo install react-dom react-native-web @expo/metro-runtime
+          pip install playwright && python -m playwright install --with-deps chromium
+      - name: Version web
+        run: scripts/ci-run.sh "expo export web" npx expo export --platform web --output-dir dist-web
+      - name: Captures
+        run: python scripts/shots.py dist-web /tmp/shots
+      - name: Déposer sur la branche mobile-shots
+        if: always()
+        run: |
+          mkdir -p /tmp/shots && cd /tmp/shots && git init -q -b mobile-shots
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" add -A
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -qm "Captures de l'app mobile ${GITHUB_SHA::7}" --allow-empty
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" mobile-shots
