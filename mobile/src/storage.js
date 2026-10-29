@@ -56,6 +56,12 @@ export async function initStorage() {
     reviewAsked: s.reviewAsked || 0,
     theme: ["auto", "light", "dark"].includes(s.theme) ? s.theme : "auto",
     distrust: Array.isArray(s.distrust) ? s.distrust : [],
+    // Profils de la famille (Premium) : prénom, allergies et régime de chacun
+    members: (Array.isArray(s.members) ? s.members : []).slice(0, 8).filter((m) => m && m.id && m.name).map((m) => ({
+      id: String(m.id).slice(0, 20), name: String(m.name).slice(0, 24),
+      allergens: (m.allergens || []).filter((a) => PROFILE_ALLERGENS.includes(a)), diet: DIETS.includes(m.diet) ? m.diet : null,
+    })),
+    ram: s.ram && typeof s.ram === "object" ? s.ram : null, // mode Ramadan : position arrondie, angle de l'aube
   };
   history = Array.isArray(get(K.history)) ? get(K.history) : [];
   local = get(K.local) || {};
@@ -74,6 +80,21 @@ export function setSettings(patch) {
   save(K.settings, settings);
   emit("settings");
 }
+// Profils de la famille
+export function addMember(name) {
+  name = String(name || "").trim().slice(0, 24);
+  if (!name || settings.members.length >= 8) return null;
+  const m = { id: "m" + Date.now().toString(36), name, allergens: [], diet: null };
+  setSettings({ members: [...settings.members, m] });
+  return m.id;
+}
+export const removeMember = (id) => setSettings({ members: settings.members.filter((m) => m.id !== id) });
+const updateMember = (id, fn) => setSettings({ members: settings.members.map((m) => (m.id === id ? { ...m, ...fn(m) } : m)) });
+export function toggleMemberAllergen(id, tag) {
+  if (!PROFILE_ALLERGENS.includes(tag)) return;
+  updateMember(id, (m) => ({ allergens: m.allergens.includes(tag) ? m.allergens.filter((a) => a !== tag) : [...m.allergens, tag] }));
+}
+export const setMemberDiet = (id, diet) => updateMember(id, () => ({ diet: DIETS.includes(diet) ? diet : null }));
 // Organismes de certification que l'utilisateur ne suit pas
 export function toggleDistrust(id) {
   const d = settings.distrust || [];

@@ -1,5 +1,6 @@
 // Accueil : bandeau vert (bonjour et bilan de la semaine, ou présentation), scan en un geste,
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
+import Ramadan from "../components/Ramadan";
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { SvgXml } from "react-native-svg";
@@ -153,6 +154,9 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           </FadeIn>
         ) : null}
       </View>
+
+      {/* Pendant le Ramadan : horaires du jour */}
+      <Ramadan force={typeof window !== "undefined" && !!window.__bayyinRamadan} />
 
       {/* Rappel d'un produit de l'historique */}
       {recalls.length ? (() => {

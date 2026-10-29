@@ -10,8 +10,16 @@ const FALLBACK = [
 ];
 
 /** { day, month } du calendrier hégirien pour une date, ou null si le navigateur ne sait pas. */
+let calendarOk = null;
 export function hijri(date = new Date()) {
   try {
+    // Certains moteurs (dont celui de l'app mobile) ignorent le calendrier demandé et répondent en grégorien :
+    // le 1er mars 2026 tombe pendant le Ramadan 1447, il doit donc donner le mois 9.
+    if (calendarOk === null) {
+      const m = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { month: "numeric" }).formatToParts(new Date(Date.UTC(2026, 2, 1, 12)));
+      calendarOk = Number((m.find((p) => p.type === "month") || {}).value) === 9;
+    }
+    if (!calendarOk) return null;
     const parts = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { day: "numeric", month: "numeric" }).formatToParts(date);
     const day = Number((parts.find((p) => p.type === "day") || {}).value);
     const month = Number((parts.find((p) => p.type === "month") || {}).value);

@@ -26,9 +26,13 @@ let job = null;
 /** Listes des organismes ; null si indisponibles (hors connexion, etc.). */
 export function loadCertified(url = CERTIFIED_URL) {
   if (!job) {
-    job = fetch(url, { signal: AbortSignal.timeout(8000) })
+    // Délai sans AbortSignal.timeout (absent de certains moteurs, dont celui de l'app mobile)
+    const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), 8000) : null;
+    job = fetch(url, ctl ? { signal: ctl.signal } : {})
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
+      .finally(() => timer && clearTimeout(timer))
       .then((d) => {
         if (!d) job = null; // nouvel essai au prochain produit
         return d;

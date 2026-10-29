@@ -1,13 +1,25 @@
 // Fonctions d'affichage communes aux écrans.
 import { classifyAny, checkProfile } from "./core";
 import { getSettings } from "./storage";
+import { isPremium } from "./premium";
 import { t, getLang, locale } from "./i18n";
 
 // Le verdict est recalculé à l'affichage pour suivre les réglages actuels.
 export const verdictOf = (p) => (p.raw ? classifyAny(p.raw, getSettings()) : p.verdict);
 export const kindOf = (p) => p.kind || (p.raw && p.raw.kind) || "food";
 // Comparaison avec le profil (allergies, régime) de l'utilisateur
-export const profileOf = (p) => checkProfile(p.raw, verdictOf(p), getSettings().profile);
+// Profil : le vôtre, et ceux de la famille (Premium). L'alerte la plus forte passe en premier,
+// avec le prénom de la personne concernée (comme la version web).
+export const profileOf = (p) => {
+  const v = verdictOf(p);
+  const st = getSettings();
+  const mine = checkProfile(p.raw, v, st.profile);
+  if (!st.members || !st.members.length || !isPremium()) return mine;
+  const people = [{ name: null, r: mine }, ...st.members.map((m) => ({ name: m.name, r: checkProfile(p.raw, v, m) }))].filter((x) => x.r.alert);
+  if (!people.length) return mine;
+  people.sort((a, b) => (a.r.alert === "no" ? 0 : 1) - (b.r.alert === "no" ? 0 : 1));
+  return { ...people[0].r, who: people[0].name, people: people.map((x) => ({ name: x.name, ...x.r })) };
+};
 export const nameOf = (p) => {
   const n = p.names || {};
   return n[getLang()] || p.name || n.any || n.en || t("product.unnamed");

@@ -1,13 +1,15 @@
 // Pièces de la fiche produit, au design de la version web : en-tête, bandeau du verdict,
 // fiabilité, chaîne de vérification, étiquette surlignée, points relevés, onglets.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Image, Linking, Animated, Easing } from "react-native";
+import { View, Text, Pressable, Image, Linking, Animated, Easing, ActivityIndicator } from "react-native";
+import { loadCertified, verifyCertification } from "../../../public/lib/certcheck.js";
+import { longDate } from "../recalls";
 import { ms } from "../motion";
-import PhotoZoom from "./PhotoZoom";
+import PhotoZoom, { photoList } from "./PhotoZoom";
 import Svg, { Circle, Rect, Defs, LinearGradient, Stop } from "react-native-svg";
 import { Glyph, Tile } from "./Art";
 import { Khatam, Thumb, STATUS_GLYPH } from "./Cards";
-import { Txt, Muted, Row } from "./ui";
+import { Txt, Muted, Row, FadeIn } from "./ui";
 import { C, R, VERDICT, GRADE_COLORS, SEV_COLORS, RISK_COLORS, mix, dir, lift, isDark } from "../theme";
 import { t, tn } from "../i18n";
 import { getSettings } from "../storage";
@@ -23,7 +25,7 @@ const open = (url) => Linking.openURL(url).catch(() => {});
 export function Top({ p }) {
   const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).join(" · ");
   const [zoom, setZoom] = useState(false);
-  const hasPhotos = (p.photos || []).some(([, u]) => u);
+  const hasPhotos = photoList(p).length > 0;
   return (
     <Row gap={14} style={{ alignItems: "center" }}>
       <Pressable disabled={!hasPhotos} onPress={() => { haptic.tap(); setZoom(true); }} accessibilityRole="imagebutton" accessibilityLabel={t("zoom.open")}
@@ -364,19 +366,53 @@ export function Reader({ p, v, onGotoSettings }) {
 }
 
 // ---------- label de certification ----------
-export function CertCard({ v }) {
-  if (!v.certification) return v.certIgnored ? (
+// Organismes dont la liste publiée est comparée automatiquement (data/certified.json), comme sur le web
+const CERT_LISTED = ["avs", "achahada", "hmc"];
+const CERT_LINKS = { AVS: "https://avs.fr/etablissements/index.html?category=fournisseurs" };
+export function CertCard({ v, p }) {
+  const c = v.certification;
+  const checkable = !!(c && c.organismeId && !v.certIgnored && p && CERT_LISTED.includes(c.organismeId));
+  const [r, setR] = useState(checkable ? "checking" : null);
+  useEffect(() => {
+    if (!checkable) return;
+    let alive = true;
+    setR("checking");
+    loadCertified().then((db) => alive && setR(verifyCertification(p, db, c.organismeId))).catch(() => alive && setR(null));
+    return () => { alive = false; };
+  }, [p && p.code, checkable]);
+  if (!c) return v.certIgnored ? (
     <Row gap={10} style={{ padding: 12, borderRadius: R.md, backgroundColor: C.tint }}><Glyph name="shield" size={18} color={C.muted} /><Muted style={{ flex: 1 }}>{t("certs.ignored", { org: v.certIgnored.organisme })}</Muted></Row>
   ) : null;
-  const org = v.certification.organisme;
+  const org = c.organisme;
+  const state = r && r !== "checking" ? (r.status === "stamp" ? "verified" : r.status === "brand" ? "listed" : "missing") : null;
+  const missing = state === "missing";
+  const verifyUrl = org ? CERT_LINKS[org] || `https://duckduckgo.com/?q=${encodeURIComponent(`${org} halal ${(p && p.brand) || ""}`)}` : `https://duckduckgo.com/?q=${encodeURIComponent(`${(p && (p.brand || nameOf(p))) || ""} halal certification organisme`)}`;
+  const vars = state ? { org, date: r.updated ? longDate(String(r.updated).slice(0, 10)) : "", match: r.match ? `\u2066${r.match}\u2069` : "" } : null;
+  const text = r === "checking" ? t("certv.checking") : state ? t(missing ? "certv.missing" : r.status === "stamp" ? "certv.ok_stamp" : "certv.ok_brand", vars) : t("cert.unverified");
+  const tone = missing ? { bg: isDark() ? "#3A2A12" : "#FFF3E0", line: isDark() ? "#5A3F17" : "#F6D7A8", fg: C.doubt } : { bg: isDark() ? "#173A27" : "#E2F5EA", line: isDark() ? "#24563A" : "#BFE6CF", fg: C.cert };
   return (
-    <View style={{ borderRadius: R.md, padding: 14, gap: 6, backgroundColor: isDark() ? "#173A27" : "#E2F5EA", borderWidth: 1, borderColor: isDark() ? "#24563A" : "#BFE6CF" }}>
-      <Row gap={8}><Glyph name="shield" size={19} color={C.cert} /><Txt style={{ flex: 1, fontWeight: "800", color: C.cert }}>{t("detail.certified")}{org ? ` · ${org}` : ""}</Txt></Row>
-      <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("cert.unverified")}</Muted>
-      <Text onPress={() => open(`https://duckduckgo.com/?q=${encodeURIComponent(`${org || ""} halal`)}`)} style={{ color: C.brand, fontWeight: "700", textDecorationLine: "underline", textAlign: dir().ta }}>
-        {org ? t("cert.verify", { org }) : t("cert.verify_any")} ↗
-      </Text>
+    <FadeIn key={state || String(r)} distance={4}>
+    <View style={{ borderRadius: R.md, padding: 14, gap: 6, backgroundColor: tone.bg, borderWidth: 1, borderColor: tone.line }}>
+      <Row gap={8}>
+        <Glyph name="shield" size={19} color={tone.fg} />
+        <Txt style={{ flex: 1, fontWeight: "800", color: tone.fg }}>{missing ? t("certv.missing_t", { org }) : state ? t("certv.ok_t") : t("detail.certified")}{!state && org ? ` · ${org}` : ""}</Txt>
+        {state ? (
+          <View style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: tone.fg }}>
+            {!missing ? <Glyph name="check" size={11} color="#fff" width={3} /> : null}
+            <Text style={{ color: "#fff", fontSize: 11.5, fontWeight: "800" }}>{t(`certv.badge.${state}`)}</Text>
+          </View>
+        ) : r === "checking" ? <ActivityIndicator size="small" color={tone.fg} /> : null}
+      </Row>
+      <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{text}</Muted>
+      {state && r.url ? (
+        <Text onPress={() => open(r.url)} style={{ color: C.brand, fontWeight: "700", textDecorationLine: "underline", textAlign: dir().ta }}>{t("certv.list", { org })} ↗</Text>
+      ) : !state ? (
+        <Text onPress={() => open(verifyUrl)} style={{ color: C.brand, fontWeight: "700", textDecorationLine: "underline", textAlign: dir().ta }}>
+          {org ? t("cert.verify", { org }) : t("cert.verify_any")} ↗
+        </Text>
+      ) : null}
     </View>
+    </FadeIn>
   );
 }
 

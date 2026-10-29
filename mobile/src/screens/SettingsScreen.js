@@ -1,7 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row } from "../components/ui";
@@ -13,7 +13,7 @@ import { t, tn, tPlain, locale, LANGS } from "../i18n";
 import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES, PROFILE_ALLERGENS, DIETS, FLAG_SOURCES, RISK_SOURCES } from "../core";
 import { COSMETIC_RULES } from "../../../public/lib/cosmetic.js";
 import { mascot } from "../../../public/lib/mascot.js";
-import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory, localCount } from "../storage";
+import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory, localCount, addMember, removeMember, toggleMemberAllergen, setMemberDiet } from "../storage";
 import { downloadPack } from "../api";
 import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
 import { premiumEnabled, isPremium, canUse } from "../premium";
@@ -133,6 +133,7 @@ function LangPage() {
 function ProfilePage() {
   const st = getSettings();
   return (
+    <View style={{ gap: 14 }}>
     <Block gap={14}>
       <Lead>{t("settings.profile_p")}</Lead>
       <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg, textAlign: dir().ta }}>{t("settings.diet")}</Text>
@@ -150,6 +151,80 @@ function ProfilePage() {
           );
         })}
       </View>
+    </Block>
+    <FamilyBlock />
+    </View>
+  );
+}
+
+// Profils de la famille (Premium) : un dépliant par personne, avec ses allergies et son régime
+function FamilyBlock() {
+  const st = getSettings();
+  const [name, setName] = useState("");
+  const [openId, setOpenId] = useState(null);
+  const locked = premiumEnabled() && !isPremium();
+  const add = () => {
+    if (!canUse("family")) return;
+    const id = addMember(name);
+    if (id) { haptic.success(); setName(""); setOpenId(id); }
+  };
+  return (
+    <Block gap={12}>
+      <Row gap={8} style={{ justifyContent: "space-between" }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: "800", color: C.fg, textAlign: dir().ta }}>{t("family.title")}</Text>
+        {locked ? <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: "#E0457B" }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: 11.5 }}>{t("premium.locked")}</Text></View> : null}
+      </Row>
+      <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("family.intro")}</Muted>
+      {st.members.map((m) => {
+        const sum = [m.diet ? t(`diet.${m.diet}`) : null, ...m.allergens.map((a) => t(`allergen.${a}`))].filter(Boolean).join(" · ") || t("family.none");
+        return (
+          <View key={m.id} style={{ borderRadius: R.md, borderWidth: 1, borderColor: C.line, padding: 12 }}>
+            <Collapse initial={openId === m.id} head={(open) => (
+              <View style={{ flexDirection: dir().row, alignItems: "center", gap: 12 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: C.brandSoft, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ color: C.brandDark, fontWeight: "800", fontSize: 17 }}>{m.name.charAt(0).toUpperCase()}</Text>
+                </View>
+                <View style={{ flex: 1, gap: 1 }}>
+                  <Text style={{ fontWeight: "800", fontSize: 15.5, color: C.fg, textAlign: dir().ta }}>{m.name}</Text>
+                  <Muted style={{ fontSize: 13 }} numberOfLines={1}>{sum}</Muted>
+                </View>
+                <Chevron open={open} />
+              </View>
+            )}>
+              <View style={{ gap: 10, paddingTop: 12 }}>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: C.muted, textAlign: dir().ta }}>{t("settings.diet")}</Text>
+                <Segmented items={[[null, t("diet.none")], ...DIETS.map((d) => [d, t(`diet.${d}`)])]} value={m.diet || null}
+                  onChange={(d) => { setMemberDiet(m.id, d); saved(t("set.member", { name: m.name, x: t(d ? `diet.${d}` : "diet.none") })); }} />
+                <Text style={{ fontSize: 13, fontWeight: "800", color: C.muted, textAlign: dir().ta }}>{t("settings.allergens")}</Text>
+                <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 6 }}>
+                  {PROFILE_ALLERGENS.map((a) => {
+                    const on = m.allergens.includes(a);
+                    return (
+                      <Pressable key={a} onPress={() => { toggleMemberAllergen(m.id, a); saved(t("set.member", { name: m.name, x: `${on ? "−" : "+"} ${t(`allergen.${a}`)}` })); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+                        style={{ paddingVertical: 6, paddingHorizontal: 11, borderRadius: 99, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : "transparent" }}>
+                        <Text style={{ fontWeight: "700", fontSize: 13.5, color: on ? C.brandDark : C.fg }}>{t(`allergen.${a}`)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <Pressable onPress={() => { haptic.tap(); removeMember(m.id); }} accessibilityRole="button" hitSlop={6} style={{ alignSelf: dir().rtl ? "flex-end" : "flex-start", paddingVertical: 6 }}>
+                  <Text style={{ color: STATUS_COLORS.haram[0], fontWeight: "700", fontSize: 14 }}>{t("family.remove", { name: m.name })}</Text>
+                </Pressable>
+              </View>
+            </Collapse>
+          </View>
+        );
+      })}
+      {st.members.length < 8 ? (
+        <View style={{ flexDirection: dir().row, gap: 8 }}>
+          <TextInput value={name} onChangeText={setName} placeholder={t("family.name_ph")} placeholderTextColor={C.faint} maxLength={24} returnKeyType="done" onSubmitEditing={add}
+            style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16, color: C.fg, backgroundColor: C.surface, textAlign: dir().ta }} />
+          <Pressable onPress={add} disabled={!name.trim()} accessibilityRole="button"
+            style={({ pressed }) => ({ paddingHorizontal: 18, justifyContent: "center", borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand, opacity: name.trim() ? 1 : 0.5 })}>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("family.add")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </Block>
   );
 }

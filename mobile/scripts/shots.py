@@ -117,6 +117,10 @@ def run(lang, scheme):
         for n in [0, 1, 2, 4, 7]:
             ev(f"window.__bayyin.tour({n})"); p.wait_for_timeout(1200); shot(f"tour-{n}")
         ev("window.__bayyin.tour(null)"); p.wait_for_timeout(500)
+        # Mode Ramadan (aperçu) : horaires de Paris
+        ev("window.__bayyinRamadan = true; window.__bayyin.setSettings({ ram: { lat: 48.86, lng: 2.35, angle: 12 } })"); ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(400)
+        ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("ramadan")
+        ev("window.__bayyinRamadan = false"); ev("window.__bayyin.setTab('history')"); ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(400)
         # Accueil guidé du premier lancement
         ev("window.__bayyin.onboard(true)"); p.wait_for_timeout(900)
         for n in range(3):
@@ -130,6 +134,8 @@ def run(lang, scheme):
             ev(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
         ev("window.__bayyinRankCat(null)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
+        e2 = ev("window.__bayyinErrors || []")
+        if e2: errs.extend(["RENDER " + x for x in e2])
         b.close()
     return errs
 

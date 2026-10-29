@@ -7,6 +7,8 @@ import { Glyph } from "./Art";
 import { t } from "../i18n";
 import { haptic } from "../motion";
 
+// Photos d'une fiche : [{ k, u }] (format de la version web), anciennes fiches gardées : [[k, u]]
+export const photoList = (p) => ((p && p.photos) || []).map((x) => (Array.isArray(x) ? [x[0], x[1]] : x && [x.k, x.u])).filter((x) => x && x[1]);
 const big = (url) => String(url || "").replace(/\.(100|200|400)\.jpg$/, ".full.jpg");
 
 function ZoomPage({ url, W, H }) {
@@ -41,7 +43,7 @@ function ZoomPage({ url, W, H }) {
 export default function PhotoZoom({ p, visible, start = 0, onClose }) {
   const { width: W, height: H } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const photos = (p.photos || []).filter(([, u]) => u);
+  const photos = photoList(p);
   const [i, setI] = useState(start);
   const pager = useRef(null);
   const dy = useRef(new Animated.Value(0)).current;

@@ -13,6 +13,7 @@ import CameraScanner from "./components/CameraScanner";
 import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
+import Guard from "./components/Guard";
 import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
 import { useEdgeSwipe } from "./components/EdgeSwipe";
@@ -149,7 +150,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
       accessibilityViewIsModal={!hidden}
       style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: v, transform }]}
     >
-      {children}
+      <Guard onBack={onBack}>{children}</Guard>
     </Animated.View>
   );
 }
@@ -278,7 +279,7 @@ function Main() {
     setHomeStatus(null);
     push({ type: "camera" }, { replace });
   };
-  const openOcr = (code) => push({ type: "ocr", code: code || null }, { replace: !!top });
+  const openOcr = (code, photo) => push({ type: "ocr", code: code || null, photo: photo || null }, { replace: !!top && !photo });
   const gotoSettings = (target = "school") => {
     clearStack();
     setTab("settings");
@@ -409,6 +410,7 @@ function Main() {
       return (
         <OcrFlow
           code={item.code}
+          photo={item.photo}
           onClose={pop}
           onDone={(p, saved) => {
             haptic.success();
@@ -433,7 +435,7 @@ function Main() {
       <StatusBar style={(top && (top.type === "camera" || top.type === "aisle") && leaving !== top.key) || isDark() ? "light" : "dark"} />
       <View key={getLang() + (isDark() ? "d" : "l")} style={{ flex: 1 }} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
-          {page}
+          <Guard key={tab}>{page}</Guard>
         </FadeIn>
         <TabBar tab={tab} onTab={(id) => { changeTab(id); if (id === "scan") openCamera(); }} />
       </View>

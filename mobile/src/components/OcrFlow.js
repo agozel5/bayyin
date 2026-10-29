@@ -37,7 +37,7 @@ const ocrHtml = (img, langs) => `<!doctype html><html><head><meta name="viewport
 const send = (o) => window.ReactNativeWebView.postMessage(JSON.stringify(o));
 window.onerror = (m) => send({ type: "error", message: String(m) });
 async function prepare(src) {
-  const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error("image")); i.src = src; });
+  const img = await new Promise((ok, ko) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = "anonymous"; i.onload = () => ok(i); i.onerror = () => ko(new Error("image")); i.src = src; });
   const longest = Math.max(img.naturalWidth, img.naturalHeight);
   const scale = longest > 2200 ? 2200 / longest : longest < 1000 ? 1000 / longest : 1;
   const canvas = document.createElement("canvas");
@@ -82,7 +82,7 @@ async function prepare(src) {
 })();
 </script></body></html>`;
 
-export default function OcrFlow({ code, onDone, onClose }) {
+export default function OcrFlow({ code, photo, onDone, onClose }) {
   const insets = useSafeAreaInsets();
   // step : photo | reading | review | empty | error
   const [step, setStep] = useState("photo");
@@ -121,8 +121,16 @@ export default function OcrFlow({ code, onDone, onClose }) {
     }
   };
 
+  // Photo des ingrédients déjà publiée sur Open Food Facts : lue directement, sans appareil photo
+  const readPhoto = () => {
+    setProgress(0);
+    setStep("reading");
+    setHtml(ocrHtml(String(photo).replace(/\.(100|200|400)\.jpg$/, ".full.jpg"), OCR_LANGS[getLang()] || OCR_LANGS.fr));
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setStep((s) => (s === "reading" ? "error" : s)), 120000);
+  };
   useEffect(() => {
-    takePhoto();
+    if (photo) readPhoto(); else takePhoto();
     return () => clearTimeout(timer.current);
   }, []);
 
@@ -159,6 +167,7 @@ export default function OcrFlow({ code, onDone, onClose }) {
       additives_tags: additivesFromText(body),
       categories_tags: [],
       local: true,
+      ...(photo ? { ocr_from: "off" } : {}),
     };
     if (code) setLocal(code, raw);
     const p = present(raw, getSettings());
@@ -195,7 +204,7 @@ export default function OcrFlow({ code, onDone, onClose }) {
         {step === "review" ? (
           <>
             <H2>{t("ocr.review")}</H2>
-            <Muted>{t("ocr.review_hint")}</Muted>
+            <Muted>{photo ? t("offocr.crop_hint") : t("ocr.review_hint")}</Muted>
             <TextInput value={text} onChangeText={setText} multiline autoCorrect={false} spellCheck={false} style={[field, { minHeight: 180, textAlignVertical: "top" }]} />
             <Muted style={{ fontSize: 14 }}>{t("ocr.name")}</Muted>
             <TextInput value={name} onChangeText={setName} style={field} returnKeyType="done" />
@@ -212,7 +221,7 @@ export default function OcrFlow({ code, onDone, onClose }) {
 
         {step === "error" ? (
           <Message title={t("msg.reader_error.t")} text={t("ocr.error.p")}>
-            <Btn title={t("msg.retry")} icon="camera" onPress={takePhoto} />
+            <Btn title={t("msg.retry")} icon={photo ? "doc" : "camera"} onPress={photo ? readPhoto : takePhoto} />
           </Message>
         ) : null}
 

@@ -20,6 +20,7 @@ import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
 import RecallBox from "./Recall";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
+import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
 import ShareCard, { shareUrl, SHARE_W } from "./ShareCard";
 import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
@@ -180,12 +181,15 @@ function ProfileAlert({ p, onGotoProfile }) {
   if (!r.alert) return null;
   const [fg, bg] = ALERT_COLORS[r.alert];
   const label = (tags) => tags.map((a) => t(`allergen.${a}`)).join(", ");
-  const lines = [
-    r.contains.length ? t("alert.contains", { list: label(r.contains) }) : null,
-    r.diet ? t(`alert.${r.diet.id}.${r.diet.level}`) : null,
-    r.traces.length ? t("alert.traces", { list: label(r.traces) }) : null,
+  const linesOf = (x) => [
+    x.contains.length ? t("alert.contains", { list: label(x.contains) }) : null,
+    x.diet ? t(`alert.${x.diet.id}.${x.diet.level}`) : null,
+    x.traces.length ? t("alert.traces", { list: label(x.traces) }) : null,
   ].filter(Boolean);
-  const arts = [...r.contains, ...r.traces].filter((a, i, l) => ALLERGEN_ART[a] && l.indexOf(a) === i).slice(0, 5);
+  // Famille : chaque ligne dit qui est concerné
+  const lines = r.people ? r.people.flatMap((x) => linesOf(x).map((l) => `${x.name || t("family.me")} : ${l}`)) : linesOf(r);
+  const all = r.people ? r.people.flatMap((x) => [...x.contains, ...x.traces]) : [...r.contains, ...r.traces];
+  const arts = all.filter((a, i, l) => ALLERGEN_ART[a] && l.indexOf(a) === i).slice(0, 5);
   return (
     <View accessible accessibilityRole="alert" accessibilityLabel={`${t(`alert.${r.alert}`)}. ${lines.join(". ")}`}
       style={[{ backgroundColor: C.surface, borderRadius: R.xl, overflow: "hidden", borderWidth: 1, borderColor: fg + "55" }, lift()]}>
@@ -591,15 +595,19 @@ function ProductBody({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr,
       "&body=" +
       encodeURIComponent(t("report.body", { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" }))
     : null;
-  const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
+  const notes = [...(p.local ? [t(p.raw && p.raw.ocr_from === "off" ? "offocr.note" : "detail.local")] : []), ...v.notes.map(noteText)];
   const halal = (
     <Panel>
       <Chain p={p} v={v} />
-      <CertCard v={v} />
+      <CertCard v={v} p={p} />
       {notes.map((n, i) => <Muted key={i}>{n}</Muted>)}
       <Reader p={p} v={v} onGotoSettings={onGotoSettings} />
       {v.flags.length ? <View style={{ gap: 10 }}>{v.flags.map((f, i) => <FlagCard2 key={f.id + i} f={f} onGotoSettings={onGotoSettings} />)}</View> : null}
-      {v.status === "inconnu" && isBarcode(p.code) && food ? <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(p.code)} /> : null}
+      <AskBrand p={p} v={v} />
+      <OffPhoto p={p} v={v} onOcr={onOcr} />
+      {v.status === "inconnu" && isBarcode(p.code) && food ? <Btn title={t("detail.photo_ingredients")} icon="doc" kind={ingredientsPhoto(p) ? "soft" : "primary"} onPress={() => onOcr(p.code)} /> : null}
+      <Twins p={p} onOpen={onOpen} />
+      <Contribute p={p} />
       <Disclaimer />
     </Panel>
   );

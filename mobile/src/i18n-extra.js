@@ -1,6 +1,8 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
 export const EXTRA = {
   fr: {
+    "share.text": "Partager le texte",
+    "contrib.share_hint": "Sur le site, un compte Open Food Facts gratuit est demandé : partagez la liste lue par Bayyin pour la coller dans la fiche.",
     "privacy.7app": "Premium s'achète avec votre compte Apple ou Google : Bayyin ne voit jamais vos informations de paiement.",
     "appearance.text_t": "Taille du texte",
     "appearance.text_p": "Bayyin suit la taille du texte choisie dans les réglages du téléphone (Accessibilité ou Affichage). Agrandissez-la là, et les verdicts, les notes et les explications s'adaptent.",
@@ -38,6 +40,8 @@ export const EXTRA = {
     "widget.scan": "Scanner",
   },
   en: {
+    "share.text": "Share the text",
+    "contrib.share_hint": "The site asks for a free Open Food Facts account: share the list read by Bayyin to paste it into the product page.",
     "privacy.7app": "Premium is bought with your Apple or Google account: Bayyin never sees your payment details.",
     "appearance.text_t": "Text size",
     "appearance.text_p": "Bayyin follows the text size set in your phone settings (Accessibility or Display). Make it bigger there and verdicts, scores and explanations adapt.",
@@ -75,6 +79,8 @@ export const EXTRA = {
     "widget.scan": "Scan",
   },
   ar: {
+    "share.text": "مشاركة النص",
+    "contrib.share_hint": "يطلب الموقع حسابًا مجانيًا في Open Food Facts: شارك القائمة التي قرأها بيّن لتلصقها في صفحة المنتج.",
     "privacy.7app": "يُشترى بريميوم بحسابك في Apple أو Google: لا يرى بيّن بيانات الدفع أبدًا.",
     "appearance.text_t": "حجم النص",
     "appearance.text_p": "يتبع بيّن حجم النص المختار في إعدادات الهاتف (تسهيلات الاستخدام أو العرض). كبّره هناك فتتكيّف الأحكام والتقييمات والشروح.",
@@ -112,6 +118,8 @@ export const EXTRA = {
     "widget.scan": "مسح",
   },
   tr: {
+    "share.text": "Metni paylaş",
+    "contrib.share_hint": "Site ücretsiz bir Open Food Facts hesabı ister: Bayyin'in okuduğu listeyi paylaşıp ürün sayfasına yapıştırın.",
     "privacy.7app": "Premium, Apple veya Google hesabınızla satın alınır: Bayyin ödeme bilgilerinizi asla görmez.",
     "appearance.text_t": "Yazı boyutu",
     "appearance.text_p": "Bayyin, telefon ayarlarında (Erişilebilirlik veya Ekran) seçilen yazı boyutunu izler. Orada büyütün; kararlar, puanlar ve açıklamalar uyum sağlar.",
