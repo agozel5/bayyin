@@ -27,7 +27,7 @@ jobs:
       - name: Playwright et ffmpeg
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-          pip install playwright
+          pip install playwright numpy
           python -m playwright install --with-deps chromium
       - name: Filmer et monter
         run: |

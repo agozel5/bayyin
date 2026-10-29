@@ -5,7 +5,7 @@ Règle Apple 2.3.4 : la vidéo ne montre que l'app elle-même, filmée en foncti
 réelle (servie en local) avec de vrais produits Open Food Facts, et on ajoute seulement un titre au-dessus.
 
 Sortie : docs/store/preview/preview-<lang>.mp4 — 886×1920 (iPhone 6,5"/6,9" portrait), H.264, 30 i/s,
-piste audio stéréo silencieuse, environ 25 s.
+musique originale en stéréo (scripts/preview-music.py), environ 27 s.
 Prérequis : serveur local sur le port 3123 (PORT=3123 node src/server.js), Playwright (Chromium), ffmpeg.
 """
 import base64, json, re, shutil, subprocess, sys, tempfile, time
@@ -174,10 +174,14 @@ def encode(frames, lang, workdir):
     speed = f"setpts=PTS*{28.5 / span:.4f}," if span > 28.5 else ""
     OUT.mkdir(parents=True, exist_ok=True)
     out = OUT / f"preview-{lang}.mp4"
+    # Musique originale (scripts/preview-music.py), à la durée de la vidéo
+    total = min(span, 28.5)
+    music = Path(workdir) / f"music-{lang}.wav"
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "preview-music.py"), str(music), f"{total:.2f}"], check=True, capture_output=True)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(concat),
-                    "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+                    "-i", str(music), "-af", "loudnorm=I=-16:TP=-1.5:LRA=7,aresample=48000",
                     "-vf", f"{speed}fps=30,scale=886:1920:flags=lanczos,format=yuv420p",
-                    "-c:v", "libx264", "-preset", "slow", "-profile:v", "high", "-level", "4.0", "-b:v", "11M", "-minrate", "10M", "-maxrate", "12M", "-bufsize", "12M",
+                    "-c:v", "libx264", "-preset", "slow", "-profile:v", "high", "-level", "4.0", "-b:v", "11M", "-minrate", "11M", "-maxrate", "11M", "-bufsize", "22M", "-x264-params", "nal-hrd=cbr",
                     "-c:a", "aac", "-b:a", "256k", "-shortest", "-movflags", "+faststart", str(out)], check=True)
     return out
 
