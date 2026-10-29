@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-29-06", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-07", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -425,6 +425,9 @@ export default {
   "src.quran": "Interdits explicites : porc, sang, animaux non sacrifiés (2:173, 5:3) et boissons enivrantes (5:90).",
   "detail.source": "Source",
   "detail.sources_health": "Sources : Nutri-Score (Santé publique France), seuils de la Food Standards Agency.",
+  "pv.b1": "compte",
+  "pv.b2": "publicité",
+  "pv.b3": "pistage",
   "privacy.t": "Votre vie privée d'abord",
   "privacy.p": "Aucun compte, aucune publicité, aucun pistage. Votre historique et vos réglages restent sur votre téléphone ; seul le code-barres est envoyé à Open Food Facts pour trouver le produit.",
   "privacy.badge": "Gratuit · sans pub · sans pistage",

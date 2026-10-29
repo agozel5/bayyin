@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-06", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-07", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -411,6 +411,9 @@ export default {
   "src.quran": "Explicit prohibitions: pork, blood, animals not properly slaughtered (2:173, 5:3) and intoxicants (5:90).",
   "detail.source": "Source",
   "detail.sources_health": "Sources: Nutri-Score (Santé publique France), Food Standards Agency thresholds.",
+  "pv.b1": "accounts",
+  "pv.b2": "ads",
+  "pv.b3": "tracking",
   "privacy.t": "Your privacy first",
   "privacy.p": "No account, no ads, no tracking. Your history and settings stay on your phone; only the barcode is sent to Open Food Facts to find the product.",
   "privacy.badge": "Free · no ads · no tracking",

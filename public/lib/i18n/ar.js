@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-06", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-07", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -411,6 +411,9 @@ export default {
   "src.quran": "محرمات صريحة: الخنزير والدم وما لم يُذكَّ (2:173، 5:3) والمسكرات (5:90).",
   "detail.source": "المصدر",
   "detail.sources_health": "المصادر: Nutri-Score (الصحة العامة الفرنسية)، حدود وكالة معايير الغذاء البريطانية.",
+  "pv.b1": "حساب",
+  "pv.b2": "إعلان",
+  "pv.b3": "تتبع",
   "privacy.t": "خصوصيتك أولاً",
   "privacy.p": "لا حساب، لا إعلانات، لا تتبع. يبقى سجلك وإعداداتك على هاتفك؛ ولا يُرسل إلى Open Food Facts سوى الرمز الشريطي للعثور على المنتج.",
   "privacy.badge": "مجاني · بلا إعلانات · بلا تتبع",

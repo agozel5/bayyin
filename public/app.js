@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-06";
+const APP_BUILD = "2026-10-29-07";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -3219,7 +3219,7 @@ function renderSettings() {
   const st = prefs();
   renderSettingsMenu();
   $("langGrid").innerHTML = LANGS.map(
-    (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}">${LANG_NAMES[l]}</button>`
+    (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}"><span class="gt lang-mark" style="--t:${{ fr: "#3D84DB", en: "#E0457B", ar: "#1A9C68", tr: "#8A63DA" }[l]}">${{ fr: "Fr", en: "En", ar: "ع", tr: "Tr" }[l]}</span>${LANG_NAMES[l]}</button>`
   ).join("");
 
   $("dietList").style.gridTemplateColumns = "repeat(3,1fr)";
@@ -3423,7 +3423,9 @@ function renderDataPage(msg) {
     [basket.all().length, "data.basket"],
     [Object.keys(localProductsAll()).length, "data.local"],
   ];
-  $("dataStats").innerHTML = stats.map(([n, k]) => `<div class="data-stat"><strong>${n}</strong><small>${t(k)}</small></div>`).join("");
+  const DS_ICO = [["#3D84DB", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'], ["#D9A81E", '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>'],
+    ["#E0457B", '<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.5a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>'], ["#8A63DA", '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>']];
+  $("dataStats").innerHTML = stats.map(([n, k], i) => `<div class="data-stat"><span class="gt" style="--t:${DS_ICO[i][0]}">${svg(DS_ICO[i][1])}</span><strong>${n}</strong><small>${t(k)}</small></div>`).join("");
   $("clearHistoryBtn").textContent = t(confirmData === "history" ? "data.confirm" : "data.clear_history");
   $("resetBtn").textContent = t(confirmData === "reset" ? "data.confirm" : "data.reset");
   $("clearHistoryBtn").classList.toggle("is-confirm", confirmData === "history");

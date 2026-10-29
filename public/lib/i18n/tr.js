@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-29-06", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-07", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -411,6 +411,9 @@ export default {
   "src.quran": "Açık yasaklar: domuz, kan, usulüne göre kesilmemiş hayvanlar (2:173, 5:3) ve sarhoş edici içkiler (5:90).",
   "detail.source": "Kaynak",
   "detail.sources_health": "Kaynaklar: Nutri-Score (Santé publique France), Food Standards Agency eşikleri.",
+  "pv.b1": "hesap",
+  "pv.b2": "reklam",
+  "pv.b3": "takip",
   "privacy.t": "Önce gizliliğiniz",
   "privacy.p": "Hesap yok, reklam yok, takip yok. Geçmişiniz ve ayarlarınız telefonunuzda kalır; ürünü bulmak için Open Food Facts'e yalnızca barkod gönderilir.",
   "privacy.badge": "Ücretsiz · reklamsız · takipsiz",
