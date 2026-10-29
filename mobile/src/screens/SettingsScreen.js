@@ -28,6 +28,9 @@ import { CERTIFIER_INFO } from "../../../public/lib/certifiers.js";
 import { I } from "../../../public/lib/icons.js";
 
 const open = (url) => Linking.openURL(url).catch(() => {});
+// Confirmation discrète après chaque réglage (comme la version web)
+let say = null;
+const saved = (msg) => { haptic.success(); say && say(msg); };
 const SI = {
   lang: ['#3D84DB', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>'],
   profile: ['#E0457B', I.user],
@@ -133,13 +136,13 @@ function ProfilePage() {
     <Block gap={14}>
       <Lead>{t("settings.profile_p")}</Lead>
       <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg, textAlign: dir().ta }}>{t("settings.diet")}</Text>
-      <Segmented items={[[null, t("diet.none")], ...DIETS.map((d) => [d, t(`diet.${d}`)])]} value={st.profile.diet || null} onChange={(d) => setDiet(d)} />
+      <Segmented items={[[null, t("diet.none")], ...DIETS.map((d) => [d, t(`diet.${d}`)])]} value={st.profile.diet || null} onChange={(d) => { setDiet(d); saved(t("set.diet", { x: t(d ? `diet.${d}` : "diet.none") })); }} />
       <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg, textAlign: dir().ta, marginTop: 4 }}>{t("settings.allergens")}</Text>
       <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
         {PROFILE_ALLERGENS.map((a) => {
           const on = st.profile.allergens.includes(a);
           return (
-            <Pressable key={a} onPress={() => { haptic.tap(); toggleAllergen(a); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
+            <Pressable key={a} onPress={() => { const on2 = !st.profile.allergens.includes(a); toggleAllergen(a); saved(t(on2 ? "set.allergen_on" : "set.allergen_off", { x: t(`allergen.${a}`) })); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
               style={{ flexDirection: dir().row, alignItems: "center", gap: 7, paddingVertical: 7, paddingHorizontal: 12, paddingStart: 7, borderRadius: 99, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : "transparent" }}>
               <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={ALLERGEN_ART[a]} size={20} /></View>
               <Text style={{ fontWeight: "700", fontSize: 14, color: on ? C.brandDark : C.fg }}>{t(`allergen.${a}`)}</Text>
@@ -166,7 +169,7 @@ function ReligionPage() {
         {schools.map((s) => {
           const on = st.school === s;
           return (
-            <Pressable key={s} onPress={() => { if (s !== "custom") { haptic.tap(); setSchool(s); } }} accessibilityRole="radio" accessibilityState={{ checked: on }}
+            <Pressable key={s} onPress={() => { if (s !== "custom" && !on) { setSchool(s); saved(t("set.school", { x: t(`school.${s}`) })); } }} accessibilityRole="radio" accessibilityState={{ checked: on }}
               style={{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.md, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : "transparent" }}>
               <Radio on={on} />
               <View style={{ flex: 1, gap: 2 }}>
@@ -201,7 +204,7 @@ function ReligionPage() {
                 const on = st.topics[topic] === d;
                 const [fg, bg] = DECISION_COLORS()[d] || [C.fg, C.surface];
                 return (
-                  <Pressable key={d} onPress={() => { haptic.tap(); setTopic(topic, d); }} accessibilityRole="radio" accessibilityState={{ checked: on }}
+                  <Pressable key={d} onPress={() => { if (on) return; setTopic(topic, d); saved(t("set.topic", { x: `${t(`topic.${topic}`)} → ${t(`decision.${d}`).toLowerCase()}` })); }} accessibilityRole="radio" accessibilityState={{ checked: on }}
                     style={{ flex: 1, paddingVertical: 9, borderRadius: R.sm, alignItems: "center", backgroundColor: on ? bg : "transparent", borderWidth: on ? 1.5 : 0, borderColor: fg }}>
                     <Text style={{ fontWeight: "800", fontSize: 14, color: on ? fg : C.muted }}>{t(`decision.${d}`)}</Text>
                   </Pressable>
@@ -648,6 +651,7 @@ const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
 export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
+  say = toast;
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(null);
   const st = getSettings();

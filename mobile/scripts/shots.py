@@ -4,7 +4,7 @@
 Usage : python scripts/shots.py dist-web sortie/   (en CI : workflow « App mobile — captures »)
 Les fiches utilisent de vrais produits Open Food Facts (copie gardée dans public/data/rankings).
 """
-import json, re, sys, threading, http.server, functools, socketserver
+import json, traceback, re, sys, threading, http.server, functools, socketserver
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -55,72 +55,80 @@ def run(lang, scheme):
         p.on("pageerror", lambda e: errs.append(str(e)))
         p.goto("http://127.0.0.1:8765/"); p.wait_for_function("!!window.__bayyin", timeout=30000); p.wait_for_timeout(1500)
         tag = f"{lang}-{scheme}"
+        def ev(js):
+            try: return p.evaluate(js)
+            except Exception as e: errs.append(f"evaluate {js[:80]}: {str(e)[:300]}")
         def shot(name, full=False): p.screenshot(path=str(OUT / f"{tag}-{name}.png"), full_page=full)
         shot("home-first")
         for c in CODES:
-            p.evaluate(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2500)
+            ev(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2500)
             shot(f"sheet-{c}")
-            p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+            ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Fiche complète, onglet par onglet (fenêtre haute : la fiche défile dans son propre cadre)
         p.set_viewport_size({"width": 390, "height": 2600})
         for c, tabs in [(CODES[2], ["halal", "health", "compo", "planet"]), (CODES[0], ["halal", "planet"]), (BEAUTY, ["health", "compo"])]:
-            p.evaluate(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2200)
+            ev(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2200)
             for tb in tabs:
-                p.evaluate(f"window.__bayyin.sheetTab && window.__bayyin.sheetTab('{tb}')"); p.wait_for_timeout(900)
+                ev(f"window.__bayyin.sheetTab && window.__bayyin.sheetTab('{tb}')"); p.wait_for_timeout(900)
                 shot(f"full-{c}-{tb}")
-            p.evaluate("window.__bayyin.sheetTab && window.__bayyin.sheetTab('halal')")
-            p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+            ev("window.__bayyin.sheetTab && window.__bayyin.sheetTab('halal')")
+            ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
-        p.evaluate("window.__bayyin.setTab('history')"); p.wait_for_timeout(500)
-        p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
+        ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(500)
+        ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:
-            p.evaluate(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
+            ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
         p.set_viewport_size({"width": 390, "height": 1700})
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"]:
-            p.evaluate(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
-        p.evaluate("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
+            ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
+        ev("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
         # Carte de partage
-        p.evaluate(f"window.__bayyin.openProduct('{CODES[0]}')"); p.wait_for_timeout(2000)
-        p.evaluate("window.__bayyin.shareCard(true)"); p.wait_for_timeout(1500); shot("share")
-        p.evaluate("window.__bayyin.shareCard(false)"); p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev(f"window.__bayyin.openProduct('{CODES[0]}')"); p.wait_for_timeout(2000)
+        ev("window.__bayyin.shareCard(true)"); p.wait_for_timeout(1500); shot("share")
+        ev("window.__bayyin.shareCard(false)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Réglages des notifications
-        p.evaluate("window.__bayyin.setTab('settings')"); p.wait_for_timeout(600)
-        p.evaluate("window.__bayyin.settingsPage('notif')"); p.wait_for_timeout(900); shot("set-notif")
-        p.evaluate("window.__bayyin.settingsPage(null)"); p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
+        ev("window.__bayyin.setTab('settings')"); p.wait_for_timeout(600)
+        ev("window.__bayyin.settingsPage('notif')"); p.wait_for_timeout(900); shot("set-notif")
+        ev("window.__bayyin.settingsPage(null)"); ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
         # Premium (aperçu des offres) et panier du mode courses
-        p.evaluate("window.__bayyin.premium(true)"); p.wait_for_timeout(1500); shot("premium")
-        p.evaluate("window.__bayyin.pop()"); p.evaluate("window.__bayyin.premium(false)"); p.wait_for_timeout(700)
-        for c in CODES: p.evaluate(f"window.__bayyin.basketAdd('{c}')")
-        p.wait_for_timeout(2500); p.evaluate("window.__bayyin.openBasket()"); p.wait_for_timeout(1500); shot("basket")
-        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.premium(true)"); p.wait_for_timeout(1500); shot("premium")
+        ev("window.__bayyin.pop()"); ev("window.__bayyin.premium(false)"); p.wait_for_timeout(700)
+        for c in CODES: ev(f"window.__bayyin.basketAdd('{c}')")
+        p.wait_for_timeout(2500); ev("window.__bayyin.openBasket()"); p.wait_for_timeout(1500); shot("basket")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Commerces halal (centre de Paris) et comparaison de deux produits de l'historique
         p.set_viewport_size({"width": 390, "height": 1700})
-        p.evaluate("window.__bayyinPlacesAt = { lat: 48.8566, lon: 2.3522 }; window.__bayyin.openPlaces()"); p.wait_for_timeout(1200)
-        p.evaluate("window.__bayyinPlacesLocate && window.__bayyinPlacesLocate()"); p.wait_for_timeout(6000); shot("places")
-        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
-        p.evaluate("window.__bayyin.openCompare()"); p.wait_for_timeout(900)
-        p.evaluate(f"window.__bayyinCompare && window.__bayyinCompare('{CODES[0]}', '{CODES[2]}')"); p.wait_for_timeout(1200); shot("compare")
-        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyinPlacesAt = { lat: 48.8566, lon: 2.3522 }; window.__bayyin.openPlaces()"); p.wait_for_timeout(1200)
+        ev("window.__bayyinPlacesLocate && window.__bayyinPlacesLocate()"); p.wait_for_timeout(6000); shot("places")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.openCompare()"); p.wait_for_timeout(900)
+        ev(f"window.__bayyinCompare && window.__bayyinCompare('{CODES[0]}', '{CODES[2]}')"); p.wait_for_timeout(1200); shot("compare")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
         # Alerte personnelle : lait et fruits à coque dans le profil (yaourt : contient du lait, traces de fruits à coque)
-        p.evaluate("window.__bayyin.setSettings({ profile: { allergens: ['en:milk', 'en:nuts', 'en:eggs'], diet: null } })"); p.wait_for_timeout(400)
-        p.evaluate(f"window.__bayyin.openProduct('{CODES[1]}')"); p.wait_for_timeout(2500); shot("alert")
-        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
-        p.evaluate("window.__bayyin.setSettings({ profile: { allergens: [], diet: null } })"); p.wait_for_timeout(400)
+        ev("window.__bayyin.setSettings({ profile: { allergens: ['en:milk', 'en:nuts', 'en:eggs'], diet: null } })"); p.wait_for_timeout(400)
+        ev(f"window.__bayyin.openProduct('{CODES[1]}')"); p.wait_for_timeout(2500); shot("alert")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.setSettings({ profile: { allergens: [], diet: null } })"); p.wait_for_timeout(400)
         # Caméra (flux de test de Chromium)
-        p.evaluate("window.__bayyin.openCamera()"); p.wait_for_timeout(3000); shot("camera")
-        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.openCamera()"); p.wait_for_timeout(3000); shot("camera")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Visite guidée : quelques étapes
         for n in [0, 1, 2, 4, 7]:
-            p.evaluate(f"window.__bayyin.tour({n})"); p.wait_for_timeout(1200); shot(f"tour-{n}")
-        p.evaluate("window.__bayyin.tour(null)"); p.wait_for_timeout(500)
+            ev(f"window.__bayyin.tour({n})"); p.wait_for_timeout(1200); shot(f"tour-{n}")
+        ev("window.__bayyin.tour(null)"); p.wait_for_timeout(500)
+        # Accueil guidé du premier lancement
+        ev("window.__bayyin.onboard(true)"); p.wait_for_timeout(900)
+        for n in range(3):
+            ev(f"window.__bayyinOb && window.__bayyinOb({n})"); p.wait_for_timeout(700); shot(f"ob-{n}")
+        ev("window.__bayyin.onboard(false)"); p.wait_for_timeout(500)
         # Classements : liste des rayons, puis deux rayons
         p.set_viewport_size({"width": 390, "height": 2600})
-        p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
-        p.evaluate("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
+        ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
+        ev("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
         for cat in ["spreads", "shampoos"]:
-            p.evaluate(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
-        p.evaluate("window.__bayyinRankCat(null)"); p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+            ev(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
+        ev("window.__bayyinRankCat(null)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
         b.close()
     return errs
@@ -128,6 +136,7 @@ def run(lang, scheme):
 if __name__ == "__main__":
     report = {}
     for lang, scheme in [("fr", "light"), ("fr", "dark"), ("ar", "light")]:
-        report[f"{lang}-{scheme}"] = run(lang, scheme)
+        try: report[f"{lang}-{scheme}"] = run(lang, scheme)
+        except Exception: report[f"{lang}-{scheme}"] = ["CRASH " + traceback.format_exc()[-1500:]]
     (OUT / "errors.json").write_text(json.dumps(report, ensure_ascii=False, indent=1))
     print(json.dumps(report, ensure_ascii=False)[:2000])

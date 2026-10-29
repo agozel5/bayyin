@@ -13,6 +13,7 @@ import CameraScanner from "./components/CameraScanner";
 import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
+import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
 import { useEdgeSwipe } from "./components/EdgeSwipe";
 import BasketScreen from "./screens/BasketScreen";
@@ -112,7 +113,7 @@ function Toast({ text }) {
     <View pointerEvents="none" style={{ position: "absolute", left: 20, right: 20, bottom: insets.bottom + 90, alignItems: "center" }}>
       <FadeIn key={text} distance={14}>
         <View style={{ backgroundColor: C.fg, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 18, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 }}>
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15, textAlign: "center" }}>{text}</Text>
+          <Text style={{ color: C.bg, fontWeight: "700", fontSize: 15, textAlign: "center" }}>{text}</Text>
         </View>
       </FadeIn>
     </View>
@@ -294,11 +295,13 @@ function Main() {
     setTour(null);
     if (!getSettings().toured) setSettings({ toured: true });
   };
+  // Premier lancement : accueil guidé (langue, avis, profil), puis la visite guidée
+  const [onboard, setOnboard] = useState(() => !getSettings().onboarded && !(typeof window !== "undefined" && window.__bayyinShots));
   useEffect(() => {
-    if (getSettings().toured) return;
+    if (onboard || getSettings().toured) return;
     const id = setTimeout(() => setTour((v) => (v === null ? 0 : v)), 900);
     return () => clearTimeout(id);
-  }, []);
+  }, [onboard]);
 
   // Android : lecture du code-barres sur une photo
   const photoBarcode = async () => {
@@ -419,7 +422,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)) };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.
@@ -451,6 +454,7 @@ function Main() {
         );
       })}
       <Toast text={toastText} />
+      {onboard ? <Onboarding onDone={() => setOnboard(false)} /> : null}
       {tour !== null ? <Tour start={tour} onDone={endTour} onScan={() => openCamera()} /> : null}
     </View>
   );
