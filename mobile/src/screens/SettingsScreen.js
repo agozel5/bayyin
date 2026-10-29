@@ -218,7 +218,7 @@ function FamilyBlock() {
       {st.members.length < 8 ? (
         <View style={{ flexDirection: dir().row, gap: 8 }}>
           <TextInput value={name} onChangeText={setName} placeholder={t("family.name_ph")} placeholderTextColor={C.faint} maxLength={24} returnKeyType="done" onSubmitEditing={add}
-            style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16, color: C.fg, backgroundColor: C.surface, textAlign: dir().ta }} />
+            style={{ flex: 1, minWidth: 0, width: 10, borderWidth: 1, borderColor: C.line, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16, color: C.fg, backgroundColor: C.surface, textAlign: dir().ta }} />
           <Pressable onPress={add} disabled={!name.trim()} accessibilityRole="button"
             style={({ pressed }) => ({ paddingHorizontal: 18, justifyContent: "center", borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand, opacity: name.trim() ? 1 : 0.5 })}>
             <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("family.add")}</Text>

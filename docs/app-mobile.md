@@ -15,6 +15,10 @@ La plupart des fonctions marchent sans rien configurer. Trois choses demandent v
 | Demande d'avis | Fenêtre officielle d'Apple ou Google après 6 fiches, une seule fois, sur un verdict halal | Aucun |
 | Widget | Bilan de la semaine et bouton Scanner sur l'écran d'accueil | Aucun pour Android ; sur iPhone, groupe d'apps (voir plus bas) |
 | Liens | `bayyin://p/<code>` et les liens de partage du site (`agozel5.github.io/bayyin/?p=<code>`) ouvrent la fiche dans l'app | Android : aucun. iPhone : voir « Liens universels » |
+| Accueil guidé | Au premier lancement : langue, avis religieux, allergies et régime, puis la visite de l'écran d'accueil | Aucun |
+| Profils de la famille | Jusqu'à 8 personnes avec leurs allergies et leur régime ; l'alerte de la fiche dit qui est concerné | Aucun (réservé à Premium quand Premium est en vente) |
+| Mode Ramadan | Pendant le mois : jour du Ramadan, fin du suhoor et iftar avec compte à rebours (calcul sur le téléphone) | Aucun (la position est demandée à l'utilisateur) |
+| Certification vérifiée | Le label AVS, Achahada ou HMC est comparé à la liste publiée par l'organisme (`data/certified.json`) | Aucun |
 
 ## Premium (achats intégrés)
 
