@@ -30,7 +30,7 @@ jobs:
       - name: Dépendances
         run: |
           scripts/ci-run.sh "Installation des dépendances" npm run setup
-          scripts/ci-run.sh "Dépendances web" npx expo install react-dom react-native-web @expo/metro-runtime
+          scripts/ci-run.sh "Dépendances web" sh -c "npx expo install react-dom react-native-web @expo/metro-runtime || npx expo install react-dom react-native-web @expo/metro-runtime"
           pip install playwright && python -m playwright install --with-deps chromium
       - name: Version web
         run: scripts/ci-run.sh "expo export web" npx expo export --platform web --output-dir dist-web
