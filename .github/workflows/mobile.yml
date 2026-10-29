@@ -50,7 +50,10 @@ jobs:
         run: scripts/ci-run.sh "expo prebuild android" npx expo prebuild --platform android --no-install
       - name: Compilation de l'APK
         working-directory: mobile/android
-        run: ../scripts/ci-run.sh "Gradle assembleRelease" ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+        env:
+          CI_TIMEOUT: 100m
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.workers.max=4 -Dkotlin.daemon.jvm.options=-Xmx2g
+        run: ../scripts/ci-run.sh "Gradle assembleRelease" ./gradlew assembleRelease --no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a
       - name: Renommer l'APK
         run: cp android/app/build/outputs/apk/release/app-release.apk ../Bayyin.apk
       - uses: actions/upload-artifact@v4

@@ -5,7 +5,8 @@
 title="$1"; shift
 log="$(mktemp)"
 set -o pipefail
-"$@" 2>&1 | tee "$log"
+# CI_TIMEOUT (ex. 90m) : arrête une étape bloquée en gardant la fin du journal dans l'annotation
+if [ -n "$CI_TIMEOUT" ]; then timeout --signal=INT "$CI_TIMEOUT" "$@" 2>&1 | tee "$log"; else "$@" 2>&1 | tee "$log"; fi
 status=${PIPESTATUS[0]}
 if [ "$status" -ne 0 ]; then
   # Les barres de progression (curl, gradle) réécrivent la ligne avec \r : on les retire
