@@ -1,5 +1,6 @@
 // Traductions (mêmes dictionnaires que la version web).
 import { DICTS } from "./core";
+import { EXTRA } from "./i18n-extra";
 
 export const LANGS = ["fr", "en", "ar", "tr"];
 const LOCALES = { fr: "fr-FR", en: "en-GB", ar: "ar-u-nu-latn", tr: "tr-TR" };
@@ -41,8 +42,8 @@ const NATIVE = {
 };
 
 export function t(key, vars) {
-  let s = NATIVE[lang][key] ?? DICTS[lang][key];
-  if (s === undefined) s = NATIVE.fr[key];
+  let s = NATIVE[lang][key] ?? EXTRA[lang][key] ?? DICTS[lang][key];
+  if (s === undefined) s = NATIVE.fr[key] ?? EXTRA.fr[key];
   if (s === undefined) s = DICTS.fr[key];
   if (s === undefined) return key;
   if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));

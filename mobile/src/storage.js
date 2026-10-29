@@ -50,6 +50,10 @@ export async function initStorage() {
     },
     onboarded: !!s.onboarded,
     toured: !!s.toured,
+    notif: s.notif !== false, // alertes de rappel (si le téléphone les autorise)
+    notifAsked: !!s.notifAsked,
+    scans: s.scans || 0, // nombre de fiches ouvertes (demande d'avis)
+    reviewAsked: s.reviewAsked || 0,
     theme: ["auto", "light", "dark"].includes(s.theme) ? s.theme : "auto",
     distrust: Array.isArray(s.distrust) ? s.distrust : [],
   };

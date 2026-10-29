@@ -1,7 +1,7 @@
 // Bayyin — application native (iOS et Android).
 // Cinq onglets en bas, et une pile d'écrans par-dessus : caméra, fiche produit, lecture d'étiquette.
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform, Appearance } from "react-native";
+import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform, Appearance, AppState } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -20,7 +20,10 @@ import SettingsScreen from "./screens/SettingsScreen";
 import { C, dir, applyTheme, isDark } from "./theme";
 import { Glyph } from "./components/Art";
 import { t, setLang, getLang } from "./i18n";
-import { initStorage, getSettings, setSettings, subscribe } from "./storage";
+import { initStorage, getSettings, setSettings, subscribe, getHistory } from "./storage";
+import { checkRecalls, dismissRecalls, notifyRecalls, setupNotifications, askNotifications, onNotificationOpen } from "./recalls";
+import { registerBackground } from "./background";
+import { listenLinks, setQuickActions } from "./links";
 import { normalizeScan } from "./core";
 import { FadeIn } from "./components/ui";
 import { haptic, ms, announce } from "./motion";
@@ -150,11 +153,32 @@ function Main() {
   useEffect(
     () =>
       subscribe((what) => {
-        if (what === "settings") { setLang(getSettings().lang); applyTheme(getSettings().theme); }
+        if (what === "settings") { setLang(getSettings().lang); applyTheme(getSettings().theme); setQuickActions(); }
+        // Alertes de rappel : autorisation demandée une fois, quand l'historique a quelques produits
+        if (what === "history" && getHistory().length >= 2 && !getSettings().notifAsked && Platform.OS !== "web") setTimeout(() => askNotifications(), 1200);
         setTick((n) => n + 1);
       }),
     []
   );
+
+  // Rappels : vérifiés au démarrage, au retour dans l'app et en arrière-plan
+  const [recalls, setRecalls] = useState([]);
+  const openRef = useRef(null);
+  const refreshRecalls = useCallback(async (force = false) => {
+    const hits = await checkRecalls({ force }).catch(() => []);
+    setRecalls(hits);
+    notifyRecalls(hits, { send: false }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    setupNotifications();
+    registerBackground();
+    refreshRecalls();
+    const off = onNotificationOpen((code) => openRef.current && openRef.current({ type: "product", code }));
+    const offLinks = listenLinks((l) => openRef.current && openRef.current(l));
+    setQuickActions();
+    const sub = AppState.addEventListener("change", (st) => { if (st === "active") refreshRecalls(); });
+    return () => { off(); offLinks(); sub.remove(); };
+  }, []);
 
   const toast = useCallback((text) => {
     setToastText(text);
@@ -204,6 +228,15 @@ function Main() {
   const openProduct = (code, { fromScan = false, product = null, replace } = {}) => {
     const onTop = top && (top.type === "sheet" || top.type === "camera" || top.type === "ocr");
     push({ type: "sheet", code, product, fromScan }, { replace: replace ?? !!onTop });
+  };
+  // Lien, raccourci de l'icône, widget ou notification
+  openRef.current = (l) => {
+    setTour(null);
+    if (l.type === "product") return openProduct(l.code, { replace: false });
+    if (l.type === "scan") { clearStack(); setTab("scan"); return openCamera(); }
+    if (l.type === "rankings") { clearStack(); setTab("scan"); return push({ type: "rankings" }); }
+    clearStack();
+    setTab(l.type);
   };
   const openCamera = ({ replace = false } = {}) => {
     setHomeStatus(null);
@@ -271,6 +304,8 @@ function Main() {
         onGotoSettings={() => gotoSettings()}
         onGotoProfile={gotoProfile}
         onRankings={() => push({ type: "rankings" })}
+        recalls={recalls}
+        onDismissRecalls={() => { dismissRecalls(recalls); setRecalls([]); }}
         manualOpen={manualOpen}
         setManualOpen={setManualOpen}
         status={homeStatus}

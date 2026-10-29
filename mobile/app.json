@@ -29,10 +29,27 @@
       },
       "permissions": [
         "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "agozel5.github.io",
+              "pathPrefix": "/bayyin"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "plugins": [
@@ -51,7 +68,37 @@
           "microphonePermission": false
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "color": "#14805A",
+          "defaultChannel": "recalls"
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "qa_scan": {
+              "foregroundImage": "./assets/shortcuts/qa_scan.png",
+              "backgroundColor": "#14805A"
+            },
+            "qa_search": {
+              "foregroundImage": "./assets/shortcuts/qa_search.png",
+              "backgroundColor": "#3D84DB"
+            },
+            "qa_history": {
+              "foregroundImage": "./assets/shortcuts/qa_history.png",
+              "backgroundColor": "#2F6FC0"
+            },
+            "qa_rankings": {
+              "foregroundImage": "./assets/shortcuts/qa_rankings.png",
+              "backgroundColor": "#E2A812"
+            }
+          }
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"
@@ -67,6 +114,7 @@
     "web": {
       "bundler": "metro",
       "output": "single"
-    }
+    },
+    "scheme": "bayyin"
   }
 }

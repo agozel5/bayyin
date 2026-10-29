@@ -8,13 +8,14 @@ import { Tile, Glyph } from "../components/Art";
 import { ProductCard, Khatam } from "../components/Cards";
 import { Txt, Muted, Row, Message, FadeIn, FONT_MAX } from "../components/ui";
 import Screen from "../components/Screen";
-import { C, R, dir, lift, isDark } from "../theme";
+import { C, R, dir, lift, isDark, STATUS_COLORS } from "../theme";
 import { t, tn, tPlain } from "../i18n";
-import { getHistory, getSettings } from "../storage";
-import { verdictOf, profileOf } from "../view";
+import { getHistory, getSettings, getEntry } from "../storage";
+import { verdictOf, profileOf, nameOf } from "../view";
 import { hasProfile } from "../core";
 import { haptic } from "../motion";
 import { tourRef } from "../components/Tour";
+import { cap, longDate } from "../recalls";
 
 const TIP_COUNT = 8;
 const BARCODE = `<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#E8F5EE"/><g stroke="#16241C" stroke-width="2.4"><path d="M11 13v20M15 13v20M18.5 13v20M22.5 13v20M27 13v20M30.5 13v20M34.5 13v20M37.5 13v20"/></g><path d="M8 35.5h32" stroke="#E0566A" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -56,7 +57,7 @@ function HeroButton({ icon, text, onPress, on }) {
   );
 }
 
-export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, manualOpen, setManualOpen, status }) {
+export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState(null);
   const history = getHistory();
@@ -152,6 +153,30 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           </FadeIn>
         ) : null}
       </View>
+
+      {/* Rappel d'un produit de l'historique */}
+      {recalls.length ? (() => {
+        const h = recalls[0];
+        const e = getEntry(h.code);
+        const [fg, bg] = STATUS_COLORS.haram;
+        return (
+          <FadeIn>
+            <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bg, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
+              <Pressable onPress={() => onOpen(h.code)} accessibilityRole="button" style={{ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14 }}>
+                <Tile color={fg} paths='<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>' size={40} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Txt style={{ color: fg, fontWeight: "800", fontSize: 15.5 }}>{tn("recall.home", recalls.length)}</Txt>
+                  <Muted style={{ fontSize: 13.5, lineHeight: 18 }} numberOfLines={2}>{t("recall.home_p", { name: e ? nameOf(e.p) : cap(h.fiche.n), d: longDate(h.fiche.d) })}</Muted>
+                </View>
+                <Glyph name="chev" size={17} color={fg} />
+              </Pressable>
+              <Pressable onPress={onDismissRecalls} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("recall.dismiss")} style={{ paddingHorizontal: 12, alignSelf: "stretch", justifyContent: "center" }}>
+                <Glyph name="cross" size={17} color={C.muted} />
+              </Pressable>
+            </View>
+          </FadeIn>
+        );
+      })() : null}
 
       {/* Classements : les meilleurs produits halal de chaque rayon */}
       <Pressable ref={tourRef("rankings")} onPress={() => { haptic.tap(); onRankings && onRankings(); }} accessibilityRole="button"

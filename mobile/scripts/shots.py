@@ -75,6 +75,14 @@ def run(lang, scheme):
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"]:
             p.evaluate(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         p.evaluate("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
+        # Carte de partage
+        p.evaluate(f"window.__bayyin.openProduct('{CODES[0]}')"); p.wait_for_timeout(2000)
+        p.evaluate("window.__bayyin.shareCard(true)"); p.wait_for_timeout(1500); shot("share")
+        p.evaluate("window.__bayyin.shareCard(false)"); p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        # Réglages des notifications
+        p.evaluate("window.__bayyin.setTab('settings')"); p.wait_for_timeout(600)
+        p.evaluate("window.__bayyin.settingsPage('notif')"); p.wait_for_timeout(900); shot("set-notif")
+        p.evaluate("window.__bayyin.settingsPage(null)"); p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
         # Alerte personnelle : lait et fruits à coque dans le profil (yaourt : contient du lait, traces de fruits à coque)
         p.evaluate("window.__bayyin.setSettings({ profile: { allergens: ['en:milk', 'en:nuts', 'en:eggs'], diet: null } })"); p.wait_for_timeout(400)
         p.evaluate(f"window.__bayyin.openProduct('{CODES[1]}')"); p.wait_for_timeout(2500); shot("alert")

@@ -15,7 +15,8 @@ export const shardOf = (code) => {
 
 const shards = new Map();
 async function getJson(url, timeout = 8000) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
+  // AbortSignal.timeout n'existe pas partout (moteur de l'app mobile) : délai seulement s'il est disponible
+  const res = await fetch(url, typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(timeout) } : {});
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }

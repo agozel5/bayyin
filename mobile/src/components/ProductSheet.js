@@ -1,6 +1,6 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Image, Linking, Share, Animated, Easing } from "react-native";
+import { View, Text, ScrollView, Pressable, Image, Linking, Share, Animated, Easing, Platform } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
@@ -17,6 +17,9 @@ import { Glyph, Art, Tile } from "./Art";
 import { I } from "../../../public/lib/icons.js";
 import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
+import RecallBox from "./Recall";
+import ShareCard, { shareUrl, SHARE_W } from "./ShareCard";
+import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
 import { NUT_ART, ALLERGEN_ART } from "../../../public/lib/rank-art.js";
 
@@ -623,6 +626,7 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
     <View style={{ gap: 14 }}>
       <FadeIn><Top2 p={p} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
+      <RecallBox p={p} />
       <FadeIn delay={60}><VerdictHero p={p} v={v} /></FadeIn>
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
       <SheetTabs tabs={tabs} cur={cur} onTab={setTab} />
@@ -699,6 +703,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         setState({ p, loading: false });
         addToHistory(p);
         const st = verdictOf(p).status;
+        countScan(st);
         const alert = profileOf(p).alert;
         if (fromScan) (st === "haram" || alert === "no" ? haptic.error : st === "mashbouh" || alert ? haptic.warn : haptic.success)();
         announce(`${nameOf(p)}. ${t("detail.halal")} : ${S(st, "label")}`);
@@ -723,15 +728,28 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
     on ? haptic.success() : haptic.tap();
     toast && toast(t(on ? "sheet.fav_added" : "sheet.fav_removed"));
   };
-  const onShare = () => {
+  // Partage : une image du verdict (carte), ou le texte quand l'image n'est pas possible
+  const cardRef = useRef(null);
+  const [card, setCard] = useState(false);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.shareCard = setCard; // captures automatiques (web)
+  const onShare = async () => {
     if (!p) return;
     haptic.light();
     const s = scoreOf(p);
-    Share.share({
-      message:
-        t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t("sheet.share_health", { n: s.score }) : "" }) +
-        (isBarcode(p.code) ? `\n${p.offUrl}` : ""),
-    }).catch(() => {});
+    const text = t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
+    const link = isBarcode(p.code) ? `\n${shareUrl(p.code)}` : "";
+    if (Platform.OS !== "web") {
+      try {
+        setCard(true);
+        await new Promise((r) => setTimeout(r, 700)); // le temps d'afficher la photo du produit
+        const { captureRef } = require("react-native-view-shot");
+        const Sharing = require("expo-sharing");
+        const uri = await captureRef(cardRef, { format: "png", quality: 1, width: 1080, height: 1920, result: "tmpfile" });
+        setCard(false);
+        if (await Sharing.isAvailableAsync()) return await Sharing.shareAsync(uri, { mimeType: "image/png", UTI: "public.png", dialogTitle: nameOf(p) });
+      } catch { setCard(false); }
+    }
+    Share.share({ message: text + link }).catch(() => {});
   };
 
   const headBtn = { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" };
@@ -777,6 +795,12 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         ) : null}
       </ScrollView>
 
+      {card && p ? (
+        // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)
+        <View pointerEvents="none" style={Platform.OS === "web" ? { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center" } : { position: "absolute", top: 0, left: -SHARE_W * 3 }}>
+          <ShareCard ref={cardRef} p={p} />
+        </View>
+      ) : null}
       {fromScan ? (
         <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.bg }}>
           <Btn title={t("sheet.scan_again")} icon="scan" onPress={onScanAgain} />

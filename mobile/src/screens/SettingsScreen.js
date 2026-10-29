@@ -1,7 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Switch, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row } from "../components/ui";
@@ -13,6 +13,7 @@ import { t, tn, tPlain, locale, LANGS } from "../i18n";
 import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES, PROFILE_ALLERGENS, DIETS } from "../core";
 import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory } from "../storage";
 import { downloadPack } from "../api";
+import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
 import { S } from "../view";
 import { haptic } from "../motion";
 import { PAGE_ART } from "../../../public/lib/page-art.js";
@@ -35,6 +36,7 @@ const SI = {
   limits: ['#F0BC33', I.alert],
   feedback: ['#1897D6', '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z"/>'],
   off: ['#8B5A3C', I.box],
+  notif: ['#E0423A', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
   report: ['#5A6472', '<path d="M5.5 21V4M5.5 4h11l-2.2 4 2.2 4h-11"/>'],
 };
 const PAGE_TINT = { lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
@@ -358,6 +360,45 @@ function HowPage({ onTour }) {
   );
 }
 
+function NotifPage() {
+  const st = getSettings();
+  const [granted, setGranted] = useState(null);
+  const [hits, setHits] = useState(null);
+  useEffect(() => { notificationsGranted().then(setGranted); }, []);
+  const toggle = async (v) => {
+    haptic.tap();
+    setSettings({ notif: v });
+    if (v && !granted) setGranted(await askNotifications({ force: true }));
+  };
+  return (
+    <View style={{ gap: 14 }}>
+      <Block title={t("notif.t")}>
+        <Muted>{t("notif.p")}</Muted>
+        <Row gap={12} style={{ paddingVertical: 6 }}>
+          <Txt style={{ flex: 1, fontWeight: "700" }}>{t("notif.switch")}</Txt>
+          <Switch value={!!st.notif && granted !== false} onValueChange={toggle} trackColor={{ true: C.brand }} disabled={Platform.OS === "web"} />
+        </Row>
+        {st.notif && granted === false ? (
+          <View style={{ gap: 8, padding: 12, borderRadius: R.md, backgroundColor: STATUS_COLORS.mashbouh[1] }}>
+            <Txt style={{ color: STATUS_COLORS.mashbouh[0], fontWeight: "700", fontSize: 14.5 }}>{t("notif.denied")}</Txt>
+            <Pressable onPress={() => Linking.openSettings().catch(() => {})} accessibilityRole="button">
+              <Text style={{ color: STATUS_COLORS.mashbouh[0], fontWeight: "800", textAlign: dir().ta }}>{t("cam.open_settings")} ↗</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        <Muted style={{ fontSize: 13 }}>{t("notif.when")}</Muted>
+      </Block>
+      <Block>
+        <Pressable onPress={async () => { haptic.tap(); setHits(await checkRecalls({ force: true })); }} accessibilityRole="button"
+          style={({ pressed }) => ({ paddingVertical: 13, borderRadius: 14, alignItems: "center", backgroundColor: pressed ? C.tint2 : C.tint })}>
+          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15 }}>{t("notif.check")}</Text>
+        </Pressable>
+        {hits ? <Txt style={{ fontWeight: "700", color: hits.length ? STATUS_COLORS.haram[0] : C.brand }}>{hits.length ? tn("recall.home", hits.length) : t("notif.none")}</Txt> : null}
+      </Block>
+    </View>
+  );
+}
+
 function SourcesPage() {
   return (
     <Block gap={6}>
@@ -421,7 +462,7 @@ function LimitsPage() {
   );
 }
 
-const PAGES = { lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage };
+const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage };
 
 export default function SettingsScreen({ focus, toast, onTour }) {
   const insets = useSafeAreaInsets();
@@ -484,6 +525,7 @@ export default function SettingsScreen({ focus, toast, onTour }) {
       </Group>
       <Group title={t("settings.g_data")}>
         <MenuRow id="offline" first title={t("settings.menu.offline")} value={offText} onPress={go("offline")} />
+        <MenuRow id="notif" title={t("settings.menu.notif")} value={t(st.notif ? "notif.on" : "notif.off")} onPress={go("notif")} />
         <MenuRow id="data" title={t("settings.menu.data")} value={tn("settings.data_count", getHistory().length)} onPress={go("data")} />
       </Group>
       <Group title={t("settings.g_about")}>
