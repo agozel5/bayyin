@@ -2667,3 +2667,4 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .set-page .data-stat{border-radius:16px;background:color-mix(in srgb,var(--fg) 4%,var(--surface))!important;padding:14px}
 .set-page .data-stat strong{font-size:1.6rem;letter-spacing:-.02em}
 .pv-badges span{border-radius:18px!important}
+.idea-chip{display:inline-flex;align-items:center;gap:6px}

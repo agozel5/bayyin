@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-09";
+const APP_BUILD = "2026-10-29-10";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -231,19 +231,35 @@ const catArt = (p) => {
 };
 // Vignette sans photo : illustration de catégorie (aliments), sinon icône du type de produit
 // Illustration en couleur : le rayon des classements s'il correspond, sinon la famille d'aliments
-const FAMILY_TO_ART = { sweet: RANK_ART.candies, bakery: RANK_ART.breads, meal: RANK_ART.meals, sauce: RANK_ART.sauces };
-function colorArt(p) {
-  if (!p || p.local) return null;
+function colorArtKey(p) {
+  if (!p || p.local) return "";
   const kind = kindOf(p);
-  if (kind === "medicine") return null;
+  if (kind === "medicine") return "";
   const tags = p.categories || (p.raw && p.raw.categories_tags) || [];
   if (tags.length) {
     const cat = RANK_CATEGORIES.find((c) => c.kind === kind && c.tags.some((tg) => tags.includes(tg)));
-    if (cat && RANK_ART[cat.id]) return RANK_ART[cat.id];
+    if (cat && RANK_ART[cat.id]) return "r:" + cat.id;
   }
   const fam = catArt(p);
-  return fam ? FAMILY_ART[fam.id] || FAMILY_TO_ART[fam.id] || null : null;
+  if (!fam) return "";
+  return FAMILY_ART[fam.id] ? "f:" + fam.id : FAMILY_TO_KEY[fam.id] ? "r:" + FAMILY_TO_KEY[fam.id] : "";
 }
+const FAMILY_TO_KEY = { sweet: "candies", bakery: "breads", meal: "meals", sauce: "sauces" };
+const artByKey = (k) => (k.startsWith("r:") ? RANK_ART[k.slice(2)] : k.startsWith("f:") ? FAMILY_ART[k.slice(2)] : "") || "";
+function colorArt(p) { const k = colorArtKey(p); return k ? artByKey(k) : null; }
+// Photo qui ne se charge pas (réseau, photo retirée) : l'illustration du rayon à la place d'un carré vide
+const phAttr = (p, cls, key = "") => ` data-ph="${esc(cls)}|${esc(key || colorArtKey(p))}"`;
+document.addEventListener("error", (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement) || !img.dataset.ph) return;
+  const [cls, key] = img.dataset.ph.split("|");
+  const art = key ? artByKey(key) : "";
+  const span = document.createElement("span");
+  span.className = `${cls} ph${art ? " art" : ""}`;
+  span.setAttribute("aria-hidden", "true");
+  span.innerHTML = art || svg(I.box);
+  img.replaceWith(span);
+}, true);
 function phArt(p, cls) {
   const color = colorArt(p);
   if (color) return `<span class="${cls} ph art" aria-hidden="true">${color}</span>`;
@@ -938,7 +954,7 @@ function alertTag(p) {
 
 function altCard(a, { fav = false } = {}) {
   const img = a.image
-    ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+    ? `<img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer"${phAttr(a, "alt-ph")}>`
     : phArt(a, "alt-ph");
   const st = verdictOf(a).status;
   return `<button type="button" class="alt" data-open="${esc(a.code)}">
@@ -1008,7 +1024,7 @@ const notFoundHtml = (code) => `<div class="nf-mascot">${mascot("search", { size
 
 function rowHtml(p, { fav = false, when = "" } = {}) {
   const img = p.image
-    ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+    ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer"${phAttr(p, "row-img")}>`
     : phArt(p, "row-img");
   const meta = [kindOf(p) !== "food" ? t(`kind.${kindOf(p)}`) : "", p.brand, when].filter(Boolean).map(esc).join(" · ");
   return `<button type="button" class="row" data-open="${esc(p.code)}">${img}
@@ -2394,7 +2410,11 @@ function renderSuggestions() {
   const ideas = searchKind === "beauty"
     ? [t("sidea.mascara"), t("sidea.lipstick"), t("sidea.foundation"), "Nivea", "Garnier", t("sidea.nail"), "Maybelline"]
     : [...SUGGESTIONS.slice(0, 3), t("search.idea_milk"), t("search.idea_chicken"), ...SUGGESTIONS.slice(3)];
-  $("suggestChips").innerHTML = ideas.map((s) => `<button type="button" class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
+  const ART = searchKind === "beauty"
+    ? ["r:mascaras", "r:lipsticks", "r:complexion", "r:body_creams", "r:shampoos", "r:nail_polishes", "r:makeup_other"]
+    : DEMO ? ["r:candies", "r:spreads", "r:sausages", "f:dairy", "f:poultry", "r:cheeses", "f:poultry"]
+      : ["r:spreads", "r:candies", "r:sausages", "f:dairy", "f:poultry", "r:chocolates", "r:yogurts"];
+  $("suggestChips").innerHTML = ideas.map((s, i) => `<button type="button" class="chip idea-chip" data-q="${esc(s)}">${ART[i] ? `<span class="al-art" aria-hidden="true">${artByKey(ART[i])}</span>` : ""}${esc(s)}</button>`).join("");
 }
 $("suggestChips").addEventListener("click", (e) => {
   const b = e.target.closest("[data-q]");
@@ -4471,7 +4491,7 @@ async function renderRankings(sub) {
       ? `<ol class="rank-list">${list.slice(0, 50).map((p, i) => {
           const s = scoreOf(p);
           const v = verdictOf(p);
-          const img = p.image ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : phArt(p, "row-img");
+          const img = p.image ? `<img class="row-img" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer"${phAttr(p, "row-img", colorArtKey(p) || (RANK_ART[cat.id] ? "r:" + cat.id : ""))}>` : phArt(p, "row-img");
           return `<li><button type="button" class="rank-row" data-open="${esc(p.code)}"><span class="rank-n${i < 3 ? " top" : ""}">${i + 1}</span>${img}
             <span class="rank-t"><strong dir="auto">${esc(nameOf(p))}</strong><small dir="auto">${esc(p.brand || "")}</small>
             <span class="rank-bar g-${s.grade}" style="--w:${s.score}%" aria-hidden="true"><i></i></span>
