@@ -2586,3 +2586,10 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .place-ico.art svg{width:72%;height:72%;fill:initial;stroke:none}
 :is(:root,:root[data-theme="dark"],:root[data-theme="light"]) :is(.tool .tool-ico,.rank-promo-ico,.feature .f-ico){color:#fff!important;
   background:linear-gradient(160deg,color-mix(in srgb,var(--t) 72%,#fff) 0%,var(--t) 55%,color-mix(in srgb,var(--t) 85%,#000) 100%)!important}
+/* Derniers endroits : sources, confidentialité, astuce de recherche — même tuile en dégradé */
+.src-stat-ico,.src-sec-ico{--t:var(--tc,#1A9C68)}
+.search-tip-ico,.privacy-ico{--t:#1A9C68}
+:is(:root,:root[data-theme="dark"],:root[data-theme="light"]) :is(.src-stat-ico,.src-sec-ico,.search-tip-ico,.privacy-ico){color:#fff!important;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--t) 72%,#fff) 0%,var(--t) 55%,color-mix(in srgb,var(--t) 85%,#000) 100%)!important;
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .3),0 3px 8px -3px color-mix(in srgb,var(--t) 70%,transparent)}
+:is(.src-stat-ico,.src-sec-ico,.search-tip-ico,.privacy-ico) svg{stroke:#fff!important;stroke-width:2.1;filter:drop-shadow(0 1px 1px rgb(0 0 0 / .18))}
