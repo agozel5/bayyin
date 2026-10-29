@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-07";
+const APP_BUILD = "2026-10-29-08";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -29,6 +29,7 @@ import { mascot } from "./lib/mascot.js";
 import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
+import { PAGE_ART } from "./lib/page-art.js";
 import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART, ORIGIN_ART, ALLERGEN_ART, PLACE_ART } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
@@ -3413,6 +3414,14 @@ $("textSizeList").addEventListener("click", (e) => {
   if (b) settings.set({ textSize: b.dataset.textSize });
 });
 
+// Illustration en tête de chaque page de réglages (dans la couleur de sa tuile)
+const PAGE_TINT = { lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
+document.querySelectorAll(".set-page[data-page]").forEach((pg) => {
+  const id = pg.dataset.page;
+  const head = pg.querySelector(".sub-head");
+  if (!PAGE_ART[id] || !head || pg.querySelector(".page-hero")) return;
+  head.insertAdjacentHTML("afterend", `<div class="page-hero" style="--t:${PAGE_TINT[id]}">${PAGE_ART[id]}</div>`);
+});
 // Mes données : chiffres, sauvegarde, effacement (confirmation par un second appui)
 let confirmData = null;
 function renderDataPage(msg) {
