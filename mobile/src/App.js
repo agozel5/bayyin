@@ -13,6 +13,7 @@ import CameraScanner from "./components/CameraScanner";
 import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
+import { Khatam } from "./components/Cards";
 import Guard from "./components/Guard";
 import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
@@ -59,6 +60,35 @@ const TAB_GLYPH = {
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
 };
 
+// Bouton Scanner central (comme la version web) : sur l'accueil, il est plus foncé et un halo
+// pulse autour pour montrer qu'un appui lance le scan ; ailleurs, un appui ramène à l'accueil.
+function ScanOrb({ home, pressed }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!home || !ms(1)) { pulse.setValue(0); return; }
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1, duration: 1540, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      Animated.delay(660),
+      Animated.timing(pulse, { toValue: 0, duration: 0, useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [home]);
+  return (
+    <View style={{ marginTop: -30, width: 62, height: 62, borderRadius: 31, shadowColor: "#12724F", shadowOpacity: 0.55, shadowRadius: 11, shadowOffset: { width: 0, height: 10 }, elevation: 8 }}>
+      {home ? (
+        <Animated.View pointerEvents="none" style={{ position: "absolute", top: -4, left: -4, right: -4, bottom: -4, borderRadius: 35, borderWidth: 2, borderColor: C.brand,
+          opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }), transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }] }} />
+      ) : null}
+      <Animated.View style={{ width: 62, height: 62, borderRadius: 31, overflow: "hidden", backgroundColor: home ? (isDark() ? "#2BA273" : C.brandDark) : C.brand, alignItems: "center", justifyContent: "center",
+        borderWidth: 4, borderColor: isDark() ? C.bg : "rgba(255,255,255,0.9)", transform: [{ scale: pressed ? 0.93 : 1 }] }}>
+        <Khatam opacity={0.18} />
+        <Glyph paths={TAB_GLYPH.scan} size={30} color="#fff" width={2.2} />
+      </Animated.View>
+    </View>
+  );
+}
+
 // Barre d'onglets flottante, arrondie, avec le bouton Scanner en relief au centre
 function TabBar({ tab, onTab }) {
   const insets = useSafeAreaInsets();
@@ -82,15 +112,11 @@ function TabBar({ tab, onTab }) {
               }}
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
-              accessibilityLabel={t(`tab.${it.id}`)}
+              accessibilityLabel={scan && on ? t("home.scan") : t(`tab.${it.id}`)}
               style={{ flex: 1, alignItems: "center", gap: 3 }}
             >
-              {scan ? (
-                <View style={{ marginTop: -30, width: 62, height: 62, borderRadius: 31, backgroundColor: C.brand, alignItems: "center", justifyContent: "center",
-                  borderWidth: 4, borderColor: C.bg, shadowColor: C.brand, shadowOpacity: 0.45, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
-                  <Glyph paths={TAB_GLYPH.scan} size={28} color="#fff" width={2.2} />
-                </View>
-              ) : (
+              {({ pressed }) => (<>
+              {scan ? <ScanOrb home={on} pressed={pressed} /> : (
                 <View style={{ paddingHorizontal: 14, paddingVertical: 3, borderRadius: 999, backgroundColor: on ? C.brandSoft : "transparent" }}>
                   <Glyph paths={TAB_GLYPH[it.id]} size={23} color={on ? C.brand : C.muted} width={on ? 2.2 : 1.9} />
                 </View>
@@ -98,6 +124,7 @@ function TabBar({ tab, onTab }) {
               <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: on || scan ? "700" : "600", color: on || scan ? C.brand : C.muted }}>
                 {t(`tab.${it.id}`)}
               </Text>
+              </>)}
             </Pressable>
           );
         })}
@@ -437,7 +464,7 @@ function Main() {
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           <Guard key={tab}>{page}</Guard>
         </FadeIn>
-        <TabBar tab={tab} onTab={(id) => { changeTab(id); if (id === "scan") openCamera(); }} />
+        <TabBar tab={tab} onTab={(id) => { if (id === "scan" && tab === "scan") openCamera(); else changeTab(id); }} />
       </View>
       {visible.map((item) => {
         const isTop = item === top;
