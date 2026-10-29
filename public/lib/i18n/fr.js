@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-29-08", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-29-09", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",

@@ -2638,3 +2638,32 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 @media (prefers-reduced-motion:no-preference){.set-page:not([hidden]) .page-hero > svg{animation:hero-in .5s cubic-bezier(.2,.8,.2,1) both}}
 @keyframes hero-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .page-hero > svg{fill:initial;stroke:none;stroke-width:initial;color:inherit}
+
+/* ===== Réglages : blocs de texte façon « listes groupées » (style iOS) ===== */
+.set-page .sub-head h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+.set-page .set-block{border-radius:22px;padding:20px;gap:14px;background:var(--surface);
+  box-shadow:0 0 0 .5px color-mix(in srgb,var(--fg) 12%,transparent),0 12px 28px -20px rgb(0 0 0 / .28)}
+:root[data-theme="dark"] .set-page .set-block{box-shadow:0 0 0 .5px rgb(255 255 255 / .07),0 14px 30px -20px rgb(0 0 0 / .7)}
+/* Titre de section : petites capitales grises, comme les en-têtes de groupe iOS */
+.set-page .set-block > h2{font-size:1.12rem!important;font-weight:800!important;letter-spacing:-.015em;color:var(--fg)!important;margin:0!important}
+/* Texte d'introduction : plus grand, plus lisible, plus aéré */
+.set-page .set-block > p.muted:first-child,.set-page .set-block > p.muted:first-of-type{font-size:1.02rem;line-height:1.55;color:color-mix(in srgb,var(--fg) 82%,transparent);letter-spacing:-.003em}
+.set-page .set-block .muted.small{font-size:.84rem;line-height:1.45}
+.set-page .pv-rows li{font-size:.97rem;line-height:1.5;color:color-mix(in srgb,var(--fg) 88%,transparent)}
+.set-page .pv-rows li + li{border-top:.5px solid var(--line)}
+/* Citation : grand guillemet, fond dégradé doux, sans barre épaisse */
+.why blockquote{position:relative;border:none!important;border-radius:20px;padding:26px 20px 18px 20px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 16%,var(--surface)) 0%,color-mix(in srgb,var(--brand) 6%,var(--surface)) 100%)}
+.why blockquote::before{content:"\201C";position:absolute;top:-10px;inset-inline-start:14px;font:800 4.2rem/1 Georgia,"Times New Roman",serif;color:var(--brand);opacity:.55}
+.why blockquote p{font-size:1.06rem!important;line-height:1.55!important;font-weight:500}
+.why cite{display:block;margin-top:8px;font-size:.84rem!important}
+/* Étapes : pastilles numérotées en dégradé reliées par un trait */
+.set-page .steps{gap:10px}
+.set-page .steps li{background:color-mix(in srgb,var(--fg) 4%,var(--surface))!important;border-radius:18px;box-shadow:none!important;line-height:1.5}
+.set-page .steps li::before{background:linear-gradient(160deg,#4FC489 0%,#1A9C68 55%,#147A52 100%)!important;box-shadow:inset 0 1px 0 rgb(255 255 255 / .35),0 3px 8px -3px rgb(26 156 104 / .7);width:32px;height:32px}
+.set-page .steps li:not(:last-child)::after{content:"";position:absolute;inset-inline-start:33px;top:52px;bottom:-12px;width:2px;border-radius:1px;background:linear-gradient(color-mix(in srgb,#1A9C68 45%,transparent),transparent)}
+.set-page .steps li strong{font-size:1.02rem;letter-spacing:-.005em}
+/* Compteurs (Mes données) et engagements (Confidentialité) : chiffres plus marqués */
+.set-page .data-stat{border-radius:16px;background:color-mix(in srgb,var(--fg) 4%,var(--surface))!important;padding:14px}
+.set-page .data-stat strong{font-size:1.6rem;letter-spacing:-.02em}
+.pv-badges span{border-radius:18px!important}
