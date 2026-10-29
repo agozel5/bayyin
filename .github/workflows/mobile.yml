@@ -6,16 +6,23 @@ name: App mobile
 #  - iOS : vérification que l'app compile (l'installation sur iPhone passe par Expo Go ou EAS).
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "Plateforme à compiler"
+        type: choice
+        options: [both, android, ios]
+        default: both
 
 permissions:
   contents: write
 
 concurrency:
-  group: mobile-${{ github.ref }}
+  group: mobile-${{ github.ref }}-${{ inputs.only || 'both' }}
   cancel-in-progress: true
 
 jobs:
   android:
+    if: ${{ inputs.only != 'ios' }}
     runs-on: ubuntu-latest
     # Beaucoup de modules natifs compilés depuis leurs sources : la première compilation est longue
     timeout-minutes: 150
@@ -62,6 +69,7 @@ jobs:
             --notes "APK compilé automatiquement depuis le commit ${GITHUB_SHA::7}. Sur le téléphone Android : télécharger Bayyin.apk, l'ouvrir, puis autoriser l'installation depuis cette source."
 
   ios:
+    if: ${{ inputs.only != 'android' }}
     runs-on: macos-26
     timeout-minutes: 150
     defaults:

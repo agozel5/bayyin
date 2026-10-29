@@ -8,10 +8,12 @@ set -o pipefail
 "$@" 2>&1 | tee "$log"
 status=${PIPESTATUS[0]}
 if [ "$status" -ne 0 ]; then
+  # Les barres de progression (curl, gradle) réécrivent la ligne avec \r : on les retire
+  tr '\r' '\n' < "$log" | grep -vE "^ *[0-9]+ +[0-9.]+[kMG]? +[0-9]+|% Total|Dload" > "$log.clean"
   {
-    grep -iE "error|failed|cannot|unable|not found|exception|wrong" "$log" | grep -v "^\s*at " | head -40
+    grep -iE "\[!\]|error|failed|cannot|unable|not found|exception|wrong|invalid" "$log.clean" | grep -v "^\s*at " | grep -v "building from source" | head -40
     echo "----- fin du journal -----"
-    tail -n 40 "$log"
+    tail -n 30 "$log.clean"
   } | cut -c1-300 > "$log.short"
   body="$(sed -e 's/%/%25/g' "$log.short" | awk '{printf "%s%%0A", $0}')"
   echo "::error title=${title}::${body}"
