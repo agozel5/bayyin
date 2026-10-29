@@ -2,7 +2,7 @@
 """Musique originale des vidéos d'aperçu (composée par programme : aucun droit tiers).
 
 Ambiance légère et optimiste, 104 bpm, la mineur -> do majeur (Am – F – C – G) :
-nappe douce, arpèges pincés, basse ronde, percussions discrètes, montée d'intensité puis fin en douceur.
+nappe douce, arpèges au piano électrique doux, basse ronde, percussions discrètes, montée d'intensité puis fin en douceur.
 Usage : python scripts/preview-music.py sortie.wav [durée_en_secondes]
 """
 import sys, wave
@@ -33,6 +33,28 @@ def pluck(freq, dur, bright=0.5):
         out[i] = buf[i % period]
         buf[i % period] = 0.5 * (buf[i % period] + buf[(i + 1) % period]) * (0.994 + 0.004 * bright)
     return out * env(n, 0.002, 0.08, 0.6, 0.15, dur)
+
+def epiano(freq, dur, bright=0.5):
+    # Piano électrique doux (synthèse FM, façon Rhodes)
+    n = int(dur * SR); t = np.arange(n) / SR
+    idx = (1.2 + 1.4 * bright) * np.exp(-t * 6)
+    s = np.sin(2 * np.pi * freq * t + idx * np.sin(2 * np.pi * freq * t)) + 0.18 * np.sin(2 * np.pi * freq * 2 * t) * np.exp(-t * 3)
+    return s * env(n, 0.004, 0.25, 0.35, 0.2, dur) * np.exp(-t * 1.4)
+
+def marimba(freq, dur, bright=0.5):
+    # Marimba / kalimba : attaque boisée, résonance courte
+    n = int(dur * SR); t = np.arange(n) / SR
+    s = np.sin(2 * np.pi * freq * t) * np.exp(-t * 5) + 0.35 * np.sin(2 * np.pi * freq * 3.98 * t) * np.exp(-t * 22) + 0.12 * np.sin(2 * np.pi * freq * 9.2 * t) * np.exp(-t * 60)
+    return s * env(n, 0.002, 0.05, 0.9, 0.08, dur)
+
+def bell(freq, dur, bright=0.5):
+    # Clochettes douces (cloches de verre)
+    n = int(dur * SR); t = np.arange(n) / SR
+    s = sum(a * np.sin(2 * np.pi * freq * r * t) * np.exp(-t * d) for r, a, d in ((1, 1, 2.2), (2.76, .35, 4), (5.4, .18, 7), (8.93, .08, 11)))
+    return s * env(n, 0.003, 0.1, 0.9, 0.2, dur)
+
+LEAD = {"pluck": pluck, "epiano": epiano, "marimba": marimba, "bell": bell}
+INSTR = "epiano"
 
 def pad(freqs, dur):
     n = int(dur * SR); t = np.arange(n) / SR; out = np.zeros(n)
@@ -99,7 +121,7 @@ def compose(total):
         steps = 8 if b >= 1 else 4
         for s in range(steps):
             f = note(arp[s % 4]); at = t0 + s * (bar / steps)
-            place(tr, pluck(f, 0.6, bright=0.4 + 0.4 * part), at, 0.20 + 0.06 * part, pan=-0.35 if s % 2 else 0.35)
+            place(tr, LEAD[INSTR](f, 0.9 if INSTR != "marimba" else 0.6, bright=0.4 + 0.4 * part), at, (0.20 + 0.06 * part) * {"pluck": 1, "epiano": 0.75, "marimba": 0.85, "bell": 0.45}[INSTR], pan=-0.35 if s % 2 else 0.35)
         if b >= 1:
             place(tr, bass(note(r), BEAT * 1.6), t0, 0.24)
             place(tr, bass(note(r), BEAT * 1.6), t0 + 2 * BEAT, 0.20)
@@ -121,6 +143,7 @@ def compose(total):
 
 if __name__ == "__main__":
     out = sys.argv[1]; total = float(sys.argv[2]) if len(sys.argv) > 2 else 28.0
+    if len(sys.argv) > 3: INSTR = sys.argv[3]
     st = compose(total)
     pcm = (st.T * 32767).astype(np.int16)
     with wave.open(out, "wb") as w:
