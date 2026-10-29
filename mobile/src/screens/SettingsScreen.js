@@ -366,7 +366,7 @@ function NotifPage() {
   const st = getSettings();
   const [granted, setGranted] = useState(null);
   const [hits, setHits] = useState(null);
-  useEffect(() => { notificationsGranted().then(setGranted); }, []);
+  useEffect(() => { if (Platform.OS !== "web") notificationsGranted().then(setGranted); }, []);
   const toggle = async (v) => {
     setSettings({ notif: v });
     if (v && !granted) setGranted(await askNotifications({ force: true }));
