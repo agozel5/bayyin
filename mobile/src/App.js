@@ -13,6 +13,12 @@ import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
 import Tour, { tourRef } from "./components/Tour";
+import BasketScreen from "./screens/BasketScreen";
+import PremiumScreen from "./screens/PremiumScreen";
+import { initPremium, setPremiumAsk, canUse, onPremium, setPreview } from "./premium";
+import { loadBasket, onBasket, getBasket, addToBasket, setBasketProduct } from "./basket";
+import { fetchProduct } from "./api";
+import { addToHistory } from "./storage";
 import SearchScreen from "./screens/SearchScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import AdditivesScreen from "./screens/AdditivesScreen";
@@ -24,6 +30,7 @@ import { initStorage, getSettings, setSettings, subscribe, getHistory } from "./
 import { checkRecalls, dismissRecalls, notifyRecalls, setupNotifications, askNotifications, onNotificationOpen } from "./recalls";
 import { registerBackground } from "./background";
 import { listenLinks, setQuickActions } from "./links";
+import { updateWidgets } from "./widget";
 import { normalizeScan } from "./core";
 import { FadeIn } from "./components/ui";
 import { haptic, ms, announce } from "./motion";
@@ -118,7 +125,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, children }) {
   }, [leaving]);
   const side = dir().rtl ? -1 : 1;
   const transform =
-    kind === "sheet" || kind === "rankings"
+    kind === "sheet" || kind === "rankings" || kind === "basket" || kind === "premium"
       ? [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }) }]
       : kind === "ocr"
         ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }]
@@ -155,11 +162,29 @@ function Main() {
       subscribe((what) => {
         if (what === "settings") { setLang(getSettings().lang); applyTheme(getSettings().theme); setQuickActions(); }
         // Alertes de rappel : autorisation demandée une fois, quand l'historique a quelques produits
+        if (what === "history" || what === "settings") updateWidgets(getHistory());
         if (what === "history" && getHistory().length >= 2 && !getSettings().notifAsked && Platform.OS !== "web") setTimeout(() => askNotifications(), 1200);
         setTick((n) => n + 1);
       }),
     []
   );
+
+  // Premium : achats intégrés ; une fonction réservée ouvre la page Premium
+  useEffect(() => {
+    initPremium();
+    setPremiumAsk((feature) => push({ type: "premium", feature }));
+    return onPremium(() => setTick((n) => n + 1));
+  }, []);
+
+  // Mode courses : panier gardé sur le téléphone
+  const [basketMode, setBasketMode] = useState(false);
+  const [basketCount, setBasketCount] = useState(0);
+  useEffect(() => { loadBasket(); return onBasket((l) => setBasketCount(l.length)); }, []);
+  const basketAdd = (code) => {
+    const added = addToBasket(code);
+    const product = fetchProduct(code).then((p) => { if (p) { setBasketProduct(code, p); addToHistory(p); } return p; }).catch(() => null);
+    return { added, product };
+  };
 
   // Rappels : vérifiés au démarrage, au retour dans l'app et en arrière-plan
   const [recalls, setRecalls] = useState([]);
@@ -314,7 +339,7 @@ function Main() {
   if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} />;
   if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
-  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} />;
+  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} onPremium={() => push({ type: "premium" })} />;
 
   const renderScreen = (item) => {
     if (item.type === "camera")
@@ -323,6 +348,11 @@ function Main() {
           onCode={(code) => openProduct(code, { fromScan: true, replace: true })}
           onClose={pop}
           onPhoto={Platform.OS !== "web" ? () => { pop(); photoBarcode(); } : undefined}
+          basket={basketMode}
+          onToggleBasket={() => { const on = !basketMode; if (on && !canUse("basket")) return; setBasketMode(on); toast(t(on ? "basket.on_toast" : "basket.off_toast")); }}
+          onBasketAdd={basketAdd}
+          basketCount={basketCount}
+          onOpenBasket={() => push({ type: "basket" }, { replace: true })}
           onManual={() => {
             clearStack();
             setTab("scan");
@@ -345,6 +375,9 @@ function Main() {
           toast={toast}
         />
       );
+    if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;
+    if (item.type === "basket")
+      return <BasketScreen onClose={pop} toast={toast} onScan={() => { setBasketMode(true); openCamera({ replace: true }); }} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "rankings")
       return <RankingsScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "ocr")
@@ -364,7 +397,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)) };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)) };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.

@@ -83,6 +83,12 @@ def run(lang, scheme):
         p.evaluate("window.__bayyin.setTab('settings')"); p.wait_for_timeout(600)
         p.evaluate("window.__bayyin.settingsPage('notif')"); p.wait_for_timeout(900); shot("set-notif")
         p.evaluate("window.__bayyin.settingsPage(null)"); p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
+        # Premium (aperçu des offres) et panier du mode courses
+        p.evaluate("window.__bayyin.premium(true)"); p.wait_for_timeout(1500); shot("premium")
+        p.evaluate("window.__bayyin.pop()"); p.evaluate("window.__bayyin.premium(false)"); p.wait_for_timeout(700)
+        for c in CODES: p.evaluate(f"window.__bayyin.basketAdd('{c}')")
+        p.wait_for_timeout(2500); p.evaluate("window.__bayyin.openBasket()"); p.wait_for_timeout(1500); shot("basket")
+        p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Alerte personnelle : lait et fruits à coque dans le profil (yaourt : contient du lait, traces de fruits à coque)
         p.evaluate("window.__bayyin.setSettings({ profile: { allergens: ['en:milk', 'en:nuts', 'en:eggs'], diet: null } })"); p.wait_for_timeout(400)
         p.evaluate(f"window.__bayyin.openProduct('{CODES[1]}')"); p.wait_for_timeout(2500); shot("alert")

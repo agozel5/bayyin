@@ -1,7 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Switch, Platform } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row } from "../components/ui";
@@ -14,6 +14,7 @@ import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES, PROFILE
 import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory } from "../storage";
 import { downloadPack } from "../api";
 import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
+import { premiumEnabled, isPremium, canUse } from "../premium";
 import { S } from "../view";
 import { haptic } from "../motion";
 import { PAGE_ART } from "../../../public/lib/page-art.js";
@@ -36,6 +37,7 @@ const SI = {
   limits: ['#F0BC33', I.alert],
   feedback: ['#1897D6', '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z"/>'],
   off: ['#8B5A3C', I.box],
+  premium: ['#D9A21B', '<path d="M5 18h14M5 18l-1.5-9 5 3.5L12 6l3.5 6.5 5-3.5L19 18"/>'],
   notif: ['#E0423A', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
   report: ['#5A6472', '<path d="M5.5 21V4M5.5 4h11l-2.2 4 2.2 4h-11"/>'],
 };
@@ -234,7 +236,7 @@ function OfflinePage() {
   const [packing, setPacking] = useState(null);
   const [err, setErr] = useState(false);
   const pack = async () => {
-    if (packing !== null) return;
+    if (packing !== null || !canUse("offline")) return;
     setErr(false); setPacking(0);
     try {
       const n = await downloadPack((count) => setPacking(count));
@@ -366,7 +368,6 @@ function NotifPage() {
   const [hits, setHits] = useState(null);
   useEffect(() => { notificationsGranted().then(setGranted); }, []);
   const toggle = async (v) => {
-    haptic.tap();
     setSettings({ notif: v });
     if (v && !granted) setGranted(await askNotifications({ force: true }));
   };
@@ -376,7 +377,7 @@ function NotifPage() {
         <Muted>{t("notif.p")}</Muted>
         <Row gap={12} style={{ paddingVertical: 6 }}>
           <Txt style={{ flex: 1, fontWeight: "700" }}>{t("notif.switch")}</Txt>
-          <Switch value={!!st.notif && granted !== false} onValueChange={toggle} trackColor={{ true: C.brand }} disabled={Platform.OS === "web"} />
+          <Switch on={!!st.notif && granted !== false} onPress={() => toggle(!(st.notif && granted !== false))} label={t("notif.switch")} />
         </Row>
         {st.notif && granted === false ? (
           <View style={{ gap: 8, padding: 12, borderRadius: R.md, backgroundColor: STATUS_COLORS.mashbouh[1] }}>
@@ -464,7 +465,7 @@ function LimitsPage() {
 
 const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage };
 
-export default function SettingsScreen({ focus, toast, onTour }) {
+export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(null);
   const st = getSettings();
@@ -517,6 +518,11 @@ export default function SettingsScreen({ focus, toast, onTour }) {
           </Pressable>
         ))}
       </View>
+      {premiumEnabled() && onPremium ? (
+        <Group>
+          <MenuRow id="premium" first title={t("premium.card_t")} value={isPremium() ? t("premium.active_t") : t("premium.card_p")} onPress={onPremium} />
+        </Group>
+      ) : null}
       <Group title={t("settings.g_prefs")}>
         <MenuRow id="lang" first title={t("settings.menu.lang")} value={LANG_NAMES[st.lang]} onPress={go("lang")} />
         <MenuRow id="profile" title={t("settings.menu.profile")} value={profText} onPress={go("profile")} />

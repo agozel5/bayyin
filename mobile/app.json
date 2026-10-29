@@ -98,6 +98,24 @@
             }
           }
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "BayyinHome",
+              "label": "Bayyin",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "description": "Scanner un produit et le bilan de votre semaine",
+              "previewImage": "./assets/widget-preview.png",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
       ]
     ],
     "runtimeVersion": {
@@ -115,6 +133,13 @@
       "bundler": "metro",
       "output": "single"
     },
-    "scheme": "bayyin"
+    "scheme": "bayyin",
+    "extra": {
+      "revenuecat": {
+        "ios": "",
+        "android": "",
+        "entitlement": "premium"
+      }
+    }
   }
 }

@@ -6,13 +6,14 @@ import { Txt, Muted, Row } from "../components/ui";
 import Screen from "../components/Screen";
 import { PageHead, Chip, ChipRow } from "../components/Controls";
 import { ListRow } from "../components/Cards";
-import { Glyph, Art } from "../components/Art";
+import { Glyph, Art, Tile } from "../components/Art";
 import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
-import { t, locale } from "../i18n";
+import { t, tn, locale } from "../i18n";
 import { getHistory, clearHistory } from "../storage";
 import { verdictOf, relTime, S, scoreOf } from "../view";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic } from "../motion";
+import { isPremium, canUse, FREE_HISTORY_DAYS } from "../premium";
 
 const ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
 const FILTERS = [
@@ -129,7 +130,10 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
   const [confirm, setConfirm] = useState(false);
   const [weeksAgo, setWeeksAgo] = useState(0);
-  const all = getHistory();
+  // Sans Premium (quand il est en vente) : les 30 derniers jours, favoris compris
+  const full = getHistory();
+  const all = isPremium() ? full : full.filter((e) => e.fav || e.at > Date.now() - FREE_HISTORY_DAYS * 864e5);
+  const hidden = full.length - all.length;
 
   if (!all.length) {
     return (
@@ -154,6 +158,17 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   return (
     <Screen gap={16}>
       <PageHead title={t("history.title")} sub={t("history.sub")} />
+      {hidden > 0 ? (
+        <Pressable onPress={() => canUse("history")} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+          <Tile color="#D9A21B" paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={38} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt style={{ fontWeight: "800" }}>{tn("premium.history_more", hidden)}</Txt>
+            <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("premium.history_more_p", { days: FREE_HISTORY_DAYS })}</Muted>
+          </View>
+          <Glyph name="chev" size={17} color={C.faint} />
+        </Pressable>
+      ) : null}
 
       <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
         <Txt style={{ fontWeight: "800", fontSize: 18 }}>{t("bilan.title")}</Txt>

@@ -11,6 +11,8 @@ import { Art, Glyph } from "./Art";
 import { C, R } from "../theme";
 import { t } from "../i18n";
 import { normalizeScan } from "../core";
+import { STATUS_COLORS } from "../theme";
+import { nameOf, verdictOf, S } from "../view";
 import { haptic, ms } from "../motion";
 import { mascot } from "../../../public/lib/mascot.js";
 
@@ -20,6 +22,7 @@ const G = {
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   torch: '<path d="M8 3h8l-1 5h-6zM9 8h6v3l-1.5 2v8h-3v-8L9 11z"/>',
   photo: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  cart: '<path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>',
   keys: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
 };
 
@@ -32,17 +35,17 @@ function RoundBtn({ glyph, onPress, label, on, role = "button" }) {
   );
 }
 
-function Pill({ glyph, text, onPress }) {
+function Pill({ glyph, text, onPress, on }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button"
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 11, paddingHorizontal: 18, borderRadius: 999, backgroundColor: pressed ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.16)" })}>
-      <Glyph paths={glyph} size={19} color="#fff" />
-      <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>{text}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={on !== undefined ? { selected: !!on } : undefined}
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 11, paddingHorizontal: 18, borderRadius: 999, backgroundColor: on ? "#fff" : pressed ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.16)" })}>
+      <Glyph paths={glyph} size={19} color={on ? "#0F6545" : "#fff"} />
+      <Text style={{ color: on ? "#0F6545" : "#fff", fontWeight: "700", fontSize: 15 }}>{text}</Text>
     </Pressable>
   );
 }
 
-export default function CameraScanner({ onCode, onClose, onManual, onPhoto }) {
+export default function CameraScanner({ onCode, onClose, onManual, onPhoto, basket = false, onToggleBasket, onBasketAdd, basketCount = 0, onOpenBasket }) {
   const insets = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
   const [perm, requestPerm] = useCameraPermissions();
@@ -50,6 +53,8 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto }) {
   const [found, setFound] = useState(false);
   const [slow, setSlow] = useState(false);
   const done = useRef(false);
+  const last = useRef({ code: null, at: 0 });
+  const [flash, setFlash] = useState(null); // mode courses : dernier produit ajouté { code, p?, again }
   const breathe = useRef(new Animated.Value(0)).current;
   const sweep = useRef(new Animated.Value(0)).current;
 
@@ -76,6 +81,19 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto }) {
     if (done.current) return;
     const code = normalizeScan(data);
     if (!code) return; // la clé de contrôle écarte les lectures erronées
+    if (basket && onBasketAdd) {
+      // Mode courses : on garde la caméra ouverte et on enchaîne les produits
+      if (last.current.code === code && Date.now() - last.current.at < 3000) return;
+      last.current = { code, at: Date.now() };
+      done.current = true;
+      setFound(true);
+      haptic.success();
+      const res = onBasketAdd(code); // { added, product: Promise }
+      setFlash({ code, again: !res.added });
+      res.product && res.product.then((p) => p && setFlash((f) => (f && f.code === code ? { ...f, p } : f))).catch(() => {});
+      setTimeout(() => { done.current = false; setFound(false); }, 1100);
+      return;
+    }
     done.current = true;
     setFound(true);
     haptic.tap(); // code lu ; le verdict a sa propre vibration
@@ -139,17 +157,39 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto }) {
         <RoundBtn glyph={G.torch} role="switch" on={torch} label={t("cam.torch")} onPress={() => { haptic.tap(); setTorch((v) => !v); }} />
       </View>
 
+      {basket && flash ? (() => {
+        const st = flash.p ? verdictOf(flash.p).status : null;
+        const [fg, bg] = st ? STATUS_COLORS[st] : ["#fff", "rgba(255,255,255,0.2)"];
+        return (
+          <View key={flash.code + (flash.p ? "p" : "")} style={{ position: "absolute", top: insets.top + 70, left: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 16, backgroundColor: "rgba(12,20,16,0.82)" }} accessibilityLiveRegion="polite">
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: st ? fg : "#9AA59F" }} />
+            <View style={{ flex: 1 }}>
+              <Text numberOfLines={1} style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{flash.p ? nameOf(flash.p) : flash.code}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12.5 }}>{t(flash.again ? "basket.again" : "basket.scanned")}</Text>
+            </View>
+            {st ? <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99, backgroundColor: bg }}><Text style={{ color: fg, fontWeight: "800", fontSize: 12 }}>{S(st, "short")}</Text></View> : null}
+          </View>
+        );
+      })() : null}
+
       <View style={{ position: "absolute", left: 20, right: 20, bottom: insets.bottom + 28, alignItems: "center", gap: 16 }}>
         <Text accessibilityLiveRegion="polite"
           style={[{ color: "#fff", fontSize: 16.5, fontWeight: "700", textAlign: "center" },
             slow ? { backgroundColor: "rgba(0,0,0,0.55)", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, overflow: "hidden", fontWeight: "600", fontSize: 15 }
               : { textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 6 }]}>
-          {t(slow ? "cam.slow" : "cam.hint")}
+          {t(slow && !basket ? "cam.slow" : basket ? "basket.on_toast" : "cam.hint")}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10 }}>
-          {onPhoto ? <Pill glyph={G.photo} text={t("cam.photo")} onPress={onPhoto} /> : null}
-          <Pill glyph={G.keys} text={t("cam.type")} onPress={onManual} />
+          {onToggleBasket ? <Pill glyph={G.cart} text={t("basket.mode")} on={basket} onPress={() => { haptic.tap(); onToggleBasket(); }} /> : null}
+          {basket ? null : onPhoto ? <Pill glyph={G.photo} text={t("cam.photo")} onPress={onPhoto} /> : null}
+          {basket ? null : <Pill glyph={G.keys} text={t("cam.type")} onPress={onManual} />}
         </View>
+        {basket ? (
+          <Pressable onPress={onOpenBasket} accessibilityRole="button"
+            style={({ pressed }) => ({ alignSelf: "stretch", paddingVertical: 14, borderRadius: 16, alignItems: "center", backgroundColor: pressed ? "#0B5038" : "#14805A" })}>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>{t("basket.open", { n: basketCount })}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

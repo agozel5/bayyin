@@ -16,6 +16,21 @@ import { getSettings, setLocal, addToHistory } from "../storage";
 
 const OCR_LANGS = { fr: "fra+eng", en: "eng+fra", tr: "tur+eng", ar: "ara+eng" };
 
+// Lecture par le téléphone (Apple Vision, Google ML Kit) : instantanée et sans réseau.
+// L'arabe et les échecs passent par Tesseract (même moteur que la version web).
+async function nativeText(uri) {
+  if (Platform.OS === "web" || getLang() === "ar") return null;
+  try {
+    const X = require("expo-text-extractor");
+    if (X.isSupported === false) return null;
+    const lines = await X.extractTextFromImage(uri);
+    const text = (lines || []).join("\n");
+    return text.replace(/[^\p{L}]/gu, "").length >= 12 ? text : null;
+  } catch {
+    return null;
+  }
+}
+
 const ocrHtml = (img, langs) => `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script>
@@ -89,6 +104,15 @@ export default function OcrFlow({ code, onDone, onClose }) {
       const mime = a.mimeType || "image/jpeg";
       setProgress(0);
       setStep("reading");
+      const quick = await nativeText(a.uri);
+      if (quick) {
+        const clean = cleanOcrText(quick);
+        if (clean && clean.replace(/[^\p{L}]/gu, "").length >= 6) {
+          setText(clean);
+          setStep("review");
+          return;
+        }
+      }
       setHtml(ocrHtml(`data:${mime};base64,${a.base64}`, OCR_LANGS[getLang()] || OCR_LANGS.fr));
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setStep((s) => (s === "reading" ? "error" : s)), 120000);

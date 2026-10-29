@@ -15,6 +15,7 @@ import { RANK_CATEGORIES, rankIndex, rankProducts, rankList, rankTab } from "../
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { mascot } from "../../../public/lib/mascot.js";
 import { haptic } from "../motion";
+import { premiumEnabled, isPremium, canUse } from "../premium";
 
 const MEDAL = ["#E2A812", "#A7B0B8", "#C98A4A"];
 
@@ -45,11 +46,16 @@ function CategoryList({ onPick, onBack }) {
       {kind === "makeup" ? <Muted style={{ fontSize: 13 }}>{t("rank.makeup_note")}</Muted> : null}
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
         {cats.map((c, i) => (
-          <Pressable key={c.id} onPress={() => { haptic.tap(); onPick(c); }} accessibilityRole="button"
+          <Pressable key={c.id} onPress={() => { haptic.tap(); if (!c.free && !canUse("rankings")) return; onPick(c); }} accessibilityRole="button"
             style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 14, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: pressed ? C.tint : "transparent", borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line })}>
             <ArtTile xml={RANK_ART[c.id]} size={48} />
             <Text style={{ flex: 1, fontSize: 16, fontWeight: "700", color: C.fg, textAlign: dir().ta }}>{t(`rank.cat.${c.id}`)}</Text>
-            <Glyph name="chev" size={17} color={C.faint} />
+            {!c.free && premiumEnabled() && !isPremium() ? (
+              <View style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: "#D9A21B22" }}>
+                <Glyph paths='<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>' size={12} color="#B8860F" width={2.4} />
+                <Text style={{ fontSize: 11.5, fontWeight: "800", color: "#B8860F" }}>{t("premium.locked")}</Text>
+              </View>
+            ) : <Glyph name="chev" size={17} color={C.faint} />}
           </Pressable>
         ))}
       </View>
