@@ -187,7 +187,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           ["compare", "#4C64D6", '<path d="M4 8h13l-3-3M20 16H7l3 3"/>', t("cmp.title"), onCompare],
         ].map(([id, color, paths, label, go]) => (
           <Pressable key={id} onPress={() => { haptic.tap(); go && go(); }} accessibilityRole="button" accessibilityLabel={id === "basket" && basketCount ? `${label}, ${basketCount}` : label}
-            style={({ pressed }) => [{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 4, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.95 : 1 }] }, lift()]}>
+            style={({ pressed }) => [{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 2, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.95 : 1 }] }, lift()]}>
             <View>
               <Tile color={color} paths={paths} size={42} />
               {id === "basket" && basketCount ? (
@@ -196,7 +196,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
                 </View>
               ) : null}
             </View>
-            <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ fontSize: 13, lineHeight: 16, fontWeight: "800", color: C.fg, textAlign: "center" }}>{label}</Text>
+            <Text numberOfLines={2} maxFontSizeMultiplier={1.2} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontSize: 12, lineHeight: 15, fontWeight: "800", color: C.fg, textAlign: "center" }}>{label}</Text>
           </Pressable>
         ))}
       </View>
