@@ -81,7 +81,10 @@ jobs:
       - name: Vérification du code JavaScript
         run: scripts/ci-run.sh "Bundle JavaScript iOS" npx expo export --platform ios --output-dir dist-check
       - name: Projet iOS
-        run: scripts/ci-run.sh "expo prebuild ios" npx expo prebuild --platform ios
+        run: scripts/ci-run.sh "expo prebuild ios" npx expo prebuild --platform ios --no-install
+      - name: Dépendances iOS (CocoaPods)
+        working-directory: mobile/ios
+        run: ../scripts/ci-run.sh "pod install" pod install
       - name: Compilation pour le simulateur
         run: |
           ws=$(ls -d ios/*.xcworkspace | head -1)

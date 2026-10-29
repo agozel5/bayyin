@@ -116,6 +116,23 @@
             }
           ]
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "BayyinWidget",
+              "displayName": "Bayyin",
+              "description": "Scanner un produit et le bilan de votre semaine",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall"
+                ]
+              }
+            }
+          ]
+        }
       ]
     ],
     "runtimeVersion": {

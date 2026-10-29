@@ -13,6 +13,14 @@ export function registerWidgets() {
 
 /** Met à jour le widget quand l'historique change (appelé par l'app ouverte). */
 export function updateWidgets(history) {
+  if (Platform.OS === "ios") {
+    try {
+      const W = require("./ios-widget").default;
+      const d = widgetData(history);
+      if (W) W.updateSnapshot({ n: d.n, week: d.n ? d.week : d.labels.none || d.week, scan: d.scan });
+    } catch { /* module absent */ }
+    return;
+  }
   if (Platform.OS !== "android") return;
   try {
     const { requestWidgetUpdate } = require("react-native-android-widget");

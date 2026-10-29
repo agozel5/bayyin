@@ -752,29 +752,35 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
     Share.share({ message: text + link }).catch(() => {});
   };
 
-  const headBtn = { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" };
+  const headBtn = { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: C.surface };
+  // Le nom apparaît dans l'en-tête quand celui de la fiche passe sous l'en-tête (comme les apps d'Apple)
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const titleOp = scrollY.interpolate({ inputRange: [60, 110], outputRange: [0, 1], extrapolate: "clamp" });
+  const lineOp = scrollY.interpolate({ inputRange: [0, 30], outputRange: [0, 1], extrapolate: "clamp" });
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 6 }}>
-        <Pressable onPress={onClose} style={headBtn} accessibilityRole="button" accessibilityLabel={t("sheet.back")} hitSlop={6}>
-          <Icon name="back" size={22} flip={dir().rtl} />
+      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 6, zIndex: 2 }}>
+        <Pressable onPress={onClose} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("sheet.back")} hitSlop={6}>
+          <Icon name="back" size={21} flip={dir().rtl} />
         </Pressable>
-        <Txt style={{ flex: 1, fontWeight: "800", fontSize: 17 }} numberOfLines={1}>
+        <Animated.Text style={{ flex: 1, fontWeight: "800", fontSize: 16, color: C.fg, textAlign: "center", opacity: p ? titleOp : 1 }} numberOfLines={1}>
           {p ? nameOf(p) : state.notFound ? t("msg.notfound.t") : t("sheet.title")}
-        </Txt>
+        </Animated.Text>
         {p && isBarcode(p.code) ? (
-          <Pressable onPress={onShare} style={headBtn} accessibilityRole="button" accessibilityLabel={t("sheet.share")} hitSlop={6}>
-            <Icon name="share" size={20} />
+          <Pressable onPress={onShare} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("sheet.share")} hitSlop={6}>
+            <Icon name="share" size={19} />
           </Pressable>
         ) : null}
         {p ? (
-          <Pressable onPress={onFav} style={headBtn} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
-            <Icon name="star" size={21} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
+          <Pressable onPress={onFav} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
+            <Icon name="star" size={20} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
           </Pressable>
         ) : null}
+        <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 0.5, backgroundColor: C.line, opacity: lineOp }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
+      <Animated.ScrollView scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
           <SheetSkeleton />
         ) : state.notFound ? (
@@ -793,7 +799,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         ) : p ? (
           <ProductBody p={p} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} />
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {card && p ? (
         // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)

@@ -16,6 +16,7 @@ export function widgetData(history) {
   return {
     n: list.length, ...c,
     title: t("home.scan"),
+    scan: t("widget.scan"),
     week: list.length ? `${list.length} · ${t("widget.week")}` : t("home.week_none"),
     labels: { ok: t("home.wk_ok", { n: c.ok }), doubt: t("home.wk_doubt", { n: c.doubt }), bad: t("home.wk_bad", { n: c.bad }) },
   };

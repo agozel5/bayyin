@@ -1,7 +1,8 @@
 // Pièces de la fiche produit, au design de la version web : en-tête, bandeau du verdict,
 // fiabilité, chaîne de vérification, étiquette surlignée, points relevés, onglets.
-import React, { useState } from "react";
-import { View, Text, Pressable, Image, Linking } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, Image, Linking, Animated, Easing } from "react-native";
+import { ms } from "../motion";
 import Svg, { Circle } from "react-native-svg";
 import { Glyph, Tile } from "./Art";
 import { Khatam, Thumb, STATUS_GLYPH } from "./Cards";
@@ -58,13 +59,28 @@ export function VerdictHero({ p, v }) {
   const kicker = t("detail.kicker", { s: t(`school.${school}`) });
   const gc = s ? GRADE_COLORS[s.grade] : null;
   const footBg = gc ? mix(gc, C.surface, isDark() ? 0.2 : 0.15) : C.surface;
+  const pop = useRef(new Animated.Value(ms(1) ? 0 : 1)).current;
+  const halo = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!ms(1)) return;
+    pop.setValue(0); halo.setValue(0);
+    Animated.parallel([
+      Animated.spring(pop, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }),
+      Animated.timing(halo, { toValue: 1, duration: 900, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, [p.code, v.status]);
   return (
     <View accessibilityRole="summary" accessibilityLabel={`${S(v.status, "label")}. ${S(v.status, "lead")}`}
       style={{ borderRadius: R.xl, overflow: "hidden", backgroundColor: vc, shadowColor: vc, shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 5 }}>
       <View style={{ padding: 18, paddingBottom: 20, flexDirection: dir().row, gap: 16, alignItems: "center" }}>
         <Khatam opacity={0.2} />
-        <View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: "rgba(255,255,255,0.95)", alignItems: "center", justifyContent: "center" }}>
-          <Glyph paths={STATUS_GLYPH[v.status]} size={34} color={vc} width={2.8} />
+        <View style={{ width: 68, height: 68, alignItems: "center", justifyContent: "center" }}>
+          <Animated.View pointerEvents="none" style={{ position: "absolute", width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: "#fff",
+            opacity: halo.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.7, 0] }), transform: [{ scale: halo.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }] }} />
+          <Animated.View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: "rgba(255,255,255,0.95)", alignItems: "center", justifyContent: "center",
+            transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }, { rotate: pop.interpolate({ inputRange: [0, 1], outputRange: ["-25deg", "0deg"] }) }] }}>
+            <Glyph paths={STATUS_GLYPH[v.status]} size={34} color={vc} width={2.8} />
+          </Animated.View>
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Txt style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "600" }}>{kicker}</Txt>
@@ -122,15 +138,31 @@ export function Confidence({ p, v }) {
 
 // ---------- onglets de la fiche ----------
 export function SheetTabs({ tabs, cur, onTab }) {
+  // Pastille de l'onglet ouvert qui glisse d'un onglet à l'autre
+  const [lay, setLay] = useState({});
+  const x = useRef(new Animated.Value(0)).current;
+  const w = useRef(new Animated.Value(0)).current;
+  const first = useRef(true);
+  const L = lay[cur];
+  useEffect(() => {
+    if (!L) return;
+    if (first.current || !ms(1)) { x.setValue(L.x); w.setValue(L.w); first.current = false; return; }
+    Animated.parallel([
+      Animated.spring(x, { toValue: L.x, friction: 9, tension: 120, useNativeDriver: false }),
+      Animated.spring(w, { toValue: L.w, friction: 9, tension: 120, useNativeDriver: false }),
+    ]).start();
+  }, [cur, L && L.x, L && L.w]);
   return (
     <View style={[{ flexDirection: dir().row, padding: 4, borderRadius: 18, backgroundColor: C.surface, gap: 2 }, lift()]} accessibilityRole="tablist">
-      {tabs.map((x) => {
-        const on = x.id === cur;
+      {L ? <Animated.View pointerEvents="none" style={{ position: "absolute", top: 4, bottom: 4, left: x, width: w, borderRadius: 14, backgroundColor: C.tint2 }} /> : null}
+      {tabs.map((tb) => {
+        const on = tb.id === cur;
         return (
-          <Pressable key={x.id} onPress={() => { haptic.tap(); onTab(x.id); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
-            style={{ flex: x.id === "compo" ? 1.35 : 1, flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 14, backgroundColor: on ? C.tint2 : "transparent" }}>
-            {x.mark}
-            <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 14, fontWeight: on ? "800" : "600", color: on ? C.fg : C.muted }}>{x.label}</Text>
+          <Pressable key={tb.id} onPress={() => { haptic.tap(); onTab(tb.id); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
+            onLayout={(e) => { const { x: lx, width } = e.nativeEvent.layout; setLay((o) => (o[tb.id] && o[tb.id].x === lx && o[tb.id].w === width ? o : { ...o, [tb.id]: { x: lx, w: width } })); }}
+            style={{ flex: tb.id === "compo" ? 1.35 : 1, flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 14, backgroundColor: !L && on ? C.tint2 : "transparent" }}>
+            {tb.mark}
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 14, fontWeight: on ? "800" : "600", color: on ? C.fg : C.muted }}>{tb.label}</Text>
           </Pressable>
         );
       })}

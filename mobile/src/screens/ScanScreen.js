@@ -57,7 +57,7 @@ function HeroButton({ icon, text, onPress, on }) {
   );
 }
 
-export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
+export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState(null);
   const history = getHistory();
@@ -178,16 +178,22 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         );
       })() : null}
 
-      {/* Classements : les meilleurs produits halal de chaque rayon */}
-      <Pressable ref={tourRef("rankings")} onPress={() => { haptic.tap(); onRankings && onRankings(); }} accessibilityRole="button"
-        style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
-        <Tile color="#E2A812" paths='<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>' size={44} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Txt style={{ fontWeight: "800", fontSize: 16.5 }}>{t("rank.title")}</Txt>
-          <Muted style={{ fontSize: 14, lineHeight: 19 }}>{t("rank.promo")}</Muted>
-        </View>
-        <Glyph name="chev" size={17} color={C.faint} />
-      </Pressable>
+      {/* Outils : classements et mode courses, côte à côte */}
+      <View style={{ flexDirection: dir().row, gap: 12 }}>
+        {[
+          ["rankings", "#E2A812", '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>', t("rank.title"), t("rank.promo"), onRankings],
+          ["basket", "#1FA597", '<path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>', t("basket.mode"), basketCount ? t("basket.open", { n: basketCount }) : t("premium.f.basket.d"), basketCount ? onOpenBasket : onBasketMode],
+        ].map(([id, color, paths, title, sub, go]) => (
+          <Pressable key={id} ref={id === "rankings" ? tourRef("rankings") : undefined} onPress={() => { haptic.tap(); go && go(); }} accessibilityRole="button" accessibilityLabel={`${title}. ${sub}`}
+            style={({ pressed }) => [{ flex: 1, gap: 10, padding: 14, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.97 : 1 }] }, lift()]}>
+            <Tile color={color} paths={paths} size={40} />
+            <View style={{ gap: 2 }}>
+              <Txt style={{ fontWeight: "800", fontSize: 16 }}>{title}</Txt>
+              <Muted style={{ fontSize: 13, lineHeight: 17 }} numberOfLines={3}>{sub}</Muted>
+            </View>
+          </Pressable>
+        ))}
+      </View>
 
       {status ? <Message title={status.title} text={status.text} /> : null}
 

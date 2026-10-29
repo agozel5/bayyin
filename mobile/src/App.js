@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform, Appearance, AppState } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { BlurView } from "expo-blur";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { scanFromURLAsync } from "expo-camera";
@@ -57,9 +58,11 @@ function TabBar({ tab, onTab }) {
   const insets = useSafeAreaInsets();
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingBottom: Math.max(insets.bottom, 10) }}>
-      <View style={{ flexDirection: dir().row, alignItems: "flex-end", backgroundColor: C.tabbar, borderRadius: 30, paddingTop: 8, paddingBottom: 8,
+      <View style={{ flexDirection: dir().row, alignItems: "flex-end", backgroundColor: Platform.OS === "ios" ? (isDark() ? "rgba(28,34,30,0.72)" : "rgba(255,255,255,0.72)") : C.tabbar, borderRadius: 30, paddingTop: 8, paddingBottom: 8,
         borderWidth: 0.5, borderColor: isDark() ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
         shadowColor: "#000", shadowOpacity: isDark() ? 0.5 : 0.12, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
+        {/* iPhone : verre dépoli derrière la barre (le contenu défile dessous) */}
+        {Platform.OS === "ios" ? <BlurView intensity={40} tint={isDark() ? "dark" : "light"} style={[StyleSheet.absoluteFill, { borderRadius: 30, overflow: "hidden" }]} /> : null}
         {TABS.map((it) => {
           const on = tab === it.id;
           const scan = it.id === "scan";
@@ -329,6 +332,9 @@ function Main() {
         onGotoSettings={() => gotoSettings()}
         onGotoProfile={gotoProfile}
         onRankings={() => push({ type: "rankings" })}
+        onBasketMode={() => { if (!canUse("basket")) return; setBasketMode(true); openCamera(); }}
+        onOpenBasket={() => push({ type: "basket" })}
+        basketCount={basketCount}
         recalls={recalls}
         onDismissRecalls={() => { dismissRecalls(recalls); setRecalls([]); }}
         manualOpen={manualOpen}
