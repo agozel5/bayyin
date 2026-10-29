@@ -1,17 +1,20 @@
-// Historique : statistiques, filtres par statut, favoris.
+// Historique : « Mon bilan » (anneau des verdicts, 7 jours, note moyenne), filtres, produits par jour.
 import React, { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import Icon from "../components/Icon";
-import { Txt, H1, Muted, Row, Btn, ProductRow } from "../components/ui";
+import Svg, { Circle } from "react-native-svg";
+import { Txt, Muted, Row } from "../components/ui";
 import Screen from "../components/Screen";
-import { Chip } from "./SearchScreen";
-import { C, R, STATUS_COLORS, dir } from "../theme";
-import { t } from "../i18n";
+import { PageHead, Chip, ChipRow } from "../components/Controls";
+import { ListRow } from "../components/Cards";
+import { Glyph, Art } from "../components/Art";
+import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
+import { t, locale } from "../i18n";
 import { getHistory, clearHistory } from "../storage";
-import { verdictOf, relTime, S } from "../view";
+import { verdictOf, relTime, S, scoreOf } from "../view";
+import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic } from "../motion";
 
-const STATUS_ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
+const ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
 const FILTERS = [
   { id: "all", test: () => true },
   { id: "fav", test: (e) => e.fav },
@@ -19,98 +22,178 @@ const FILTERS = [
   { id: "doubt", test: (e) => verdictOf(e.p).status === "mashbouh" },
   { id: "haram", test: (e) => verdictOf(e.p).status === "haram" },
 ];
+const col = (st) => STATUS_COLORS[st][0];
+
+function Donut({ counts, total, size = 118 }) {
+  const r = size / 2 - 10, c = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.tint2} strokeWidth={14} fill="none" />
+        {ORDER.filter((s) => counts[s]).map((s) => {
+          const len = (counts[s] / total) * c;
+          const el = <Circle key={s} cx={size / 2} cy={size / 2} r={r} stroke={col(s)} strokeWidth={14} fill="none" strokeDasharray={`${Math.max(len - 2, 1)} ${c}`} strokeDashoffset={-acc} />;
+          acc += len;
+          return el;
+        })}
+      </Svg>
+      <Text style={{ fontSize: 30, fontWeight: "800", color: C.fg }}>{total}</Text>
+      <Text style={{ fontSize: 11, color: C.muted, textAlign: "center", width: 70 }}>{t(total === 1 ? "history.count_one" : "history.count_other")}</Text>
+    </View>
+  );
+}
+
+function weekBounds(weeksAgo) {
+  const end = new Date(); end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + 1 - 7 * weeksAgo);
+  const start = new Date(end); start.setDate(start.getDate() - 7);
+  return { start: start.getTime(), end: end.getTime() };
+}
+
+function Week({ all, weeksAgo, setWeeksAgo }) {
+  const oldest = all.length ? Math.min(...all.map((e) => e.at)) : Date.now();
+  const maxWeeks = Math.max(0, Math.ceil((weekBounds(0).start - oldest) / (7 * 864e5)));
+  const { start, end } = weekBounds(weeksAgo);
+  const days = [...Array(7)].map((_, i) => {
+    const s = start + i * 864e5;
+    const list = all.filter((e) => e.at >= s && e.at < s + 864e5);
+    const c = {};
+    list.forEach((e) => { const st = verdictOf(e.p).status; c[st] = (c[st] || 0) + 1; });
+    return { s, n: list.length, c };
+  });
+  const max = Math.max(1, ...days.map((d) => d.n));
+  const n = days.reduce((a, d) => a + d.n, 0);
+  const wd = new Intl.DateTimeFormat(locale(), { weekday: "short" });
+  let title = t("bilan.week");
+  if (weeksAgo) {
+    const f = new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" });
+    title = t("bilan.week_range", { range: `${f.format(start)} – ${f.format(end - 864e5)}` });
+  }
+  const Nav = ({ dirn, off }) => (
+    <Pressable disabled={off} onPress={() => { haptic.tap(); setWeeksAgo(weeksAgo + (dirn === "prev" ? 1 : -1)); }} hitSlop={8}
+      accessibilityRole="button" accessibilityLabel={t(dirn === "prev" ? "bilan.prev_week" : "bilan.next_week")} style={{ opacity: off ? 0.25 : 1, padding: 4 }}>
+      <Glyph name="chev" size={18} color={C.muted} />
+    </Pressable>
+  );
+  return (
+    <View style={{ gap: 10, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
+      <Row style={{ justifyContent: "space-between" }}>
+        <Text style={{ color: C.muted, fontSize: 13.5, flex: 1, textAlign: dir().ta }}>{title}</Text>
+        <Text style={{ color: C.fg, fontWeight: "800", fontSize: 16 }}>{n}</Text>
+      </Row>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, direction: "ltr" }}>
+        <View style={{ transform: [{ scaleX: -1 }] }}><Nav dirn="prev" off={weeksAgo >= maxWeeks} /></View>
+        {days.map((d, i) => (
+          <View key={d.s} style={{ flex: 1, alignItems: "center", gap: 4 }}>
+            <Text style={{ fontSize: 11, color: C.muted, height: 14 }}>{d.n || ""}</Text>
+            <View style={{ height: 80, width: 18, justifyContent: "flex-end", borderRadius: 6, backgroundColor: C.tint, overflow: "hidden" }}>
+              <View style={{ height: d.n ? `${Math.max(10, (d.n / max) * 100)}%` : 3, borderRadius: 6, overflow: "hidden" }}>
+                {d.n ? ORDER.filter((s) => d.c[s]).map((s) => <View key={s} style={{ flex: d.c[s], backgroundColor: col(s) }} />) : <View style={{ flex: 1, backgroundColor: C.tint2 }} />}
+              </View>
+            </View>
+            <Text style={{ fontSize: 11, color: i === 6 && !weeksAgo ? C.fg : C.muted, fontWeight: i === 6 && !weeksAgo ? "800" : "500" }}>{wd.format(d.s).replace(/\.$/, "")}</Text>
+          </View>
+        ))}
+        <Nav dirn="next" off={weeksAgo === 0} />
+      </View>
+    </View>
+  );
+}
+
+function AvgGauge({ avg }) {
+  const g = avg >= 75 ? "excellent" : avg >= 50 ? "bon" : avg >= 25 ? "mediocre" : "mauvais";
+  return (
+    <View style={{ gap: 8, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
+      <Row style={{ justifyContent: "space-between" }}>
+        <Text style={{ color: C.muted, fontSize: 13.5, flex: 1, textAlign: dir().ta }}>{t("bilan.avg")}</Text>
+        <Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 18 }}>{avg}<Text style={{ fontSize: 12, color: C.muted }}>/100</Text></Text>
+        <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GRADE_COLORS[g] + "33" }}><Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 12 }}>{t(`grade.${g}`)}</Text></View>
+      </Row>
+      <View style={{ direction: "ltr" }}>
+        <View style={{ height: 12 }}><View style={{ position: "absolute", left: `${avg}%`, marginLeft: -6, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} /></View>
+        <View style={{ flexDirection: "row", gap: 2, height: 7 }}>{["#E2533F", "#F0A23A", "#7DBE45", "#1E8A4C"].map((c) => <View key={c} style={{ flex: 1, backgroundColor: c, borderRadius: 4 }} />)}</View>
+      </View>
+    </View>
+  );
+}
+
+function groups(entries) {
+  const day = (ts) => new Date(ts).setHours(0, 0, 0, 0);
+  const today = day(Date.now());
+  const bucket = (ts) => { const d = (today - day(ts)) / 864e5; return d < 1 ? "today" : d < 2 ? "yesterday" : d < 7 ? "week" : "older"; };
+  return ["today", "yesterday", "week", "older"].map((g) => ({ g, list: entries.filter((e) => bucket(e.at) === g) })).filter((x) => x.list.length);
+}
 
 export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
   const [confirm, setConfirm] = useState(false);
+  const [weeksAgo, setWeeksAgo] = useState(0);
   const all = getHistory();
 
   if (!all.length) {
     return (
       <Screen>
-        <H1>{t("history.title")}</H1>
-        <View style={{ alignItems: "center", gap: 10, paddingVertical: 40 }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}>
-            <Icon name="history" size={34} color={C.faint} />
-          </View>
+        <PageHead title={t("history.title")} sub={t("history.sub")} />
+        <View style={{ alignItems: "center", gap: 10, paddingVertical: 36 }}>
+          <View style={{ width: 96, height: 96, borderRadius: 28, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={RANK_ART.mueslis} size={70} /></View>
           <Text style={{ fontSize: 19, fontWeight: "800", color: C.fg, textAlign: "center" }}>{t("history.empty.t")}</Text>
           <Text style={{ fontSize: 15, lineHeight: 22, color: C.muted, textAlign: "center" }}>{t("history.empty.p")}</Text>
-          <Btn title={t("home.scan")} icon="scan" onPress={onScan} style={{ marginTop: 8 }} />
+          <Pressable onPress={onScan} style={{ marginTop: 8, paddingHorizontal: 22, paddingVertical: 14, borderRadius: R.md, backgroundColor: C.brand }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>{t("home.scan")}</Text></Pressable>
         </View>
       </Screen>
     );
   }
 
   const counts = {};
-  all.forEach((e) => {
-    const st = verdictOf(e.p).status;
-    counts[st] = (counts[st] || 0) + 1;
-  });
-  const seen = STATUS_ORDER.filter((s) => counts[s]);
+  all.forEach((e) => { const st = verdictOf(e.p).status; counts[st] = (counts[st] || 0) + 1; });
+  const scores = all.map((e) => scoreOf(e.p)).filter(Boolean).map((x) => x.score);
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
   const shown = all.filter(FILTERS.find((f) => f.id === filter).test);
 
   return (
-    <Screen>
-      <View style={{ gap: 6 }}>
-        <H1>{t("history.title")}</H1>
-        <Muted>{t("history.sub")}</Muted>
+    <Screen gap={16}>
+      <PageHead title={t("history.title")} sub={t("history.sub")} />
+
+      <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
+        <Txt style={{ fontWeight: "800", fontSize: 18 }}>{t("bilan.title")}</Txt>
+        <Row gap={18}>
+          <Donut counts={counts} total={all.length} />
+          <View style={{ flex: 1, gap: 8 }}>
+            {ORDER.filter((s) => counts[s]).map((s) => (
+              <Row key={s} gap={8}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col(s) }} />
+                <Text numberOfLines={1} style={{ flex: 1, fontSize: 13.5, color: C.fg, textAlign: dir().ta }}>{S(s, "label")}</Text>
+                <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.fg }}>{counts[s]}</Text>
+                <Text style={{ fontSize: 12, color: C.muted, width: 38, textAlign: "right" }}>{Math.round((counts[s] / all.length) * 100)} %</Text>
+              </Row>
+            ))}
+          </View>
+        </Row>
+        <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
+        {avg !== null ? <AvgGauge avg={avg} /> : null}
       </View>
 
-      <View style={{ backgroundColor: C.tint, borderRadius: R.lg, padding: 16, gap: 12 }}>
-        <Row gap={8} style={{ alignItems: "baseline" }}>
-          <Text style={{ fontSize: 34, fontWeight: "800", color: C.fg }}>{all.length}</Text>
-          <Muted>{t(all.length === 1 ? "history.count_one" : "history.count_other")}</Muted>
-        </Row>
-        <View
-          accessible
-          accessibilityLabel={seen.map((s) => `${counts[s]} ${S(s, "label")}`).join(", ")}
-          style={{ flexDirection: dir().row, height: 12, borderRadius: 6, overflow: "hidden", gap: 2 }}
-        >
-          {seen.map((s) => (
-            <View key={s} style={{ flex: counts[s], backgroundColor: STATUS_COLORS[s][0] }} />
-          ))}
+      <ChipRow>
+        {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => setFilter(f.id)} />)}
+      </ChipRow>
+
+      {shown.length ? groups(shown).map(({ g, list }) => (
+        <View key={g} style={{ gap: 8 }}>
+          <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t(`history.g.${g}`)}</Text>
+          <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
+            {list.map((e, i) => <ListRow key={e.code} p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} />)}
+          </View>
         </View>
-        <Row gap={14} style={{ flexWrap: "wrap" }}>
-          {seen.map((s) => (
-            <Row key={s} gap={6}>
-              <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: STATUS_COLORS[s][0] }} />
-              <Text style={{ fontSize: 13, color: C.muted, fontWeight: "600" }}>{counts[s]} {S(s, "label")}</Text>
-            </Row>
-          ))}
-        </Row>
-      </View>
-
-      <Row gap={8} style={{ flexWrap: "wrap" }}>
-        {FILTERS.map((f) => (
-          <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => setFilter(f.id)} />
-        ))}
-      </Row>
-
-      <View>
-        {shown.length ? (
-          shown.map((e) => <ProductRow key={e.code} p={e.p} fav={e.fav} when={relTime(e.at)} onPress={() => onOpen(e.code)} />)
-        ) : (
-          <Muted style={{ textAlign: "center", paddingVertical: 24 }}>{t(filter === "fav" ? "history.empty_fav" : "history.empty_cat")}</Muted>
-        )}
-      </View>
+      )) : <Muted style={{ textAlign: "center", paddingVertical: 24 }}>{t(filter === "fav" ? "history.empty_fav" : "history.empty_cat")}</Muted>}
 
       {confirm ? (
         <Row gap={16} style={{ justifyContent: "center", flexWrap: "wrap" }}>
           <Txt style={{ fontWeight: "700" }}>{t("history.clear_q")}</Txt>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              haptic.warn();
-              clearHistory();
-              setConfirm(false);
-              toast(t("history.cleared"));
-            }}
-          >
-            <Text style={{ color: STATUS_COLORS.haram[0], fontWeight: "800" }}>{t("history.clear_yes")}</Text>
+          <Pressable accessibilityRole="button" onPress={() => { haptic.warn(); clearHistory(); setConfirm(false); toast(t("history.cleared")); }}>
+            <Text style={{ color: C.haram, fontWeight: "800" }}>{t("history.clear_yes")}</Text>
           </Pressable>
-          <Pressable onPress={() => setConfirm(false)} accessibilityRole="button">
-            <Text style={{ color: C.muted, fontWeight: "700" }}>{t("history.clear_no")}</Text>
-          </Pressable>
+          <Pressable onPress={() => setConfirm(false)} accessibilityRole="button"><Text style={{ color: C.muted, fontWeight: "700" }}>{t("history.clear_no")}</Text></Pressable>
         </Row>
       ) : (
         <Pressable onPress={() => setConfirm(true)} accessibilityRole="button" style={{ alignSelf: "center", padding: 8 }}>

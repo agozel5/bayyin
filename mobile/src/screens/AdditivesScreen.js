@@ -1,156 +1,130 @@
-// Guide des additifs et ingrédients : liste halal (selon vos réglages) et liste santé.
-import React, { useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import { Txt, H1, Muted, Label, Row, Pill } from "../components/ui";
-import Screen from "../components/Screen";
-import { Chip, SearchField } from "./SearchScreen";
-import { C, R, SEV_COLORS, RISK_COLORS, dir } from "../theme";
-import { t } from "../i18n";
-import { ADDITIVES, TEXT_RULES, TOPIC_OF, SEVERITY_OF, ADDITIVE_RISK, BEAUTY_RULES } from "../core";
-import { getSettings } from "../storage";
-import { haptic } from "../motion";
+// Guide des additifs : codes E (origine, halal selon vos réglages, risque santé) et ingrédients surveillés.
+// Même présentation que la version web.
+import React, { useMemo, useState } from "react";
+import { View, Text, FlatList, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Txt, Muted, Row } from "../components/ui";
+import { PageHead, SearchBox, Chip, ChipRow, Segmented } from "../components/Controls";
+import { AdditiveRow, additiveRow, eFunctions } from "../components/Additives";
+import { Pill2 } from "../components/SheetParts";
+import { C, R, SEV_COLORS, dir, lift } from "../theme";
+import { t, tn, getLang } from "../i18n";
+import { TEXT_RULES, TOPIC_OF, SEVERITY_OF, BEAUTY_RULES } from "../core";
+import { getSettings, getHistory } from "../storage";
+import DB from "../../../public/data/additives.json";
 
-const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
+const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const PAGE = 60;
 
-function halalItems() {
+// Ingrédients surveillés pour le halal (porc, alcool, gélatine…), selon vos réglages
+function ingredientItems() {
   const topics = getSettings().topics;
   const level = (id, base) => (TOPIC_OF[id] ? SEVERITY_OF[topics[TOPIC_OF[id]]] : base);
-  const items = TEXT_RULES.map((r) => ({
-    key: "r" + r.id, group: t("add.group_ingredients"), name: t(`flag.${r.id}.label`), codes: [], reason: t(`flag.${r.id}.reason`),
-    level: level(r.id, r.severity), topic: TOPIC_OF[r.id],
-  }));
-  const fatty = [];
-  for (const [code, a] of Object.entries(ADDITIVES)) {
-    if (a.group === "gras") {
-      fatty.push(code.toUpperCase());
-      continue;
-    }
-    items.push({
-      key: "a" + code, group: t("add.group_additives"), name: `${code.toUpperCase()} · ${t(`flag.${code}.label`)}`, codes: [],
-      reason: t(`flag.${code}.reason`), level: level(code, a.severity), topic: TOPIC_OF[code],
-    });
-  }
-  for (const r of BEAUTY_RULES) {
-    items.push({
-      key: "b" + r.id, group: t("kind.beauty"), name: t(`flag.${r.id}.label`), codes: [], reason: t(`flag.${r.id}.reason`),
-      level: level(r.id, r.severity), topic: TOPIC_OF[r.id],
-    });
-  }
-  items.push({ key: "fatty", group: t("add.group_additives"), name: t("add.fatty"), codes: fatty, reason: t("flag.fatty.reason"), level: SEVERITY_OF[topics.derives], topic: "derives" });
-  return items;
+  return [...TEXT_RULES.map((r) => ({ ...r, beauty: false })), ...BEAUTY_RULES.map((r) => ({ ...r, beauty: true }))].map((r) => ({
+    key: (r.beauty ? "b" : "r") + r.id, name: t(`flag.${r.id}.label`), reason: t(`flag.${r.id}.reason`), level: level(r.id, r.severity), topic: TOPIC_OF[r.id], beauty: r.beauty,
+  })).sort((a, b) => ({ haram: 0, mashbouh: 1, info: 2 }[a.level] - { haram: 0, mashbouh: 1, info: 2 }[b.level]));
 }
 
-function healthItems() {
-  const groups = new Map();
-  for (const [code, a] of Object.entries(ADDITIVE_RISK)) {
-    if (!groups.has(a.key)) groups.set(a.key, { level: a.level, key: a.key, members: [] });
-    groups.get(a.key).members.push(code);
+function myCounts() {
+  const m = new Map();
+  for (const e of getHistory()) for (const tag of (e.p.raw && e.p.raw.additives_tags) || []) {
+    const k = String(tag).replace(/^\w+:/, "").toLowerCase();
+    m.set(k, (m.get(k) || 0) + 1);
   }
-  return [...groups.values()].map((g) => ({
-    key: g.key, group: t(`risk.${g.level}`), name: g.members.map((c) => t(`addname.${c}`)).join(", "),
-    codes: g.members.map((c) => c.toUpperCase()), reason: t(`risk.reason.${g.key}`), level: g.level,
-  }));
+  return m;
 }
-
-const MODES = {
-  halal: {
-    items: halalItems,
-    filters: [["all", "add.f.all"], ["haram", "sev.haram"], ["mashbouh", "sev.mashbouh"], ["info", "sev.info"]],
-    pill: (it) => <Pill text={t(`sev.${it.level}`)} colors={SEV_COLORS[it.level]} />,
-    order: { haram: 0, mashbouh: 1, info: 2 },
-  },
-  sante: {
-    items: healthItems,
-    filters: [["all", "add.f.all"], ["eleve", "risk.short.eleve"], ["modere", "risk.short.modere"], ["limite", "risk.short.limite"]],
-    pill: (it) => <Pill text={t(`risk.short.${it.level}`)} colors={RISK_COLORS[it.level]} />,
-    order: { eleve: 0, modere: 1, limite: 2 },
-  },
-};
 
 export default function AdditivesScreen({ onGotoSettings }) {
-  const [mode, setMode] = useState("halal");
+  const insets = useSafeAreaInsets();
+  const [mode, setMode] = useState("codes");
   const [filter, setFilter] = useState("all");
+  const [fn, setFn] = useState("");
   const [q, setQ] = useState("");
-  const m = MODES[mode];
-  const all = m.items();
-  const nq = norm(q);
-  const items = all
-    .filter((it) => (filter === "all" || it.level === filter) && (!nq || norm([it.name, it.codes.join(" "), it.reason].join(" ")).includes(nq)))
-    .sort((a, b) => m.order[a.level] - m.order[b.level]);
-  const groups = [...new Set(items.map((i) => i.group))];
+  const [shown, setShown] = useState(PAGE);
+  const lang = getLang();
+  const rows = useMemo(() => {
+    const mine = myCounts();
+    return DB.items.map((it) => ({ ...additiveRow(it.e.toLowerCase()), mine: mine.get(it.e.toLowerCase()) || 0 })).filter((r) => r.it);
+  }, [lang, getSettings().topics]);
+  const FILTERS = {
+    all: () => true,
+    mine: (r) => r.mine > 0,
+    halal: (r) => r.halal.level === "haram" || r.halal.level === "mashbouh",
+    health: (r) => !!r.health.level,
+    animal: (r) => r.origin === "animal" || r.origin === "animal_product" || r.origin === "maybe",
+  };
+  const fnCount = new Map();
+  rows.forEach((r) => r.fns.forEach((k) => fnCount.set(k, (fnCount.get(k) || 0) + 1)));
+  const fns = [...fnCount].sort((a, b) => b[1] - a[1]).map(([k]) => k).slice(0, 10);
+  const nq = norm(q), qCode = nq.replace(/^e-?/, "");
+  const list = rows.filter((r) => FILTERS[filter](r) && (!fn || r.fns.includes(fn)) &&
+    (!nq || r.code === "e" + qCode || (r.code.startsWith("e" + qCode) && /^\d/.test(qCode)) || norm(r.name + " " + Object.values(r.it.n).join(" ")).includes(nq)));
+  if (filter === "mine") list.sort((a, b) => b.mine - a.mine);
+
+  const ingr = mode === "ingr" ? ingredientItems().filter((it) => !nq || norm(it.name + " " + it.reason).includes(nq)) : [];
   const topics = getSettings().topics;
 
-  return (
-    <Screen>
-      <View style={{ gap: 6 }}>
-        <H1>{t("add.title")}</H1>
-        <Muted>{t("add.sub")}</Muted>
-      </View>
+  const header = (
+    <View style={{ gap: 14, paddingBottom: 10 }}>
+      <PageHead title={t("add.title")} sub={t("add.sub")} />
+      <Segmented items={[["codes", t("add.mode_e")], ["ingr", t("add.mode_ingr")]]} value={mode} onChange={(m) => { setMode(m); setShown(PAGE); }} />
+      <SearchBox value={q} onChangeText={(v) => { setQ(v); setShown(PAGE); }} placeholder={t("add.placeholder")} />
+      {mode === "codes" ? (
+        <View style={{ gap: 6 }}>
+          <ChipRow>
+            {Object.keys(FILTERS).filter((id) => id !== "mine" || rows.some((r) => r.mine)).map((id) => (
+              <Chip key={id} text={t(`add.ef.${id}`)} n={rows.filter(FILTERS[id]).length} on={filter === id} onPress={() => { setFilter(id); setShown(PAGE); }} />
+            ))}
+          </ChipRow>
+          <ChipRow>
+            <Chip text={t("add.fn_all")} on={!fn} onPress={() => setFn("")} />
+            {fns.map((k) => <Chip key={k} text={t(`fn.${k}`)} on={fn === k} onPress={() => setFn(fn === k ? "" : k)} />)}
+          </ChipRow>
+          <Muted style={{ fontSize: 13.5, marginTop: 4 }}>{tn("add.count", list.length)}</Muted>
+        </View>
+      ) : null}
+    </View>
+  );
 
-      <View style={{ flexDirection: dir().row, backgroundColor: C.tint, borderRadius: R.md, padding: 4 }}>
-        {[["halal", "add.mode_halal"], ["sante", "add.mode_health"]].map(([id, key]) => (
-          <Pressable
-            key={id}
-            accessibilityRole="tab"
-            onPress={() => {
-              haptic.tap();
-              setMode(id);
-              setFilter("all");
-            }}
-            accessibilityState={{ selected: mode === id }}
-            style={{ flex: 1, paddingVertical: 10, borderRadius: R.sm, backgroundColor: mode === id ? "#fff" : "transparent", alignItems: "center" }}
-          >
-            <Text style={{ fontWeight: "800", color: mode === id ? C.fg : C.muted }}>{t(key)}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <SearchField value={q} onChangeText={setQ} placeholder={t("add.placeholder")} />
-
-      <Row gap={8} style={{ flexWrap: "wrap" }}>
-        {m.filters.map(([id, key]) => (
-          <Chip key={id} text={t(key)} n={id === "all" ? all.length : all.filter((i) => i.level === id).length} on={filter === id} onPress={() => setFilter(id)} />
-        ))}
-      </Row>
-
-      {items.length ? (
-        groups.map((g) => (
-          <View key={g} style={{ gap: 10 }}>
-            <Label>{g}</Label>
-            {items
-              .filter((i) => i.group === g)
-              .map((it) => (
-                <View key={it.key} style={{ backgroundColor: C.tint, borderRadius: R.md, padding: 14, gap: 6 }}>
-                  <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <Txt style={{ fontWeight: "800", flex: 1 }}>{it.name}</Txt>
-                    {m.pill(it)}
-                  </Row>
-                  {it.codes.length ? (
-                    <Row gap={6} style={{ flexWrap: "wrap" }}>
-                      {it.codes.map((c) => (
-                        <View key={c} style={{ backgroundColor: "#fff", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                          <Text style={{ fontSize: 12, fontWeight: "700", color: C.muted }}>{c}</Text>
-                        </View>
-                      ))}
-                    </Row>
-                  ) : null}
-                  <Muted style={{ fontSize: 14, lineHeight: 20 }}>{it.reason}</Muted>
-                  {it.topic ? (
-                    <Txt style={{ fontSize: 13, lineHeight: 19, color: C.muted }}>
-                      {t("add.your_setting", { d: t(`decision.${topics[it.topic]}`).toLowerCase() })} ·{" "}
-                      <Text onPress={onGotoSettings} style={{ color: C.brand, fontWeight: "700" }}>{t("detail.change_setting")}</Text>
-                    </Txt>
-                  ) : null}
-                </View>
-              ))}
+  const card = { backgroundColor: C.surface, paddingHorizontal: 14, ...lift() };
+  if (mode === "ingr") {
+    return (
+      <FlatList data={ingr} keyExtractor={(it) => it.key} ListHeaderComponent={header}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap: 10 }}
+        style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
+        renderItem={({ item: it }) => (
+          <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 6 }, lift()]}>
+            <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+              <Txt style={{ fontWeight: "800", flex: 1 }}>{it.name}</Txt>
+              <Pill2 text={t(`sev.${it.level}`)} colors={SEV_COLORS[it.level] || SEV_COLORS.info} />
+            </Row>
+            <Muted style={{ fontSize: 14, lineHeight: 20 }}>{it.reason}</Muted>
+            {it.topic ? (
+              <Text style={{ fontSize: 13, color: C.muted, textAlign: dir().ta }}>
+                {t("add.your_setting", { d: t(`decision.${topics[it.topic]}`).toLowerCase() })} · <Text onPress={onGotoSettings} style={{ color: C.brand, fontWeight: "700", textDecorationLine: "underline" }}>{t("detail.change_setting")}</Text>
+              </Text>
+            ) : null}
           </View>
-        ))
-      ) : (
-        <View style={{ alignItems: "center", gap: 6, paddingVertical: 30 }}>
-          <Text style={{ fontWeight: "800", fontSize: 17, color: C.fg }}>{t("add.empty.t")}</Text>
-          <Muted style={{ textAlign: "center" }}>{t(mode === "halal" ? "add.empty_halal" : "add.empty_health")}</Muted>
+        )}
+      />
+    );
+  }
+  const data = list.slice(0, shown);
+  return (
+    <FlatList data={data} keyExtractor={(r) => r.code} ListHeaderComponent={header} initialNumToRender={20} windowSize={9}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120 }}
+      style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
+      renderItem={({ item: r, index }) => (
+        <View style={[card, index === 0 ? { borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg, paddingTop: 2 } : null, index === data.length - 1 ? { borderBottomLeftRadius: R.lg, borderBottomRightRadius: R.lg, paddingBottom: 2 } : null]}>
+          <AdditiveRow r={r} first={index === 0} onGotoSettings={onGotoSettings} />
         </View>
       )}
-    </Screen>
+      ListEmptyComponent={<View style={{ alignItems: "center", gap: 6, paddingVertical: 30 }}><Text style={{ fontWeight: "800", fontSize: 17, color: C.fg }}>{t("add.empty.t")}</Text><Muted style={{ textAlign: "center" }}>{t("add.e_none")}</Muted></View>}
+      ListFooterComponent={list.length > shown ? (
+        <Pressable onPress={() => setShown(shown + PAGE)} style={{ marginTop: 14, paddingVertical: 14, borderRadius: R.md, backgroundColor: C.tint2, alignItems: "center" }}>
+          <Text style={{ fontWeight: "700", color: C.fg }}>{t("add.more", { n: list.length - shown })}</Text>
+        </Pressable>
+      ) : list.length ? <Muted style={{ fontSize: 12.5, marginTop: 14, textAlign: "center" }}>{t("add.e_source")}</Muted> : null}
+    />
   );
 }

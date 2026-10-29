@@ -1,57 +1,21 @@
 // Recherche par nom de produit, marque ou code-barres.
 import React, { useRef, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import Icon from "../components/Icon";
-import { H1, Muted, Label, Row, Loading, Message, ProductRow } from "../components/ui";
+import { View, Text } from "react-native";
+import { Muted, Loading, Message, Row, Txt } from "../components/ui";
 import Screen from "../components/Screen";
-import { C, R, dir } from "../theme";
+import { PageHead, SearchBox, Chip } from "../components/Controls";
+import { ListRow } from "../components/Cards";
+import { Art, Tile } from "../components/Art";
+import { C, R, dir, lift } from "../theme";
 import { t, tn } from "../i18n";
 import { fetchProduct, searchProducts } from "../api";
 import { errorText } from "../view";
-import { haptic } from "../motion";
+import { artByKey } from "../../../public/lib/product-art.js";
 
-const SUGGESTIONS = ["Nutella", "Haribo", "Kinder", "Isla Délice", "Danone", "Oreo"];
-
-export function Chip({ text, n, on, onPress }) {
-  return (
-    <Pressable
-      onPress={() => {
-        haptic.tap();
-        onPress && onPress();
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={n !== undefined ? `${text}, ${n}` : text}
-      accessibilityState={{ selected: !!on }}
-      style={{ flexDirection: dir().row, alignItems: "center", gap: 6, paddingVertical: 9, paddingHorizontal: 14, borderRadius: 999, backgroundColor: on ? C.fg : C.tint }}
-    >
-      <Text style={{ color: on ? "#fff" : C.fg, fontWeight: "700", fontSize: 14 }}>{text}</Text>
-      {n !== undefined ? <Text style={{ color: on ? "rgba(255,255,255,0.7)" : C.muted, fontWeight: "700", fontSize: 13 }}>{n}</Text> : null}
-    </Pressable>
-  );
-}
-
-export function SearchField({ value, onChangeText, onSubmit, placeholder }) {
-  return (
-    <View style={{ flexDirection: dir().row, alignItems: "center", gap: 10, borderWidth: 1.5, borderColor: C.line, borderRadius: R.md, paddingHorizontal: 14, backgroundColor: "#fff" }}>
-      <Icon name="search" size={20} color={C.muted} />
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        onSubmitEditing={onSubmit}
-        placeholder={placeholder}
-        placeholderTextColor={C.faint}
-        returnKeyType="search"
-        autoCorrect={false}
-        style={{ flex: 1, paddingVertical: 13, fontSize: 17, color: C.fg, textAlign: dir().ta }}
-      />
-      {value ? (
-        <Pressable onPress={() => onChangeText("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="✕">
-          <Icon name="close" size={18} color={C.muted} />
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
+// Des marques, et deux mots courants dans la langue de l'app, chacun avec son dessin
+const IDEAS = () => [["Nutella", "r:spreads"], ["Haribo", "r:candies"], ["Isla Délice", "r:sausages"], [t("search.idea_milk"), "f:dairy"], [t("search.idea_chicken"), "f:poultry"], ["Kinder", "r:chocolates"], ["Danone", "r:yogurts"]];
+// Compatibilité avec les anciens écrans qui importaient ces composants d'ici
+export { Chip, SearchBox as SearchField };
 
 export default function SearchScreen({ onOpen }) {
   const [q, setQ] = useState("");
@@ -77,30 +41,28 @@ export default function SearchScreen({ onOpen }) {
       if (n === ticket.current) setState({ error: err });
     }
   };
-
-  const change = (v) => {
-    setQ(v);
-    if (!v.trim()) {
-      ticket.current++;
-      setState({});
-    }
-  };
+  const change = (v) => { setQ(v); if (!v.trim()) { ticket.current++; setState({}); } };
 
   return (
-    <Screen>
-      <View style={{ gap: 6 }}>
-        <H1>{t("search.title")}</H1>
-        <Muted>{t("search.sub")}</Muted>
-      </View>
-      <SearchField value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} />
+    <Screen gap={16}>
+      <PageHead title={t("search.title")} sub={t("search.sub")} />
+      <SearchBox value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} />
 
       {!q.trim() ? (
         <View style={{ gap: 10 }}>
-          <Label>{t("search.ideas")}</Label>
-          <Row gap={8} style={{ flexWrap: "wrap" }}>
-            {SUGGESTIONS.map((s) => (
-              <Chip key={s} text={s} onPress={() => { setQ(s); run(s); }} />
+          <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t("search.ideas")}</Text>
+          <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
+            {IDEAS().map(([s, k]) => (
+              <Chip key={s} text={s} onPress={() => { setQ(s); run(s); }}
+                icon={<View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center", marginStart: -6 }}><Art xml={artByKey(k)} size={19} /></View>} />
             ))}
+          </View>
+          <Row gap={12} style={[{ marginTop: 8, padding: 14, borderRadius: R.lg, backgroundColor: C.surface, alignItems: "flex-start" }, lift()]}>
+            <Tile color="#1A9C68" paths='<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M16 8v8"/>' size={42} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Txt style={{ fontWeight: "800" }}>{t("search.tip_t")}</Txt>
+              <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("search.tip_p")}</Muted>
+            </View>
           </Row>
         </View>
       ) : null}
@@ -111,15 +73,13 @@ export default function SearchScreen({ onOpen }) {
       {state.notFound ? <Message title={t("msg.notfound.t")} text={t("msg.notfound.p", { code: state.notFound })} /> : null}
       {state.list ? (
         state.list.length ? (
-          <View>
-            <Label style={{ marginBottom: 4 }}>{tn("search.results", state.list.length)}</Label>
-            {state.list.map((p) => (
-              <ProductRow key={p.code} p={p} onPress={() => onOpen(p.code)} />
-            ))}
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{tn("search.results", state.list.length)}</Text>
+            <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
+              {state.list.map((p, i) => <ListRow key={p.code} p={p} first={i === 0} onPress={() => onOpen(p.code)} />)}
+            </View>
           </View>
-        ) : (
-          <Message title={t("search.none.t")} text={t("search.none.p", { q: state.q })} />
-        )
+        ) : <Message title={t("search.none.t")} text={t("search.none.p", { q: state.q })} />
       ) : null}
     </Screen>
   );

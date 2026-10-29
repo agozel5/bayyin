@@ -458,7 +458,7 @@ function AlternativesSection({ p, onOpen }) {
   }, [p.code]);
   if (!state.loading && (state.error || !state.list.length)) return null;
   return (
-    <Section title={t("detail.alternatives")} sub={t("detail.alt_sub")}>
+    <Panel><Section title={t("detail.alternatives")} sub={t("detail.alt_sub")}>
       {state.loading ? (
         <Loading text={t("detail.alt_loading")} />
       ) : state.error ? (
@@ -470,7 +470,7 @@ function AlternativesSection({ p, onOpen }) {
       ) : (
         <Muted>{t(p.categories && p.categories.length ? "detail.alt_none" : "detail.alt_nocat")}</Muted>
       )}
-    </Section>
+    </Section></Panel>
   );
 }
 
@@ -611,7 +611,7 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
       <SheetTabs tabs={tabs} cur={cur} onTab={setTab} />
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
-      {!p.local && food ? <Panel><AlternativesSection p={p} onOpen={onOpen} /></Panel> : null}
+      {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
       <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null

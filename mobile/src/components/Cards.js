@@ -3,7 +3,8 @@ import React from "react";
 import { View, Text, Pressable, Image } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Art, Glyph } from "./Art";
-import { C, R, VERDICT, GRADE_COLORS, ALERT_COLORS, dir, lift } from "../theme";
+import { C, R, VERDICT, GRADE_COLORS, ALERT_COLORS, STATUS_COLORS, dir, lift } from "../theme";
+const STATUS_PILL = (st) => STATUS_COLORS[st];
 import { t } from "../i18n";
 import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf } from "../view";
 import { productArtKey, artByKey } from "../../../public/lib/product-art.js";
@@ -78,6 +79,35 @@ export function ProductCard({ p, onPress, fav, width = 214 }) {
         <ScoreDot p={p} />
         {alert ? <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: ALERT_COLORS[alert][1] }}><Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "700" }}>{t(`alert.short.${alert}`)}</Text></View> : null}
       </View>
+    </Pressable>
+  );
+}
+
+// Ligne de liste (historique, recherche) : vignette, nom, marque · moment, verdict, note
+export function ListRow({ p, onPress, fav, when, first }) {
+  const st = verdictOf(p).status;
+  const alert = profileOf(p).alert;
+  const meta = [kindOf(p) !== "food" ? t(`kind.${kindOf(p)}`) : "", p.brand, when].filter(Boolean).join(" · ");
+  const [fg, bg] = STATUS_PILL(st);
+  return (
+    <Pressable onPress={() => { haptic.tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={`${nameOf(p)}, ${S(st, "label")}`}
+      style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14, backgroundColor: pressed ? C.tint : "transparent",
+        borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line })}>
+      <Thumb p={p} size={54} />
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text numberOfLines={2} style={{ color: C.fg, fontWeight: "700", fontSize: 15.5, lineHeight: 20, textAlign: dir().ta }}>{nameOf(p)}</Text>
+        {meta ? <Text numberOfLines={1} style={{ color: C.muted, fontSize: 13, textAlign: dir().ta }}>{meta}</Text> : null}
+        <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <View style={{ flexDirection: dir().row, alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: bg }}>
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: fg }} />
+            <Text style={{ color: fg, fontSize: 12, fontWeight: "800" }}>{S(st, "short")}</Text>
+          </View>
+          <ScoreDot p={p} size={12.5} />
+          {alert ? <Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "800" }}>{t(`alert.short.${alert}`)}</Text> : null}
+          {fav ? <Glyph name="star" size={14} color="#E9A100" /> : null}
+        </View>
+      </View>
+      <Glyph name="chev" size={17} color={C.faint} />
     </Pressable>
   );
 }
