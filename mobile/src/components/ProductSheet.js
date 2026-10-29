@@ -6,17 +6,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
 import { Txt, H2, Muted, Label, Row, Btn, Pill, StatusPill, MiniScore, Loading, Message, Skeleton, FadeIn } from "./ui";
 import { haptic, ms, announce } from "../motion";
-import { isDark, C, R, ALERT_COLORS, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir } from "../theme";
+import { isDark, C, R, ALERT_COLORS, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir, lift } from "../theme";
 import { t, tn, tPlain } from "../i18n";
 import { SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES, isMedicineCode } from "../core";
 import { fetchProduct, fetchAlternatives } from "../api";
 import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../storage";
 import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
-import { Glyph, Art } from "./Art";
+import { Glyph, Art, Tile } from "./Art";
+import { I } from "../../../public/lib/icons.js";
 import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
-import { NUT_ART } from "../../../public/lib/rank-art.js";
+import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
+import { NUT_ART, ALLERGEN_ART } from "../../../public/lib/rank-art.js";
 
 const STATUS_ICON = { halal_certifie: "check", halal_probable: "check", mashbouh: "question", haram: "cross", inconnu: "dash" };
 const open = (url) => Linking.openURL(url).catch(() => {});
@@ -180,27 +182,37 @@ function ProfileAlert({ p, onGotoProfile }) {
     r.diet ? t(`alert.${r.diet.id}.${r.diet.level}`) : null,
     r.traces.length ? t("alert.traces", { list: label(r.traces) }) : null,
   ].filter(Boolean);
+  const arts = [...r.contains, ...r.traces].filter((a, i, l) => ALLERGEN_ART[a] && l.indexOf(a) === i).slice(0, 5);
   return (
-    <View
-      accessible
-      accessibilityRole="alert"
-      accessibilityLabel={`${t(`alert.${r.alert}`)}. ${lines.join(". ")}`}
-      style={{ backgroundColor: bg, borderRadius: R.lg, padding: 14, gap: 6, borderWidth: 1.5, borderColor: fg }}
-    >
-      <Row gap={8}>
-        <Icon name="alert" size={22} color={fg} width={2.4} />
-        <Txt style={{ color: fg, fontWeight: "800", fontSize: 17, flex: 1 }}>{t(`alert.${r.alert}`)}</Txt>
-      </Row>
-      {lines.map((l) => (
-        <Txt key={l} style={{ color: C.fg, fontWeight: "600" }}>{l}</Txt>
-      ))}
-      <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("alert.note")}</Muted>
-      <Text onPress={onGotoProfile} style={{ color: fg, fontWeight: "700", textAlign: dir().ta }}>{t("alert.edit")}</Text>
+    <View accessible accessibilityRole="alert" accessibilityLabel={`${t(`alert.${r.alert}`)}. ${lines.join(". ")}`}
+      style={[{ backgroundColor: C.surface, borderRadius: R.xl, overflow: "hidden", borderWidth: 1, borderColor: fg + "55" }, lift()]}>
+      <View style={{ backgroundColor: bg, padding: 14, gap: 10 }}>
+        <Row gap={12}>
+          <Tile color={fg} paths={I.alert} size={40} />
+          <Txt style={{ color: fg, fontWeight: "800", fontSize: 17, flex: 1, lineHeight: 22 }}>{t(`alert.${r.alert}`)}</Txt>
+          {arts.length ? (
+            <View style={{ flexDirection: dir().row }}>
+              {arts.map((a, i) => (
+                <View key={a} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.surface, borderWidth: 2, borderColor: bg, alignItems: "center", justifyContent: "center", marginStart: i ? -10 : 0 }}>
+                  <Art xml={ALLERGEN_ART[a]} size={24} />
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </Row>
+        {lines.map((l) => <Txt key={l} style={{ color: C.fg, fontWeight: "700", fontSize: 15.5, lineHeight: 21 }}>{l}</Txt>)}
+      </View>
+      <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4, gap: 2 }}>
+        <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("alert.note")}</Muted>
+        <Pressable onPress={onGotoProfile} accessibilityRole="link" style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingVertical: 8 }}>
+          <Text style={{ color: fg, fontWeight: "800", fontSize: 14.5 }}>{t("alert.edit")}</Text>
+          <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={15} color={fg} width={2.4} /></View>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-// Médicament : forme, laboratoire, conseil, lien vers la fiche officielle
 function MedicineSection({ p }) {
   return (
     <Section title={t("kind.medicine")}>
@@ -591,17 +603,18 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr }) {
       <WatchSection p={p} />
       <Panel><ExtraSections p={p} /></Panel>
     </View>
-  ) : kind === "medicine" ? <Panel><MedicineSection p={p} /></Panel> : null;
+  ) : kind === "medicine" ? <Panel><MedicineSection p={p} /></Panel> : kind === "beauty" ? <Panel><CosmeticSection p={p} /></Panel> : null;
   const compo = (
     <View style={{ gap: 14 }}>
       {food ? <Panel><CompositionAdditives p={p} onGotoSettings={onGotoSettings} /></Panel> : null}
-      {p.ingredients && !food ? <Panel><Section title={t("detail.ingredients")}><Muted>{p.ingredients.replace(/_/g, "")}</Muted></Section></Panel> : null}
+      {kind === "beauty" ? <Panel><CosmeticIngredients p={p} /></Panel> : null}
+      {p.ingredients && !food && kind !== "beauty" ? <Panel><Section title={t("detail.ingredients")}><Muted>{p.ingredients.replace(/_/g, "")}</Muted></Section></Panel> : null}
     </View>
   );
   const tabs = [
     { id: "halal", label: t("detail.halal"), mark: <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: VERDICT_DOT(v.status) }} />, el: halal },
-    health ? { id: "health", label: t(food ? "detail.health" : "kind.medicine"), mark: s ? <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 99, backgroundColor: GRADE_COLORS[s.grade] }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>{s.score}</Text></View> : null, el: health } : null,
-    food ? { id: "compo", label: t("detail.compo_tab"), mark: null, el: compo } : null,
+    health ? { id: "health", label: t(food ? "detail.health" : kind === "beauty" ? "detail.cosmetic_tab" : "kind.medicine"), mark: s ? <View style={{ paddingHorizontal: 7, paddingVertical: 1, borderRadius: 99, backgroundColor: GRADE_COLORS[s.grade] }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "800" }}>{s.score}</Text></View> : null, el: health } : null,
+    food || (kind === "beauty" && p.ingredients) ? { id: "compo", label: t("detail.compo_tab"), mark: null, el: compo } : null,
     // Environnement : chargé à l'ouverture de l'onglet (aliments d'Open Food Facts seulement)
     food && !p.local && isBarcode(p.code) ? { id: "planet", label: t("env.tab"), mark: null, el: <Panel><PlanetSection p={p} /></Panel> } : null,
   ].filter(Boolean);

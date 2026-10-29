@@ -12,6 +12,7 @@ import CameraScanner from "./components/CameraScanner";
 import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
+import Tour, { tourRef } from "./components/Tour";
 import SearchScreen from "./screens/SearchScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import AdditivesScreen from "./screens/AdditivesScreen";
@@ -19,7 +20,7 @@ import SettingsScreen from "./screens/SettingsScreen";
 import { C, dir, applyTheme, isDark } from "./theme";
 import { Glyph } from "./components/Art";
 import { t, setLang, getLang } from "./i18n";
-import { initStorage, getSettings, subscribe } from "./storage";
+import { initStorage, getSettings, setSettings, subscribe } from "./storage";
 import { normalizeScan } from "./core";
 import { FadeIn } from "./components/ui";
 import { haptic, ms, announce } from "./motion";
@@ -55,6 +56,7 @@ function TabBar({ tab, onTab }) {
           return (
             <Pressable
               key={it.id}
+              ref={scan ? undefined : tourRef(it.id)}
               onPress={() => {
                 haptic.tap();
                 onTab(it.id);
@@ -141,6 +143,7 @@ function Main() {
   const [manualOpen, setManualOpen] = useState(false);
   const [homeStatus, setHomeStatus] = useState(null);
   const [focus, setFocus] = useState({ target: null, n: 0 });
+  const [tour, setTour] = useState(null); // étape de la visite guidée affichée, ou null
   const toastTimer = useRef(null);
   const nonce = useRef(0);
 
@@ -181,6 +184,10 @@ function Main() {
   // Bouton retour d'Android : ferme d'abord l'écran du dessus.
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (tour !== null) {
+        endTour();
+        return true;
+      }
       if (stack.length) {
         pop();
         return true;
@@ -192,7 +199,7 @@ function Main() {
       return false;
     });
     return () => sub.remove();
-  }, [stack, tab, leaving]);
+  }, [stack, tab, leaving, tour]);
 
   const openProduct = (code, { fromScan = false, product = null, replace } = {}) => {
     const onTop = top && (top.type === "sheet" || top.type === "camera" || top.type === "ocr");
@@ -209,6 +216,21 @@ function Main() {
     setFocus((f) => ({ target, n: f.n + 1 }));
   };
   const gotoProfile = () => gotoSettings("profile");
+  // Visite guidée : à la première ouverture, puis depuis Réglages › Comment ça marche
+  const startTour = (n = 0) => {
+    clearStack();
+    setTab("scan");
+    setTour(n);
+  };
+  const endTour = () => {
+    setTour(null);
+    if (!getSettings().toured) setSettings({ toured: true });
+  };
+  useEffect(() => {
+    if (getSettings().toured) return;
+    const id = setTimeout(() => setTour((v) => (v === null ? 0 : v)), 900);
+    return () => clearTimeout(id);
+  }, []);
 
   // Android : lecture du code-barres sur une photo
   const photoBarcode = async () => {
@@ -257,7 +279,7 @@ function Main() {
   if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} />;
   if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
-  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} />;
+  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} />;
 
   const renderScreen = (item) => {
     if (item.type === "camera")
@@ -307,7 +329,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }) };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)) };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.
@@ -338,6 +360,7 @@ function Main() {
         );
       })}
       <Toast text={toastText} />
+      {tour !== null ? <Tour start={tour} onDone={endTour} onScan={() => openCamera()} /> : null}
     </View>
   );
 }

@@ -321,9 +321,20 @@ function NotesPage() {
   );
 }
 
-function HowPage() {
+function HowPage({ onTour }) {
   return (
     <View style={{ gap: 14 }}>
+      {onTour ? (
+        <Pressable onPress={onTour} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+          <Tile color="#1A9C68" paths='<path d="M9 7.5l8 4.5-8 4.5z"/>' size={42} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt style={{ fontWeight: "800" }}>{t("tour.replay")}</Txt>
+            <Muted style={{ fontSize: 14, lineHeight: 19 }}>{t("tour.replay_p")}</Muted>
+          </View>
+          <Glyph name="chev" size={17} color={C.faint} />
+        </Pressable>
+      ) : null}
       <Block title={t("why.t")}>
         <View style={{ borderRadius: 20, padding: 20, paddingTop: 26, backgroundColor: isDark() ? "#173A2B" : "#E3F3EB" }}>
           <Text style={{ position: "absolute", top: -6, [dir().rtl ? "right" : "left"]: 14, fontSize: 64, fontWeight: "800", color: C.brand, opacity: 0.5 }}>“</Text>
@@ -412,7 +423,7 @@ function LimitsPage() {
 
 const PAGES = { lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage };
 
-export default function SettingsScreen({ focus, toast }) {
+export default function SettingsScreen({ focus, toast, onTour }) {
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(null);
   const st = getSettings();
@@ -444,7 +455,7 @@ export default function SettingsScreen({ focus, toast }) {
             <Art xml={PAGE_ART[page]} width="100%" height={150} />
           </View>
         ) : null}
-        <P toast={toast} />
+        <P toast={toast} onTour={onTour} />
       </ScrollView>
     );
   }

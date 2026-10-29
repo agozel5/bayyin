@@ -1,5 +1,6 @@
 // Accès à Open Food Facts depuis l'app, avec repli hors connexion.
 import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny, greenScore } from "./core";
+import { setCosmeticDb, cosmeticDbVersion } from "../../public/lib/cosmetic.js";
 import { getSettings, getCachedRaw, cacheRaw, getLocal, setPack, getEntry } from "./storage";
 
 const HEADERS = { "User-Agent": "Bayyin/1.0 (https://github.com/agozel5/bayyin)", Accept: "application/json" };
@@ -145,4 +146,16 @@ export async function fetchEnvironment(code) {
   const e = data && data.product ? greenScore(data.product) : null;
   envMemo.set(code, e);
   return e;
+}
+
+// Base des ingrédients cosmétiques (CosIng, ≈ 1,5 Mo) : chargée une fois, à la première fiche de cosmétique.
+let cosingLoading = null;
+export function loadCosing() {
+  if (cosmeticDbVersion()) return Promise.resolve(true);
+  if (!cosingLoading) {
+    cosingLoading = getJson("https://agozel5.github.io/bayyin/data/cosing.json", 30000)
+      .then((d) => { if (!d || !d.i) throw new Error("cosing"); setCosmeticDb(d); return true; })
+      .catch(() => { cosingLoading = null; return false; });
+  }
+  return cosingLoading;
 }

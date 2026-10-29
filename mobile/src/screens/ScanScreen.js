@@ -14,6 +14,7 @@ import { getHistory, getSettings } from "../storage";
 import { verdictOf, profileOf } from "../view";
 import { hasProfile } from "../core";
 import { haptic } from "../motion";
+import { tourRef } from "../components/Tour";
 
 const TIP_COUNT = 8;
 const BARCODE = `<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#E8F5EE"/><g stroke="#16241C" stroke-width="2.4"><path d="M11 13v20M15 13v20M18.5 13v20M22.5 13v20M27 13v20M30.5 13v20M34.5 13v20M37.5 13v20"/></g><path d="M8 35.5h32" stroke="#E0566A" stroke-width="2.4" stroke-linecap="round"/></svg>`;
@@ -119,6 +120,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         </FadeIn>
 
         <Pressable
+          ref={tourRef("scan")}
           onPress={() => { haptic.light(); onScan(); }}
           accessibilityRole="button"
           accessibilityLabel={`${t("home.scan")}. ${t("home.kinds")}`}
@@ -131,7 +133,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           </View>
           <Glyph name="chev" size={20} color="#0F6545" />
         </Pressable>
-        <View style={{ flexDirection: dir().row, gap: 10 }}>
+        <View ref={tourRef("photo")} collapsable={false} style={{ flexDirection: dir().row, gap: 10 }}>
           <HeroButton icon="doc" text={t("home.photo_ingredients")} onPress={() => onOcr(null)} />
           <HeroButton icon="keyboard" text={t("home.type_code")} on={manualOpen} onPress={() => setManualOpen(!manualOpen)} />
         </View>
@@ -152,7 +154,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
       </View>
 
       {/* Classements : les meilleurs produits halal de chaque rayon */}
-      <Pressable onPress={() => { haptic.tap(); onRankings && onRankings(); }} accessibilityRole="button"
+      <Pressable ref={tourRef("rankings")} onPress={() => { haptic.tap(); onRankings && onRankings(); }} accessibilityRole="button"
         style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
         <Tile color="#E2A812" paths='<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>' size={44} />
         <View style={{ flex: 1, gap: 2 }}>
