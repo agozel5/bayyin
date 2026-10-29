@@ -1,9 +1,12 @@
 name: Vidéos d'aperçu des stores
 
 # Filme l'app réelle (vrais produits, vraies photos Open Food Facts) et monte une vidéo par langue :
-# 886×1920, H.264, 30 i/s, moins de 30 s. Résultat : l'archive « apercus » de l'exécution.
+# 886×1920, H.264, 30 i/s, moins de 30 s. Résultat : la branche store-previews (fichiers preview-<langue>.mp4).
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
   group: app-preview
@@ -31,8 +34,10 @@ jobs:
           PORT=3123 node src/server.js > /tmp/server.log 2>&1 &
           for i in $(seq 1 20); do curl -s localhost:3123 > /dev/null && break; sleep 0.5; done
           python scripts/app-preview.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: apercus
-          path: docs/store/preview/*.mp4
-          retention-days: 30
+      - name: Déposer sur la branche store-previews (hors de main, pour ne pas alourdir le dépôt)
+        run: |
+          mkdir /tmp/pv && cp docs/store/preview/*.mp4 /tmp/pv/
+          cd /tmp/pv && git init -q -b store-previews
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" add -A
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -qm "Vidéos d'aperçu des stores"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" store-previews
