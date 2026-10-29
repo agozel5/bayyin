@@ -36,6 +36,11 @@ def run(lang, scheme):
                       body=json.dumps({"status": 1, "product": {"code": code, **PRODUCTS[code]}} if code else {"status": 0}))
         ctx.route(re.compile(r".*openfoodfacts\.org/api/v[0-9]/product/.*"), prod)
         ctx.route(re.compile(r".*openbeautyfacts.*"), lambda r: r.fulfill(status=200, content_type="application/json", body='{"status":0}'))
+        def ranks(r):
+            f = PUB / "data" / "rankings" / r.request.url.split("/data/rankings/")[1].split("?")[0]
+            r.fulfill(status=200 if f.exists() else 404, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
+                      body=f.read_text() if f.exists() else "{}")
+        ctx.route(re.compile(r".*/data/rankings/.*\.json.*"), ranks)
         p = ctx.new_page()
         p.on("pageerror", lambda e: errs.append(str(e)))
         p.goto("http://127.0.0.1:8765/"); p.wait_for_function("!!window.__bayyin", timeout=30000); p.wait_for_timeout(1500)
@@ -64,6 +69,13 @@ def run(lang, scheme):
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"]:
             p.evaluate(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         p.evaluate("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
+        # Classements : liste des rayons, puis deux rayons
+        p.set_viewport_size({"width": 390, "height": 2600})
+        p.evaluate("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
+        p.evaluate("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
+        for cat in ["spreads", "shampoos"]:
+            p.evaluate(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
+        p.evaluate("window.__bayyinRankCat(null)"); p.evaluate("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
         b.close()
     return errs

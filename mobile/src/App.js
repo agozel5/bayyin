@@ -11,6 +11,7 @@ import ProductSheet from "./components/ProductSheet";
 import CameraScanner from "./components/CameraScanner";
 import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
+import RankingsScreen from "./screens/RankingsScreen";
 import SearchScreen from "./screens/SearchScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import AdditivesScreen from "./screens/AdditivesScreen";
@@ -112,7 +113,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, children }) {
   }, [leaving]);
   const side = dir().rtl ? -1 : 1;
   const transform =
-    kind === "sheet"
+    kind === "sheet" || kind === "rankings"
       ? [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }) }]
       : kind === "ocr"
         ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }]
@@ -247,6 +248,7 @@ function Main() {
         onGoto={changeTab}
         onGotoSettings={() => gotoSettings()}
         onGotoProfile={gotoProfile}
+        onRankings={() => push({ type: "rankings" })}
         manualOpen={manualOpen}
         setManualOpen={setManualOpen}
         status={homeStatus}
@@ -285,6 +287,8 @@ function Main() {
           toast={toast}
         />
       );
+    if (item.type === "rankings")
+      return <RankingsScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "ocr")
       return (
         <OcrFlow
@@ -302,7 +306,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }) };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.

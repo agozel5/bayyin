@@ -55,7 +55,7 @@ function HeroButton({ icon, text, onPress, on }) {
   );
 }
 
-export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, manualOpen, setManualOpen, status }) {
+export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState(null);
   const history = getHistory();
@@ -150,6 +150,17 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           </FadeIn>
         ) : null}
       </View>
+
+      {/* Classements : les meilleurs produits halal de chaque rayon */}
+      <Pressable onPress={() => { haptic.tap(); onRankings && onRankings(); }} accessibilityRole="button"
+        style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+        <Tile color="#E2A812" paths='<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>' size={44} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Txt style={{ fontWeight: "800", fontSize: 16.5 }}>{t("rank.title")}</Txt>
+          <Muted style={{ fontSize: 14, lineHeight: 19 }}>{t("rank.promo")}</Muted>
+        </View>
+        <Glyph name="chev" size={17} color={C.faint} />
+      </Pressable>
 
       {status ? <Message title={status.title} text={status.text} /> : null}
 

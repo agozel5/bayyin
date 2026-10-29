@@ -100,7 +100,8 @@ export const RANK_BASE =
 const cache = new Map();
 function getJson(url) {
   if (!cache.has(url)) {
-    const job = fetch(url, { signal: AbortSignal.timeout(12000) })
+    // AbortSignal.timeout n'existe pas partout (moteur de l'app mobile) : délai seulement s'il est disponible
+    const job = fetch(url, typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(12000) } : {})
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .catch((e) => { cache.delete(url); throw e; });
     cache.set(url, job);
