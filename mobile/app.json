@@ -152,7 +152,8 @@
       "fallbackToCacheTimeout": 0,
       "requestHeaders": {
         "expo-channel-name": "production"
-      }
+      },
+      "url": "https://u.expo.dev/115e79e5-92bf-4f5f-b8d2-f54574fe2798"
     },
     "web": {
       "bundler": "metro",
@@ -164,6 +165,9 @@
         "ios": "",
         "android": "",
         "entitlement": "premium"
+      },
+      "eas": {
+        "projectId": "115e79e5-92bf-4f5f-b8d2-f54574fe2798"
       }
     }
   }
