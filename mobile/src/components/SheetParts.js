@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Image, Linking, Animated, Easing } from "react-native";
 import { ms } from "../motion";
-import Svg, { Circle } from "react-native-svg";
+import PhotoZoom from "./PhotoZoom";
+import Svg, { Circle, Rect, Defs, LinearGradient, Stop } from "react-native-svg";
 import { Glyph, Tile } from "./Art";
 import { Khatam, Thumb, STATUS_GLYPH } from "./Cards";
 import { Txt, Muted, Row } from "./ui";
@@ -21,11 +22,20 @@ const open = (url) => Linking.openURL(url).catch(() => {});
 // ---------- en-tête : photo, nom, marque · quantité, code ----------
 export function Top({ p }) {
   const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).join(" · ");
+  const [zoom, setZoom] = useState(false);
+  const hasPhotos = (p.photos || []).some(([, u]) => u);
   return (
     <Row gap={14} style={{ alignItems: "center" }}>
-      <View style={[{ borderRadius: 20, backgroundColor: C.surface, padding: 6 }, lift()]}>
+      <Pressable disabled={!hasPhotos} onPress={() => { haptic.tap(); setZoom(true); }} accessibilityRole="imagebutton" accessibilityLabel={t("zoom.open")}
+        style={({ pressed }) => [{ borderRadius: 20, backgroundColor: C.surface, padding: 6, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
         <Thumb p={p} size={96} radius={16} />
-      </View>
+        {hasPhotos ? (
+          <View style={{ position: "absolute", bottom: 8, [dir().rtl ? "left" : "right"]: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center" }}>
+            <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5"/>' size={15} color="#fff" width={2.2} />
+          </View>
+        ) : null}
+      </Pressable>
+      {hasPhotos ? <PhotoZoom p={p} visible={zoom} onClose={() => setZoom(false)} /> : null}
       <View style={{ flex: 1, gap: 4 }}>
         <Txt style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }} numberOfLines={3}>{nameOf(p)}</Txt>
         {meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
@@ -51,7 +61,32 @@ function Ring({ score, color, size = 50 }) {
 }
 
 // ---------- bandeau du verdict, avec la note santé en dessous ----------
-export function VerdictHero({ p, v }) {
+// Reflet : une bande de lumière traverse la carte une fois, à l'ouverture de la fiche
+function Sheen({ width }) {
+  const x = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!ms(1) || !width) return;
+    x.setValue(0);
+    Animated.timing(x, { toValue: 1, duration: 1100, delay: 450, easing: Easing.bezier(0.45, 0.05, 0.25, 1), useNativeDriver: true }).start();
+  }, [width]);
+  if (!width) return null;
+  const w = width * 0.45;
+  return (
+    <Animated.View pointerEvents="none" style={{ position: "absolute", top: -20, bottom: -20, left: 0, width: w,
+      opacity: x.interpolate({ inputRange: [0, 0.85, 1], outputRange: [1, 1, 0] }),
+      transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [-w * 1.3, width + w * 0.6] }) }, { skewX: "-14deg" }] }}>
+      <Svg width={w} height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
+        <Defs><LinearGradient id="sh" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="#fff" stopOpacity="0" /><Stop offset="0.3" stopColor="#fff" stopOpacity={isDark() ? 0.1 : 0.1} />
+          <Stop offset="0.5" stopColor="#fff" stopOpacity={isDark() ? 0.28 : 0.42} /><Stop offset="0.7" stopColor="#fff" stopOpacity="0.1" /><Stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </LinearGradient></Defs>
+        <Rect x="0" y="0" width="100" height="100" fill="url(#sh)" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
+export function VerdictHero({ p, v, scanned }) {
   const s = scoreOf(p);
   const kind = kindOf(p);
   const vc = VERDICT[v.status];
@@ -69,9 +104,35 @@ export function VerdictHero({ p, v }) {
       Animated.timing(halo, { toValue: 1, duration: 900, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
   }, [p.code, v.status]);
+  // Après un scan : le verdict s'allume (halo autour de la carte, onde de lumière depuis l'icône)
+  const glow = useRef(new Animated.Value(scanned && ms(1) ? 0 : 1)).current;
+  const wave = useRef(new Animated.Value(scanned && ms(1) ? 0 : 1)).current;
+  const [cardW, setCardW] = useState(0);
+  useEffect(() => {
+    if (!scanned || !ms(1)) return;
+    Animated.timing(glow, { toValue: 1, duration: 1100, delay: 100, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    Animated.timing(wave, { toValue: 1, duration: 1000, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [p.code]);
+  // Les trois lignes de texte apparaissent l'une après l'autre
+  const lines = useRef([0, 1, 2].map(() => new Animated.Value(ms(1) ? 0 : 1))).current;
+  useEffect(() => {
+    if (!ms(1)) return;
+    lines.forEach((l) => l.setValue(0));
+    Animated.stagger(80, lines.map((l) => Animated.timing(l, { toValue: 1, duration: 500, easing: Easing.bezier(0.2, 0.8, 0.2, 1), useNativeDriver: true }))).start();
+  }, [p.code, v.status]);
+  const lineStyle = (i) => ({ opacity: lines[i], transform: [{ translateY: lines[i].interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] });
   return (
-    <View accessibilityRole="summary" accessibilityLabel={`${S(v.status, "label")}. ${S(v.status, "lead")}`}
+    <View>
+    {scanned ? (
+      <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, borderRadius: R.xl, borderWidth: 3, borderColor: vc,
+        opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }), transform: [{ scaleX: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }) }, { scaleY: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] }} />
+    ) : null}
+    <View accessibilityRole="summary" accessibilityLabel={`${S(v.status, "label")}. ${S(v.status, "lead")}`} onLayout={(e) => setCardW(e.nativeEvent.layout.width)}
       style={{ borderRadius: R.xl, overflow: "hidden", backgroundColor: vc, shadowColor: vc, shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 5 }}>
+      {scanned ? (
+        <Animated.View pointerEvents="none" style={{ position: "absolute", top: 20, [dir().rtl ? "right" : "left"]: 20, width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.35)",
+          opacity: wave.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: wave.interpolate({ inputRange: [0, 1], outputRange: [0.6, 10] }) }] }} />
+      ) : null}
       <View style={{ padding: 18, paddingBottom: 20, flexDirection: dir().row, gap: 16, alignItems: "center" }}>
         <Khatam opacity={0.2} />
         <View style={{ width: 68, height: 68, alignItems: "center", justifyContent: "center" }}>
@@ -83,9 +144,9 @@ export function VerdictHero({ p, v }) {
           </Animated.View>
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Txt style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "600" }}>{kicker}</Txt>
-          <Txt style={{ color: "#fff", fontSize: 27, lineHeight: 31, fontWeight: "800", letterSpacing: -0.4 }}>{S(v.status, "label")}</Txt>
-          <Txt style={{ color: "rgba(255,255,255,0.92)", fontSize: 14.5, lineHeight: 20 }}>{S(v.status, "lead")}</Txt>
+          <Animated.View style={lineStyle(0)}><Txt style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "600" }}>{kicker}</Txt></Animated.View>
+          <Animated.View style={lineStyle(1)}><Txt style={{ color: "#fff", fontSize: 27, lineHeight: 31, fontWeight: "800", letterSpacing: -0.4 }}>{S(v.status, "label")}</Txt></Animated.View>
+          <Animated.View style={lineStyle(2)}><Txt style={{ color: "rgba(255,255,255,0.92)", fontSize: 14.5, lineHeight: 20 }}>{S(v.status, "lead")}</Txt></Animated.View>
         </View>
       </View>
       {kind !== "medicine" ? (
@@ -101,6 +162,8 @@ export function VerdictHero({ p, v }) {
           {gc ? <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: gc, shadowColor: gc, shadowOpacity: 0.9, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } }} /> : null}
         </View>
       ) : null}
+      <Sheen width={cardW} />
+    </View>
     </View>
   );
 }
@@ -205,10 +268,14 @@ export function Chain({ p, v }) {
   return (
     <View style={{ flexDirection: dir().row, backgroundColor: C.tint, borderRadius: R.lg, paddingVertical: 14, paddingHorizontal: 6 }}
       accessibilityLabel={steps.map((s) => `${t(`chain.s.${s.id}`)} : ${s.sub}`).join(" · ")}>
+      {/* Traits entre les étapes : un calque derrière les pastilles (sinon un trait passerait sur la pastille précédente) */}
+      <View pointerEvents="none" style={{ position: "absolute", top: 14 + 20, left: `${50 / steps.length}%`, right: `${50 / steps.length}%`, height: 3, flexDirection: dir().row, paddingHorizontal: 6 }}>
+        {steps.slice(1).map((s, i) => (
+          <View key={s.id} style={{ flex: 1, marginHorizontal: 22, height: 3, borderRadius: 2, backgroundColor: steps[i].state === "ok" && s.state !== "na" && s.state !== "none" ? col(s.state) : C.tint2 }} />
+        ))}
+      </View>
       {steps.map((s, i) => (
         <View key={s.id} style={{ flex: 1, alignItems: "center", gap: 6 }}>
-          {i ? <View style={{ position: "absolute", top: 21, [dir().rtl ? "left" : "right"]: "50%", width: "100%", height: 3, borderRadius: 2,
-            backgroundColor: steps[i - 1].state === "ok" && s.state !== "na" && s.state !== "none" ? col(s.state) : C.tint2 }} /> : null}
           <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: col(s.state), backgroundColor: C.surface, alignItems: "center", justifyContent: "center" }}>
             <Glyph paths={CHAIN_ICO[s.id]} size={21} color={col(s.state)} />
             <View style={{ position: "absolute", bottom: -4, [dir().rtl ? "left" : "right"]: -4, width: 20, height: 20, borderRadius: 10, backgroundColor: col(s.state), borderWidth: 2, borderColor: C.tint, alignItems: "center", justifyContent: "center" }}>

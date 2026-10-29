@@ -129,6 +129,7 @@ export function clearHistory() {
 
 // ---------- fiches complétées par photo ----------
 export const getLocal = (code) => local[code] || null;
+export const localCount = () => Object.keys(local).length;
 export function setLocal(code, raw) {
   local = { ...local, [code]: raw };
   save(K.local, local);

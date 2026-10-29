@@ -1,12 +1,15 @@
 // Guide des additifs : codes E (origine, halal selon vos réglages, risque santé) et ingrédients surveillés.
 // Même présentation que la version web.
 import React, { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable } from "react-native";
+import { View, Text, FlatList, Pressable, ScrollView, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row } from "../components/ui";
 import { PageHead, SearchBox, Chip, ChipRow, Segmented } from "../components/Controls";
 import { AdditiveRow, additiveRow, eFunctions } from "../components/Additives";
 import { Pill2 } from "../components/SheetParts";
+import { Glyph } from "../components/Art";
+import { Collapse, Chevron } from "../components/Reveal";
+import { haptic } from "../motion";
 import { C, R, SEV_COLORS, dir, lift } from "../theme";
 import { t, tn, getLang } from "../i18n";
 import { TEXT_RULES, TOPIC_OF, SEVERITY_OF, BEAUTY_RULES } from "../core";
@@ -41,6 +44,8 @@ export default function AdditivesScreen({ onGotoSettings }) {
   const [fn, setFn] = useState("");
   const [q, setQ] = useState("");
   const [shown, setShown] = useState(PAGE);
+  const [fnOpen, setFnOpen] = useState(false);
+  const [ingrF, setIngrF] = useState("all");
   const lang = getLang();
   const rows = useMemo(() => {
     const mine = myCounts();
@@ -55,7 +60,7 @@ export default function AdditivesScreen({ onGotoSettings }) {
   };
   const fnCount = new Map();
   rows.forEach((r) => r.fns.forEach((k) => fnCount.set(k, (fnCount.get(k) || 0) + 1)));
-  const fns = [...fnCount].sort((a, b) => b[1] - a[1]).map(([k]) => k).slice(0, 10);
+  const fns = [...fnCount].sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const nq = norm(q), qCode = nq.replace(/^e-?/, "");
   const list = rows.filter((r) => FILTERS[filter](r) && (!fn || r.fns.includes(fn)) &&
     (!nq || r.code === "e" + qCode || (r.code.startsWith("e" + qCode) && /^\d/.test(qCode)) || norm(r.name + " " + Object.values(r.it.n).join(" ")).includes(nq)));
@@ -76,10 +81,13 @@ export default function AdditivesScreen({ onGotoSettings }) {
               <Chip key={id} text={t(`add.ef.${id}`)} n={rows.filter(FILTERS[id]).length} on={filter === id} onPress={() => { setFilter(id); setShown(PAGE); }} />
             ))}
           </ChipRow>
-          <ChipRow>
-            <Chip text={t("add.fn_all")} on={!fn} onPress={() => setFn("")} />
-            {fns.map((k) => <Chip key={k} text={t(`fn.${k}`)} on={fn === k} onPress={() => setFn(fn === k ? "" : k)} />)}
-          </ChipRow>
+          {/* La fonction se choisit dans un menu, comme sur le site */}
+          <Pressable onPress={() => setFnOpen(true)} accessibilityRole="button" accessibilityLabel={`${t("add.fn")} ${fn ? t(`fn.${fn}`) : t("add.fn_all")}`}
+            style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 8, height: 44, paddingHorizontal: 14, borderRadius: R.md, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+            <Text style={{ color: C.muted, fontSize: 14 }}>{t("add.fn")}</Text>
+            <Text numberOfLines={1} style={{ flex: 1, color: C.fg, fontWeight: "700", fontSize: 14.5, textAlign: dir().ta }}>{fn ? t(`fn.${fn}`) : t("add.fn_all")}</Text>
+            <View style={{ transform: [{ rotate: "90deg" }] }}><Glyph name="chev" size={16} color={C.muted} /></View>
+          </Pressable>
           <Muted style={{ fontSize: 13.5, marginTop: 4 }}>{tn("add.count", list.length)}</Muted>
         </View>
       ) : null}
@@ -87,30 +95,86 @@ export default function AdditivesScreen({ onGotoSettings }) {
   );
 
   const card = { backgroundColor: C.surface, paddingHorizontal: 14, ...lift() };
+  const fnSheet = (
+    <Modal visible={fnOpen} transparent animationType="slide" onRequestClose={() => setFnOpen(false)}>
+      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }} onPress={() => setFnOpen(false)} />
+      <View style={{ maxHeight: "70%", backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 10, paddingBottom: insets.bottom + 10 }}>
+        <View style={{ alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: C.tint2, marginBottom: 8 }} />
+        <Text style={{ fontSize: 17, fontWeight: "800", color: C.fg, paddingHorizontal: 20, paddingBottom: 6, textAlign: dir().ta }}>{t("add.fn")}</Text>
+        <ScrollView>
+          {["", ...fns].map((k) => (
+            <Pressable key={k || "all"} onPress={() => { haptic.tap(); setFn(k); setShown(PAGE); setFnOpen(false); }} accessibilityRole="radio" accessibilityState={{ checked: fn === k }}
+              style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 10, paddingHorizontal: 20, paddingVertical: 13, backgroundColor: pressed ? C.tint : "transparent" })}>
+              <Text style={{ flex: 1, fontSize: 15.5, fontWeight: fn === k ? "800" : "500", color: C.fg, textAlign: dir().ta }}>{k ? t(`fn.${k}`) : t("add.fn_all")}</Text>
+              {k ? <Text style={{ color: C.muted, fontSize: 13 }}>{fnCount.get(k)}</Text> : null}
+              {fn === k ? <Glyph name="check" size={18} color={C.brand} width={2.6} /> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+
   if (mode === "ingr") {
+    // Comme sur le site : filtres par niveau, groupes repliés (ouverts par une recherche ou un filtre), lignes dépliables
+    const all = ingredientItems();
+    const filtered = ingr.filter((it) => ingrF === "all" || it.level === ingrF);
+    const groups = [...new Set(filtered.map((it) => (it.beauty ? t("kind.beauty") : t("add.group_ingredients"))))];
+    const forceOpen = !!nq || ingrF !== "all" || groups.length === 1;
+    const sevPill = (lv, n) => <Pill2 key={lv} text={`${t(`sev.${lv}`)}${n != null ? ` · ${n}` : ""}`} colors={SEV_COLORS[lv] || SEV_COLORS.info} />;
     return (
-      <FlatList data={ingr} keyExtractor={(it) => it.key} ListHeaderComponent={header}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap: 10 }}
-        style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
-        renderItem={({ item: it }) => (
-          <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 6 }, lift()]}>
-            <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-              <Txt style={{ fontWeight: "800", flex: 1 }}>{it.name}</Txt>
-              <Pill2 text={t(`sev.${it.level}`)} colors={SEV_COLORS[it.level] || SEV_COLORS.info} />
-            </Row>
-            <Muted style={{ fontSize: 14, lineHeight: 20 }}>{it.reason}</Muted>
-            {it.topic ? (
-              <Text style={{ fontSize: 13, color: C.muted, textAlign: dir().ta }}>
-                {t("add.your_setting", { d: t(`decision.${topics[it.topic]}`).toLowerCase() })} · <Text onPress={onGotoSettings} style={{ color: C.brand, fontWeight: "700", textDecorationLine: "underline" }}>{t("detail.change_setting")}</Text>
-              </Text>
-            ) : null}
-          </View>
-        )}
-      />
+      <ScrollView style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap: 12 }}>
+        {header}
+        <ChipRow>
+          {[["all", "add.f.all"], ["haram", "sev.haram"], ["mashbouh", "sev.mashbouh"], ["info", "sev.info"]].map(([id, key]) => (
+            <Chip key={id} text={t(key)} n={id === "all" ? all.length : all.filter((i) => i.level === id).length} on={ingrF === id} onPress={() => setIngrF(id)} />
+          ))}
+        </ChipRow>
+        {groups.length ? groups.map((g) => {
+          const items = filtered.filter((it) => (it.beauty ? t("kind.beauty") : t("add.group_ingredients")) === g);
+          const counts = ["haram", "mashbouh", "info"].map((lv) => [lv, items.filter((i) => i.level === lv).length]).filter(([, n]) => n);
+          return (
+            <View key={g + forceOpen} style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
+              <Collapse initial={forceOpen} head={(open) => (
+                <View style={{ flexDirection: dir().row, alignItems: "center", gap: 10, padding: 14 }}>
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Txt style={{ fontWeight: "800", fontSize: 16 }}>{g}</Txt>
+                    <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 6 }}>{counts.map(([lv, n]) => sevPill(lv, n))}</View>
+                  </View>
+                  <Chevron open={open} />
+                </View>
+              )}>
+                {items.map((it) => (
+                  <View key={it.key} style={{ borderTopWidth: 0.5, borderTopColor: C.line, paddingHorizontal: 14 }}>
+                    <Collapse head={(open) => (
+                      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 12 }}>
+                        <Txt style={{ flex: 1, fontWeight: "700", fontSize: 15 }}>{it.name}</Txt>
+                        {sevPill(it.level)}
+                        <Chevron open={open} />
+                      </View>
+                    )}>
+                      <View style={{ gap: 6, paddingBottom: 12 }}>
+                        <Muted style={{ fontSize: 14, lineHeight: 20 }}>{it.reason}</Muted>
+                        {it.topic ? (
+                          <Text style={{ fontSize: 13, color: C.muted, textAlign: dir().ta }}>
+                            {t("add.your_setting", { d: t(`decision.${topics[it.topic]}`).toLowerCase() })} · <Text onPress={onGotoSettings} style={{ color: C.brand, fontWeight: "700", textDecorationLine: "underline" }}>{t("detail.change_setting")}</Text>
+                          </Text>
+                        ) : null}
+                      </View>
+                    </Collapse>
+                  </View>
+                ))}
+              </Collapse>
+            </View>
+          );
+        }) : <View style={{ alignItems: "center", gap: 6, paddingVertical: 30 }}><Text style={{ fontWeight: "800", fontSize: 17, color: C.fg }}>{t("add.empty.t")}</Text><Muted style={{ textAlign: "center" }}>{t("add.empty_halal")}</Muted></View>}
+      </ScrollView>
     );
   }
   const data = list.slice(0, shown);
   return (
+    <>
+    {fnSheet}
     <FlatList data={data} keyExtractor={(r) => r.code} ListHeaderComponent={header} initialNumToRender={20} windowSize={9}
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120 }}
       style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
@@ -126,5 +190,6 @@ export default function AdditivesScreen({ onGotoSettings }) {
         </Pressable>
       ) : list.length ? <Muted style={{ fontSize: 12.5, marginTop: 14, textAlign: "center" }}>{t("add.e_source")}</Muted> : null}
     />
+    </>
   );
 }

@@ -12,6 +12,8 @@ import { ADDITIVES, ADDITIVE_RISK, SEVERITY_OF, TOPIC_OF } from "../core";
 import { ORIGIN_ART } from "../../../public/lib/rank-art.js";
 import DB from "../../../public/data/additives.json";
 import { haptic } from "../motion";
+import { Chevron } from "./Reveal";
+import { FadeIn } from "./ui";
 
 const BY_CODE = new Map(DB.items.map((it) => [it.e.toLowerCase(), it]));
 export const additiveItem = (k) => BY_CODE.get(k) || BY_CODE.get((k.match(/^e\d+/) || [k])[0]) || null;
@@ -96,9 +98,10 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
           {halalPill}{healthPill}
           {!halalPill && !healthPill ? <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.brandSoft, alignItems: "center", justifyContent: "center" }}><Glyph name="check" size={15} color={C.cert} width={2.6} /></View> : null}
         </View>
+        <Chevron open={openR} />
       </Pressable>
       {openR ? (
-        <View style={{ gap: 12, paddingBottom: 14, paddingHorizontal: 4 }}>
+        <FadeIn distance={-6} style={{ gap: 12, paddingBottom: 14, paddingHorizontal: 4 }}>
           {fn ? <Field title={t("add.e_fn")}><Txt style={{ fontSize: 15 }}>{fn}</Txt></Field> : null}
           <Field title={t("add.e_origin")}>
             <Row gap={10}>{art ? <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={art} size={26} /></View> : null}<Txt style={{ flex: 1, fontSize: 15 }}>{t(`add.origin.${r.origin}`)}</Txt></Row>
@@ -117,7 +120,7 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
             {r.it.a ? <Muted style={{ fontSize: 13 }}>{t("add.anses")}</Muted> : null}
             {r.it.u ? <Text onPress={() => Linking.openURL(r.it.u).catch(() => {})} style={{ color: C.brand, fontWeight: "700", fontSize: 13.5, marginTop: 2, textAlign: dir().ta }}>{t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) })} ↗</Text> : null}
           </Field>
-        </View>
+        </FadeIn>
       ) : null}
     </View>
   );

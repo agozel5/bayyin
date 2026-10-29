@@ -14,6 +14,7 @@ import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
 import Tour, { tourRef } from "./components/Tour";
+import { useEdgeSwipe } from "./components/EdgeSwipe";
 import BasketScreen from "./screens/BasketScreen";
 import PremiumScreen from "./screens/PremiumScreen";
 import PlacesScreen from "./screens/PlacesScreen";
@@ -120,8 +121,10 @@ function Toast({ text }) {
 
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
-function Layer({ kind, instant, leaving, onGone, hidden, children }) {
+const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare"];
+function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
+  const swipe = useEdgeSwipe(onBack, SLIDE.includes(kind) || kind === "ocr");
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: ms(kind === "camera" ? 180 : 260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, []);
@@ -131,13 +134,14 @@ function Layer({ kind, instant, leaving, onGone, hidden, children }) {
   }, [leaving]);
   const side = dir().rtl ? -1 : 1;
   const transform =
-    ["sheet", "rankings", "basket", "premium", "places", "compare"].includes(kind)
-      ? [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }) }]
+    SLIDE.includes(kind)
+      ? [{ translateX: Animated.add(v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }), swipe.dx) }]
       : kind === "ocr"
-        ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }]
+        ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }, { translateX: swipe.dx }]
         : [];
   return (
     <Animated.View
+      {...swipe.panHandlers}
       pointerEvents={hidden || leaving ? "none" : "auto"}
       importantForAccessibility={hidden ? "no-hide-descendants" : "auto"}
       accessibilityElementsHidden={!!hidden}
@@ -256,9 +260,9 @@ function Main() {
     return () => sub.remove();
   }, [stack, tab, leaving, tour]);
 
-  const openProduct = (code, { fromScan = false, product = null, replace } = {}) => {
+  const openProduct = (code, { fromScan = false, product = null, replace, revealed = false } = {}) => {
     const onTop = top && (top.type === "sheet" || top.type === "camera" || top.type === "ocr");
-    push({ type: "sheet", code, product, fromScan }, { replace: replace ?? !!onTop });
+    push({ type: "sheet", code, product, fromScan, revealed }, { replace: replace ?? !!onTop });
   };
   // Lien, raccourci de l'icône, widget ou notification
   openRef.current = (l) => {
@@ -348,7 +352,7 @@ function Main() {
         status={homeStatus}
       />
     );
-  if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} />;
+  if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} />;
   if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
   if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} onPremium={() => push({ type: "premium" })} />;
@@ -357,7 +361,8 @@ function Main() {
     if (item.type === "camera")
       return (
         <CameraScanner
-          onCode={(code) => openProduct(code, { fromScan: true, replace: true })}
+          onCode={(code, o) => openProduct(code, { fromScan: true, replace: true, product: o && o.product, revealed: !!(o && o.revealed) })}
+          onAisle={() => { if (canUse("aisle")) push({ type: "aisle" }, { replace: true }); }}
           onClose={pop}
           onPhoto={Platform.OS !== "web" ? () => { pop(); photoBarcode(); } : undefined}
           basket={basketMode}
@@ -378,6 +383,7 @@ function Main() {
           code={item.code}
           product={item.product}
           fromScan={item.fromScan}
+          revealed={item.revealed}
           onClose={pop}
           onOpen={(code) => push({ type: "sheet", code, fromScan: false }, { replace: code === item.code })}
           onScanAgain={() => openCamera({ replace: true })}
@@ -426,7 +432,7 @@ function Main() {
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           {page}
         </FadeIn>
-        <TabBar tab={tab} onTab={changeTab} />
+        <TabBar tab={tab} onTab={(id) => { changeTab(id); if (id === "scan") openCamera(); }} />
       </View>
       {visible.map((item) => {
         const isTop = item === top;
@@ -438,6 +444,7 @@ function Main() {
             hidden={!isTop}
             leaving={leaving === item.key}
             onGone={() => removeTop(item.key)}
+            onBack={pop}
           >
             {renderScreen(item)}
           </Layer>

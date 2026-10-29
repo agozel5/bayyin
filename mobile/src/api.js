@@ -1,6 +1,8 @@
 // Accès à Open Food Facts depuis l'app, avec repli hors connexion.
 import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny, greenScore } from "./core";
 import { setCosmeticDb, cosmeticDbVersion } from "../../public/lib/cosmetic.js";
+import { createClient } from "../../public/lib/off.js";
+import { getLang } from "./i18n";
 import { getSettings, getCachedRaw, cacheRaw, getLocal, setPack, getEntry } from "./storage";
 
 const HEADERS = { "User-Agent": "Bayyin/1.0 (https://github.com/agozel5/bayyin)", Accept: "application/json" };
@@ -88,37 +90,30 @@ export async function fetchProduct(code) {
 
 export const remember = (raw) => memo.set(raw.code, raw);
 
+// Client de la version web (recherche, alternatives, fiches jumelles) : mêmes résultats que sur le site
+export const offClient = createClient({ prefs: () => getSettings() });
+
+/** Recherche par nom -> { food, beauty, alt, foodFailed, beautyFailed } (kind : all | food | beauty) */
+export async function searchAll(q, kind = "all") {
+  return offClient.search(q, { lang: getLang(), kind });
+}
+// Compatibilité : liste simple
 export async function searchProducts(q) {
-  const url = `${OFF_BASE}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
-  const data = await getJson(url);
-  return ((data && data.products) || []).filter((p) => p.code).map((p) => {
-    const raw = compact(p);
-    memo.set(p.code, raw);
-    return show(raw);
-  });
+  const r = await searchAll(q);
+  return [...r.food, ...r.beauty];
 }
 
+/** Alternatives du même type, halal et mieux notées, qui respectent le profil */
 export async function fetchAlternatives(product) {
-  const cats = (product.categories || []).filter((c) => c.startsWith("en:"));
-  const tried = [];
-  let found = [];
-  for (const cat of cats.slice(-3).reverse()) {
-    const url = `${OFF_BASE}/api/v2/search?categories_tags=${encodeURIComponent(cat)}&countries_tags=en:france` +
-      `&nutrition_grades_tags=a|b|c|d&sort_by=unique_scans_n&page_size=50&fields=${FIELDS}`;
-    const data = await getJson(url);
-    for (const p of (data && data.products) || []) {
-      if (!p.code) continue;
-      const raw = compact(p);
-      memo.set(p.code, raw);
-      tried.push(show(raw));
-    }
-    // Les alternatives respectent aussi le profil (allergies, régime)
-    const profile = getSettings().profile;
-    found = pickAlternatives(product, tried.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, getSettings()), profile).alert));
-    if (found.length >= 4) break;
-  }
-  return found;
+  const found = await offClient.alternatives(product);
+  const profile = getSettings().profile;
+  const alts = found.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, getSettings()), profile).alert);
+  alts.best = !!found.best;
+  return alts;
 }
+
+/** Fiches plus complètes du même produit (même nom, même marque) */
+export const fetchTwins = (product) => offClient.twins(product).catch(() => []);
 
 // Les produits les plus scannés en France, gardés pour le hors connexion.
 export async function downloadPack(onProgress, pages = 5, pageSize = 100) {

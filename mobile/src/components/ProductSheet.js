@@ -14,10 +14,12 @@ import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../st
 import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
 import { Glyph, Art, Tile } from "./Art";
+import { ProductCard } from "./Cards";
 import { I } from "../../../public/lib/icons.js";
 import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
 import RecallBox from "./Recall";
+import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import ShareCard, { shareUrl, SHARE_W } from "./ShareCard";
 import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
@@ -72,11 +74,9 @@ function Expand({ head, children, initial = false }) {
         style={{ flexDirection: dir().row, alignItems: "center", gap: 10, padding: 14 }}
       >
         <View style={{ flex: 1 }}>{head}</View>
-        <View style={{ transform: [{ rotate: on ? "90deg" : "0deg" }] }}>
-          <Icon name="chev" size={16} color={C.muted} flip={dir().rtl && !on} />
-        </View>
+        <Chevron open={on} color={C.muted} />
       </Pressable>
-      {on ? <View style={{ paddingHorizontal: 14, paddingBottom: 14, gap: 6 }}>{children}</View> : null}
+      {on ? <FadeIn distance={-6} style={{ paddingHorizontal: 14, paddingBottom: 14, gap: 6 }}>{children}</FadeIn> : null}
     </View>
   );
 }
@@ -291,6 +291,8 @@ function HalalSection({ p, v, onGotoSettings, onOcr }) {
 
 // Jauge tricolore avec repère du produit (comme la version web)
 function Gauge({ n }) {
+  const ref = useRef(null);
+  const grow = useGrow(ref);
   if (!n.t) return null;
   const [a, b] = n.t;
   const top = Math.max(n.kind === "neg" ? b * 1.6 : b * 1.5, n.value * 1.05);
@@ -299,13 +301,14 @@ function Gauge({ n }) {
   const r = (x) => fmt(x < 10 ? Math.round(x * 10) / 10 : Math.round(x));
   const w = [pct(a), pct(b) - pct(a), 100 - pct(b)];
   return (
-    <View style={{ marginStart: 52, marginTop: 4, direction: "ltr" }} accessible accessibilityLabel={`${fmt(n.value)} ${n.unit} · ${r(a)} / ${r(b)}`}>
+    <View ref={ref} collapsable={false} style={{ marginStart: 52, marginTop: 4, direction: "ltr" }} accessible accessibilityLabel={`${fmt(n.value)} ${n.unit} · ${r(a)} / ${r(b)}`}>
       <View style={{ height: 14, justifyContent: "flex-end" }}>
-        <View style={{ position: "absolute", left: `${pct(n.value)}%`, marginLeft: -6, top: 0, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+        {/* le curseur glisse jusqu'à la valeur quand la jauge arrive à l'écran */}
+        <Animated.View style={{ position: "absolute", left: grow.interpolate({ inputRange: [0, 1], outputRange: ["0%", `${pct(n.value)}%`] }), marginLeft: -6, top: 0, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
           borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} />
       </View>
       <View style={{ flexDirection: "row", height: 7, gap: 2, marginTop: 2 }}>
-        {segs.map((c, i) => <View key={i} style={{ width: `${w[i]}%`, backgroundColor: c, borderRadius: 4 }} />)}
+        {segs.map((c, i) => <Animated.View key={i} style={{ width: `${w[i]}%`, backgroundColor: c, borderRadius: 4, opacity: grow.interpolate({ inputRange: [0, 0.4 + i * 0.2, 1], outputRange: [0.25, 1, 1], extrapolate: "clamp" }) }} />)}
       </View>
       <View style={{ height: 18, marginTop: 3 }}>
         {[[0, "0"], [pct(a), r(a)], [pct(b), r(b)], [100, r(top)]].map(([x, l], i) => (
@@ -319,23 +322,26 @@ function Gauge({ n }) {
 function NutRow({ n }) {
   const textKey = n.id === "fiber" && n.value >= 6 ? "excellent" : n.level;
   const color = LEVEL_COLORS[n.level] || C.muted;
+  const head = (open) => (
+    <Row gap={12}>
+      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
+        {NUT_ART[n.id] ? <Art xml={NUT_ART[n.id]} size={30} /> : <Icon name={n.id} size={20} color={C.fg} />}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Txt style={{ fontWeight: "700" }}>{t(`nut.${n.id}`)}</Txt>
+        <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`nut.${n.id}.${textKey}`)}</Muted>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15.5 }}>{fmt(n.value)} {n.unit}</Text>
+        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
+        {n.t ? <Chevron open={open} /> : null}
+      </View>
+    </Row>
+  );
   return (
-    <View style={{ gap: 6, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: C.line }}>
-      <Row gap={12}>
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
-          {NUT_ART[n.id] ? <Art xml={NUT_ART[n.id]} size={30} /> : <Icon name={n.id} size={20} color={C.fg} />}
-        </View>
-        <View style={{ flex: 1 }}>
-          <Txt style={{ fontWeight: "700" }}>{t(`nut.${n.id}`)}</Txt>
-          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`nut.${n.id}.${textKey}`)}</Muted>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15.5 }}>{fmt(n.value)} {n.unit}</Text>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
-        </View>
-      </Row>
-      <Gauge n={n} />
-    </View>
+    <Reveal style={{ paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: C.line }}>
+      {n.t ? <Collapse initial head={head}><View style={{ paddingTop: 6 }}><Gauge n={n} /></View></Collapse> : head(false)}
+    </Reveal>
   );
 }
 
@@ -374,7 +380,7 @@ function HealthSection({ p }) {
     <Section title={t("detail.health")} sub={t("detail.per", { u: t(h.nutrition.drink ? "unit.100ml" : "unit.100g") })}>
       {lead}
       {s ? (
-        <View style={{ gap: 8, direction: "ltr" }}>
+        <Reveal style={{ gap: 8, direction: "ltr" }}>
           <View style={{ flexDirection: "row", gap: 4, height: 8 }}>
             {parts.map(([id, max, c]) => (
               <View key={id} style={{ flex: max, backgroundColor: C.tint2, borderRadius: 4, overflow: "hidden" }}>
@@ -387,10 +393,10 @@ function HealthSection({ p }) {
               <Row key={id} gap={5}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} /><Text style={{ fontSize: 12.5, color: C.muted }}>{t(`bd.${id}`)} <Text style={{ color: C.fg, fontWeight: "800" }}>{s.parts[id]}</Text>/{max}</Text></Row>
             ))}
           </View>
-        </View>
+        </Reveal>
       ) : null}
       {s && s.nutriscore && "abcde".includes(s.nutriscore) ? (
-        <View style={{ gap: 6 }}>
+        <Reveal style={{ gap: 6 }}>
           <Txt style={{ fontWeight: "800", fontSize: 15 }}>Nutri-Score</Txt>
           <View style={{ flexDirection: "row", gap: 4, alignItems: "center", direction: "ltr" }}>
             {[["a", "#038141"], ["b", "#85BB2F"], ["c", "#F6B800"], ["d", "#EE8100"], ["e", "#E63E11"]].map(([l, c]) => {
@@ -399,7 +405,7 @@ function HealthSection({ p }) {
                 shadowColor: c, shadowOpacity: on ? 0.5 : 0, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: on ? 16 : 12, opacity: on ? 1 : 0.85 }}>{l.toUpperCase()}</Text></View>;
             })}
           </View>
-        </View>
+        </Reveal>
       ) : null}
       {neg.length || risky ? (
         <View>
@@ -461,30 +467,27 @@ function AltCard({ a, onOpen }) {
 }
 
 function AlternativesSection({ p, onOpen }) {
-  const [state, setState] = useState({ loading: true, list: [], error: false });
+  const [state, setState] = useState({ loading: true, list: [], best: false, error: false });
   useEffect(() => {
     let alive = true;
-    setState({ loading: true, list: [], error: false });
+    setState({ loading: true, list: [], best: false, error: false });
     fetchAlternatives(p)
-      .then((list) => alive && setState({ loading: false, list, error: false }))
-      .catch(() => alive && setState({ loading: false, list: [], error: true }));
-    return () => {
-      alive = false;
-    };
+      .then((list) => alive && setState({ loading: false, list, best: !!list.best, error: false }))
+      .catch(() => alive && setState({ loading: false, list: [], best: false, error: true }));
+    return () => { alive = false; };
   }, [p.code]);
-  if (!state.loading && (state.error || !state.list.length)) return null;
+  // Rien à proposer : pas de section vide
+  if (!state.loading && (state.error || (!state.list.length && !state.best))) return null;
   return (
     <Panel><Section title={t("detail.alternatives")} sub={t("detail.alt_sub")}>
       {state.loading ? (
-        <Loading text={t("detail.alt_loading")} />
-      ) : state.error ? (
-        <Muted>{t("detail.alt_error")}</Muted>
+        <View style={{ flexDirection: dir().row, gap: 12 }}>{[0, 1].map((i) => <Skeleton key={i} width={190} height={150} radius={18} />)}</View>
       ) : state.list.length ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, flexDirection: dir().row }}>
-          {state.list.map((a) => <AltCard key={a.code} a={a} onOpen={onOpen} />)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 4, gap: 12, flexDirection: dir().row }}>
+          {state.list.map((a) => <ProductCard key={a.code} p={a} width={190} onPress={() => onOpen(a.code, { product: a })} />)}
         </ScrollView>
       ) : (
-        <Muted>{t(p.categories && p.categories.length ? "detail.alt_none" : "detail.alt_nocat")}</Muted>
+        <Row gap={10}><Glyph name="check" size={18} color={C.brand} width={2.6} /><Txt style={{ flex: 1, fontWeight: "700" }}>{t("detail.alt_best")}</Txt></Row>
       )}
     </Section></Panel>
   );
@@ -573,7 +576,7 @@ function LinkRow({ text, url, muted = false }) {
 
 // Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
 let lastTab = "halal";
-function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare }) {
+function ProductBody({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare }) {
   const v = verdictOf(p);
   const kind = kindOf(p);
   const food = kind === "food";
@@ -627,19 +630,11 @@ function ProductBody({ p, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompar
       <FadeIn><Top2 p={p} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
       <RecallBox p={p} />
-      <FadeIn delay={60}><VerdictHero p={p} v={v} /></FadeIn>
+      <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
       <SheetTabs tabs={tabs} cur={cur} onTab={setTab} />
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
       {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
-      {onCompare && kind !== "medicine" ? (
-        <Pressable onPress={() => { haptic.tap(); onCompare(p.code, p); }} accessibilityRole="button"
-          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
-          <Tile color="#4C64D6" paths='<path d="M4 8h13l-3-3M20 16H7l3 3"/>' size={36} />
-          <Txt style={{ flex: 1, fontWeight: "800" }}>{t("cmp.title")}</Txt>
-          <Glyph name="chev" size={17} color={C.faint} />
-        </Pressable>
-      ) : null}
       <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
@@ -679,7 +674,7 @@ function SheetSkeleton() {
   );
 }
 
-export default function ProductSheet({ code, product, fromScan, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
+export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
@@ -691,6 +686,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
   useEffect(() => {
     if (product) {
       setState({ p: product, loading: false });
+      if (fromScan) { addToHistory(product); countScan(verdictOf(product).status); } // le verdict a déjà vibré dans la caméra
       return;
     }
     let alive = true;
@@ -763,6 +759,7 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
   const headBtn = { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: C.surface };
   // Le nom apparaît dans l'en-tête quand celui de la fiche passe sous l'en-tête (comme les apps d'Apple)
   const scrollY = useRef(new Animated.Value(0)).current;
+  const reveal = useRevealRoot();
   const titleOp = scrollY.interpolate({ inputRange: [60, 110], outputRange: [0, 1], extrapolate: "clamp" });
   const lineOp = scrollY.interpolate({ inputRange: [0, 30], outputRange: [0, 1], extrapolate: "clamp" });
   return (
@@ -774,6 +771,11 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         <Animated.Text style={{ flex: 1, fontWeight: "800", fontSize: 16, color: C.fg, textAlign: "center", opacity: p ? titleOp : 1 }} numberOfLines={1}>
           {p ? nameOf(p) : state.notFound ? t("msg.notfound.t") : t("sheet.title")}
         </Animated.Text>
+        {p && onCompare && kindOf(p) !== "medicine" ? (
+          <Pressable onPress={() => { haptic.tap(); onCompare(p.code, p); }} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("cmp.title")} hitSlop={6}>
+            <Glyph paths='<path d="M4 8h13l-3-3M20 16H7l3 3"/>' size={19} color={C.fg} width={2.1} />
+          </Pressable>
+        ) : null}
         {p && isBarcode(p.code) ? (
           <Pressable onPress={onShare} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("sheet.share")} hitSlop={6}>
             <Icon name="share" size={19} />
@@ -787,7 +789,8 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
         <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 0.5, backgroundColor: C.line, opacity: lineOp }} />
       </View>
 
-      <Animated.ScrollView scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+      <RevealProvider value={reveal.value}>
+      <Animated.ScrollView scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true, listener: reveal.onScroll })}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
           <SheetSkeleton />
@@ -805,9 +808,10 @@ export default function ProductSheet({ code, product, fromScan, onClose, onOpen,
             <Btn title={t("detail.photo_ingredients")} icon="doc" kind="white" onPress={() => onOcr(code)} />
           </Message>
         ) : p ? (
-          <ProductBody p={p} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} onCompare={onCompare} />
+          <ProductBody p={p} scanned={!!fromScan} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} onCompare={onCompare} />
         ) : null}
       </Animated.ScrollView>
+      </RevealProvider>
 
       {card && p ? (
         // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)

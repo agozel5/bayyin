@@ -1,6 +1,10 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
 export const EXTRA = {
   fr: {
+    "privacy.7app": "Premium s'achète avec votre compte Apple ou Google : Bayyin ne voit jamais vos informations de paiement.",
+    "appearance.text_t": "Taille du texte",
+    "appearance.text_p": "Bayyin suit la taille du texte choisie dans les réglages du téléphone (Accessibilité ou Affichage). Agrandissez-la là, et les verdicts, les notes et les explications s'adaptent.",
+    "appearance.text_btn": "Ouvrir les réglages du téléphone",
     "settings.menu.notif": "Notifications",
     "notif.on": "Rappels de produits : activées",
     "notif.off": "Désactivées",
@@ -34,6 +38,10 @@ export const EXTRA = {
     "widget.scan": "Scanner",
   },
   en: {
+    "privacy.7app": "Premium is bought with your Apple or Google account: Bayyin never sees your payment details.",
+    "appearance.text_t": "Text size",
+    "appearance.text_p": "Bayyin follows the text size set in your phone settings (Accessibility or Display). Make it bigger there and verdicts, scores and explanations adapt.",
+    "appearance.text_btn": "Open phone settings",
     "settings.menu.notif": "Notifications",
     "notif.on": "Product recalls: on",
     "notif.off": "Off",
@@ -67,6 +75,10 @@ export const EXTRA = {
     "widget.scan": "Scan",
   },
   ar: {
+    "privacy.7app": "يُشترى بريميوم بحسابك في Apple أو Google: لا يرى بيّن بيانات الدفع أبدًا.",
+    "appearance.text_t": "حجم النص",
+    "appearance.text_p": "يتبع بيّن حجم النص المختار في إعدادات الهاتف (تسهيلات الاستخدام أو العرض). كبّره هناك فتتكيّف الأحكام والتقييمات والشروح.",
+    "appearance.text_btn": "فتح إعدادات الهاتف",
     "settings.menu.notif": "الإشعارات",
     "notif.on": "سحب المنتجات: مفعّلة",
     "notif.off": "معطّلة",
@@ -100,6 +112,10 @@ export const EXTRA = {
     "widget.scan": "مسح",
   },
   tr: {
+    "privacy.7app": "Premium, Apple veya Google hesabınızla satın alınır: Bayyin ödeme bilgilerinizi asla görmez.",
+    "appearance.text_t": "Yazı boyutu",
+    "appearance.text_p": "Bayyin, telefon ayarlarında (Erişilebilirlik veya Ekran) seçilen yazı boyutunu izler. Orada büyütün; kararlar, puanlar ve açıklamalar uyum sağlar.",
+    "appearance.text_btn": "Telefon ayarlarını aç",
     "settings.menu.notif": "Bildirimler",
     "notif.on": "Ürün geri çağırmaları: açık",
     "notif.off": "Kapalı",

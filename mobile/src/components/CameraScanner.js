@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Linking, StyleSheet, Animated, Easing, useWindowDimensions } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Path, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Btn, Loading } from "./ui";
 import { Art, Glyph } from "./Art";
@@ -12,7 +12,8 @@ import { C, R } from "../theme";
 import { t } from "../i18n";
 import { normalizeScan } from "../core";
 import { STATUS_COLORS } from "../theme";
-import { nameOf, verdictOf, S } from "../view";
+import { nameOf, verdictOf, profileOf, S } from "../view";
+import { fetchProduct } from "../api";
 import { haptic, ms } from "../motion";
 import { mascot } from "../../../public/lib/mascot.js";
 
@@ -45,12 +46,68 @@ function Pill({ glyph, text, onPress, on }) {
   );
 }
 
-export default function CameraScanner({ onCode, onClose, onManual, onPhoto, basket = false, onToggleBasket, onBasketAdd, basketCount = 0, onOpenBasket }) {
+// Le moment du scan (comme la version web) : les barres du code se resserrent en un point,
+// qui s'ouvre sur le verdict à sa couleur (coche, point d'interrogation, croix), avec sa vibration.
+const WIDTHS = [3, 2, 5, 2, 3, 6, 2, 2, 4, 3, 2, 5, 3, 2, 6, 2, 3, 4, 2, 3, 5, 2];
+const SYMBOL = { ok: "M127 61l15 15 31-32", warn: "M150 40v26M150 82v.5", no: "M134 44l32 32M166 44l-32 32", question: "M139 47a11 11 0 1 1 16 10c-4 2-5 5-5 9M150 82v.5", dash: "M132 60h36" };
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+export function lookOf(p) {
+  const st = verdictOf(p).status;
+  const al = profileOf(p).alert;
+  const [haram] = STATUS_COLORS.haram, [doubt] = STATUS_COLORS.mashbouh;
+  if (al === "no") return ["no", haram, t(`alert.${al}`)];
+  if (st === "haram") return ["no", haram, S(st, "label")];
+  if (st === "mashbouh") return ["question", doubt, S(st, "label")];
+  if (al === "maybe") return ["warn", doubt, t(`alert.${al}`)];
+  if (st === "inconnu") return ["dash", "#8A9790", S(st, "label")];
+  return ["ok", st === "halal_certifie" ? "#169B57" : "#3E8A49", S(st, "label")];
+}
+function Morph({ width, height, look }) {
+  const read = useRef(new Animated.Value(0)).current;
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.timing(read, { toValue: 1, duration: 320, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(); }, []);
+  useEffect(() => { if (look) Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: false }).start(); }, [!!look]);
+  const gap = 4.4, total = WIDTHS.reduce((a, w) => a + w, 0) + gap * (WIDTHS.length - 1);
+  let x = 150 - total / 2;
+  const bars = WIDTHS.map((w, i) => { const cx = x + w / 2; const r = { x, w, dx: 150 - cx }; x += w + gap; return r; });
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, width, height, alignItems: "center", justifyContent: "center" }}>
+      <Svg width={width} height={height} viewBox="0 0 300 120">
+        {bars.map((b, i) => (
+          <AnimatedRect key={i} x={read.interpolate({ inputRange: [0, 1], outputRange: [b.x, b.x + b.dx] })} y={read.interpolate({ inputRange: [0, 1], outputRange: [26, 57] })}
+            width={b.w} height={read.interpolate({ inputRange: [0, 1], outputRange: [68, 6] })} rx={1} fill="#fff" opacity={look ? 0 : 1} />
+        ))}
+        {look ? <Circle cx={150} cy={60} r={42} fill={look[1]} /> : null}
+        {look ? <AnimatedPath d={SYMBOL[look[0]]} stroke="#fff" strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" fill="none" strokeDasharray="100" strokeDashoffset={v.interpolate({ inputRange: [0, 1], outputRange: [100, 0] })} /> : null}
+      </Svg>
+      {look ? <Text style={{ position: "absolute", top: height + 16, color: "#fff", fontSize: 19, fontWeight: "800", textAlign: "center", textShadowColor: "rgba(0,0,0,0.6)", textShadowRadius: 6 }}>{look[2]}</Text> : null}
+    </View>
+  );
+}
+
+// Onde autour du cadre à la lecture du code
+function Burst({ width, height, color }) {
+  const a = useRef(new Animated.Value(0)).current;
+  const b = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(a, { toValue: 1, duration: 750, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    Animated.timing(b, { toValue: 1, duration: 750, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, []);
+  return [a, b].map((v, i) => (
+    <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", left: -3, top: -3, width: width + 6, height: height + 6, borderRadius: 24, borderWidth: 3, borderColor: color,
+      opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.95, 0] }), transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }] }} />
+  ));
+}
+
+export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAisle, basket = false, onToggleBasket, onBasketAdd, basketCount = 0, onOpenBasket }) {
   const insets = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
   const [perm, requestPerm] = useCameraPermissions();
   const [torch, setTorch] = useState(false);
   const [found, setFound] = useState(false);
+  const [morph, setMorph] = useState(null); // { look? } pendant l'animation du verdict
+  const [burst, setBurst] = useState(0);
   const [slow, setSlow] = useState(false);
   const done = useRef(false);
   const last = useRef({ code: null, at: 0 });
@@ -96,8 +153,22 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, bask
     }
     done.current = true;
     setFound(true);
+    setBurst((n) => n + 1);
     haptic.tap(); // code lu ; le verdict a sa propre vibration
-    setTimeout(() => onCode(code), ms(260));
+    if (!ms(1)) return onCode(code);
+    reveal(code);
+  };
+  const reveal = async (code) => {
+    setMorph({});
+    const wait = (n) => new Promise((r) => setTimeout(r, n));
+    let p;
+    try { [p] = await Promise.all([Promise.race([fetchProduct(code), wait(1500).then(() => undefined)]), wait(320)]); } catch { p = undefined; }
+    if (!p) return onCode(code); // lent, introuvable ou erreur : la fiche s'en charge
+    const look = lookOf(p);
+    setMorph({ look });
+    (look[0] === "no" ? haptic.error : look[0] === "ok" ? haptic.success : haptic.warn)();
+    await wait(820);
+    onCode(code, { product: p, revealed: true });
   };
 
   if (!perm) {
@@ -127,7 +198,7 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, bask
 
   // Fond assombri autour du cadre : un rectangle plein percé d'un rectangle arrondi
   const hole = `M${fx + r} ${fy}H${fx + fw - r}A${r} ${r} 0 0 1 ${fx + fw} ${fy + r}V${fy + fh - r}A${r} ${r} 0 0 1 ${fx + fw - r} ${fy + fh}H${fx + r}A${r} ${r} 0 0 1 ${fx} ${fy + fh - r}V${fy + r}A${r} ${r} 0 0 1 ${fx + r} ${fy}Z`;
-  const cornerColor = found ? GREEN : "#fff";
+  const cornerColor = morph && morph.look ? morph.look[1] : found ? GREEN : "#fff";
   const corner = (pos, dx, dy) => (
     <Animated.View key={pos} style={[{ position: "absolute", width: 38, height: 38, borderColor: cornerColor }, CORNERS[pos],
       found ? null : { transform: [{ translateX: breathe.interpolate({ inputRange: [0, 1], outputRange: [0, dx] }) }, { translateY: breathe.interpolate({ inputRange: [0, 1], outputRange: [0, dy] }) }] }]} />
@@ -140,11 +211,13 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, bask
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <Svg width={W} height={H}>
           <Path d={`M0 0H${W}V${H}H0Z ${hole}`} fill="rgba(0,0,0,0.55)" fillRule="evenodd" />
-          {found ? <Path d={hole} fill="rgba(61,220,132,0.22)" /> : null}
+          {found ? <Path d={hole} fill={morph && morph.look ? morph.look[1] + "33" : "rgba(61,220,132,0.22)"} /> : null}
         </Svg>
         <View style={{ position: "absolute", left: fx, top: fy, width: fw, height: fh }}>
           {corner("tl", -5, -5)}{corner("tr", 5, -5)}{corner("bl", -5, 5)}{corner("br", 5, 5)}
-          {found ? null : (
+          {burst ? <Burst key={burst} width={fw} height={fh} color={GREEN} /> : null}
+          {morph ? <Morph width={fw} height={fh} look={morph.look} /> : null}
+          {found || morph ? null : (
             <Animated.View style={{ position: "absolute", left: 14, right: 14, height: 2, borderRadius: 2, backgroundColor: "#FF5A50",
               shadowColor: "#FF5A50", shadowOpacity: 0.8, shadowRadius: 8, top: fh * 0.14,
               transform: [{ translateY: sweep.interpolate({ inputRange: [0, 1], outputRange: [0, fh * 0.72] }) }] }} />
@@ -183,6 +256,7 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, bask
           {onToggleBasket ? <Pill glyph={G.cart} text={t("basket.mode")} on={basket} onPress={() => { haptic.tap(); onToggleBasket(); }} /> : null}
           {basket ? null : onPhoto ? <Pill glyph={G.photo} text={t("cam.photo")} onPress={onPhoto} /> : null}
           {basket ? null : <Pill glyph={G.keys} text={t("cam.type")} onPress={onManual} />}
+          {basket || !onAisle ? null : <Pill glyph='<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="8.5" cy="10" r="2.2"/><circle cx="15.5" cy="10" r="2.2"/><circle cx="12" cy="16" r="2.2"/>' text={t("aisle.title")} onPress={onAisle} />}
         </View>
         {basket ? (
           <Pressable onPress={onOpenBasket} accessibilityRole="button"

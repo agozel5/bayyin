@@ -1,22 +1,27 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
-import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row } from "../components/ui";
-import { PageHead, Segmented } from "../components/Controls";
+import { PageHead, Segmented, Chip, ChipRow } from "../components/Controls";
 import { Tile, Art, Glyph } from "../components/Art";
 import { Pill2 } from "../components/SheetParts";
-import { C, R, STATUS_COLORS, GRADE_COLORS, SEV_COLORS, VERDICT, dir, lift, isDark } from "../theme";
+import { C, R, STATUS_COLORS, GRADE_COLORS, SEV_COLORS, RISK_COLORS, VERDICT, dir, lift, isDark } from "../theme";
 import { t, tn, tPlain, locale, LANGS } from "../i18n";
-import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES, PROFILE_ALLERGENS, DIETS } from "../core";
-import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory } from "../storage";
+import { SCHOOLS, TOPICS, DECISIONS, SOURCES, LANG_NAMES, HEALTH_GRADES, PROFILE_ALLERGENS, DIETS, FLAG_SOURCES, RISK_SOURCES } from "../core";
+import { COSMETIC_RULES } from "../../../public/lib/cosmetic.js";
+import { mascot } from "../../../public/lib/mascot.js";
+import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory, localCount } from "../storage";
 import { downloadPack } from "../api";
 import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
 import { premiumEnabled, isPremium, canUse } from "../premium";
 import { S } from "../view";
-import { haptic } from "../motion";
+import { haptic, ms } from "../motion";
+import { useEdgeSwipe } from "../components/EdgeSwipe";
+import { Collapse, Chevron } from "../components/Reveal";
+import { getBasket } from "../basket";
 import { PAGE_ART } from "../../../public/lib/page-art.js";
 import { ALLERGEN_ART, LANG_FLAG } from "../../../public/lib/rank-art.js";
 import { CERTIFIER_INFO } from "../../../public/lib/certifiers.js";
@@ -149,6 +154,9 @@ function ProfilePage() {
 const DECISION_COLORS = () => ({ permis: SEV_COLORS.info, douteux: SEV_COLORS.mashbouh, interdit: SEV_COLORS.haram });
 function ReligionPage() {
   const st = getSettings();
+  const base = SCHOOLS[st.school] ? st.school : "standard";
+  const ref = { ...SCHOOLS.standard, ...SCHOOLS[base] };
+  const modified = TOPICS.filter((tp) => st.topics[tp] !== ref[tp]);
   const schools = [...Object.keys(SCHOOLS), ...(st.school === "custom" ? ["custom"] : [])];
   const distrust = st.distrust || [];
   return (
@@ -169,7 +177,22 @@ function ReligionPage() {
           );
         })}
       </Block>
-      <Block title={t("settings.topics")} gap={14}>
+      <Block gap={14}>
+        <Collapse head={(open) => (
+          <View style={{ flexDirection: dir().row, alignItems: "center", gap: 10 }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontSize: 17, fontWeight: "800", color: C.fg, textAlign: dir().ta }}>{t("settings.topics")}</Text>
+              <Muted style={{ fontSize: 13.5 }}>{modified.length ? tn("settings.topics_modified", modified.length, { s: t(`school.${base}`) }) : t("settings.topics_none", { s: t(`school.${base}`) })}</Muted>
+            </View>
+            <Chevron open={open} />
+          </View>
+        )}>
+        <View style={{ gap: 14, paddingTop: 14 }}>
+        {modified.length ? (
+          <Pressable onPress={() => { haptic.tap(); setSchool(base); }} accessibilityRole="button" style={{ alignSelf: dir().rtl ? "flex-end" : "flex-start", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99, backgroundColor: C.tint }}>
+            <Text style={{ fontWeight: "800", color: C.fg, fontSize: 13.5 }}>{t("settings.topics_reset", { s: t(`school.${base}`) })}</Text>
+          </Pressable>
+        ) : null}
         {TOPICS.map((topic) => (
           <View key={topic} style={{ gap: 8 }}>
             <Txt style={{ fontWeight: "700" }}>{t(`topic.${topic}`)}</Txt>
@@ -187,6 +210,8 @@ function ReligionPage() {
             </View>
           </View>
         ))}
+        </View>
+        </Collapse>
         <Muted style={{ fontSize: 13, lineHeight: 19 }}>{t("settings.disclaimer")}</Muted>
       </Block>
       <Block title={t("certs.title")} gap={4}>
@@ -209,6 +234,7 @@ function ReligionPage() {
 function AppearancePage() {
   const st = getSettings();
   return (
+    <View style={{ gap: 14 }}>
     <Block title={t("settings.theme")}>
       <View style={{ flexDirection: dir().row, gap: 10 }}>
         {["auto", "light", "dark"].map((m) => {
@@ -228,6 +254,19 @@ function AppearancePage() {
         })}
       </View>
     </Block>
+    <Block title={t("appearance.text_t")} gap={10}>
+      <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("appearance.text_p")}</Muted>
+      <View style={{ flexDirection: dir().row, alignItems: "flex-end", gap: 14, padding: 14, borderRadius: R.md, backgroundColor: C.tint }}>
+        {[14, 18, 23].map((n) => <Text key={n} style={{ fontSize: n, fontWeight: "800", color: C.fg }}>A</Text>)}
+        <Muted style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t("settings.text_preview")}</Muted>
+      </View>
+      {Platform.OS !== "web" ? (
+        <Pressable onPress={() => Linking.openSettings().catch(() => {})} accessibilityRole="button" style={{ paddingVertical: 12, borderRadius: 14, alignItems: "center", backgroundColor: C.brandSoft }}>
+          <Text style={{ color: C.brandDark, fontWeight: "800" }}>{t("appearance.text_btn")}</Text>
+        </Pressable>
+      ) : null}
+    </Block>
+    </View>
   );
 }
 
@@ -264,6 +303,8 @@ function DataPage({ toast }) {
   const stats = [
     [all.length, "data.history", "#3D84DB", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
     [all.filter((e) => e.fav).length, "data.favs", "#D9A81E", I.star],
+    [getBasket().length, "data.basket", "#E0457B", '<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.5a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>'],
+    [localCount(), "data.local", "#8A63DA", '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'],
   ];
   const act = (what) => {
     if (confirm !== what) { haptic.warn(); return setConfirm(what); }
@@ -274,9 +315,9 @@ function DataPage({ toast }) {
     <View style={{ gap: 14 }}>
       <Block>
         <Lead>{t("settings.data_p")}</Lead>
-        <View style={{ flexDirection: dir().row, gap: 10 }}>
+        <View style={{ flexDirection: dir().row, flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 }}>
           {stats.map(([n, k, color, paths]) => (
-            <View key={k} style={{ flex: 1, padding: 14, borderRadius: 16, backgroundColor: C.tint, gap: 6 }}>
+            <View key={k} style={{ width: "48.5%", padding: 14, borderRadius: 16, backgroundColor: C.tint, gap: 6 }}>
               <Tile color={color} paths={paths} size={30} />
               <Text style={{ fontSize: 26, fontWeight: "800", color: C.fg, textAlign: dir().ta }}>{n}</Text>
               <Muted style={{ fontSize: 13 }}>{t(k)}</Muted>
@@ -295,32 +336,91 @@ function DataPage({ toast }) {
   );
 }
 
+// Texte « _html » de la version web : seulement <strong> (gras) et <br>
+function Rich({ k, vars, style }) {
+  const parts = String(t(k, vars)).replace(/<br\s*\/?>/g, "\n").split(/(<strong>[\s\S]*?<\/strong>)/g);
+  return (
+    <Text style={[{ fontSize: 14, lineHeight: 20, color: C.muted, textAlign: dir().ta }, style]}>
+      {parts.map((x, i) => (/^<strong>/.test(x) ? <Text key={i} style={{ fontWeight: "800", color: C.fg }}>{x.replace(/<\/?strong>/g, "")}</Text> : x.replace(/<[^>]+>/g, "")))}
+    </Text>
+  );
+}
+const KIND_ICONS = {
+  illegal: '<circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/>',
+  cmr: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  ed: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  allergen: '<circle cx="12" cy="9" r="4"/><path d="M12 13v8M12 5V3M8 9H6M18 9h-2M9.2 6.2L8 5M14.8 6.2L16 5"/>',
+  irritant: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+  env: '<path d="M4 14c3-4 6-4 9 0s6 4 7 0"/><path d="M4 19c3-4 6-4 9 0s6 4 7 0"/><path d="M12 9V3M9 6l3-3 3 3"/>',
+  contaminant: '<path d="M7 3h10M8 3v5l-3 11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1L16 8V3"/><circle cx="10" cy="15" r="1"/><circle cx="14" cy="13" r="1"/>',
+  precaution: '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16h.01"/>',
+};
+const KIND_COL = { illegal: "haram", cmr: "haram", ed: "mashbouh", allergen: "mashbouh", irritant: "mashbouh", env: "halal_certifie", contaminant: "inconnu", precaution: "inconnu" };
+
 function NotesPage() {
+  const [tab, setTab] = useState("halal");
+  const pts = (label, colors) => (
+    <View style={{ minWidth: 62, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, backgroundColor: colors ? colors[1] : C.brandSoft, alignItems: "center" }}>
+      <Text style={{ fontWeight: "800", color: colors ? colors[0] : C.brandDark, fontSize: 13 }}>{label}</Text>
+    </View>
+  );
+  const pill = (s) => {
+    const [fg, bg] = STATUS_COLORS[s];
+    return (
+      <View style={{ minWidth: 118, flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 99, backgroundColor: bg }}>
+        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: fg }} /><Text style={{ color: fg, fontWeight: "800", fontSize: 12 }}>{S(s, "label")}</Text>
+      </View>
+    );
+  };
   return (
     <View style={{ gap: 14 }}>
-      <Block title={t("settings.statuses")} gap={12}>
-        {["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"].map((s) => (
-          <Row key={s} gap={12} style={{ alignItems: "flex-start" }}>
-            <View style={{ minWidth: 112, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 99, backgroundColor: VERDICT[s], alignItems: "center" }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: 12 }}>{S(s, "label")}</Text></View>
-            <Muted style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{S(s, "legend")}</Muted>
-          </Row>
-        ))}
-      </Block>
-      <Block title={t("settings.health")} gap={12}>
-        {[["60", "health.rule1_html"], ["30", "health.rule2_html"], ["10", "health.rule3_html"]].map(([pts, key]) => (
-          <Row key={key} gap={12} style={{ alignItems: "flex-start" }}>
-            <View style={{ minWidth: 58, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, backgroundColor: C.brandSoft, alignItems: "center" }}><Text style={{ fontWeight: "800", color: C.brandDark, fontSize: 13 }}>{t("health.pts", { n: pts })}</Text></View>
-            <Muted style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{tPlain(key)}</Muted>
-          </Row>
-        ))}
-        {HEALTH_GRADES.map((g, i) => (
-          <Row key={g.id} gap={10}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: GRADE_COLORS[g.id] }} />
-            <Txt style={{ fontWeight: "700", fontSize: 15 }}>{t(`grade.${g.id}`)}</Txt>
-            <Muted style={{ fontSize: 14 }}>{t("health.range", { a: g.min, b: i === 0 ? 100 : HEALTH_GRADES[i - 1].min - 1 })}</Muted>
-          </Row>
-        ))}
-      </Block>
+      <Row gap={12} style={{ padding: 14, borderRadius: R.lg, backgroundColor: isDark() ? "#173A2B" : "#E3F3EB" }}>
+        <Art xml={mascot("teach", { size: 76 })} size={76} />
+        <Txt style={{ flex: 1, fontWeight: "700", color: C.brandDark, fontSize: 14.5, lineHeight: 20 }}>{t("notes.mascot")}</Txt>
+      </Row>
+      <Segmented items={[["halal", t("settings.notes_halal")], ["health", t("settings.notes_health")], ["cosmetic", t("settings.notes_cosmetic")]]} value={tab} onChange={setTab} />
+      {tab === "halal" ? (
+        <Block title={t("settings.statuses")} gap={12}>
+          {["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"].map((s) => (
+            <Row key={s} gap={12} style={{ alignItems: "flex-start" }}>{pill(s)}<Muted style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{S(s, "legend")}</Muted></Row>
+          ))}
+        </Block>
+      ) : tab === "health" ? (
+        <Block title={t("settings.health")} gap={12}>
+          {[["55", "health.rule1_html"], ["25", "health.rule2_html"], ["10", "health.rule4_html"], ["10", "health.rule3_html"]].map(([n, key]) => (
+            <Row key={key} gap={12} style={{ alignItems: "flex-start" }}>{pts(t("health.pts", { n }))}<Rich k={key} style={{ flex: 1 }} /></Row>
+          ))}
+          <Rich k="health.why_html" />
+          {HEALTH_GRADES.map((g, i) => (
+            <Row key={g.id} gap={10}>
+              <View style={{ flexDirection: dir().row, alignItems: "center", gap: 6, minWidth: 108, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 99, backgroundColor: C.tint }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: GRADE_COLORS[g.id] }} /><Text style={{ fontWeight: "800", fontSize: 13, color: C.fg }}>{t(`grade.${g.id}`)}</Text>
+              </View>
+              <Muted style={{ fontSize: 14 }}>{t("health.range", { a: g.min, b: i === 0 ? 100 : HEALTH_GRADES[i - 1].min - 1 })}</Muted>
+            </Row>
+          ))}
+        </Block>
+      ) : (
+        <Block title={t("settings.cosmetic")} gap={12}>
+          <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("cosmetic.intro")}</Muted>
+          {[["0–24", "cosmetic.rule1_html", "eleve"], ["25–49", "cosmetic.rule2_html", "modere"], ["50–100", "cosmetic.rule3_html", "limite"]].map(([n, key, lv]) => (
+            <Row key={key} gap={12} style={{ alignItems: "flex-start" }}>{pts(n, RISK_COLORS[lv])}<Rich k={key} style={{ flex: 1 }} /></Row>
+          ))}
+          <Rich k="cosmetic.exposure_html" />
+          <Text style={{ fontSize: 13, fontWeight: "800", color: C.muted, textTransform: "uppercase", letterSpacing: 0.4, marginTop: 4, textAlign: dir().ta }}>{t("cosmetic.kinds_t")}</Text>
+          {Object.entries(KIND_ICONS).map(([k, ico]) => {
+            const [fg, bg] = STATUS_COLORS[KIND_COL[k]];
+            return (
+              <Row key={k} gap={12} style={{ alignItems: "flex-start" }}>
+                <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: bg, alignItems: "center", justifyContent: "center" }}><Glyph paths={ico} size={18} color={fg} /></View>
+                <View style={{ flex: 1 }}><Txt style={{ fontWeight: "800", fontSize: 14.5 }}>{t(`cosm.kind.${k}`)}</Txt><Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`cosm.kind.${k}.d`)}</Muted></View>
+              </Row>
+            );
+          })}
+          <Rich k="cosmetic.why_html" />
+          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("cosmetic.note")}</Muted>
+        </Block>
+      )}
     </View>
   );
 }
@@ -400,26 +500,104 @@ function NotifPage() {
   );
 }
 
-function SourcesPage() {
+// Nos sources : des cartes par thème. Pas de logos officiels (ce serait laisser croire à un partenariat) :
+// un sigle sur une pastille dont la couleur et le pictogramme disent le type de source.
+const SRC_THEMES = ["halal", "food", "cosm", "data"];
+const SRC_COSM = new Set(["sccs", "echa", "ansm", "eu_cosmetics", "cir", "essca", "ema", "cosmetics_europe", "afssaps_baby", "fr_pfas"]);
+const srcTheme = (src) => (src.group === "halal" || /_list$/.test(src.id) ? "halal" : src.group === "data" ? "data" : SRC_COSM.has(src.id) ? "cosm" : "food");
+const SRC_THEME = { halal: ["#1A9C68", I.shield], food: ["#D9822B", I.flask], cosm: ["#B4589C", '<path d="M9 3h6v4H9z"/><path d="M8 7h8l1 4v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-9z"/><path d="M10 14h4"/>'], data: ["#2F7FC1", I.box] };
+const SRC_KIND = {
+  database: ["#2F7FC1", '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>'],
+  agency: ["#1E8F5A", '<path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M3 10l9-6 9 6z"/>'],
+  law: ["#5B6B86", '<path d="M12 4v16M5 20h14M6 8h12M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z"/>'],
+  study: ["#7A5BC2", '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'],
+  text: ["#B8892A", '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/>'],
+  fatwa: ["#14857A", '<path d="M12 3a6 6 0 0 0 0 12 5 5 0 0 1 0-10"/><path d="M5 21h14M7 21v-4h10v4"/>'],
+};
+const SRC_SHORT = { off: "OFF", obf: "OBF", cosing: "CosIng", bdpm: "BDPM", rappelconso: "Rappel", osm: "OSM", avs_list: "AVS", achahada_list: "Achahada", hmc_list: "HMC",
+  efsa: "EFSA", anses: "ANSES", iarc: "CIRC", jecfa: "JECFA", eu_additives: "1333", eu_labelling: "1169", fda: "FDA", nutriscore: "Nutri", fsa: "FSA", nova: "NOVA", nutrinet: "NutriNet",
+  sccs: "SCCS", echa: "ECHA", ansm: "ANSM", eu_cosmetics: "1223", cir: "CIR", essca: "ESSCA", ema: "EMA", cosmetics_europe: "CE", afssaps_baby: "ANSM", fr_pfas: "PFAS",
+  quran: "قرآن", iifa: "IIFA", ecfr: "ECFR", diyanet: "Diyanet", daralifta: "Ifta", muftiwp: "Mufti", mui: "MUI" };
+let srcUses = null;
+function sourceUses() {
+  if (srcUses) return srcUses;
+  srcUses = new Map();
+  const add = (ids) => (ids || []).forEach((id) => srcUses.set(id, (srcUses.get(id) || 0) + 1));
+  Object.values(FLAG_SOURCES).forEach(add);
+  Object.values(RISK_SOURCES).forEach(add);
+  (COSMETIC_RULES || []).forEach((r) => add(r.sources));
+  return srcUses;
+}
+
+function SrcCard({ src }) {
+  const [kc, kIco] = SRC_KIND[src.kind] || SRC_KIND.database;
+  const short = SRC_SHORT[src.id] || src.name.split(" ")[0];
+  const n = sourceUses().get(src.id) || 0;
   return (
-    <Block gap={6}>
-      <Lead>{t("sources.intro")}</Lead>
-      {["data", "health", "halal"].map((g) => (
-        <View key={g} style={{ gap: 2, marginTop: 10 }}>
-          <Text style={{ fontSize: 14, fontWeight: "800", color: C.muted, textAlign: dir().ta }}>{t(`sources.g.${g}`)}</Text>
-          {SOURCES.filter((src) => src.group === g).map((src, i) => (
-            <Pressable key={src.id} onPress={() => open(src.url)} accessibilityRole="link"
-              style={{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 11, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Txt style={{ fontWeight: "700", fontSize: 15 }}>{src.name}</Txt>
-                <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`src.${src.id}`)}</Muted>
-              </View>
-              <Text style={{ color: C.faint }}>↗</Text>
+    <Pressable onPress={() => open(src.url)} accessibilityRole="link" accessibilityLabel={src.name}
+      style={({ pressed }) => [{ width: "48.5%", padding: 12, gap: 4, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, borderWidth: 0.5, borderColor: C.line }]}>
+      <View style={{ alignSelf: dir().rtl ? "flex-end" : "flex-start", minWidth: 56, height: 44, paddingHorizontal: 10, marginBottom: 4, borderRadius: 13, backgroundColor: kc, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: "#fff", fontWeight: "800", fontSize: short.length > 5 ? 12.5 : 15 }}>{short}</Text>
+        <View style={{ position: "absolute", bottom: -5, [dir().rtl ? "left" : "right"]: -5, width: 20, height: 20, borderRadius: 10, backgroundColor: C.surface, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: kc }}>
+          <Glyph paths={kIco} size={11} color={kc} width={2.2} />
+        </View>
+      </View>
+      <Text numberOfLines={3} style={{ fontSize: 14, fontWeight: "800", color: C.fg, lineHeight: 18, textAlign: dir().ta }}>{src.name}</Text>
+      <Text style={{ fontSize: 11.5, fontWeight: "800", color: kc, textAlign: dir().ta }}>{t(`sources.k1.${src.kind}`)}</Text>
+      <Muted numberOfLines={4} style={{ fontSize: 12, lineHeight: 16 }}>{t(`src.${src.id}`)}</Muted>
+      <View style={{ flexDirection: dir().row, justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 4 }}>
+        {n ? (
+          <View style={{ flexDirection: dir().row, alignItems: "center", gap: 3, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 99, backgroundColor: C.brandSoft }}>
+            <Glyph name="check" size={11} color={C.brandDark} width={2.6} /><Text style={{ fontSize: 11, fontWeight: "800", color: C.brandDark }}>{tn("sources.uses", n)}</Text>
+          </View>
+        ) : <View />}
+        <Text style={{ color: C.faint }}>↗</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function SourcesPage() {
+  const [f, setF] = useState("all");
+  const count = (th) => SOURCES.filter((src) => th === "all" || srcTheme(src) === th).length;
+  const themes = f === "all" ? SRC_THEMES : [f];
+  return (
+    <View style={{ gap: 14 }}>
+      <Block gap={12}>
+        <Lead>{t("sources.intro")}</Lead>
+        <View style={{ flexDirection: dir().row, gap: 8 }}>
+          {SRC_THEMES.map((th) => (
+            <Pressable key={th} onPress={() => { haptic.tap(); setF(f === th ? "all" : th); }} accessibilityRole="button" accessibilityState={{ selected: f === th }}
+              style={{ flex: 1, alignItems: "center", gap: 3, paddingVertical: 10, borderRadius: R.md, backgroundColor: f === th ? SRC_THEME[th][0] + "22" : C.tint }}>
+              <Tile color={SRC_THEME[th][0]} paths={SRC_THEME[th][1]} size={30} />
+              <Text style={{ fontSize: 19, fontWeight: "800", color: C.fg }}>{count(th)}</Text>
+              <Text numberOfLines={1} style={{ fontSize: 11, color: C.muted, fontWeight: "600" }}>{t(`sources.t.${th}`)}</Text>
             </Pressable>
           ))}
         </View>
+      </Block>
+      <ChipRow>
+        {["all", ...SRC_THEMES].map((th) => <Chip key={th} text={th === "all" ? t("sources.all") : t(`sources.t.${th}`)} n={count(th)} on={f === th} onPress={() => setF(th)} />)}
+      </ChipRow>
+      {themes.map((th) => (
+        <View key={th} style={{ gap: 10 }}>
+          <Row gap={10}>
+            <Tile color={SRC_THEME[th][0]} paths={SRC_THEME[th][1]} size={34} />
+            <View style={{ flex: 1 }}>
+              <Txt style={{ fontWeight: "800", fontSize: 16 }}>{t(`sources.t.${th}`)}</Txt>
+              <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`sources.td.${th}`)}</Muted>
+            </View>
+          </Row>
+          <View style={{ flexDirection: dir().row, flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 }}>
+            {SOURCES.filter((src) => srcTheme(src) === th).map((src) => <SrcCard key={src.id} src={src} />)}
+          </View>
+        </View>
       ))}
-    </Block>
+      <Row gap={10} style={{ padding: 14, borderRadius: R.lg, backgroundColor: C.tint, alignItems: "flex-start" }}>
+        <Glyph name="bulb" size={18} color="#D9A81E" />
+        <Muted style={{ flex: 1, fontSize: 13.5, lineHeight: 19 }}>{t("sources.how")}</Muted>
+      </Row>
+    </View>
   );
 }
 
@@ -429,7 +607,9 @@ function PrivacyPage() {
     ["#1FA597", '<rect x="7" y="3" width="10" height="18" rx="2.4"/><path d="M10.5 18h3"/>', "privacy.2"],
     ["#3D84DB", '<path d="M4 6v12M7 6v12M10 6v12M14 6v12M17 6v12M20 6v12"/>', "privacy.3"],
     ["#8A63DA", '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.4"/>', "privacy.4"],
+    ["#2F6FC0", '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>', "privacy.5"],
     ["#D9A81E", '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>', "privacy.6"],
+    ["#E0457B", '<path d="M5 18h14M5 18l-1.5-9 5 3.5L12 6l3.5 6.5 5-3.5L19 18"/>', "privacy.7app"],
   ].map(([c, pth, k]) => [c, pth, t(k)]);
   return (
     <View style={{ gap: 14 }}>
@@ -465,6 +645,8 @@ function LimitsPage() {
 
 const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage };
 
+// Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
+let handledFocus = 0;
 export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(null);
@@ -472,7 +654,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
 
   // « Mon réglage » de l'accueil, ou alerte d'une fiche : on ouvre directement la bonne page
   useEffect(() => {
-    if (focus && focus.n) setPage(focus.target === "profile" ? "profile" : "religion");
+    if (focus && focus.n > handledFocus) { handledFocus = focus.n; setPage(focus.target === "profile" ? "profile" : "religion"); }
   }, [focus && focus.n]);
   useEffect(() => {
     if (!page) return;
@@ -480,11 +662,21 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
     return () => sub.remove();
   }, [page]);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.settingsPage = setPage; // captures automatiques (web)
+  // Page qui arrive en glissant depuis le bord ; retour par glissement du doigt depuis le bord
+  const swipe = useEdgeSwipe(() => setPage(null), !!page);
+  const slide = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    slide.setValue(ms(1) ? 0 : 1);
+    Animated.timing(slide, { toValue: 1, duration: ms(260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [page]);
+  const side = dir().rtl ? -1 : 1;
+  const slideStyle = { flex: 1, opacity: slide, transform: [{ translateX: Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [side * (page ? 34 : -34), 0] }), swipe.dx) }] };
 
   const scroll = { paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 120, gap: 16 };
   if (page) {
     const P = PAGES[page];
     return (
+      <Animated.View {...swipe.panHandlers} style={[slideStyle, { backgroundColor: C.bg }]}>
       <ScrollView key={page} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll}>
         <Row gap={6}>
           <Pressable onPress={() => setPage(null)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
@@ -499,6 +691,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         ) : null}
         <P toast={toast} onTour={onTour} />
       </ScrollView>
+      </Animated.View>
     );
   }
 
@@ -507,6 +700,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   const version = (Constants.expoConfig && Constants.expoConfig.version) || "";
   const go = (id) => () => setPage(id);
   return (
+    <Animated.View style={slideStyle}>
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll}>
       <PageHead title={t("settings.title")} />
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 8 }, lift()]}>
@@ -544,5 +738,6 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
     </ScrollView>
+    </Animated.View>
   );
 }

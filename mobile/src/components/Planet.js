@@ -9,6 +9,7 @@ import { C, R, STATUS_COLORS, dir, isDark } from "../theme";
 import { t, getLang } from "../i18n";
 import { fmt } from "../view";
 import { fetchEnvironment } from "../api";
+import { Reveal, Collapse, Chevron } from "./Reveal";
 import { ENV_ART, FAMILY_ART, RANK_ART, NUT_ART } from "../../../public/lib/rank-art.js";
 import { loadWorld, resolveOrigin, flagOf, countryName } from "../../../public/lib/world.js";
 
@@ -46,20 +47,24 @@ function Ok({ ok }) {
 }
 
 function EnvRow({ art, title, sub, right, first, children }) {
+  const head = (open) => (
+    <Row gap={12}>
+      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
+        <Art xml={ENV_ART[art]} size={30} />
+      </View>
+      <View style={{ flex: 1, gap: 1 }}>
+        <Txt style={{ fontWeight: "700" }}>{title}</Txt>
+        <Muted style={{ fontSize: 13, lineHeight: 18 }}>{sub}</Muted>
+      </View>
+      {right}
+      {children ? <Chevron open={open} /> : null}
+    </Row>
+  );
+  // Production et origines : dépliants ouverts au départ, comme sur le site
   return (
-    <View style={{ paddingVertical: 12, borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line, gap: 8 }}>
-      <Row gap={12}>
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
-          <Art xml={ENV_ART[art]} size={30} />
-        </View>
-        <View style={{ flex: 1, gap: 1 }}>
-          <Txt style={{ fontWeight: "700" }}>{title}</Txt>
-          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{sub}</Muted>
-        </View>
-        {right}
-      </Row>
-      {children}
-    </View>
+    <Reveal style={{ paddingVertical: 12, borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line }}>
+      {children ? <Collapse initial head={head}><View style={{ gap: 8, paddingTop: 8 }}>{children}</View></Collapse> : head(false)}
+    </Reveal>
   );
 }
 

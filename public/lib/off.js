@@ -250,13 +250,20 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
 async function getJson(url, timeout = 12000, { tries = 1, signal } = {}) {
   for (let attempt = 1; ; attempt++) {
     let res;
+    // Délai maximal : AbortSignal.timeout et AbortSignal.any n'existent pas partout (moteur de l'app mobile)
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeout);
+    const stop = () => ctl.abort();
+    signal?.addEventListener?.("abort", stop, { once: true });
     try {
-      const limit = AbortSignal.timeout(timeout);
-      res = await fetch(url, { signal: signal && AbortSignal.any ? AbortSignal.any([signal, limit]) : limit });
+      res = await fetch(url, { signal: ctl.signal });
     } catch (err) {
       if (signal?.aborted) throw err; // recherche remplacée par une autre
       if (attempt < tries) { await sleep(600 * attempt, signal); continue; }
       throw new OffError("network");
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener?.("abort", stop);
     }
     if (res.status === 404) return null;
     if (RETRY_STATUS.has(res.status) && attempt < tries) { await sleep(900 * attempt * attempt, signal); continue; }
@@ -458,7 +465,7 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
           keys.slice(i, i + 10).map(async (k) => {
             const url = `${medBase}${k}.json`;
             try {
-              const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+              const res = await fetch(url, typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(20000) } : {});
               if (!res.ok) return;
               const copy = res.clone();
               medCount += Object.keys(await res.json()).length;
