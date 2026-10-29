@@ -515,3 +515,20 @@ export const PLACE_ART = {
     <rect x="13" y="28" width="9" height="14" rx="1" fill="#8B5A3C"/>
     <rect x="27" y="27" width="9" height="7" rx="1" fill="#BFE3F5"/>`)
 };
+
+// Drapeaux des langues (viewBox 60×40, recadrés dans une tuile arrondie)
+const F = (body) => `<svg viewBox="0 0 60 40" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${body}</svg>`;
+export const LANG_FLAG = {
+  fr: F(`<rect width="20" height="40" fill="#002395"/><rect x="20" width="20" height="40" fill="#FFFFFF"/><rect x="40" width="20" height="40" fill="#ED2939"/>`),
+  en: F(`<rect width="60" height="40" fill="#012169"/>
+    <path d="M0 0l60 40M60 0L0 40" stroke="#FFFFFF" stroke-width="8"/>
+    <path d="M0 0l60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/>
+    <path d="M30 0v40M0 20h60" stroke="#FFFFFF" stroke-width="12"/>
+    <path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="7"/>`),
+  ar: F(`<rect width="60" height="40" fill="#006C35"/>
+    <text x="30" y="19" text-anchor="middle" direction="rtl" font-family="IBM Plex Sans Arabic,system-ui,sans-serif" font-weight="700" font-size="6" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#FFFFFF">لا إله إلا الله محمد رسول الله</text>
+    <path d="M17 28h25l2.4-1-2.4-1H17z" fill="#FFFFFF"/><path d="M42 24.8v4.4M15.4 27h2" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>`),
+  tr: F(`<rect width="60" height="40" fill="#E30A17"/>
+    <circle cx="22" cy="20" r="10" fill="#FFFFFF"/><circle cx="24.5" cy="20" r="8" fill="#E30A17"/>
+    <polygon points="30.50,20.00 33.80,18.77 33.95,15.24 36.15,18.00 39.55,17.06 37.60,20.00 39.55,22.94 36.15,22.00 33.95,24.76 33.80,21.23" fill="#FFFFFF"/>`),
+};

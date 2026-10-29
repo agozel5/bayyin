@@ -2668,3 +2668,6 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .set-page .data-stat strong{font-size:1.6rem;letter-spacing:-.02em}
 .pv-badges span{border-radius:18px!important}
 .idea-chip{display:inline-flex;align-items:center;gap:6px}
+.lang-flag{flex:none;width:42px;height:30px;border-radius:8px;overflow:hidden;display:inline-flex;box-shadow:0 0 0 .5px rgb(0 0 0 / .18),0 3px 8px -4px rgb(0 0 0 / .45)}
+.lang-flag svg{width:100%;height:100%;display:block}
+.lang-flag svg{fill:initial;stroke:none;stroke-width:initial}

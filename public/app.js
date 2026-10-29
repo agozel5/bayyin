@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-29-10";
+const APP_BUILD = "2026-10-29-11";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -30,7 +30,7 @@ import { readLabel } from "./lib/highlight.js";
 import { ramadanDay, fastTimes } from "./lib/ramadan.js";
 import { loadWorld, resolveOrigin, flagOf, countryName, mapSvg } from "./lib/world.js";
 import { PAGE_ART } from "./lib/page-art.js";
-import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART, ORIGIN_ART, ALLERGEN_ART, PLACE_ART } from "./lib/rank-art.js";
+import { RANK_ART, FAMILY_ART, NUT_ART, ENV_ART, ORIGIN_ART, ALLERGEN_ART, PLACE_ART, LANG_FLAG } from "./lib/rank-art.js";
 import { RANK_CATEGORIES, RANK_BY_ID, RANK_ICONS, rankIndex, rankProducts, rankList, rankTab } from "./lib/rankings.js";
 import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGORIES } from "./lib/places.js";
 import { rankByRelevance } from "./lib/search.js";
@@ -3240,7 +3240,7 @@ function renderSettings() {
   const st = prefs();
   renderSettingsMenu();
   $("langGrid").innerHTML = LANGS.map(
-    (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}"><span class="gt lang-mark" style="--t:${{ fr: "#3D84DB", en: "#E0457B", ar: "#1A9C68", tr: "#8A63DA" }[l]}">${{ fr: "Fr", en: "En", ar: "ع", tr: "Tr" }[l]}</span>${LANG_NAMES[l]}</button>`
+    (l) => `<button type="button" role="radio" class="lang-btn" aria-checked="${st.lang === l}" data-lang="${l}" lang="${l}"><span class="lang-flag">${LANG_FLAG[l] || ""}</span>${LANG_NAMES[l]}</button>`
   ).join("");
 
   $("dietList").style.gridTemplateColumns = "repeat(3,1fr)";

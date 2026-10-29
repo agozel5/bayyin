@@ -14,18 +14,20 @@ const shadow = (cx, cy, rx) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${
 
 export const PAGE_ART = {
   lang: W(`${bg("#3D84DB", "#8A63DA")}
-    ${shadow(160, 134, 46)}
-    <circle cx="160" cy="80" r="46" fill="#3D84DB"/>
-    <path d="M160 34a46 46 0 0 1 0 92c20-10 30-27 30-46s-10-36-30-46z" fill="#2F6FC0"/>
-    <path d="M131 53c8 0 10 5 18 5s8 8 3 13-13 3-15 10 5 13 0 18-15-3-18-10c-3-10-1-26 12-36z" fill="#6DB24E"/>
-    <path d="M172 41c8 3 15 8 18 15-5 3-10 0-13 5s3 10 8 13 10 10 5 20-15 13-18 5 3-15-3-20-10-8-8-18 5-13 11-20z" fill="#5A9C3E"/>
-    <path d="M126 66c4-9 11-16 20-19" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".45"/>
-    <g transform="translate(58 22)"><rect width="58" height="40" rx="12" fill="#fff"/><path d="M14 40l-4 12 14-12z" fill="#fff"/>
-      <text x="29" y="27" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif" font-weight="700" font-size="18" fill="#3D84DB">Aa</text></g>
-    <g transform="translate(206 30)"><rect width="56" height="40" rx="12" fill="#fff"/><path d="M42 40l4 12-14-12z" fill="#fff"/>
-      <text x="28" y="28" text-anchor="middle" font-family="IBM Plex Sans Arabic,system-ui,sans-serif" font-weight="700" font-size="20" fill="#1A9C68">عربي</text></g>
-    <g transform="translate(222 84)"><rect width="46" height="30" rx="10" fill="#fff" opacity=".95"/>
-      <text x="23" y="20" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif" font-weight="700" font-size="13" fill="#8A63DA">Tr</text></g>`),
+    ${shadow(160, 134, 44)}
+    <circle cx="160" cy="80" r="44" fill="#3D84DB"/>
+    <path d="M160 36a44 44 0 0 1 0 88c19-10 29-26 29-44s-10-34-29-44z" fill="#2F6FC0"/>
+    <path d="M132 54c8 0 10 5 17 5s8 8 3 12-12 3-14 10 5 12 0 17-14-3-17-10c-3-9-1-25 11-34z" fill="#6DB24E"/>
+    <path d="M171 43c8 3 14 8 17 14-5 3-9 0-12 5s3 9 8 12 9 10 5 19-14 12-17 5 3-14-3-19-9-8-8-17 5-12 10-19z" fill="#5A9C3E"/>
+    <path d="M127 66c4-9 10-15 19-18" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+    <g transform="translate(28 22)"><rect width="84" height="34" rx="11" fill="#fff"/><path d="M64 34l10 10 2-10z" fill="#fff"/>
+      <text x="42.0" y="22.5" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif" font-weight="700" font-size="15" fill="#3D84DB">Bonjour</text></g>
+    <g transform="translate(34 92)"><rect width="70" height="34" rx="11" fill="#fff"/><path d="M56 0l12-8-2 8z" fill="#fff"/>
+      <text x="35.0" y="22.5" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif" font-weight="700" font-size="15" fill="#E0457B">Hello</text></g>
+    <g transform="translate(212 20)"><rect width="78" height="34" rx="11" fill="#fff"/><path d="M14 34l-10 10-2-10z" fill="#fff"/>
+      <text x="39.0" y="22.5" text-anchor="middle" font-family="IBM Plex Sans Arabic,system-ui,sans-serif" font-weight="700" font-size="17" fill="#1A9C68">مرحبا</text></g>
+    <g transform="translate(214 92)"><rect width="84" height="34" rx="11" fill="#fff"/><path d="M14 0l-12-8 2 8z" fill="#fff"/>
+      <text x="42.0" y="22.5" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif" font-weight="700" font-size="15" fill="#8A63DA">Merhaba</text></g>`),
 
   profile: W(`${bg("#E0457B", "#F2B84B")}
     ${shadow(160, 136, 56)}
