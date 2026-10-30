@@ -140,7 +140,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Bayyin utilise votre position seulement pour trouver les commerces halal autour de vous. Elle n'est ni gardée ni envoyée à Bayyin."
+          "locationWhenInUsePermission": "Bayyin utilise votre position pour trouver les commerces halal autour de vous et, pendant le Ramadan, calculer les horaires du jour. Elle n'est jamais envoyée à Bayyin ; pour les horaires, une position arrondie reste sur votre téléphone."
         }
       ]
     ],
