@@ -1,7 +1,7 @@
 // Retour par glissement depuis le bord de l'écran (comme sur iPhone) : l'écran suit le doigt,
 // puis se ferme si on l'a tiré assez loin ou assez vite.
-import { useRef } from "react";
-import { Animated, PanResponder, Dimensions } from "react-native";
+import { createContext, useContext, useEffect as useEffect2, useRef } from "react";
+import { Animated, PanResponder, Dimensions, BackHandler } from "react-native";
 import { dir } from "../theme";
 import { haptic } from "../motion";
 
@@ -10,9 +10,11 @@ export function useEdgeSwipe(onBack, enabled = true) {
   const dx = useRef(new Animated.Value(0)).current;
   const back = useRef(onBack);
   back.current = onBack;
+  const on = useRef(enabled); // valeur à jour (le geste est créé une seule fois)
+  on.current = enabled;
   const pan = useRef(PanResponder.create({
     onMoveShouldSetPanResponderCapture: (e, g) => {
-      if (!enabled) return false;
+      if (!on.current) return false;
       const W = Dimensions.get("window").width;
       const rtl = dir().rtl;
       const fromEdge = rtl ? g.x0 > W - EDGE : g.x0 < EDGE;
@@ -27,10 +29,23 @@ export function useEdgeSwipe(onBack, enabled = true) {
       const d = Math.abs(g.dx), v = Math.abs(g.vx);
       if (d > W * 0.33 || v > 0.6) {
         haptic.tap();
-        Animated.timing(dx, { toValue: (dir().rtl ? -1 : 1) * W, duration: 180, useNativeDriver: true }).start(() => { back.current && back.current(); setTimeout(() => dx.setValue(0), 400); });
+        Animated.timing(dx, { toValue: (dir().rtl ? -1 : 1) * W, duration: 180, useNativeDriver: true }).start(() => { const stay = back.current && back.current(); if (stay === true) dx.setValue(0); else setTimeout(() => dx.setValue(0), 400); });
       } else Animated.spring(dx, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
     },
     onPanResponderTerminate: () => Animated.spring(dx, { toValue: 0, useNativeDriver: true }).start(),
   })).current;
   return { dx, panHandlers: pan.panHandlers };
+}
+
+// Retour « intérieur » : un écran qui a sa propre sous-page (un rayon des classements…) reprend
+// le geste de retour et le bouton retour d'Android pour revenir à sa liste au lieu de se fermer.
+export const InnerBackContext = createContext(null);
+export function useInnerBack(handler) {
+  const slot = useContext(InnerBackContext);
+  useEffect2(() => {
+    if (!handler) return undefined;
+    if (slot) slot.current = handler;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => { handler(); return true; });
+    return () => { if (slot && slot.current === handler) slot.current = null; sub.remove(); };
+  }, [handler]);
 }

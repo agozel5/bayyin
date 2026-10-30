@@ -782,12 +782,18 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
     if (Platform.OS !== "web") {
       try {
         setCard(true);
-        await new Promise((r) => setTimeout(r, 700)); // le temps d'afficher la photo du produit
+        await new Promise((r) => setTimeout(r, 900)); // le temps d'afficher la photo du produit
         const { captureRef } = require("react-native-view-shot");
         const Sharing = require("expo-sharing");
-        const uri = await captureRef(cardRef, { format: "png", quality: 1, width: 1080, height: 1920, result: "tmpfile" });
+        // Capture limitée à 5 s : sinon, partage du texte
+        const uri = await Promise.race([
+          captureRef(cardRef, { format: "png", quality: 1, width: 1080, height: 1920, result: "tmpfile" }),
+          new Promise((_, ko) => setTimeout(() => ko(new Error("capture")), 5000)),
+        ]);
         setCard(false);
-        if (await Sharing.isAvailableAsync()) return await Sharing.shareAsync(uri, { mimeType: "image/png", UTI: "public.png", dialogTitle: nameOf(p) });
+        const file = String(uri).startsWith("file://") ? uri : `file://${uri}`;
+        if (await Sharing.isAvailableAsync()) { await Sharing.shareAsync(file, { mimeType: "image/png", UTI: "public.png", dialogTitle: nameOf(p) }); return; }
+        if (Platform.OS === "ios") { await Share.share({ url: file, message: text + link }); return; }
       } catch { setCard(false); }
     }
     Share.share({ message: text + link }).catch(() => {});
@@ -848,7 +854,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
       </View>
 
       <RevealProvider value={reveal.value}>
-      <Animated.ScrollView ref={scrollRef} scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true, listener: onScrollJs })}
+      <Animated.ScrollView ref={scrollRef} style={{ flex: 1, backgroundColor: C.bg }} scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true, listener: onScrollJs })}
         stickyHeaderIndices={p && !state.loading && !state.notFound && !state.error ? [1] : undefined}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
@@ -875,7 +881,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
 
       {card && p ? (
         // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)
-        <View pointerEvents="none" style={Platform.OS === "web" ? { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center" } : { position: "absolute", top: 0, left: -SHARE_W * 3 }}>
+        <View pointerEvents="none" style={Platform.OS === "web" ? { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center" } : { position: "absolute", top: 0, left: 0, zIndex: -1, elevation: 0 }}>
           <ShareCard ref={cardRef} p={p} />
         </View>
       ) : null}

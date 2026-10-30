@@ -1,7 +1,7 @@
 // Onglet Planète : Green-Score d'Open Food Facts (analyse de cycle de vie Agribalyse), bio, huile de palme,
 // origine des ingrédients (carte et drapeaux) et emballage. Même contenu que la version web.
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, Pressable, Animated } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Txt, Muted, Row, Skeleton } from "./ui";
 import { Art, Glyph } from "./Art";
@@ -9,7 +9,7 @@ import { C, R, STATUS_COLORS, dir, isDark } from "../theme";
 import { t, getLang } from "../i18n";
 import { fmt } from "../view";
 import { fetchEnvironment } from "../api";
-import { Reveal, Collapse, Chevron } from "./Reveal";
+import { Reveal, Collapse, Chevron, useGrow } from "./Reveal";
 import LetterScale from "./LetterScale";
 import { ENV_ART, FAMILY_ART, RANK_ART, NUT_ART } from "../../../public/lib/rank-art.js";
 import { loadWorld, resolveOrigin, flagOf, countryName } from "../../../public/lib/world.js";
@@ -74,14 +74,22 @@ function GsScale({ grade }) {
 }
 
 function ProdGauge({ value }) {
+  // Comme sur le web : la barre se dessine puis le repère glisse jusqu'à la valeur
+  const ref = useRef(null);
+  const v = useGrow(ref, { duration: 1000, delay: 150 });
+  const [bw, setBw] = useState(0);
   return (
-    <View style={{ marginStart: 52, direction: "ltr", gap: 2 }} accessible accessibilityLabel={`${value}/100`}>
+    <View ref={ref} collapsable={false} style={{ marginStart: 52, direction: "ltr", gap: 2 }} accessible accessibilityLabel={`${value}/100`}>
       <View style={{ height: 14 }}>
-        <View style={{ position: "absolute", left: `${value}%`, marginLeft: -6, top: 0, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+        <Animated.View style={{ position: "absolute", left: v.interpolate({ inputRange: [0, 1], outputRange: ["0%", `${value}%`] }), opacity: v.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 1, 1] }), marginLeft: -6, top: 0, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
           borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} />
       </View>
-      <View style={{ flexDirection: "row", height: 7, gap: 2 }}>
-        {PROD_SEGS.map((c) => <View key={c} style={{ flex: 1, backgroundColor: c, borderRadius: 4 }} />)}
+      <View style={{ height: 7 }} onLayout={(e) => setBw(e.nativeEvent.layout.width)}>
+        <Animated.View style={{ height: 7, overflow: "hidden", width: bw ? v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, bw, bw] }) : "100%" }}>
+          <View style={{ flexDirection: "row", height: 7, gap: 2, width: bw || "100%" }}>
+            {PROD_SEGS.map((c) => <View key={c} style={{ flex: 1, backgroundColor: c, borderRadius: 4 }} />)}
+          </View>
+        </Animated.View>
       </View>
       <View style={{ height: 16, marginTop: 2 }}>
         {[0, 20, 40, 60, 80, 100].map((x, i) => (

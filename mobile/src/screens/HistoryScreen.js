@@ -9,7 +9,8 @@ import { ListRow } from "../components/Cards";
 import { Glyph, Art, Tile } from "../components/Art";
 import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
 import { t, tn, locale } from "../i18n";
-import { getHistory, clearHistory } from "../storage";
+import { getHistory, clearHistory, removeFromHistory } from "../storage";
+import SwipeRow from "../components/SwipeRow";
 import { verdictOf, relTime, S, scoreOf } from "../view";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic, ms } from "../motion";
@@ -101,9 +102,11 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
   const oldest = all.length ? Math.min(...all.map((e) => e.at)) : Date.now();
   const maxWeeks = Math.max(0, Math.ceil((weekBounds(0).start - oldest) / (7 * 864e5)));
   const { start, end } = weekBounds(weeksAgo);
+  // Jours du calendrier (et non des tranches de 24 h : le passage à l'heure d'hiver fait un jour de 25 h)
   const days = [...Array(7)].map((_, i) => {
-    const s = start + i * 864e5;
-    const list = all.filter((e) => e.at >= s && e.at < s + 864e5);
+    const d0 = new Date(start); d0.setDate(d0.getDate() + i); const s = d0.getTime();
+    const d1 = new Date(start); d1.setDate(d1.getDate() + i + 1); const e1 = d1.getTime();
+    const list = all.filter((e) => e.at >= s && e.at < e1);
     const c = {};
     list.forEach((e) => { const st = verdictOf(e.p).status; c[st] = (c[st] || 0) + 1; });
     return { s, n: list.length, c };
@@ -272,7 +275,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           <View style={{ flexDirection: dir().row, gap: 10 }}>
             {[["ok", okShare + " %", t("bilan.k_halal"), C.cert], ["n", String(base.length), t(base.length === 1 ? "history.count_one" : "history.count_other"), C.fg], ["bad", String((counts.haram || 0) + (counts.mashbouh || 0)), t("bilan.k_avoid"), (counts.haram || 0) + (counts.mashbouh || 0) ? C.doubt : C.muted]].map(([k, v, l, c], i) => (
               <FadeIn key={k + period + weeksAgo} delay={200 + i * 80} style={{ flex: 1 }}>
-                <View style={{ padding: 10, borderRadius: R.md, backgroundColor: C.tint, alignItems: "center", gap: 2 }}>
+                <View style={{ flex: 1, minHeight: 78, padding: 10, borderRadius: R.md, backgroundColor: C.tint, alignItems: "center", justifyContent: "center", gap: 2 }}>
                   <Text style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }}>{v}</Text>
                   <Text numberOfLines={2} style={{ fontSize: 11.5, color: C.muted, textAlign: "center" }}>{l}</Text>
                 </View>
@@ -288,11 +291,16 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => setFilter(f.id)} />)}
       </ChipRow>
 
+      {shown.length ? <Muted style={{ fontSize: 12.5, marginTop: -6 }}>{t("history.swipe_hint")}</Muted> : null}
       {shown.length ? groups(shown).map(({ g, list }) => (
         <View key={g} style={{ gap: 8 }}>
           <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t(`history.g.${g}`)}</Text>
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
-            {list.map((e, i) => <ListRow key={e.code} p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} />)}
+            {list.map((e, i) => (
+              <SwipeRow key={e.code} label={t("history.delete_one")} onDelete={() => { removeFromHistory(e.code); toast && toast(t("history.deleted_one")); }}>
+                <View style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} /></View>
+              </SwipeRow>
+            ))}
           </View>
         </View>
       )) : <Muted style={{ textAlign: "center", paddingVertical: 24 }}>{t(filter === "fav" ? "history.empty_fav" : "history.empty_cat")}</Muted>}

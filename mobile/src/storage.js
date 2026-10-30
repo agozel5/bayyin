@@ -155,6 +155,12 @@ export function toggleFav(code) {
   const e = getEntry(code);
   return !!(e && e.fav);
 }
+/** Retire un seul produit de l'historique (glisser la ligne) */
+export function removeFromHistory(code) {
+  history = history.filter((e) => e.code !== code);
+  save(K.history, history);
+  emit("history");
+}
 export function clearHistory() {
   history = history.filter((e) => e.fav);
   save(K.history, history);

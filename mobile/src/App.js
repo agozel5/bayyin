@@ -17,7 +17,7 @@ import { Khatam } from "./components/Cards";
 import Guard from "./components/Guard";
 import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
-import { useEdgeSwipe } from "./components/EdgeSwipe";
+import { useEdgeSwipe, InnerBackContext } from "./components/EdgeSwipe";
 import BasketScreen from "./screens/BasketScreen";
 import PremiumScreen from "./screens/PremiumScreen";
 import PlacesScreen from "./screens/PlacesScreen";
@@ -153,7 +153,9 @@ function Toast({ text }) {
 const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare"];
 function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
-  const swipe = useEdgeSwipe(onBack, SLIDE.includes(kind) || kind === "ocr");
+  const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
+  const back = () => { if (inner.current) { inner.current(); return true; } onBack(); return false; };
+  const swipe = useEdgeSwipe(back, SLIDE.includes(kind) || kind === "ocr");
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: ms(kind === "camera" ? 180 : 260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, []);
@@ -177,7 +179,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
       accessibilityViewIsModal={!hidden}
       style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: v, transform }]}
     >
-      <Guard onBack={onBack}>{children}</Guard>
+      <InnerBackContext.Provider value={inner}><Guard onBack={onBack}>{children}</Guard></InnerBackContext.Provider>
     </Animated.View>
   );
 }

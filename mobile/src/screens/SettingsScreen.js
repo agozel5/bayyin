@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
-import { Txt, Muted, Row } from "../components/ui";
+import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { PageHead, Segmented, Chip, ChipRow } from "../components/Controls";
 import { Tile, Art, Glyph } from "../components/Art";
 import { Pill2 } from "../components/SheetParts";
@@ -623,7 +623,7 @@ function SrcCard({ src }) {
   const n = sourceUses().get(src.id) || 0;
   return (
     <Pressable onPress={() => open(src.url)} accessibilityRole="link" accessibilityLabel={src.name}
-      style={({ pressed }) => [{ width: "48.5%", padding: 12, gap: 4, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, borderWidth: 0.5, borderColor: C.line }]}>
+      style={({ pressed }) => [{ width: "100%", flex: 1, padding: 12, gap: 4, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, borderWidth: 0.5, borderColor: C.line }]}>
       <View style={{ alignSelf: dir().rtl ? "flex-end" : "flex-start", minWidth: 56, height: 44, paddingHorizontal: 10, marginBottom: 4, borderRadius: 13, backgroundColor: kc, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: "#fff", fontWeight: "800", fontSize: short.length > 5 ? 12.5 : 15 }}>{short}</Text>
         <View style={{ position: "absolute", bottom: -5, [dir().rtl ? "left" : "right"]: -5, width: 20, height: 20, borderRadius: 10, backgroundColor: C.surface, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: kc }}>
@@ -645,8 +645,19 @@ function SrcCard({ src }) {
   );
 }
 
+// Contenu qui arrive en glissant depuis la droite (thème suivant) ou la gauche (précédent), comme sur le web
+function SlideIn({ from, children }) {
+  const v = useRef(new Animated.Value(ms(1) ? 0 : 1)).current;
+  useEffect(() => { Animated.timing(v, { toValue: 1, duration: ms(320), easing: Easing.bezier(0.2, 0.8, 0.2, 1), useNativeDriver: true }).start(); }, []);
+  const side = (dir().rtl ? -1 : 1) * from;
+  return <Animated.View style={{ gap: 14, opacity: v, transform: [{ translateX: v.interpolate({ inputRange: [0, 1], outputRange: [side * 28, 0] }) }] }}>{children}</Animated.View>;
+}
+
 function SourcesPage() {
-  const [f, setF] = useState("all");
+  const [f, setFState] = useState("all");
+  const order = ["all", ...SRC_THEMES];
+  const [from, setFrom] = useState(1);
+  const setF = (x) => { setFrom(order.indexOf(x) >= order.indexOf(f) ? 1 : -1); setFState(x); };
   const count = (th) => SOURCES.filter((src) => th === "all" || srcTheme(src) === th).length;
   const themes = f === "all" ? SRC_THEMES : [f];
   return (
@@ -667,6 +678,7 @@ function SourcesPage() {
       <ChipRow>
         {["all", ...SRC_THEMES].map((th) => <Chip key={th} text={th === "all" ? t("sources.all") : t(`sources.t.${th}`)} n={count(th)} on={f === th} onPress={() => setF(th)} />)}
       </ChipRow>
+      <SlideIn key={f} from={from}>
       {themes.map((th) => (
         <View key={th} style={{ gap: 10 }}>
           <Row gap={10}>
@@ -677,10 +689,11 @@ function SourcesPage() {
             </View>
           </Row>
           <View style={{ flexDirection: dir().row, flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 }}>
-            {SOURCES.filter((src) => srcTheme(src) === th).map((src) => <SrcCard key={src.id} src={src} />)}
+            {SOURCES.filter((src) => srcTheme(src) === th).map((src, i) => <FadeIn key={src.id} delay={Math.min(i, 8) * 35} style={{ width: "48.5%" }}><SrcCard src={src} /></FadeIn>)}
           </View>
         </View>
       ))}
+      </SlideIn>
       <Row gap={10} style={{ padding: 14, borderRadius: R.lg, backgroundColor: C.tint, alignItems: "flex-start" }}>
         <Glyph name="bulb" size={18} color="#D9A81E" />
         <Muted style={{ flex: 1, fontSize: 13.5, lineHeight: 19 }}>{t("sources.how")}</Muted>
@@ -752,7 +765,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   }, [page]);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.settingsPage = setPage; // captures automatiques (web)
   // Page qui arrive en glissant depuis le bord ; retour par glissement du doigt depuis le bord
-  const swipe = useEdgeSwipe(() => setPage(null), !!page);
+  const swipe = useEdgeSwipe(() => { setPage(null); return true; }, !!page);
   const slide = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     slide.setValue(ms(1) ? 0 : 1);

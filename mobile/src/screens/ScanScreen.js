@@ -93,6 +93,14 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
   const wk = week(history);
   const returning = history.length > 0;
 
+  const paste = async () => {
+    try {
+      const C2 = require("expo-clipboard");
+      const txt = await C2.getStringAsync();
+      const digits = String(txt || "").replace(/[^\d]/g, "").slice(0, 14);
+      if (digits) { haptic.tap(); setCode(digits); setError(null); }
+    } catch { /* presse-papiers indisponible */ }
+  };
   const submit = () => {
     const digits = code.replace(/\D/g, "");
     if (digits.length < 8 || digits.length > 14) { haptic.error(); return setError(true); }
@@ -164,13 +172,18 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           <FadeIn style={{ gap: 8 }}>
             <Txt style={{ color: "rgba(255,255,255,0.9)", fontSize: 14 }}>{t("home.manual_label")}</Txt>
             <Row>
-              <TextInput value={code} onChangeText={setCode} keyboardType="number-pad" placeholder="3017620422003" placeholderTextColor="#97A39C" autoFocus returnKeyType="go"
+              <TextInput value={code} onChangeText={(x) => setCode(x.replace(/[^\d]/g, "").slice(0, 14))} keyboardType="number-pad" contextMenuHidden={false} selectTextOnFocus={false} placeholder="3017620422003" placeholderTextColor="#97A39C" autoFocus returnKeyType="go"
                 onSubmitEditing={submit} maxFontSizeMultiplier={FONT_MAX} accessibilityLabel={t("home.manual_label")}
                 style={{ flex: 1, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 18, color: "#16241C", backgroundColor: "#fff" }} />
               <Pressable onPress={submit} accessibilityRole="button" style={({ pressed }) => ({ paddingHorizontal: 18, paddingVertical: 13, borderRadius: R.md, backgroundColor: pressed ? "#0B5139" : "#1A9C68" })}>
                 <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>{t("home.verify")}</Text>
               </Pressable>
             </Row>
+            {/* Coller un code copié ailleurs (message, site…) */}
+            <Pressable onPress={paste} accessibilityRole="button" hitSlop={6} style={{ alignSelf: dir().rtl ? "flex-end" : "flex-start", flexDirection: dir().row, alignItems: "center", gap: 6, paddingVertical: 4 }}>
+              <Glyph paths='<rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/>' size={16} color="#fff" width={2} />
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14, textDecorationLine: "underline" }}>{t("home.paste")}</Text>
+            </Pressable>
             {error ? <Txt style={{ color: "#FFD3CE", fontSize: 14 }}>{t("msg.code_short.p")}</Txt> : null}
           </FadeIn>
         ) : null}

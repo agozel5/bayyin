@@ -1,7 +1,9 @@
 // Comparer deux produits côte à côte : halal, note santé, nutriments, additifs, NOVA, profil.
 // La case en vert indique le meilleur des deux.
-import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable, Animated } from "react-native";
+import { RevealProvider, useRevealRoot, Reveal, useGrow } from "../components/Reveal";
+import { useInnerBack } from "../components/EdgeSwipe";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, Btn } from "../components/ui";
 import { Art, Glyph } from "../components/Art";
@@ -62,6 +64,36 @@ function Cell({ children, win, dot }) {
   );
 }
 
+// Ligne du tableau : elle apparaît en glissant quand elle arrive à l'écran, puis ses barres se remplissent
+function CmpRow({ r, i }) {
+  const ref = useRef(null);
+  const g = useGrow(ref, { duration: 750, delay: 120 });
+  return (
+    <Reveal delay={Math.min(i, 3) * 40}>
+      <View ref={ref} collapsable={false} style={{ borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+        <Text style={{ paddingHorizontal: 14, paddingTop: 10, fontSize: 13.5, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{r.label}</Text>
+        <View style={{ flexDirection: dir().row }}>
+          <Cell win={r.w[0]} dot={r.da}>{r.x}</Cell>
+          <Cell win={r.w[1]} dot={r.db}>{r.y}</Cell>
+        </View>
+        {r.va != null && r.vb != null ? (
+          // Deux barres en miroir depuis le centre : on voit qui en a le plus
+          <View style={{ flexDirection: dir().row, height: 6, gap: 6, paddingHorizontal: 14, marginTop: -4, marginBottom: 10 }}>
+            {[[r.va, r.w[0], "flex-end"], [r.vb, r.w[1], "flex-start"]].map(([v, win, al], k) => {
+              const pct = Math.max(3, (v / (Math.max(r.va, r.vb) || 1)) * 100);
+              return (
+                <View key={k} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: C.tint2, alignItems: dir().rtl ? (al === "flex-end" ? "flex-start" : "flex-end") : al, overflow: "hidden" }}>
+                  <Animated.View style={{ width: g.interpolate({ inputRange: [0, 1], outputRange: ["0%", `${pct}%`] }), height: 6, borderRadius: 3, backgroundColor: win ? "#3FB46B" : C.faint }} />
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
+    </Reveal>
+  );
+}
+
 function Table({ a, b, onOpen }) {
   const va = verdictOf(a), vb = verdictOf(b);
   const sa = scoreOf(a), sb = scoreOf(b);
@@ -87,25 +119,7 @@ function Table({ a, b, onOpen }) {
     <View style={{ gap: 14 }}>
       <View style={{ flexDirection: dir().row, gap: 12 }}><Head p={a} onOpen={onOpen} /><Head p={b} onOpen={onOpen} /></View>
       <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, overflow: "hidden" }, lift()]}>
-        {rows.map((r, i) => (
-          <View key={r.label} style={{ borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
-            <Text style={{ paddingHorizontal: 14, paddingTop: 10, fontSize: 13.5, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{r.label}</Text>
-            <View style={{ flexDirection: dir().row }}>
-              <Cell win={r.w[0]} dot={r.da}>{r.x}</Cell>
-              <Cell win={r.w[1]} dot={r.db}>{r.y}</Cell>
-            </View>
-            {r.va != null && r.vb != null ? (
-              // Deux barres en miroir depuis le centre : on voit qui en a le plus
-              <View style={{ flexDirection: dir().row, height: 6, gap: 6, paddingHorizontal: 14, marginTop: -4, marginBottom: 10 }}>
-                {[[r.va, r.w[0], "flex-end"], [r.vb, r.w[1], "flex-start"]].map(([v, win, al], k) => (
-                  <View key={k} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: C.tint2, alignItems: dir().rtl ? (al === "flex-end" ? "flex-start" : "flex-end") : al, overflow: "hidden" }}>
-                    <View style={{ width: `${Math.max(3, (v / (Math.max(r.va, r.vb) || 1)) * 100)}%`, height: 6, borderRadius: 3, backgroundColor: win ? "#3FB46B" : C.faint }} />
-                  </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ))}
+        {rows.map((r, i) => <CmpRow key={r.label} r={r} i={i} />)}
       </View>
       <Muted style={{ fontSize: 12.5, textAlign: "center" }}>{t("cmp.note")}</Muted>
     </View>
@@ -120,8 +134,13 @@ export default function CompareScreen({ base: baseCode, baseP, onClose, onOpen, 
   if (typeof window !== "undefined") window.__bayyinCompare = (x, y) => { setA((getEntry(x) || {}).p || null); setB((getEntry(y) || {}).p || null); };
   const back = () => (b ? setB(null) : a && !baseCode ? setA(null) : onClose());
   const others = a ? all.filter((p) => p.code !== a.code && kindOf(p) === kindOf(a)) : [];
+  const reveal = useRevealRoot();
+  // Geste de retour : d'abord revenir au choix du second produit
+  const toPick = useCallback(() => setB(null), []);
+  useInnerBack(b ? toPick : null);
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
+    <RevealProvider value={reveal.value}>
+    <ScrollView onScroll={reveal.onScroll} scrollEventThrottle={16} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
       <Row gap={6}>
         <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
           <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
@@ -146,5 +165,6 @@ export default function CompareScreen({ base: baseCode, baseP, onClose, onOpen, 
         </View>
       )}
     </ScrollView>
+    </RevealProvider>
   );
 }

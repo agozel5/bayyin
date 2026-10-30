@@ -1,6 +1,7 @@
 // Classements : les produits halal les mieux notés pour la santé, rayon par rayon (selon vos réglages).
 // Les listes sont préparées chaque semaine sur le site (data/rankings/<rayon>.json).
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useInnerBack } from "../components/EdgeSwipe";
 import { View, Text, ScrollView, Pressable, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, Loading } from "../components/ui";
@@ -130,6 +131,9 @@ function Ranking({ cat, onBack, onOpen }) {
 export default function RankingsScreen({ onClose, onOpen }) {
   const insets = useSafeAreaInsets();
   const [cat, setCat] = useState(null);
+  // Dans un rayon : le geste de retour ramène à la liste des rayons
+  const toList = useCallback(() => setCat(null), []);
+  useInnerBack(cat ? toList : null);
   if (typeof window !== "undefined") window.__bayyinRankCat = (id) => setCat(id ? RANK_CATEGORIES.find((c) => c.id === id) : null);
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }}>

@@ -1,6 +1,10 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
 export const EXTRA = {
   fr: {
+    "history.delete_one": "Supprimer",
+    "history.deleted_one": "Produit retiré de l'historique",
+    "history.swipe_hint": "Glissez un produit vers la gauche pour le supprimer.",
+    "home.paste": "Coller un code",
     "widget.recent": "Derniers produits",
     "widget.none": "Scannez un produit pour le voir ici.",
     "widget.photo": "Ingrédients",
@@ -61,6 +65,10 @@ export const EXTRA = {
     "widget.scan": "Scanner",
   },
   en: {
+    "history.delete_one": "Delete",
+    "history.deleted_one": "Product removed from history",
+    "history.swipe_hint": "Swipe a product to the left to delete it.",
+    "home.paste": "Paste a code",
     "widget.recent": "Latest products",
     "widget.none": "Scan a product to see it here.",
     "widget.photo": "Ingredients",
@@ -121,6 +129,10 @@ export const EXTRA = {
     "widget.scan": "Scan",
   },
   ar: {
+    "history.delete_one": "حذف",
+    "history.deleted_one": "تمت إزالة المنتج من السجل",
+    "history.swipe_hint": "اسحب منتجًا إلى اليمين لحذفه.",
+    "home.paste": "لصق رمز",
     "widget.recent": "آخر المنتجات",
     "widget.none": "امسح منتجًا ليظهر هنا.",
     "widget.photo": "المكونات",
@@ -181,6 +193,10 @@ export const EXTRA = {
     "widget.scan": "مسح",
   },
   tr: {
+    "history.delete_one": "Sil",
+    "history.deleted_one": "Ürün geçmişten kaldırıldı",
+    "history.swipe_hint": "Silmek için bir ürünü sola kaydırın.",
+    "home.paste": "Kod yapıştır",
     "widget.recent": "Son ürünler",
     "widget.none": "Burada görmek için bir ürün tarayın.",
     "widget.photo": "İçindekiler",
