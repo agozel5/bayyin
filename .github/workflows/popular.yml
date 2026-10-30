@@ -1,0 +1,46 @@
+name: Produits populaires (hors connexion)
+
+# Met à jour public/data/popular.json chaque jeudi, à la demande, ou quand le script change.
+on:
+  schedule:
+    - cron: "23 4 * * 4"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/build-popular.mjs", ".github/workflows/popular.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: popular
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Préparer le fichier
+        timeout-minutes: 30
+        run: |
+          set -o pipefail
+          node scripts/build-popular.mjs
+      - name: Enregistrer
+        if: always()
+        run: |
+          true
+          if [ -f public/data/popular.json ]; then git add public/data/popular.json; fi
+          if git diff --cached --quiet; then echo "Aucun changement."; exit 0; fi
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -m "Produits populaires (hors connexion) mis à jour"
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

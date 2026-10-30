@@ -1,8 +1,8 @@
 // Accueil : bandeau vert (bonjour et bilan de la semaine, ou présentation), scan en un geste,
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
 import Ramadan from "../components/Ramadan";
-import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Logo } from "../components/Icon";
 import { Tile, Glyph } from "../components/Art";
@@ -14,12 +14,33 @@ import { t, tn, tPlain } from "../i18n";
 import { getHistory, getSettings, getEntry } from "../storage";
 import { verdictOf, profileOf, nameOf } from "../view";
 import { hasProfile } from "../core";
-import { haptic } from "../motion";
+import { haptic, ms } from "../motion";
 import { tourRef } from "../components/Tour";
 import { cap, longDate } from "../recalls";
 
 const TIP_COUNT = 8;
-const BARCODE = `<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#E8F5EE"/><g stroke="#16241C" stroke-width="2.4"><path d="M11 13v20M15 13v20M18.5 13v20M22.5 13v20M27 13v20M30.5 13v20M34.5 13v20M37.5 13v20"/></g><path d="M8 35.5h32" stroke="#E0566A" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const BARCODE = `<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#E8F5EE"/><g stroke="#16241C" stroke-width="2.4"><path d="M11 13v20M15 13v20M18.5 13v20M22.5 13v20M27 13v20M30.5 13v20M34.5 13v20M37.5 13v20"/></g></svg>`;
+// Code-barres du bouton Scanner : un trait laser monte et descend (comme la version web)
+function ScanArt() {
+  const y = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!ms(1)) { y.setValue(0.5); return; }
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(y, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(y, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  return (
+    <View style={{ width: 56, height: 56 }}>
+      <SvgXml xml={BARCODE} width={56} height={56} />
+      <Animated.View pointerEvents="none" style={{ position: "absolute", left: 7, right: 7, top: 0, height: 2.5, borderRadius: 2, backgroundColor: "#FF8A80",
+        shadowColor: "#FF6B61", shadowOpacity: 0.9, shadowRadius: 5, shadowOffset: { width: 0, height: 0 },
+        transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [12, 42] }) }] }} />
+    </View>
+  );
+}
 const FEATURES = [
   ["halal", "#1A9C68", '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12.5l2 2 3.5-4"/>'],
   ["health", "#E0457B", '<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>'],
@@ -128,7 +149,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           accessibilityLabel={`${t("home.scan")}. ${t("home.kinds")}`}
           style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 14, padding: 14, borderRadius: R.lg, backgroundColor: "#fff", transform: [{ scale: pressed ? 0.98 : 1 }] })}
         >
-          <SvgXml xml={BARCODE} width={56} height={56} />
+          <ScanArt />
           <View style={{ flex: 1, gap: 2 }}>
             <Txt style={{ color: "#16241C", fontWeight: "800", fontSize: 19 }}>{t("home.scan")}</Txt>
             <Txt style={{ color: "#5D6A63", fontSize: 13.5, lineHeight: 18 }}>{t("home.kinds")}</Txt>

@@ -34,11 +34,13 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // Petits éléments
 // ---------------------------------------------------------------------------
 function Section({ title, sub, children }) {
+  // Titre jamais coupé : un sous-titre long passe en dessous du titre
+  const below = sub && sub.length > 22;
   return (
     <View style={{ gap: 10 }}>
-      <Row style={{ justifyContent: "space-between" }}>
-        <H2 style={{ flexShrink: 1 }}>{title}</H2>
-        {sub ? <Muted style={{ fontSize: 13 }}>{sub}</Muted> : null}
+      <Row style={{ justifyContent: "space-between", alignItems: below ? "flex-start" : "center", flexWrap: below ? "wrap" : "nowrap" }}>
+        <H2 style={{ flexShrink: 0 }}>{title}</H2>
+        {sub ? <Muted style={{ fontSize: 13, flexShrink: 1, textAlign: below ? dir().ta : "auto", width: below ? "100%" : undefined, marginTop: below ? -6 : 0 }}>{sub}</Muted> : null}
       </Row>
       {children}
     </View>
@@ -555,7 +557,8 @@ function ExtraSections({ p }) {
       </Section>
       {h.nova ? (
         <Section title={t("detail.nova")} sub={t("detail.nova_sub")}>
-          <Row gap={14} style={{ alignItems: "flex-start" }}>
+          <NovaScale group={h.nova.group} />
+          <Row gap={14} style={{ alignItems: "center" }}>
             <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: NOVA_COLORS[h.nova.group], alignItems: "center", justifyContent: "center" }}>
               <Text style={{ color: "#fff", fontWeight: "800", fontSize: 22 }}>{h.nova.group}</Text>
             </View>
@@ -570,6 +573,35 @@ function ExtraSections({ p }) {
   );
 }
 
+// Échelle NOVA 1 à 4 : le groupe du produit ressort, avec un repère au-dessus (comme sur le web)
+function NovaScale({ group }) {
+  const ref = useRef(null);
+  const v = useGrow(ref, { duration: 600, delay: 100 });
+  return (
+    <View ref={ref} collapsable={false} style={{ gap: 4, direction: "ltr", paddingTop: 4 }}>
+      <View style={{ flexDirection: "row", height: 12 }}>
+        {[1, 2, 3, 4].map((n) => (
+          <View key={n} style={{ flex: 1, alignItems: "center" }}>
+            {n === group ? <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }], width: 0, height: 0, borderLeftWidth: 7, borderRightWidth: 7, borderTopWidth: 9, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} /> : null}
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
+        {[1, 2, 3, 4].map((n) => {
+          const on = n === group;
+          return (
+            <Animated.View key={n} style={{ flex: 1, height: on ? 34 : 24, borderRadius: on ? 9 : 99, alignItems: "center", justifyContent: "center", backgroundColor: NOVA_COLORS[n], opacity: on ? 1 : 0.38,
+              transform: on ? [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }] : [],
+              shadowColor: NOVA_COLORS[n], shadowOpacity: on ? 0.6 : 0, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: on ? 4 : 0 }}>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: on ? 17 : 13, opacity: on ? 1 : 0.8 }}>{n}</Text>
+            </Animated.View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function LinkRow({ text, url, muted = false }) {
   return (
     <Pressable onPress={() => open(url)} style={{ paddingVertical: 8 }}>
@@ -580,14 +612,12 @@ function LinkRow({ text, url, muted = false }) {
 
 // Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
 let lastTab = "halal";
-function ProductBody({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare }) {
+// Contenu de la fiche en blocs (fonction simple, sans état : l'onglet ouvert est gardé par la fiche)
+function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onHeroEnd, onTabChange, tab, setTab }) {
   const v = verdictOf(p);
   const kind = kindOf(p);
   const food = kind === "food";
   const s = scoreOf(p);
-  const [tab, setTabState] = useState(lastTab);
-  const setTab = (x) => { lastTab = x; setTabState(x); };
-  if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.sheetTab = setTab; // captures automatiques (web)
   const st = getSettings();
   const report = isBarcode(p.code)
     ? "https://github.com/agozel5/bayyin/issues/new?title=" +
@@ -633,14 +663,20 @@ function ProductBody({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr,
     food && !p.local && isBarcode(p.code) ? { id: "planet", label: t("env.tab"), mark: null, el: <Panel><PlanetSection p={p} /></Panel> } : null,
   ].filter(Boolean);
   const cur = tabs.some((x) => x.id === tab) ? tab : "halal";
-  return (
-    <View style={{ gap: 14 }}>
+  // Les onglets restent collés en haut quand on fait défiler (comme la version web) :
+  // la fiche est rendue en blocs séparés, directement dans la liste qui défile.
+  return [
+    <View key="head" style={{ gap: 14, paddingBottom: 14 }} onLayout={(e) => onHeroEnd && onHeroEnd(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
       <FadeIn><Top2 p={p} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
       <RecallBox p={p} />
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
-      <SheetTabs tabs={tabs} cur={cur} onTab={setTab} />
+    </View>,
+    <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>
+      <SheetTabs tabs={tabs} cur={cur} onTab={(x) => { setTab(x); onTabChange && onTabChange(); }} />
+    </View>,
+    <View key="body" style={{ gap: 14 }}>
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
       {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
       <Panel gap={6}>
@@ -651,8 +687,8 @@ function ProductBody({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr,
         ) : null}
         {report ? <LinkRow text={t("detail.report")} url={report} muted /> : null}
       </Panel>
-    </View>
-  );
+    </View>,
+  ];
 }
 const VERDICT_DOT = (st) => ({ halal_certifie: "#169B57", halal_probable: "#3E8A49", mashbouh: "#EE8A1F", haram: "#E0423A", inconnu: "#97A39C" })[st];
 
@@ -764,41 +800,63 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
     Share.share({ message: text + link }).catch(() => {});
   };
 
-  const headBtn = { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: C.surface };
-  // Le nom apparaît dans l'en-tête quand celui de la fiche passe sous l'en-tête (comme les apps d'Apple)
+  // Onglet ouvert (gardé d'une fiche à l'autre, comme sur le web)
+  const [tab, setTabState] = useState(lastTab);
+  const setTab = (x) => { lastTab = x; setTabState(x); };
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.sheetTab = setTab; // captures automatiques (web)
+  // En-tête : icônes simples ; quand le verdict sort de l'écran, une vignette du produit remplace « Comparer »
+  const headBtn = { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" };
   const scrollY = useRef(new Animated.Value(0)).current;
   const reveal = useRevealRoot();
-  const titleOp = scrollY.interpolate({ inputRange: [60, 110], outputRange: [0, 1], extrapolate: "clamp" });
+  const heroEnd = useRef(420);
+  const [compact, setCompact] = useState(false);
+  const compactRef = useRef(false);
+  const scrollRef = useRef(null);
+  const onScrollJs = (e) => {
+    reveal.onScroll();
+    const c = e.nativeEvent.contentOffset.y > heroEnd.current - 60;
+    if (c !== compactRef.current) { compactRef.current = c; setCompact(c); }
+  };
+  useEffect(() => { compactRef.current = false; setCompact(false); }, [code]);
   const lineOp = scrollY.interpolate({ inputRange: [0, 30], outputRange: [0, 1], extrapolate: "clamp" });
+  const press = ({ pressed }) => [headBtn, pressed && { backgroundColor: C.tint, transform: [{ scale: 0.92 }] }];
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 6, zIndex: 2 }}>
-        <Pressable onPress={onClose} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("sheet.back")} hitSlop={6}>
-          <Icon name="back" size={21} flip={dir().rtl} />
+      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 6, zIndex: 2, backgroundColor: C.bg }}>
+        <Pressable onPress={onClose} style={press} accessibilityRole="button" accessibilityLabel={t("sheet.back")} hitSlop={6}>
+          <Icon name="back" size={24} color={C.fg} flip={dir().rtl} />
         </Pressable>
-        <Animated.Text style={{ flex: 1, fontWeight: "800", fontSize: 16, color: C.fg, textAlign: "center", opacity: p ? titleOp : 1 }} numberOfLines={1}>
+        <Text style={{ flex: 1, fontWeight: "800", fontSize: 17, color: C.fg, textAlign: dir().ta, paddingHorizontal: 4 }} numberOfLines={1}>
           {p ? nameOf(p) : state.notFound ? t("msg.notfound.t") : t("sheet.title")}
-        </Animated.Text>
-        {p && onCompare && kindOf(p) !== "medicine" ? (
-          <Pressable onPress={() => { haptic.tap(); onCompare(p.code, p); }} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("cmp.title")} hitSlop={6}>
-            <Glyph paths='<path d="M4 8h13l-3-3M20 16H7l3 3"/>' size={19} color={C.fg} width={2.1} />
+        </Text>
+        {p && compact && p.image ? (
+          <FadeIn distance={0}>
+            <Pressable onPress={() => scrollRef.current && scrollRef.current.scrollTo({ y: 0, animated: true })} accessibilityRole="button" accessibilityLabel={nameOf(p)} hitSlop={6}
+              style={{ width: 36, height: 36, borderRadius: 9, overflow: "hidden", backgroundColor: "#fff", marginHorizontal: 2 }}>
+              <Image source={{ uri: p.image }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+            </Pressable>
+          </FadeIn>
+        ) : p && onCompare && kindOf(p) !== "medicine" ? (
+          <Pressable onPress={() => { haptic.tap(); onCompare(p.code, p); }} style={press} accessibilityRole="button" accessibilityLabel={t("cmp.title")} hitSlop={6}>
+            <Glyph paths='<path d="M4 8h13l-3-3M20 16H7l3 3"/>' size={22} color={C.fg} width={2.1} />
           </Pressable>
         ) : null}
         {p && isBarcode(p.code) ? (
-          <Pressable onPress={onShare} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityLabel={t("sheet.share")} hitSlop={6}>
-            <Icon name="share" size={19} />
+          <Pressable onPress={onShare} style={press} accessibilityRole="button" accessibilityLabel={t("sheet.share")} hitSlop={6}>
+            <Icon name="share" size={22} color={C.fg} />
           </Pressable>
         ) : null}
         {p ? (
-          <Pressable onPress={onFav} style={({ pressed }) => [headBtn, lift(), pressed && { transform: [{ scale: 0.92 }] }]} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
-            <Icon name="star" size={20} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
+          <Pressable onPress={onFav} style={press} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
+            <Icon name="star" size={23} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
           </Pressable>
         ) : null}
         <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 0.5, backgroundColor: C.line, opacity: lineOp }} />
       </View>
 
       <RevealProvider value={reveal.value}>
-      <Animated.ScrollView scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true, listener: reveal.onScroll })}
+      <Animated.ScrollView ref={scrollRef} scrollEventThrottle={16} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true, listener: onScrollJs })}
+        stickyHeaderIndices={p && !state.loading && !state.notFound && !state.error ? [1] : undefined}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
           <SheetSkeleton />
@@ -816,7 +874,8 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
             <Btn title={t("detail.photo_ingredients")} icon="doc" kind="white" onPress={() => onOcr(code)} />
           </Message>
         ) : p ? (
-          <ProductBody p={p} scanned={!!fromScan} onOpen={onOpen} onGotoSettings={onGotoSettings} onGotoProfile={onGotoProfile} onOcr={onOcr} onCompare={onCompare} />
+          productBlocks({ p, scanned: !!fromScan, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, tab, setTab,
+            onHeroEnd: (y) => { heroEnd.current = y; }, onTabChange: () => setTimeout(reveal.check, 120) })
         ) : null}
       </Animated.ScrollView>
       </RevealProvider>

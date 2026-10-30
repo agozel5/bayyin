@@ -1,5 +1,6 @@
 import React from "react";
-import Svg, { Path, Circle, Rect } from "react-native-svg";
+import Svg, { Path, Circle, Rect, G, Defs, LinearGradient, RadialGradient, Stop } from "react-native-svg";
+import { C } from "../theme";
 
 // Mêmes pictogrammes que la version web (tracés 24 × 24).
 const ICONS = {
@@ -39,7 +40,9 @@ const ICONS = {
   bulb: [{ d: "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" }],
 };
 
-export default function Icon({ name, size = 22, color = "#18211C", width = 2, fill = "none", flip = false }) {
+// Couleur par défaut : celle du texte du thème (clair ou sombre)
+export default function Icon({ name, size = 22, color, width = 2, fill = "none", flip = false }) {
+  color = color || C.fg;
   const shapes = ICONS[name] || ICONS.box;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" style={flip ? { transform: [{ scaleX: -1 }] } : null}>
@@ -55,11 +58,19 @@ export default function Icon({ name, size = 22, color = "#18211C", width = 2, fi
 
 // Le logo : la lettre ب sur fond vert.
 export function Logo({ size = 36 }) {
+  // Même logo que le site et l'icône de l'app : dégradé vert, cadre de scan, lettre ب
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48">
-      <Rect width={48} height={48} rx={12} fill="#14805A" />
-      <Path d="M9.6 20.4c-.1 5.6 3.4 8.1 10.4 8.3l7.6.1c6.9 0 10.6-2.6 11-8.4.2-2.4-.3-4.8-1.2-6.6" fill="none" stroke="#FFFFFF" strokeWidth={4.4} strokeLinecap="round" strokeLinejoin="round" />
-      <Circle cx={23.6} cy={35.8} r={3.2} fill="#FFD27A" />
+    <Svg width={size} height={size} viewBox="0 0 1024 1024">
+      <Defs>
+        <LinearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#1FA371" /><Stop offset="0.55" stopColor="#14805A" /><Stop offset="1" stopColor="#0B5A3F" /></LinearGradient>
+        <RadialGradient id="lgold" cx="0.38" cy="0.32" r="0.75"><Stop offset="0" stopColor="#FFE3A3" /><Stop offset="0.6" stopColor="#FFC95C" /><Stop offset="1" stopColor="#E9A93A" /></RadialGradient>
+      </Defs>
+      <Rect width={1024} height={1024} rx={230} fill="url(#lg)" />
+      <Path d="M232 340v-60a48 48 0 0 1 48-48h60M684 232h60a48 48 0 0 1 48 48v60M792 684v60a48 48 0 0 1-48 48h-60M340 792h-60a48 48 0 0 1-48-48v-60" fill="none" stroke="#FFFFFF" strokeOpacity={0.38} strokeWidth={30} strokeLinecap="round" strokeLinejoin="round" />
+      <G transform="translate(512 506) scale(0.7) translate(-547 -521)">
+        <Path d="M318 442c-2 112 66 162 206 166l152 2c138 0 212-52 220-168 4-48-6-96-24-132" transform="translate(-60 0)" fill="none" stroke="#FFFFFF" strokeWidth={96} strokeLinecap="round" strokeLinejoin="round" />
+        <Circle cx={462} cy={752} r={64} fill="url(#lgold)" />
+      </G>
     </Svg>
   );
 }

@@ -116,16 +116,30 @@ export async function fetchAlternatives(product) {
 export const fetchTwins = (product) => offClient.twins(product).catch(() => []);
 
 // Les produits les plus scannés en France, gardés pour le hors connexion.
+export const POPULAR_URL = "https://agozel5.github.io/bayyin/data/popular.json";
 export async function downloadPack(onProgress, pages = 5, pageSize = 100) {
   const all = {};
-  for (let page = 1; page <= pages; page++) {
-    const url = `${OFF_BASE}/api/v2/search?countries_tags=en:france&sort_by=unique_scans_n&page_size=${pageSize}&page=${page}&fields=${FIELDS}`;
-    const data = await getJson(url, 30000);
-    const products = ((data && data.products) || []).filter((p) => p.code);
-    for (const p of products) all[p.code] = compact(p);
+  // 1) Fichier préparé chaque semaine sur le site (un seul téléchargement, rapide et fiable)
+  try {
+    const data = await getJson(POPULAR_URL, 45000);
+    for (const p of (data && data.products) || []) if (p.code) all[p.code] = compact(p);
     onProgress && onProgress(Object.keys(all).length);
-    if (products.length < pageSize) break;
+  } catch { /* site indisponible : repli sur Open Food Facts */ }
+  // 2) Repli : la recherche d'Open Food Facts, avec de nouveaux essais (elle est souvent saturée)
+  if (Object.keys(all).length < 100) {
+    for (let page = 1; page <= pages; page++) {
+      const url = `${OFF_BASE}/api/v2/search?countries_tags=en:france&sort_by=unique_scans_n&page_size=${pageSize}&page=${page}&fields=${FIELDS}`;
+      let data = null;
+      for (let i = 0; i < 3 && !data; i++) {
+        try { data = await getJson(url, 30000); } catch (e) { if (i === 2) { if (Object.keys(all).length) break; throw e; } await new Promise((r) => setTimeout(r, 2500 * (i + 1))); }
+      }
+      const products = ((data && data.products) || []).filter((p) => p.code);
+      for (const p of products) all[p.code] = compact(p);
+      onProgress && onProgress(Object.keys(all).length);
+      if (products.length < pageSize) break;
+    }
   }
+  if (!Object.keys(all).length) throw new OffError("network");
   setPack(all);
   return Object.keys(all).length;
 }

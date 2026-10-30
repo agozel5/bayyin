@@ -9,7 +9,7 @@ on:
   # Les robots de données poussent avec le jeton GitHub, ce qui ne relance pas ce workflow :
   # on republie donc après chacun d'eux.
   workflow_run:
-    workflows: ["Rappels de produits (RappelConso)", "Listes des organismes halal", "Encyclopédie des additifs", "Base des ingrédients cosmétiques (CosIng)", "Base des médicaments", "Images des stores", "Commerces halal (OpenStreetMap)", "Classements"]
+    workflows: ["Rappels de produits (RappelConso)", "Listes des organismes halal", "Encyclopédie des additifs", "Base des ingrédients cosmétiques (CosIng)", "Base des médicaments", "Images des stores", "Commerces halal (OpenStreetMap)", "Classements", "Produits populaires (hors connexion)"]
     types: [completed]
 
 permissions:

@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, Btn } from "../components/ui";
 import { Art, Glyph } from "../components/Art";
 import { ListRow, Thumb, STATUS_GLYPH } from "../components/Cards";
-import { C, R, dir, lift, VERDICT, STATUS_COLORS, ALERT_COLORS, isDark } from "../theme";
+import { C, R, dir, lift, VERDICT, STATUS_COLORS, ALERT_COLORS, LEVEL_COLORS, isDark } from "../theme";
+import PhotoZoom, { photoList } from "../components/PhotoZoom";
 import { t } from "../i18n";
 import { getHistory, getEntry } from "../storage";
 import { verdictOf, profileOf, scoreOf, nameOf, kindOf, fmt, S } from "../view";
@@ -22,26 +23,41 @@ const watchCount = (p) => { const h = p.health; return ((h && (h.additives || (h
 
 function Head({ p, onOpen }) {
   const st = verdictOf(p).status;
+  const [zoom, setZoom] = useState(false);
+  const many = photoList(p).length > 0;
   return (
-    <Pressable onPress={() => onOpen(p.code)} accessibilityRole="button" style={[{ flex: 1, borderRadius: R.lg, backgroundColor: C.surface, overflow: "hidden" }, lift()]}>
-      <View style={{ flexDirection: dir().row, alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: VERDICT[st] }}>
-        <Glyph paths={STATUS_GLYPH[st]} size={13} color="#fff" width={2.6} />
-        <Text numberOfLines={1} style={{ flex: 1, color: "#fff", fontWeight: "800", fontSize: 12 }}>{S(st, "label")}</Text>
+    <View style={[{ flex: 1, borderRadius: R.lg, backgroundColor: C.surface, overflow: "hidden" }, lift()]}>
+      <View style={{ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 7, backgroundColor: VERDICT[st] }}>
+        <Glyph paths={STATUS_GLYPH[st]} size={14} color="#fff" width={2.6} />
+        <Text numberOfLines={1} style={{ flexShrink: 1, color: "#fff", fontWeight: "800", fontSize: 13 }}>{S(st, "label")}</Text>
       </View>
-      <View style={{ alignItems: "center", padding: 10, gap: 6 }}>
-        <Thumb p={p} size={76} radius={14} />
-        <Text numberOfLines={2} style={{ fontSize: 14, fontWeight: "800", color: C.fg, textAlign: "center" }}>{nameOf(p)}</Text>
-        {p.brand ? <Text numberOfLines={1} style={{ fontSize: 12, color: C.muted }}>{p.brand}</Text> : null}
-        <Text style={{ fontSize: 12, fontWeight: "800", color: C.brand }}>{t("cmp.see")} ›</Text>
+      <View style={{ alignItems: "center", padding: 12, gap: 6 }}>
+        {/* Photo agrandissable, comme sur le web */}
+        <Pressable disabled={!many} onPress={() => setZoom(true)} accessibilityRole="imagebutton" accessibilityLabel={t("zoom.open")} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+          <Thumb p={p} size={104} radius={18} />
+          {many ? (
+            <View style={{ position: "absolute", bottom: 5, [dir().rtl ? "left" : "right"]: 5, width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" }}>
+              <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5"/>' size={15} color="#fff" width={2.2} />
+            </View>
+          ) : null}
+        </Pressable>
+        {many ? <PhotoZoom p={p} visible={zoom} onClose={() => setZoom(false)} /> : null}
+        <Pressable onPress={() => onOpen(p.code)} accessibilityRole="button" style={{ alignItems: "center", gap: 3 }}>
+          <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: "800", color: C.fg, textAlign: "center", lineHeight: 19 }}>{nameOf(p)}</Text>
+          {p.brand ? <Text numberOfLines={1} style={{ fontSize: 12.5, color: C.muted }}>{p.brand}</Text> : null}
+          <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.brand, marginTop: 2 }}>{t("cmp.see")} ›</Text>
+        </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
-function Cell({ children, win }) {
+// Case : la meilleure des deux est teintée sur toute sa moitié de ligne (comme sur le web)
+function Cell({ children, win, dot }) {
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 9, borderRadius: 10, backgroundColor: win ? (isDark() ? "#173A27" : "#E2F5EA") : "transparent" }}>
-      {typeof children === "string" ? <Text style={{ fontSize: 14.5, fontWeight: win ? "800" : "600", color: win ? STATUS_COLORS.halal_certifie[0] : C.fg }}>{children}</Text> : children}
+    <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 6, paddingBottom: 10, backgroundColor: win ? (isDark() ? "#173A27" : "#E2F5EA") : "transparent" }}>
+      {typeof children === "string" ? <Text style={{ fontSize: 17, fontWeight: "800", color: win ? (isDark() ? "#7FDCA9" : STATUS_COLORS.halal_certifie[0]) : C.fg, fontVariant: ["tabular-nums"] }}>{children}</Text> : children}
+      {dot ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: dot }} /> : null}
     </View>
   );
 }
@@ -56,7 +72,8 @@ function Table({ a, b, onOpen }) {
     ...["sugars", "saturated-fat", "salt", "energy", "fiber", "proteins"].map((id) => {
       const na = nutOf(a, id), nb = nutOf(b, id);
       const low = !["fiber", "proteins"].includes(id);
-      return { id, label: t(`nut.${id}`), x: na ? `${fmt(na.value)} ${na.unit}` : "—", y: nb ? `${fmt(nb.value)} ${nb.unit}` : "—", w: better(na && na.value, nb && nb.value, low), va: na && na.value, vb: nb && nb.value };
+      return { id, label: t(`nut.${id}`), x: na ? `${fmt(na.value)} ${na.unit}` : "—", y: nb ? `${fmt(nb.value)} ${nb.unit}` : "—", w: better(na && na.value, nb && nb.value, low), va: na && na.value, vb: nb && nb.value,
+        da: na && LEVEL_COLORS[na.level], db: nb && LEVEL_COLORS[nb.level] };
     }),
     { label: t(kindOf(a) === "beauty" ? "detail.cosmetic_watch" : "detail.watch"), x: String(watchCount(a)), y: String(watchCount(b)), w: better(watchCount(a), watchCount(b), true) },
     { label: t("detail.nova"), x: a.health && a.health.nova ? String(a.health.nova.group) : "—", y: b.health && b.health.nova ? String(b.health.nova.group) : "—", w: better(a.health && a.health.nova && a.health.nova.group, b.health && b.health.nova && b.health.nova.group, true) },
@@ -69,20 +86,20 @@ function Table({ a, b, onOpen }) {
   return (
     <View style={{ gap: 14 }}>
       <View style={{ flexDirection: dir().row, gap: 12 }}><Head p={a} onOpen={onOpen} /><Head p={b} onOpen={onOpen} /></View>
-      <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 12 }, lift()]}>
+      <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, overflow: "hidden" }, lift()]}>
         {rows.map((r, i) => (
-          <View key={r.label} style={{ paddingVertical: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line, gap: 6 }}>
-            <Text style={{ fontSize: 12.5, fontWeight: "800", color: C.muted, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.4 }}>{r.label}</Text>
-            <View style={{ flexDirection: dir().row, gap: 8 }}>
-              <Cell win={r.w[0]}>{r.x}</Cell>
-              <Cell win={r.w[1]}>{r.y}</Cell>
+          <View key={r.label} style={{ borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+            <Text style={{ paddingHorizontal: 14, paddingTop: 10, fontSize: 13.5, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{r.label}</Text>
+            <View style={{ flexDirection: dir().row }}>
+              <Cell win={r.w[0]} dot={r.da}>{r.x}</Cell>
+              <Cell win={r.w[1]} dot={r.db}>{r.y}</Cell>
             </View>
             {r.va != null && r.vb != null ? (
               // Deux barres en miroir depuis le centre : on voit qui en a le plus
-              <View style={{ flexDirection: dir().row, height: 6, gap: 4 }}>
+              <View style={{ flexDirection: dir().row, height: 6, gap: 6, paddingHorizontal: 14, marginTop: -4, marginBottom: 10 }}>
                 {[[r.va, r.w[0], "flex-end"], [r.vb, r.w[1], "flex-start"]].map(([v, win, al], k) => (
-                  <View key={k} style={{ flex: 1, alignItems: dir().rtl ? (al === "flex-end" ? "flex-start" : "flex-end") : al }}>
-                    <View style={{ width: `${(v / (Math.max(r.va, r.vb) || 1)) * 100}%`, height: 6, borderRadius: 3, backgroundColor: win ? "#3FB46B" : C.tint2 }} />
+                  <View key={k} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: C.tint2, alignItems: dir().rtl ? (al === "flex-end" ? "flex-start" : "flex-end") : al, overflow: "hidden" }}>
+                    <View style={{ width: `${Math.max(3, (v / (Math.max(r.va, r.vb) || 1)) * 100)}%`, height: 6, borderRadius: 3, backgroundColor: win ? "#3FB46B" : C.faint }} />
                   </View>
                 ))}
               </View>

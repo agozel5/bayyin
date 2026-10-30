@@ -6,7 +6,7 @@ import { loadCertified, verifyCertification } from "../../../public/lib/certchec
 import { longDate } from "../recalls";
 import { ms } from "../motion";
 import PhotoZoom, { photoList } from "./PhotoZoom";
-import Svg, { Circle, Rect, Defs, LinearGradient, Stop } from "react-native-svg";
+import Svg, { Circle, Rect, Defs, LinearGradient, RadialGradient, Stop } from "react-native-svg";
 import { Glyph, Tile } from "./Art";
 import { Khatam, Thumb, STATUS_GLYPH } from "./Cards";
 import { Txt, Muted, Row, FadeIn } from "./ui";
@@ -25,13 +25,20 @@ const open = (url) => Linking.openURL(url).catch(() => {});
 export function Top({ p }) {
   const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).join(" · ");
   const [zoom, setZoom] = useState(false);
-  const hasPhotos = photoList(p).length > 0;
+  const nPhotos = photoList(p).length;
+  const hasPhotos = nPhotos > 0;
   return (
     <Row gap={14} style={{ alignItems: "center" }}>
       <Pressable disabled={!hasPhotos} onPress={() => { haptic.tap(); setZoom(true); }} accessibilityRole="imagebutton" accessibilityLabel={t("zoom.open")}
         style={({ pressed }) => [{ borderRadius: 20, backgroundColor: C.surface, padding: 6, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
         <Thumb p={p} size={96} radius={16} />
-        {hasPhotos ? (
+        {/* Plusieurs photos : leur nombre (comme sur le web) ; une seule : la loupe */}
+        {nPhotos > 1 ? (
+          <View style={{ position: "absolute", bottom: 8, [dir().rtl ? "left" : "right"]: 8, flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 7, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.6)" }}>
+            <Glyph paths='<rect x="4" y="6" width="13" height="13" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v11"/>' size={14} color="#fff" width={2.2} />
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 13 }}>{nPhotos}</Text>
+          </View>
+        ) : hasPhotos ? (
           <View style={{ position: "absolute", bottom: 8, [dir().rtl ? "left" : "right"]: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center" }}>
             <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5"/>' size={15} color="#fff" width={2.2} />
           </View>
@@ -131,6 +138,13 @@ export function VerdictHero({ p, v, scanned }) {
     ) : null}
     <View accessibilityRole="summary" accessibilityLabel={`${S(v.status, "label")}. ${S(v.status, "lead")}`} onLayout={(e) => setCardW(e.nativeEvent.layout.width)}
       style={{ borderRadius: R.xl, overflow: "hidden", backgroundColor: vc, shadowColor: vc, shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 5 }}>
+      {/* Lumière douce en haut à gauche (comme le bandeau du web) */}
+      <Svg pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
+        <Defs><RadialGradient id="vlight" cx="28" cy="0" rx="85" ry="95" gradientUnits="userSpaceOnUse">
+          <Stop offset="0" stopColor="#fff" stopOpacity={isDark() ? 0.16 : 0.26} /><Stop offset="0.38" stopColor="#fff" stopOpacity={isDark() ? 0.05 : 0.06} /><Stop offset="0.62" stopColor="#fff" stopOpacity="0" />
+        </RadialGradient></Defs>
+        <Rect x="0" y="0" width="100" height="100" fill="url(#vlight)" />
+      </Svg>
       {scanned ? (
         <Animated.View pointerEvents="none" style={{ position: "absolute", top: 20, [dir().rtl ? "right" : "left"]: 20, width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.35)",
           opacity: wave.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: wave.interpolate({ inputRange: [0, 1], outputRange: [0.6, 10] }) }] }} />

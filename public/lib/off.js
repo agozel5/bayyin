@@ -274,6 +274,7 @@ async function getJson(url, timeout = 12000, { tries = 1, signal } = {}) {
 
 // Cache partagé avec le service worker (sw.js) : fiches produits disponibles hors connexion.
 export const PRODUCT_CACHE = "hs-products-v1";
+const POPULAR_URL = typeof location !== "undefined" && /^https?:/.test(location.protocol) ? new URL("data/popular.json", location.href).href : "https://agozel5.github.io/bayyin/data/popular.json";
 export const MED_CACHE = "hs-med-v1"; // base des médicaments (voir sw.js)
 
 const rawCache = new Map(); // fiches brutes : le verdict est recalculé selon les réglages
@@ -437,7 +438,17 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
       if (!("caches" in globalThis)) throw new OffError("network");
       const cache = await caches.open(PRODUCT_CACHE);
       let count = 0;
-      for (let page = 1; page <= pages; page++) {
+      // Fichier préparé chaque semaine sur le site (data/popular.json) : un seul téléchargement, fiable
+      try {
+        const pack = await getJson(POPULAR_URL, 45000);
+        const list = ((pack && pack.products) || []).filter((p) => p.code);
+        await Promise.all(list.map((p) => cache.put(productUrl(p.code),
+          new Response(JSON.stringify({ status: 1, code: p.code, product: p }), { headers: { "Content-Type": "application/json", "X-HS-Pack": "1" } }))));
+        count = list.length;
+        onProgress && onProgress(count, count);
+      } catch { /* repli : la recherche d'Open Food Facts */ }
+      const fromFile = count >= 100;
+      for (let page = 1; !fromFile && page <= pages; page++) {
         const url = `${OFF_BASE}/api/v2/search?countries_tags=en:france&sort_by=unique_scans_n` +
           `&page_size=${pageSize}&page=${page}&fields=${FIELDS}`;
         const data = await getJson(url, 30000);

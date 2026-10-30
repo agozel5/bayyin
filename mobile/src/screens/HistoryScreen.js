@@ -1,8 +1,8 @@
 // Historique : « Mon bilan » (anneau des verdicts, 7 jours, note moyenne), filtres, produits par jour.
-import React, { useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, Animated, Easing } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { Txt, Muted, Row } from "../components/ui";
+import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
 import { PageHead, Chip, ChipRow } from "../components/Controls";
 import { ListRow } from "../components/Cards";
@@ -12,7 +12,7 @@ import { t, tn, locale } from "../i18n";
 import { getHistory, clearHistory } from "../storage";
 import { verdictOf, relTime, S, scoreOf } from "../view";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
-import { haptic } from "../motion";
+import { haptic, ms } from "../motion";
 import { isPremium, canUse, FREE_HISTORY_DAYS } from "../premium";
 
 const ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
@@ -25,22 +25,63 @@ const FILTERS = [
 ];
 const col = (st) => STATUS_COLORS[st][0];
 
+// Animation d'arrivée (comme le bilan du web) : valeur de 0 à 1, relancée quand `key` change
+function useIntro(key, { duration = 900, delay = 100 } = {}) {
+  const [k, setK] = useState(ms(1) ? 0 : 1);
+  useEffect(() => {
+    if (!ms(1)) return setK(1);
+    const v = new Animated.Value(0);
+    const id = v.addListener(({ value }) => setK(value));
+    setK(0);
+    Animated.timing(v, { toValue: 1, duration, delay, easing: Easing.bezier(0.3, 0.8, 0.3, 1), useNativeDriver: false }).start();
+    return () => { v.removeListener(id); v.stopAnimation(); };
+  }, [key]);
+  return k;
+}
+
 function Donut({ counts, total, size = 118 }) {
   const r = size / 2 - 10, c = 2 * Math.PI * r;
+  // Les segments se dessinent l'un après l'autre, le nombre au centre apparaît
+  const k = useIntro(`${total}:${ORDER.map((s) => counts[s] || 0).join(",")}`, { duration: 1100 });
+  const segs = ORDER.filter((s) => counts[s]);
   let acc = 0;
+  const center = Math.min(1, Math.max(0, (k - 0.15) / 0.5));
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.tint2} strokeWidth={14} fill="none" />
-        {ORDER.filter((s) => counts[s]).map((s) => {
+        {segs.map((s, i) => {
           const len = (counts[s] / total) * c;
-          const el = <Circle key={s} cx={size / 2} cy={size / 2} r={r} stroke={col(s)} strokeWidth={14} fill="none" strokeDasharray={`${Math.max(len - 2, 1)} ${c}`} strokeDashoffset={-acc} />;
+          // chaque segment a sa fenêtre de temps (décalée de 14 %)
+          const start = Math.min(0.4, i * 0.14), span = 0.6;
+          const f = Math.min(1, Math.max(0, (k - start) / span));
+          const eased = 1 - Math.pow(1 - f, 3);
+          const el = <Circle key={s} cx={size / 2} cy={size / 2} r={r} stroke={col(s)} strokeWidth={14} fill="none" strokeDasharray={`${Math.max((len - 2) * eased, 0.01)} ${c}`} strokeDashoffset={-acc} />;
           acc += len;
           return el;
         })}
       </Svg>
-      <Text style={{ fontSize: 30, fontWeight: "800", color: C.fg }}>{total}</Text>
-      <Text style={{ fontSize: 11, color: C.muted, textAlign: "center", width: 70 }}>{t(total === 1 ? "history.count_one" : "history.count_other")}</Text>
+      <View style={{ alignItems: "center", opacity: center, transform: [{ scale: 0.85 + 0.15 * center }] }}>
+        <Text style={{ fontSize: 30, fontWeight: "800", color: C.fg }}>{total}</Text>
+        <Text style={{ fontSize: 11, color: C.muted, textAlign: "center", width: 70 }}>{t(total === 1 ? "history.count_one" : "history.count_other")}</Text>
+      </View>
+    </View>
+  );
+}
+
+// Barre d'un jour : elle pousse depuis le bas, les jours l'un après l'autre
+function DayBar({ i, children, h, weeksAgo }) {
+  const v = useRef(new Animated.Value(ms(1) ? 0 : 1)).current;
+  useEffect(() => {
+    if (!ms(1)) return;
+    v.setValue(0);
+    Animated.timing(v, { toValue: 1, duration: 600, delay: 100 + i * 60, easing: Easing.bezier(0.3, 1.25, 0.5, 1), useNativeDriver: true }).start();
+  }, [weeksAgo]);
+  return (
+    <View style={{ height: 80, width: 18, justifyContent: "flex-end", borderRadius: 6, backgroundColor: C.tint, overflow: "hidden" }}>
+      <Animated.View style={{ height: h, borderRadius: 6, overflow: "hidden", transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }] }}>
+        {children}
+      </Animated.View>
     </View>
   );
 }
@@ -88,11 +129,9 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
         {days.map((d, i) => (
           <View key={d.s} style={{ flex: 1, alignItems: "center", gap: 4 }}>
             <Text style={{ fontSize: 11, color: C.muted, height: 14 }}>{d.n || ""}</Text>
-            <View style={{ height: 80, width: 18, justifyContent: "flex-end", borderRadius: 6, backgroundColor: C.tint, overflow: "hidden" }}>
-              <View style={{ height: d.n ? `${Math.max(10, (d.n / max) * 100)}%` : 3, borderRadius: 6, overflow: "hidden" }}>
-                {d.n ? ORDER.filter((s) => d.c[s]).map((s) => <View key={s} style={{ flex: d.c[s], backgroundColor: col(s) }} />) : <View style={{ flex: 1, backgroundColor: C.tint2 }} />}
-              </View>
-            </View>
+            <DayBar i={i} weeksAgo={weeksAgo} h={d.n ? `${Math.max(10, (d.n / max) * 100)}%` : 3}>
+              {d.n ? ORDER.filter((s) => d.c[s]).map((s) => <View key={s} style={{ flex: d.c[s], backgroundColor: col(s) }} />) : <View style={{ flex: 1, backgroundColor: C.tint2 }} />}
+            </DayBar>
             <Text style={{ fontSize: 11, color: i === 6 && !weeksAgo ? C.fg : C.muted, fontWeight: i === 6 && !weeksAgo ? "800" : "500" }}>{wd.format(d.s).replace(/\.$/, "")}</Text>
           </View>
         ))}
@@ -103,6 +142,7 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
 }
 
 function AvgGauge({ avg }) {
+  const k = useIntro(avg, { duration: 1000, delay: 250 });
   const g = avg >= 75 ? "excellent" : avg >= 50 ? "bon" : avg >= 25 ? "mediocre" : "mauvais";
   return (
     <View style={{ gap: 8, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
@@ -112,8 +152,8 @@ function AvgGauge({ avg }) {
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GRADE_COLORS[g] + "33" }}><Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 12 }}>{t(`grade.${g}`)}</Text></View>
       </Row>
       <View style={{ direction: "ltr" }}>
-        <View style={{ height: 12 }}><View style={{ position: "absolute", left: `${avg}%`, marginLeft: -6, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} /></View>
-        <View style={{ flexDirection: "row", gap: 2, height: 7 }}>{["#E2533F", "#F0A23A", "#7DBE45", "#1E8A4C"].map((c) => <View key={c} style={{ flex: 1, backgroundColor: c, borderRadius: 4 }} />)}</View>
+        <View style={{ height: 12 }}><View style={{ position: "absolute", left: `${avg * (1 - Math.pow(1 - k, 3))}%`, opacity: Math.min(1, k * 4), marginLeft: -6, width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} /></View>
+        <View style={{ height: 7, overflow: "hidden", width: `${Math.min(100, k * 160)}%` }}><View style={{ flexDirection: "row", gap: 2, height: 7, width: `${100 / Math.max(0.01, Math.min(1, k * 1.6))}%` }}>{["#E2533F", "#F0A23A", "#7DBE45", "#1E8A4C"].map((c) => <View key={c} style={{ flex: 1, backgroundColor: c, borderRadius: 4 }} />)}</View></View>
       </View>
     </View>
   );
@@ -175,13 +215,13 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         <Row gap={18}>
           <Donut counts={counts} total={all.length} />
           <View style={{ flex: 1, gap: 8 }}>
-            {ORDER.filter((s) => counts[s]).map((s) => (
-              <Row key={s} gap={8}>
+            {ORDER.filter((s) => counts[s]).map((s, i) => (
+              <FadeIn key={s} delay={150 + i * 90}><Row gap={8}>
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col(s) }} />
                 <Text numberOfLines={1} style={{ flex: 1, fontSize: 13.5, color: C.fg, textAlign: dir().ta }}>{S(s, "label")}</Text>
                 <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.fg }}>{counts[s]}</Text>
                 <Text style={{ fontSize: 12, color: C.muted, width: 38, textAlign: "right" }}>{Math.round((counts[s] / all.length) * 100)} %</Text>
-              </Row>
+              </Row></FadeIn>
             ))}
           </View>
         </Row>

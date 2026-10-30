@@ -145,8 +145,6 @@ export default function PlacesScreen({ onClose }) {
       ) : null}
       {st.error ? <Txt style={{ color: STATUS_COLORS.mashbouh[0], fontWeight: "700" }}>{st.error}</Txt> : null}
 
-      {st.center ? <PlacesMap center={st.center} places={vis} selected={st.selected} onSelect={(id) => set({ selected: id })} /> : null}
-      {st.center && !st.loading && !st.error ? <Muted style={{ fontSize: 13.5 }}>{tn("places.found", vis.length, { where: st.label, r: st.radius / 1000 })}</Muted> : null}
       {st.list.length ? (
         <ChipRow>
           {["all", ...CATEGORIES.filter((c) => counts[c])].map((c) => (
@@ -154,6 +152,9 @@ export default function PlacesScreen({ onClose }) {
           ))}
         </ChipRow>
       ) : null}
+      {/* Comme sur le site : filtres, puis le nombre de commerces, puis la carte */}
+      {st.center && !st.loading && !st.error ? <Muted style={{ fontSize: 16, fontWeight: "700", lineHeight: 22 }}>{tn("places.found", vis.length, { where: st.label, r: st.radius / 1000 })}</Muted> : null}
+      {st.center ? <PlacesMap center={st.center} places={vis} selected={st.selected} onSelect={(id) => set({ selected: id })} height={320} /> : null}
 
       {st.loading && !st.list.length ? [0, 1, 2].map((i) => <Skeleton key={i} height={110} radius={18} />) : null}
       {st.center && !st.loading && !st.error && !vis.length ? (

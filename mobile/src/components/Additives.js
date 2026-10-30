@@ -1,7 +1,7 @@
 // Additifs : nom, fonction, picto d'origine, statut halal (selon le réglage) et risque santé,
 // avec le détail qui s'ouvre au toucher. Même présentation que la version web (onglet Additifs et Composition).
-import React, { useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, Linking, Animated, Easing } from "react-native";
 import { Art, Glyph } from "./Art";
 import { Txt, Muted, Row } from "./ui";
 import { Pill2 } from "./SheetParts";
@@ -11,7 +11,7 @@ import { getSettings } from "../storage";
 import { ADDITIVES, ADDITIVE_RISK, SEVERITY_OF, TOPIC_OF } from "../core";
 import { ORIGIN_ART } from "../../../public/lib/rank-art.js";
 import DB from "../../../public/data/additives.json";
-import { haptic } from "../motion";
+import { haptic, ms } from "../motion";
 import { Chevron } from "./Reveal";
 import { FadeIn } from "./ui";
 
@@ -64,13 +64,24 @@ const RISK_STEPS = () => [["none", "#3FB46B"], ["limite", "#D9B600"], ["modere",
 function RiskScale({ level }) {
   const steps = RISK_STEPS();
   const i = steps.findIndex(([k]) => k === (level || "none"));
+  // Repère ▼ au-dessus du niveau, qui glisse à sa place à l'ouverture (comme sur le web)
+  const v = useRef(new Animated.Value(ms(1) ? 0 : 1)).current;
+  useEffect(() => { Animated.timing(v, { toValue: 1, duration: ms(650), delay: ms(120), easing: Easing.bezier(0.3, 1.4, 0.5, 1), useNativeDriver: false }).start(); }, []);
+  const at = ((i + 0.5) / steps.length) * 100;
   return (
-    <View style={{ flexDirection: "row", gap: 3, marginVertical: 4, direction: "ltr" }}>
-      {steps.map(([k, c], j) => (
-        <View key={k} style={{ flex: 1, paddingVertical: j === i ? 5 : 3, borderRadius: 7, backgroundColor: j === i ? c : c + "55", alignItems: "center" }}>
-          <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: "800", color: j === i ? "#fff" : C.fg, opacity: j === i ? 1 : 0.6 }}>{t(`risk.short.${k}`)}</Text>
-        </View>
-      ))}
+    <View style={{ marginVertical: 4, direction: "ltr" }}>
+      <View style={{ height: 11 }}>
+        <Animated.View style={{ position: "absolute", left: v.interpolate({ inputRange: [0, 1], outputRange: ["0%", `${at}%`] }), marginLeft: -7, opacity: v, width: 0, height: 0,
+          borderLeftWidth: 7, borderRightWidth: 7, borderTopWidth: 9, borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: C.fg }} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 3, alignItems: "center" }}>
+        {steps.map(([k, c], j) => (
+          <View key={k} style={{ flex: 1, paddingVertical: j === i ? 6 : 3, borderRadius: 8, backgroundColor: j === i ? c : c + "55", alignItems: "center",
+            shadowColor: c, shadowOpacity: j === i ? 0.5 : 0, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } }}>
+            <Text numberOfLines={1} style={{ fontSize: 11.5, fontWeight: "800", color: j === i ? "#fff" : C.fg, opacity: j === i ? 1 : 0.6 }}>{t(`risk.short.${k}`)}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -83,7 +94,7 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
   const healthPill = r.health.level ? <Pill2 text={t(`risk.short.${r.health.level}`)} colors={RISK_COLORS[r.health.level]} /> : null;
   const art = originArt(r.origin, r.code);
   return (
-    <View style={{ borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line }}>
+    <View style={{ borderTopWidth: first || openR ? 0 : 0.5, borderTopColor: C.line, borderRadius: openR ? R.md : 0, backgroundColor: openR ? C.tint : "transparent", marginHorizontal: openR ? -8 : 0, paddingHorizontal: openR ? 8 : 0, marginVertical: openR ? 4 : 0 }}>
       <Pressable onPress={() => { haptic.tap(); setOpen(!openR); }} accessibilityRole="button" accessibilityState={{ expanded: openR }}
         accessibilityLabel={`${r.label} ${r.name}`} style={{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 12 }}>
         <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>{art ? <Art xml={art} size={28} /> : null}</View>
@@ -92,7 +103,7 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
         </View>
         <View style={{ flex: 1, gap: 1 }}>
           <Txt numberOfLines={2} style={{ fontWeight: "700", fontSize: 15, lineHeight: 19 }}>{r.name || r.label}</Txt>
-          {fn || r.origin !== "plant" ? <Muted numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16 }}>{[fn, r.origin !== "plant" ? t(`add.origin.${r.origin}`) : ""].filter(Boolean).join(" · ")}</Muted> : null}
+          {fn || r.origin !== "plant" ? <Muted numberOfLines={1} style={{ fontSize: 12.5, lineHeight: 16 }}>{[fn, r.origin !== "plant" ? t(`add.origin.${r.origin}`) : ""].filter(Boolean).join(" · ")}</Muted> : null}
         </View>
         <View style={{ alignItems: "flex-end", gap: 4 }}>
           {halalPill}{healthPill}
