@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Bayyin motion</title>
+<style>
+@font-face{font-family:"Plex";font-weight:400;src:url("../../public/fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Plex";font-weight:500;src:url("../../public/fonts/ibm-plex-sans-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Plex";font-weight:600;src:url("../../public/fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Plex";font-weight:700;src:url("../../public/fonts/ibm-plex-sans-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Plex";font-weight:400;src:url("../../public/fonts/ibm-plex-sans-latin-ext-400-normal.woff2") format("woff2");unicode-range:U+0100-024F,U+0152-0153,U+1E00-1EFF}
+@font-face{font-family:"PlexAr";font-weight:700;src:url("../../public/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2") format("woff2")}
+@font-face{font-family:"PlexMono";font-weight:600;src:url("../../public/fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2")}
+html,body{margin:0;background:#000}
+canvas{display:block}
+</style></head><body>
+<canvas id="c"></canvas>
+<script>
+// Motion design Bayyin : chaque image est dessinée à partir du temps t (secondes), de façon déterministe,
+// pour être capturée image par image (scripts/motion/render.py). Format choisi par ?f=story (1080×1920) ou ?f=square (1080×1080).
+const P = new URLSearchParams(location.search);
+const FMT = P.get("f") || "story";
+const W = 1080, H = FMT === "square" ? 1080 : FMT === "post" ? 1350 : 1920;
+const S = H / 1920; // échelle verticale de la mise en page
+const cv = document.getElementById("c"); cv.width = W; cv.height = H;
+const M = cv.getContext("2d");
+// Chaque scène est dessinée sur sa propre toile, puis posée avec son fondu
+const off = document.createElement("canvas"); off.width = W; off.height = H;
+let x = off.getContext("2d");
+const DUR = 23;
+
+// ---------- palette ----------
+const K = { deep: "#0A2A1F", green: "#0F6545", brand: "#14805A", light: "#1FA371", gold: "#E7B84E", cream: "#F4F8F5", ink: "#16241C", muted: "#5D6A63",
+  cert: "#169B57", prob: "#3E8A49", doubt: "#EE8A1F", haram: "#E0423A", info: "#3F79B5" };
+
+// ---------- outils ----------
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (p) => 1 - Math.pow(1 - p, 3);                  // sortie douce
+const eio = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const back = (p) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const lerp = (a, b, p) => a + (b - a) * p;
+function rr(X, Y, w, h, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); }
+function font(w, s, fam = "Plex") { x.font = `${w} ${s}px "${fam}", system-ui, sans-serif`; }
+function text(s, X, Y, { w = 700, size = 60, color = K.cream, align = "center", alpha = 1, fam = "Plex", base = "alphabetic" } = {}) {
+  x.save(); x.globalAlpha *= alpha; font(w, size, fam); x.fillStyle = color; x.textAlign = align; x.textBaseline = base; x.fillText(s, X, Y); x.restore();
+}
+// Titre qui monte mot par mot
+function words(s, X, Y, p, { size = 84, w = 700, color = K.cream, lh = 1.12, maxW = 900 } = {}) {
+  font(w, size);
+  const parts = s.split(" "); const lines = []; let cur = "";
+  for (const p2 of parts) { const tryL = cur ? cur + " " + p2 : p2; if (x.measureText(tryL).width > maxW && cur) { lines.push(cur); cur = p2; } else cur = tryL; }
+  lines.push(cur);
+  let k = 0; const n = parts.length;
+  lines.forEach((ln, li) => {
+    const ws = ln.split(" "); font(w, size);
+    let cx = X - x.measureText(ln).width / 2;
+    ws.forEach((wd) => {
+      const q = eo(seg(p, (k / n) * 0.6, (k / n) * 0.6 + 0.4));
+      const ww = x.measureText(wd + " ").width;
+      x.save(); x.globalAlpha = q; font(w, size); x.fillStyle = color; x.textAlign = "left";
+      x.fillText(wd, cx, Y + li * size * lh + (1 - q) * 40); x.restore();
+      cx += ww; k++;
+    });
+  });
+}
+
+// Khatam : étoile à huit branches (deux carrés), en motif
+function star(cx, cy, r, rot) {
+  for (const a of [0, Math.PI / 4]) {
+    x.save(); x.translate(cx, cy); x.rotate(rot + a); x.strokeRect(-r, -r, 2 * r, 2 * r); x.restore();
+  }
+}
+function pattern(t, alpha = 0.08, color = "#FFFFFF") {
+  x.save(); x.strokeStyle = color; x.globalAlpha = alpha; x.lineWidth = 3;
+  const step = 160;
+  for (let yy = -step; yy < H + step; yy += step) for (let xx = -step; xx < W + step; xx += step) {
+    const off = ((yy / step) % 2) * step / 2;
+    star(xx + off, yy + ((t * 12) % step), 40, t * 0.15);
+  }
+  x.restore();
+}
+function background(t, top = K.green, bottom = K.deep) {
+  const g = x.createLinearGradient(0, 0, W * 0.4, H); g.addColorStop(0, top); g.addColorStop(1, bottom);
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  pattern(t);
+  // halo doux
+  const rg = x.createRadialGradient(W * 0.3, H * 0.18, 10, W * 0.3, H * 0.18, W * 0.9);
+  rg.addColorStop(0, "rgba(255,255,255,0.10)"); rg.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = rg; x.fillRect(0, 0, W, H);
+}
+
+// Logo (même dessin que l'icône de l'app), centre (cx, cy), taille s
+function logo(cx, cy, s, a = 1) {
+  x.save(); x.globalAlpha *= a; x.translate(cx - s / 2, cy - s / 2); x.scale(s / 1024, s / 1024);
+  const g = x.createLinearGradient(0, 0, 1024, 1024); g.addColorStop(0, "#1FA371"); g.addColorStop(0.55, "#14805A"); g.addColorStop(1, "#0B5A3F");
+  rr(0, 0, 1024, 1024, 230); x.fillStyle = g; x.fill();
+  x.strokeStyle = "rgba(255,255,255,0.38)"; x.lineWidth = 30; x.lineCap = "round";
+  x.stroke(new Path2D("M232 340v-60a48 48 0 0 1 48-48h60M684 232h60a48 48 0 0 1 48 48v60M792 684v60a48 48 0 0 1-48 48h-60M340 792h-60a48 48 0 0 1-48-48v-60"));
+  x.save(); x.translate(512, 506); x.scale(0.7, 0.7); x.translate(-547, -521); x.translate(-60, 0);
+  x.strokeStyle = "#fff"; x.lineWidth = 96; x.lineJoin = "round";
+  x.stroke(new Path2D("M318 442c-2 112 66 162 206 166l152 2c138 0 212-52 220-168 4-48-6-96-24-132")); x.translate(60, 0);
+  x.beginPath(); x.arc(462, 752, 64, 0, Math.PI * 2); x.fillStyle = "#FFC95C"; x.fill();
+  x.restore(); x.restore();
+}
+
+// بيّن tracé à l'encre puis rempli
+function inkWord(cx, cy, p, size) {
+  x.save(); font(700, size, "PlexAr"); x.textAlign = "center"; x.textBaseline = "middle"; x.direction = "rtl";
+  x.lineWidth = 5; x.strokeStyle = K.gold; x.setLineDash([2400]); x.lineDashOffset = 2400 * (1 - eio(clamp(p / 0.75)));
+  x.strokeText("بيّن", cx, cy);
+  x.setLineDash([]); x.globalAlpha = eo(seg(p, 0.55, 1)); x.fillStyle = K.gold; x.fillText("بيّن", cx, cy);
+  x.restore();
+}
+
+// Pictogramme (chemin SVG 24×24) dessiné au trait
+function ico(d, cx, cy, s, color, lw = 2.2) {
+  x.save(); x.translate(cx - s / 2, cy - s / 2); x.scale(s / 24, s / 24); x.strokeStyle = color; x.lineWidth = lw; x.lineCap = "round"; x.lineJoin = "round"; x.fillStyle = "transparent";
+  d.split("|").forEach((p) => {
+    if (p.startsWith("C")) { const [cx2, cy2, r] = p.slice(1).split(",").map(Number); x.beginPath(); x.arc(cx2, cy2, r, 0, Math.PI * 2); x.stroke(); }
+    else x.stroke(new Path2D(p));
+  });
+  x.restore();
+}
+const I = {
+  check: "M5 12.5l4.5 4.5L19 7.5", cross: "M7 7l10 10M17 7L7 17", q: "M9.2 9a3 3 0 1 1 4.1 2.8c-.8.4-1.3 1-1.3 1.9v.6|M12 17.5h.01",
+  doc: "M7 3h7l4 4v14H7z|M14 3v4h4M10 12h5M10 16h5", origin: "M8 4c0 3 1 4 4 4s4-1 4-4|M6 10c0 6 2.5 10 6 10s6-4 6-10|M10 14h4",
+  flask: "M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3|M7.5 15h9", shield: "M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z|M9 12l2 2 4-4",
+  warn: "M12 7v6|M12 17h.01", dash: "M7 12h10", bell: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z|M10 20.5a2 2 0 0 0 4 0",
+  globe: "C12,12,9|M3 12h18|M12 3c2.5 2.7 3.5 5.7 3.5 9s-1 6.3-3.5 9c-2.5-2.7-3.5-5.7-3.5-9s1-6.3 3.5-9z", wifi: "M5 12.5a10 10 0 0 1 14 0|M8.5 16a5 5 0 0 1 7 0|M12 19.5h.01|M3 3l18 18",
+  heart: "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z", users: "C9,8,3|M3.5 19c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2|C17,9.5,2.3|M14.5 15c.8-.6 1.6-.8 2.5-.8 2.2 0 4 1.7 4 4",
+};
+
+// ---------- scènes ----------
+function scIntro(t) { // 0 – 2.8
+  background(t);
+  const p = seg(t, 0.1, 2.1);
+  const cy = H * 0.47;
+  logo(W / 2, cy - 330 * S, 220 * S * (0.6 + 0.4 * back(seg(t, 0, 0.7))), seg(t, 0, 0.4));
+  inkWord(W / 2, cy, p, 300 * S);
+  text("Bayyin", W / 2, cy + 230 * S, { size: 96 * S, alpha: eo(seg(t, 1.3, 1.9)) });
+  text("Le halal, en clair.", W / 2, cy + 330 * S, { w: 500, size: 56 * S, color: "rgba(244,248,245,0.82)", alpha: eo(seg(t, 1.6, 2.3)) });
+}
+
+// Paquet générique (aucune marque) avec code-barres
+function pack(cx, cy, s, t) {
+  x.save(); x.translate(cx, cy); x.scale(s, s);
+  // ombre
+  x.fillStyle = "rgba(0,0,0,0.25)"; x.beginPath(); x.ellipse(0, 330, 240, 30, 0, 0, Math.PI * 2); x.fill();
+  // sachet
+  x.beginPath(); x.moveTo(-230, -300); x.lineTo(230, -300); x.lineTo(250, -250); x.lineTo(260, 280); x.quadraticCurveTo(0, 310, -260, 280); x.lineTo(-250, -250); x.closePath();
+  const g = x.createLinearGradient(-260, -300, 260, 300); g.addColorStop(0, "#FF8FB1"); g.addColorStop(1, "#E9557F"); x.fillStyle = g; x.fill();
+  x.fillStyle = "rgba(255,255,255,0.18)"; x.fillRect(-230, -300, 460, 26);
+  // bonbons dessinés
+  const cols = ["#FFD166", "#7BDFF2", "#B2F7EF", "#F7AEF8", "#FFFFFF"];
+  for (let i = 0; i < 7; i++) {
+    const a = i * 0.9 + 0.3, r = 60 + (i % 3) * 40;
+    x.fillStyle = cols[i % cols.length]; x.beginPath(); x.ellipse(Math.cos(a) * r, -90 + Math.sin(a) * r * 0.6, 34, 24, a, 0, Math.PI * 2); x.fill();
+  }
+  font(700, 64); x.fillStyle = "#fff"; x.textAlign = "center"; x.fillText("BONBONS", 0, 60);
+  font(500, 30); x.fillStyle = "rgba(255,255,255,0.85)"; x.fillText("gélifiés · 200 g", 0, 104);
+  // code-barres
+  x.fillStyle = "#fff"; rr(-120, 150, 240, 110, 10); x.fill();
+  x.fillStyle = K.ink; let bx = -100; const widths = [3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 1, 3, 2, 1];
+  widths.forEach((w2, i) => { if (i % 2 === 0) x.fillRect(bx, 165, w2 * 2.6, 70); bx += w2 * 2.6 + 2; });
+  font(600, 18, "PlexMono"); x.fillStyle = K.ink; x.fillText("3 760123 456789", 0, 252);
+  x.restore();
+}
+function scScan(t) { // 2.8 – 6.4 (t local)
+  background(t + 2.8);
+  words("Scannez un produit.", W / 2, 300 * S, seg(t, 0.1, 1.0), { size: 92 * S });
+  const enter = eo(seg(t, 0, 0.8));
+  const cy = H * 0.56;
+  pack(W / 2, cy + (1 - enter) * 300, 1.25 * Math.min(1, S * 1.15), t);
+  // cadre de scan autour du code-barres
+  const bcY = cy + 205 * 1.25 * Math.min(1, S * 1.15);
+  const conv = eio(seg(t, 0.9, 1.7));
+  const hw = lerp(380, 175, conv), hh = lerp(260, 100, conv);
+  const found = seg(t, 2.3, 2.6);
+  const col = found > 0 ? K.doubt : "#FFFFFF";
+  x.save(); x.strokeStyle = col; x.lineWidth = 10; x.lineCap = "round"; x.globalAlpha = seg(t, 0.7, 1.0);
+  const L = 60;
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+    const cx2 = W / 2 + sx * hw, cy2 = bcY + sy * hh;
+    x.beginPath(); x.moveTo(cx2, cy2 - sy * L); x.lineTo(cx2, cy2); x.lineTo(cx2 - sx * L, cy2); x.stroke();
+  });
+  x.restore();
+  // laser
+  if (t > 1.6 && t < 2.4) {
+    const ly = bcY - hh + (hh * 2) * (0.5 + 0.5 * Math.sin((t - 1.6) * 9));
+    x.save(); x.shadowColor = "#FF4D40"; x.shadowBlur = 24; x.fillStyle = "#FF6B61"; x.fillRect(W / 2 - hw + 20, ly - 3, hw * 2 - 40, 6); x.restore();
+  }
+  // bip : anneau
+  if (found > 0) {
+    const r2 = seg(t, 2.3, 3.2);
+    x.save(); x.globalAlpha = 1 - r2; x.strokeStyle = K.doubt; x.lineWidth = 8; x.beginPath(); x.arc(W / 2, bcY, 120 + r2 * 380, 0, Math.PI * 2); x.stroke(); x.restore();
+  }
+}
+
+// Carte du verdict (comme dans l'app)
+function verdictCard(cx, cy, w, p, { color = K.doubt, glyph = I.q, title = "Douteux", kicker = "Selon votre avis : Avis courant", lead = "Un ingrédient a une origine inconnue." } = {}) {
+  const pp = back(clamp(p));
+  x.save(); x.translate(cx, cy); x.scale(0.85 + 0.15 * pp, 0.85 + 0.15 * pp); x.globalAlpha = clamp(p * 2);
+  const h = 300;
+  x.shadowColor = color; x.shadowBlur = 50; x.shadowOffsetY = 20;
+  rr(-w / 2, -h / 2, w, h, 48); x.fillStyle = color; x.fill(); x.shadowColor = "transparent";
+  // lumière
+  const rg = x.createRadialGradient(-w * 0.2, -h / 2, 10, -w * 0.2, -h / 2, w * 0.8); rg.addColorStop(0, "rgba(255,255,255,0.28)"); rg.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = rg; rr(-w / 2, -h / 2, w, h, 48); x.fill();
+  // icône
+  const ip = back(seg(p, 0.15, 0.6));
+  x.save(); x.translate(-w / 2 + 130, 0); x.scale(ip, ip); x.beginPath(); x.arc(0, 0, 82, 0, Math.PI * 2); x.fillStyle = "rgba(255,255,255,0.96)"; x.fill(); x.restore();
+  if (ip > 0.1) ico(glyph, -w / 2 + 130, 0, 100 * ip, color, 2.8);
+  const tx = -w / 2 + 250;
+  text(kicker, tx, -58, { size: 30, w: 600, align: "left", color: "rgba(255,255,255,0.9)", alpha: seg(p, 0.3, 0.6) });
+  text(title, tx, 20, { size: 84, w: 700, align: "left", color: "#fff", alpha: seg(p, 0.35, 0.7) });
+  text(lead, tx, 82, { size: 32, w: 400, align: "left", color: "rgba(255,255,255,0.92)", alpha: seg(p, 0.45, 0.8) });
+  x.restore();
+}
+// Chaîne de vérification : Ingrédients → Origine → Additifs → Label
+function chain(cx, cy, w, p) {
+  const steps = [["Ingrédients", I.doc, K.cert, I.check, "Liste lue"], ["Origine", I.origin, K.doubt, I.warn, "Gélatine"], ["Additifs", I.flask, K.cert, I.check, "Rien à signaler"], ["Label", I.shield, "#97A39C", I.dash, "Aucun label"]];
+  x.save(); x.translate(cx - w / 2, cy);
+  rr(0, -110, w, 250, 40); x.fillStyle = "rgba(255,255,255,0.96)"; x.globalAlpha = seg(p, 0, 0.15); x.fill(); x.globalAlpha = 1;
+  const gap = w / 4;
+  steps.forEach((s, i) => {
+    const q = seg(p, 0.1 + i * 0.17, 0.3 + i * 0.17);
+    if (i) {
+      const lp = seg(p, 0.02 + i * 0.17, 0.2 + i * 0.17);
+      x.fillStyle = "#E3E9E5"; rr(gap * (i - 1) + gap / 2 + 62, -42, gap - 124, 8, 4); x.fill();
+      x.fillStyle = steps[i - 1][2] === K.cert && s[2] !== "#97A39C" ? s[2] : "#E3E9E5"; rr(gap * (i - 1) + gap / 2 + 62, -42, (gap - 124) * lp, 8, 4); x.fill();
+    }
+    const cx2 = gap * i + gap / 2, b = back(q);
+    x.save(); x.translate(cx2, -38); x.scale(b, b);
+    x.beginPath(); x.arc(0, 0, 58, 0, Math.PI * 2); x.fillStyle = "#fff"; x.fill(); x.lineWidth = 7; x.strokeStyle = s[2]; x.stroke();
+    x.restore();
+    if (q > 0.05) ico(s[1], cx2, -38, 60 * b, s[2], 2);
+    const mq = back(seg(p, 0.2 + i * 0.17, 0.4 + i * 0.17));
+    if (mq > 0.01) { x.save(); x.translate(cx2 + 42, -2); x.scale(mq, mq); x.beginPath(); x.arc(0, 0, 24, 0, Math.PI * 2); x.fillStyle = s[2]; x.fill(); x.lineWidth = 5; x.strokeStyle = "#fff"; x.stroke(); x.restore(); ico(s[3], cx2 + 42, -2, 30 * mq, "#fff", 3.2); }
+    text(s[0], cx2, 62, { size: 30, w: 700, color: K.ink, alpha: q });
+    text(s[4], cx2, 102, { size: 26, w: s[2] === K.doubt ? 700 : 400, color: s[2] === K.doubt ? K.doubt : K.muted, alpha: q });
+  });
+  x.restore();
+}
+function scWhy(t) { // 6.4 – 10.8
+  background(t + 6.4);
+  words("Comprenez pourquoi.", W / 2, 300 * S, seg(t, 0.1, 1.0), { size: 92 * S });
+  verdictCard(W / 2, H * 0.36, 940, seg(t, 0.2, 1.1));
+  chain(W / 2, H * 0.36 + 360 * S + 40, 940, seg(t, 1.0, 2.6));
+  // point relevé
+  const q = eo(seg(t, 2.5, 3.1));
+  const fy = H * 0.36 + 640 * S + 80 + (1 - q) * 40;
+  x.save(); x.globalAlpha = q;
+  rr(70, fy, 940, 190, 32); x.fillStyle = "rgba(255,255,255,0.96)"; x.fill();
+  x.fillStyle = K.doubt; rr(70, fy, 14, 190, 7); x.fill();
+  text("Gélatine", 120, fy + 70, { size: 44, w: 700, align: "left", color: K.ink });
+  x.fillStyle = "#FFEBD1"; rr(760, fy + 30, 210, 56, 28); x.fill();
+  text("Douteux", 865, fy + 70, { size: 30, w: 700, color: "#B5620A" });
+  text("Origine animale possible, rarement précisée", 120, fy + 128, { size: 30, w: 400, align: "left", color: K.muted });
+  x.restore();
+  // surlignage qui pulse
+  if (q >= 1) { const pu = (Math.sin((t - 3.1) * 6) + 1) / 2; x.save(); x.globalAlpha = 0.25 * pu; x.strokeStyle = K.doubt; x.lineWidth = 6; rr(64, fy - 6, 952, 202, 36); x.stroke(); x.restore(); }
+}
+
+function scSchools(t) { // 10.8 – 13.8
+  background(t + 10.8);
+  words("Selon votre avis religieux.", W / 2, 300 * S, seg(t, 0.1, 1.0), { size: 86 * S });
+  const names = ["Avis courant", "Prudent", "Hanafite", "Malékite", "Chaféite", "Hanbalite"];
+  const active = Math.min(names.length - 1, Math.floor(seg(t, 0.9, 2.8) * names.length));
+  names.forEach((n, i) => {
+    const q = back(seg(t, 0.3 + i * 0.08, 0.8 + i * 0.08));
+    const col = i % 2, row = Math.floor(i / 2);
+    const bx = W / 2 + (col ? 30 : -450), by = H * 0.38 + row * 190 * Math.max(0.8, S);
+    const on = i === active;
+    x.save(); x.globalAlpha = clamp(q); x.translate(bx + 210, by + 70); x.scale(0.8 + 0.2 * q, 0.8 + 0.2 * q); x.translate(-(bx + 210), -(by + 70));
+    rr(bx, by, 420, 140, 36); x.fillStyle = on ? "#fff" : "rgba(255,255,255,0.12)"; x.fill();
+    x.lineWidth = 4; x.strokeStyle = on ? K.gold : "rgba(255,255,255,0.25)"; x.stroke();
+    x.beginPath(); x.arc(bx + 60, by + 70, 22, 0, Math.PI * 2); x.lineWidth = 5; x.strokeStyle = on ? K.brand : "rgba(255,255,255,0.6)"; x.stroke();
+    if (on) { x.beginPath(); x.arc(bx + 60, by + 70, 11, 0, Math.PI * 2); x.fillStyle = K.brand; x.fill(); }
+    text(n, bx + 100, by + 82, { size: 38, w: 700, align: "left", color: on ? K.ink : "#fff" });
+    x.restore();
+  });
+  text("Chaque point est réglable. Le verdict suit votre choix.", W / 2, H * 0.38 + 3 * 190 * Math.max(0.8, S) + 70, { size: 34, w: 500, color: "rgba(244,248,245,0.85)", alpha: seg(t, 1.6, 2.2) });
+}
+
+function scHealth(t) { // 13.8 – 17.0
+  background(t + 13.8);
+  words("Et votre santé, notée sur 100.", W / 2, 300 * S, seg(t, 0.1, 1.0), { size: 86 * S });
+  const cy = H * 0.47;
+  const p = eio(seg(t, 0.6, 2.0));
+  const val = Math.round(82 * p);
+  // anneau
+  x.save(); x.lineCap = "round";
+  x.beginPath(); x.arc(W / 2, cy, 230, 0, Math.PI * 2); x.lineWidth = 42; x.strokeStyle = "rgba(255,255,255,0.14)"; x.stroke();
+  x.beginPath(); x.arc(W / 2, cy, 230, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.82 * p); x.strokeStyle = "#52C27A"; x.shadowColor = "#52C27A"; x.shadowBlur = 30; x.stroke();
+  x.restore();
+  text(String(val), W / 2, cy + 40, { size: 150, w: 700 });
+  text("/100", W / 2, cy + 100, { size: 40, w: 500, color: "rgba(244,248,245,0.7)" });
+  text("Excellent", W / 2, cy + 340, { size: 64, w: 700, color: "#8FE3B8", alpha: seg(t, 1.8, 2.3) });
+  // Nutri-Score avec son repère
+  const ns = [["A", "#038141"], ["B", "#85BB2F"], ["C", "#F6B800"], ["D", "#EE8100"], ["E", "#E63E11"]];
+  const y0 = cy + 430, sw = 150, gx = (W - (sw * 5 + 16 * 4)) / 2;
+  const q = seg(t, 1.2, 2.4);
+  ns.forEach(([l, c], i) => {
+    const on = i === 1;
+    x.save(); x.globalAlpha = seg(t, 1.0 + i * 0.06, 1.3 + i * 0.06);
+    const hgt = on ? 96 : 70; rr(gx + i * (sw + 16), y0 + (on ? -13 : 0), sw, hgt, 22); x.fillStyle = on ? c : c + "77"; x.fill();
+    text(l, gx + i * (sw + 16) + sw / 2, y0 + 48, { size: on ? 52 : 36, w: 700, color: "#fff" }); x.restore();
+  });
+  const mx = lerp(gx, gx + 1 * (sw + 16) + sw / 2, eo(q));
+  x.save(); x.globalAlpha = q > 0 ? 1 : 0; x.fillStyle = "#fff"; x.beginPath(); x.moveTo(mx - 18, y0 - 50); x.lineTo(mx + 18, y0 - 50); x.lineTo(mx, y0 - 24); x.closePath(); x.fill(); x.restore();
+  text("Nutri-Score", W / 2, y0 + 150, { size: 32, w: 600, color: "rgba(244,248,245,0.75)", alpha: q });
+}
+
+function scFeatures(t) { // 17.0 – 20.0
+  background(t + 17);
+  words("Tout ce qu'il faut, en un scan.", W / 2, 300 * S, seg(t, 0.1, 1.0), { size: 84 * S });
+  const F = [[I.flask, "534 additifs", "expliqués"], [I.shield, "Certification", "vérifiée"], [I.bell, "Alertes", "de rappel"], [I.users, "Profils", "de la famille"], [I.globe, "4 langues", "FR · EN · AR · TR"], [I.wifi, "Hors", "connexion"]];
+  const tw = 450, th = 230 * Math.max(0.75, S), gx = (W - tw * 2 - 30) / 2, y0 = H * 0.3;
+  F.forEach(([d, a, b], i) => {
+    const q = back(seg(t, 0.5 + i * 0.15, 1.0 + i * 0.15));
+    const bx = gx + (i % 2) * (tw + 30), by = y0 + Math.floor(i / 2) * (th + 30);
+    x.save(); x.globalAlpha = clamp(q); x.translate(bx + tw / 2, by + th / 2); x.scale(0.7 + 0.3 * q, 0.7 + 0.3 * q); x.translate(-(bx + tw / 2), -(by + th / 2));
+    rr(bx, by, tw, th, 40); x.fillStyle = "rgba(255,255,255,0.96)"; x.fill();
+    x.beginPath(); x.arc(bx + 80, by + th / 2, 50, 0, Math.PI * 2); x.fillStyle = "#E3F3EB"; x.fill();
+    ico(d, bx + 80, by + th / 2, 56, K.brand, 2.2);
+    text(a, bx + 152, by + th / 2 - 4, { size: 40, w: 700, align: "left", color: K.ink });
+    text(b, bx + 152, by + th / 2 + 42, { size: 30, w: 400, align: "left", color: K.muted });
+    x.restore();
+  });
+}
+
+function scEnd(t) { // 20.0 – 23.0
+  background(t + 20, "#14805A", "#0A2A1F");
+  const cy = H * 0.36;
+  logo(W / 2, cy, 260 * S * (0.7 + 0.3 * back(seg(t, 0, 0.6))), seg(t, 0, 0.3));
+  text("Bayyin", W / 2, cy + 250 * S, { size: 110 * S, alpha: eo(seg(t, 0.3, 0.8)) });
+  text("بيّن", W / 2, cy + 370 * S, { size: 90 * S, fam: "PlexAr", color: K.gold, alpha: eo(seg(t, 0.4, 0.9)) });
+  const badges = ["Gratuit", "Sans pub", "Sans pistage"];
+  font(700, 38 * Math.max(0.85, S));
+  const bw = badges.map((b) => x.measureText(b).width + 64), total = bw.reduce((a, b) => a + b, 0) + 24 * 2;
+  let bx = (W - total) / 2; const by = cy + 470 * S;
+  badges.forEach((b, i) => {
+    const q = back(seg(t, 0.8 + i * 0.12, 1.2 + i * 0.12));
+    x.save(); x.globalAlpha = clamp(q); rr(bx, by, bw[i], 76, 38); x.fillStyle = "rgba(255,255,255,0.14)"; x.fill(); x.lineWidth = 3; x.strokeStyle = "rgba(255,255,255,0.35)"; x.stroke();
+    text(b, bx + bw[i] / 2, by + 51, { size: 38 * Math.max(0.85, S), w: 700 }); x.restore(); bx += bw[i] + 24;
+  });
+  const q = eo(seg(t, 1.4, 2.0));
+  x.save(); x.globalAlpha = q; rr(W / 2 - 400, by + 150 * S + 40, 800, 120, 60); x.fillStyle = "#fff"; x.fill();
+  text("Bientôt sur l'App Store et Google Play", W / 2, by + 150 * S + 40 + 74, { size: 36, w: 700, color: K.green }); x.restore();
+}
+
+// Fondu enchaîné entre les scènes
+const SCENES = [[0, 2.8, scIntro], [2.8, 6.4, scScan], [6.4, 10.8, scWhy], [10.8, 13.8, scSchools], [13.8, 17.0, scHealth], [17.0, 20.0, scFeatures], [20.0, 23.0, scEnd]];
+window.render = (t) => {
+  M.setTransform(1, 0, 0, 1, 0, 0); M.globalAlpha = 1; M.fillStyle = K.deep; M.fillRect(0, 0, W, H);
+  const XF = 0.35;
+  for (const [a, b, fn] of SCENES) {
+    if (t < a - XF || t > b + XF) continue;
+    // la scène qui part reste pleine ; celle qui arrive apparaît par-dessus (pas de creux sombre)
+    let al = 1;
+    if (t < a + XF && a > 0) al = clamp((t - (a - XF)) / (2 * XF));
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.clearRect(0, 0, W, H);
+    fn(Math.max(0, t - a));
+    M.globalAlpha = al; M.drawImage(off, 0, 0); M.globalAlpha = 1;
+  }
+  // fondu de fin
+  if (t > DUR - 0.4) { M.fillStyle = `rgba(10,42,31,${seg(t, DUR - 0.4, DUR)})`; M.fillRect(0, 0, W, H); }
+};
+window.DUR = DUR;
+document.fonts.ready.then(() => { window.ready = true; window.render(Number(P.get("t") || 0)); });
+</script></body></html>
