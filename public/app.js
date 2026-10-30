@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-30-1";
+const APP_BUILD = "2026-10-30-2";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -833,12 +833,12 @@ function allAdditivesSection(p, v) {
     <div class="cadd-sum">${sum}</div><div class="ae-list cadd-list">${rows.join("")}</div></section>`;
 }
 
-// Lien de signalement prérempli (ticket GitHub du projet)
+// Lien de signalement prérempli (e-mail de contact ; masqué tant qu'aucune adresse n'est réglée)
 function reportLink(p, v) {
-  if (!/^\d+$/.test(p.code)) return "";
+  if (!/^\d+$/.test(p.code) || !APP.feedbackEmail) return "";
   const st = prefs();
   const vars = { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" };
-  const url = "https://github.com/agozel5/bayyin/issues/new?title=" + encodeURIComponent(t("report.title", vars)) + "&body=" + encodeURIComponent(t("report.body", vars));
+  const url = `mailto:${APP.feedbackEmail}?subject=` + encodeURIComponent(t("report.title", vars)) + "&body=" + encodeURIComponent(t("report.body", vars));
   return `<a class="off-link muted-link" href="${esc(url)}" target="_blank" rel="noopener">${t("detail.report")}</a>`;
 }
 
@@ -1620,19 +1620,19 @@ $("sheetShare").addEventListener("click", async () => {
   const s = scoreOf(p);
   const text = t("sheet.share_text", { name: nameOf(p), status: S(v.status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
   // Lien direct vers la fiche : ouvre le produit dans Bayyin (aussi encodé dans le QR de la carte)
-  const url = location.origin + location.pathname + "?p=" + encodeURIComponent(p.code);
+  const url = APP.site ? APP.site.replace(/\/?$/, "/") + "?p=" + encodeURIComponent(p.code) : ""; // seulement avec un nom de domaine propre
   try {
     const blob = await drawShareCard({
       name: nameOf(p), brand: p.brand, image: p.image, status: v.status, statusLabel: S(v.status, "label"),
       kicker: t("detail.halal"), lead: S(v.status, "lead"), score: s ? s.score : null, grade: s && s.grade,
       gradeLabel: s ? t(`grade.${s.grade}`) : "", healthLabel: t(kindOf(p) === "beauty" ? "detail.cosmetic" : "detail.health"), footer: t("share.footer"), rtl: getLang() === "ar",
-      scanLine: t("share.scan_line"), url, urlLabel: (location.host + location.pathname).replace(/\/$/, ""),
+      scanLine: t("share.scan_line"), url, urlLabel: url ? APP.site.replace(/^https?:\/\//, "").replace(/\/$/, "") : "",
     });
     const file = new File([blob], `bayyin-${p.code}.png`, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: nameOf(p), text: `${text}\n${url}` });
+      await navigator.share({ files: [file], title: nameOf(p), text: url ? `${text}\n${url}` : text });
     } else if (navigator.share) {
-      await navigator.share({ title: nameOf(p), text, url });
+      await navigator.share(url ? { title: nameOf(p), text, url } : { title: nameOf(p), text });
     } else {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -3169,10 +3169,10 @@ function renderSettingsMenu() {
     group("settings.g_data", [setRow("offline", offlineValue(st)), setRow("data", tn("settings.data_count", nHist))]) +
     group("settings.g_about", [setRow("notes"), setRow("how"), setRow("sources"), setRow("privacy"), setRow("limits")]) +
     group("settings.g_links", [
-      `<a class="set-row" href="#" data-feedback><span class="set-ico si-feedback">${svg('<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/><path d="M8.5 9h7M8.5 12h4.5"/>')}</span>
-        <span class="set-text"><strong>${t("fb.title")}</strong><small>${esc(t("fb.row"))}</small></span><span class="set-chev" aria-hidden="true">${svg(I.chev, "flip")}</span></a>`,
+      ...(APP.feedbackEmail ? [`<a class="set-row" href="#" data-feedback><span class="set-ico si-feedback">${svg('<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/><path d="M8.5 9h7M8.5 12h4.5"/>')}</span>
+        <span class="set-text"><strong>${t("fb.title")}</strong><small>${esc(t("fb.row"))}</small></span><span class="set-chev" aria-hidden="true">${svg(I.chev, "flip")}</span></a>`] : []),
       setRow("off", t("link.off.d"), { href: "https://fr.openfoodfacts.org", external: true }),
-      setRow("report", t("link.report.d"), { href: "https://github.com/agozel5/bayyin/issues", external: true }),
+      ...(APP.feedbackEmail ? [setRow("report", t("link.report.d"), { href: `mailto:${APP.feedbackEmail}?subject=${encodeURIComponent("Bayyin")}`, external: true })] : []),
       ...(DEMO ? [setRow("demo", t("link.demo_exit.d"), { href: location.pathname + "#scan" }).replace(` data-go="demo"`, "")] : []),
     ]);
 }
@@ -4522,7 +4522,7 @@ $("sheetBody").addEventListener("click", async (e) => {
 });
 
 // ===========================================================================
-// Donner mon avis : envoyé par e-mail (adresse dans app-config.js) ou déposé sur GitHub
+// Donner mon avis : envoyé par e-mail (adresse dans app-config.js)
 // ===========================================================================
 const FEEDBACK_TYPES = ["idea", "bug", "product", "other"];
 let fbType = "idea";
@@ -4545,7 +4545,7 @@ function renderFeedback() {
     <div class="chips" role="radiogroup">${FEEDBACK_TYPES.map((k) => `<button type="button" role="radio" class="chip" aria-checked="${fbType === k}" aria-selected="${fbType === k}" data-fb-type="${k}">${t(`fb.type.${k}`)}</button>`).join("")}</div>
     <textarea id="fbText" class="field area" rows="6" placeholder="${esc(t(`fb.ph.${fbType}`))}">${esc(keep)}</textarea>
     <button class="btn btn-primary btn-block" type="button" data-fb-send>${t("fb.send")}</button>
-    <p class="fineprint">${t(APP.feedbackEmail ? "fb.via_mail" : "fb.via_github")}</p>
+    <p class="fineprint">${t("fb.via_mail")}</p>
   </div>`;
 }
 $("sheetBody").addEventListener("click", (e) => {
@@ -4560,9 +4560,8 @@ $("sheetBody").addEventListener("click", (e) => {
   const ua = /iPhone|iPad/.test(navigator.userAgent) ? "iPhone/iPad" : /Android/.test(navigator.userAgent) ? "Android" : "Ordinateur";
   const subject = `Bayyin · ${t(`fb.type.${fbType}`)}${fbRating ? ` · ${fbRating}/5` : ""}`;
   const body = `${text}\n\n—\n${t("fb.type." + fbType)} · ${fbRating ? fbRating + "/5" : "-"} · ${getLang()} · ${ua} · v${APP.version}`;
-  const url = APP.feedbackEmail
-    ? `mailto:${APP.feedbackEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    : `https://github.com/agozel5/bayyin/issues/new?title=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  if (!APP.feedbackEmail) return;
+  const url = `mailto:${APP.feedbackEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.open(url, "_blank", "noopener");
   toast(t("fb.thanks"));
 });

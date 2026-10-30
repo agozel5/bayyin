@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-30-1", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -116,7 +116,7 @@ export default {
   "decision.douteux": "Douteux",
   "decision.interdit": "Interdit",
   "settings.offline": "Hors connexion",
-  "settings.offline_p": "Les fiches déjà consultées restent disponibles sans réseau. Téléchargez en plus les 500 produits les plus scannés en France et la base des médicaments (environ 6 Mo).",
+  "settings.offline_p": "Les fiches déjà consultées restent disponibles sans réseau. Téléchargez en plus les 1 000 produits les plus scannés en France et la base des médicaments (environ 8 Mo).",
   "settings.offline_btn": "Télécharger les produits populaires",
   "settings.offline_update": "Mettre à jour les produits populaires",
   "settings.offline_progress": "Téléchargement… {n} produits",
@@ -141,7 +141,7 @@ export default {
   "link.off.t": "Open Food Facts",
   "link.off.d": "Ajouter ou corriger un produit",
   "link.report.t": "Signaler une erreur",
-  "link.report.d": "Sur GitHub",
+  "link.report.d": "Par e-mail",
   "link.demo_exit.t": "Quitter le mode démo",
   "link.demo_exit.d": "Revenir aux vraies données Open Food Facts",
   "fine.data": "Données",
@@ -597,7 +597,7 @@ export default {
   "ask.copied": "Message copié",
   "ask.subject": "Question sur l'origine des ingrédients : {name}",
   "ask.body": "Bonjour,\n\nJe consomme halal et j'aimerais acheter votre produit « {name} » ({brand}, code-barres {code}).\n\nPourriez-vous me préciser l'origine des ingrédients suivants (végétale, microbienne ou animale ; si animale, quelle espèce et quel mode d'abattage) ?\n{list}\n\nMerci d'avance pour votre réponse.\nCordialement",
-  "share.footer": "Vérifié avec Bayyin · agozel5.github.io/bayyin",
+  "share.footer": "Vérifié avec Bayyin",
   "share.saved": "Image enregistrée",
   "basket.mode": "Mode courses",
   "basket.mode_on": "Mode courses : activé",

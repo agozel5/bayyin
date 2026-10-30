@@ -21,6 +21,8 @@ import PlanetSection from "./Planet";
 import RecallBox from "./Recall";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
+import { mailto } from "../config";
+import LetterScale from "./LetterScale";
 import ShareCard, { shareUrl, SHARE_W } from "./ShareCard";
 import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
@@ -404,13 +406,8 @@ function HealthSection({ p }) {
       {s && s.nutriscore && "abcde".includes(s.nutriscore) ? (
         <Reveal style={{ gap: 6 }}>
           <Txt style={{ fontWeight: "800", fontSize: 15 }}>Nutri-Score</Txt>
-          <View style={{ flexDirection: "row", gap: 4, alignItems: "center", direction: "ltr" }}>
-            {[["a", "#038141"], ["b", "#85BB2F"], ["c", "#F6B800"], ["d", "#EE8100"], ["e", "#E63E11"]].map(([l, c]) => {
-              const on = l === s.nutriscore;
-              return <View key={l} style={{ flex: on ? 1.25 : 1, paddingVertical: on ? 8 : 5, borderRadius: 9, backgroundColor: on ? c : c + "66", alignItems: "center",
-                shadowColor: c, shadowOpacity: on ? 0.5 : 0, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: on ? 16 : 12, opacity: on ? 1 : 0.85 }}>{l.toUpperCase()}</Text></View>;
-            })}
-          </View>
+          <LetterScale label={`Nutri-Score ${s.nutriscore.toUpperCase()}`} value={s.nutriscore}
+            items={[["a", "#038141"], ["b", "#85BB2F"], ["c", "#F6B800"], ["d", "#EE8100"], ["e", "#E63E11"]].map(([l, c]) => [l, l.toUpperCase(), c])} />
         </Reveal>
       ) : null}
       {neg.length || risky ? (
@@ -611,7 +608,6 @@ function LinkRow({ text, url, muted = false }) {
 }
 
 // Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
-let lastTab = "halal";
 // Contenu de la fiche en blocs (fonction simple, sans état : l'onglet ouvert est gardé par la fiche)
 function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onHeroEnd, onTabChange, tab, setTab }) {
   const v = verdictOf(p);
@@ -619,12 +615,9 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
   const food = kind === "food";
   const s = scoreOf(p);
   const st = getSettings();
-  const report = isBarcode(p.code)
-    ? "https://github.com/agozel5/bayyin/issues/new?title=" +
-      encodeURIComponent(t("report.title", { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" })) +
-      "&body=" +
-      encodeURIComponent(t("report.body", { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" }))
-    : null;
+  // Signaler une erreur : par e-mail (masqué tant qu'aucune adresse de contact n'est réglée)
+  const rv = { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" };
+  const report = isBarcode(p.code) ? mailto(t("report.title", rv), t("report.body", rv)) : null;
   const notes = [...(p.local ? [t(p.raw && p.raw.ocr_from === "off" ? "offocr.note" : "detail.local")] : []), ...v.notes.map(noteText)];
   const halal = (
     <Panel>
@@ -785,7 +778,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
     haptic.light();
     const s = scoreOf(p);
     const text = t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
-    const link = isBarcode(p.code) ? `\n${shareUrl(p.code)}` : "";
+    const link = isBarcode(p.code) && shareUrl(p.code) ? `\n${shareUrl(p.code)}` : "";
     if (Platform.OS !== "web") {
       try {
         setCard(true);
@@ -800,9 +793,9 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
     Share.share({ message: text + link }).catch(() => {});
   };
 
-  // Onglet ouvert (gardé d'une fiche à l'autre, comme sur le web)
-  const [tab, setTabState] = useState(lastTab);
-  const setTab = (x) => { lastTab = x; setTabState(x); };
+  // Onglet ouvert : chaque nouvelle fiche s'ouvre sur « Halal »
+  const [tab, setTab] = useState("halal");
+  useEffect(() => { setTab("halal"); }, [code]);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.sheetTab = setTab; // captures automatiques (web)
   // En-tête : icônes simples ; quand le verdict sort de l'écran, une vignette du produit remplace « Comparer »
   const headBtn = { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" };

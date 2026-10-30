@@ -66,6 +66,19 @@ export async function initStorage() {
   history = Array.isArray(get(K.history)) ? get(K.history) : [];
   local = get(K.local) || {};
   pack = get(K.pack) || {};
+  // Pack en plusieurs morceaux (Android limite la taille d'une valeur stockée) : chargé en arrière-plan
+  loadPackChunks();
+}
+const CHUNK = 150;
+async function loadPackChunks() {
+  try {
+    const n = Number(await AsyncStorage.getItem(K.pack + ":n")) || 0;
+    if (!n) return;
+    const rows = await AsyncStorage.multiGet(Array.from({ length: n }, (_, i) => `${K.pack}:${i}`));
+    const all = {};
+    for (const [, v] of rows) { try { Object.assign(all, JSON.parse(v) || {}); } catch { /* morceau abîmé */ } }
+    pack = { ...pack, ...all };
+  } catch { /* stockage indisponible */ }
 }
 
 export const subscribe = (fn) => {
@@ -172,5 +185,13 @@ export function cacheRaw(code, raw) {
 }
 export function setPack(products) {
   pack = products;
-  save(K.pack, pack);
+  const codes = Object.keys(products);
+  const pairs = [];
+  for (let i = 0; i * CHUNK < codes.length; i++) {
+    const part = {};
+    codes.slice(i * CHUNK, (i + 1) * CHUNK).forEach((c) => { part[c] = products[c]; });
+    pairs.push([`${K.pack}:${i}`, JSON.stringify(part)]);
+  }
+  AsyncStorage.removeItem(K.pack).catch(() => {}); // ancien format (une seule valeur)
+  AsyncStorage.multiSet([...pairs, [K.pack + ":n", String(pairs.length)]]).catch(() => {});
 }

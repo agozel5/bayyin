@@ -8,8 +8,18 @@ import { t } from "../i18n";
 import { haptic } from "../motion";
 
 // Photos d'une fiche : [{ k, u }] (format de la version web), anciennes fiches gardées : [[k, u]]
-export const photoList = (p) => ((p && p.photos) || []).map((x) => (Array.isArray(x) ? [x[0], x[1]] : x && [x.k, x.u])).filter((x) => x && x[1]);
+export const photoList = (p) => {
+  const list = ((p && p.photos) || []).map((x) => (Array.isArray(x) ? [x[0], x[1]] : x && [x.k, x.u])).filter((x) => x && x[1]);
+  // Fiche gardée sans la liste des photos (ou hors connexion) : au moins la photo du produit
+  return list.length ? list : p && p.image ? [["front", p.image]] : [];
+};
 const big = (url) => String(url || "").replace(/\.(100|200|400)\.jpg$/, ".full.jpg");
+
+// Grande photo ; si elle ne charge pas (hors connexion), la petite déjà vue est affichée à la place
+function ZoomImage({ url, W, H }) {
+  const [src, setSrc] = useState(big(url));
+  return <Image source={{ uri: src }} onError={() => { if (src !== url) setSrc(url); }} resizeMode="contain" style={{ width: W, height: H * 0.78 }} />;
+}
 
 function ZoomPage({ url, W, H }) {
   const ref = useRef(null);
@@ -33,7 +43,7 @@ function ZoomPage({ url, W, H }) {
       maximumZoomScale={4} minimumZoomScale={1} centerContent showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}>
       <Pressable onPress={tap}>
         <Animated.View style={{ transform: [{ scale }] }}>
-          <Image source={{ uri: big(url) }} defaultSource={undefined} resizeMode="contain" style={{ width: W, height: H * 0.78 }} />
+          <ZoomImage url={url} W={W} H={H} />
         </Animated.View>
       </Pressable>
     </ScrollView>

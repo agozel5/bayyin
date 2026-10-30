@@ -1,6 +1,6 @@
 // Produits populaires pour le hors connexion -> public/data/popular.json
 //
-// Les 500 produits les plus scannés en France sur Open Food Facts, avec ce qu'il faut pour le verdict
+// Les 1 000 produits les plus scannés en France sur Open Food Facts, avec ce qu'il faut pour le verdict
 // halal et la note santé. L'app télécharge ce seul fichier (rapide, toujours disponible) au lieu de
 // lancer cinq recherches sur Open Food Facts, dont le moteur de recherche est souvent saturé.
 // Données : Open Food Facts, licence ODbL.
@@ -10,7 +10,7 @@ import { FIELDS } from "../public/lib/off.js";
 
 const OUT = new URL("../public/data/popular.json", import.meta.url);
 const UA = { "User-Agent": "Bayyin/1.0 (github.com/agozel5/bayyin)" };
-const PAGES = 5, SIZE = 100;
+const PAGES = 10, SIZE = 100;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function getJson(url, tries = 6) {

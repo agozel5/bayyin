@@ -12,7 +12,7 @@ import { haptic } from "../motion";
 import { normalizeScan } from "../core";
 import { fetchProduct } from "../api";
 import { getEntry } from "../storage";
-import { verdictOf, profileOf, nameOf, S } from "../view";
+import { verdictOf, profileOf, nameOf, S, alertLabel } from "../view";
 
 const TYPES = ["ean13", "ean8", "upc_a", "upc_e"];
 const KEEP = 900; // une pastille reste affichée un peu après que le code a quitté l'image
@@ -81,7 +81,7 @@ export default function AisleScreen({ onClose, onOpen }) {
       {live.map(([code, h]) => {
         const p = products.current.get(code);
         const [fg, bg] = color(p);
-        const label = p ? (profileOf(p).alert ? t(`alert.short.${profileOf(p).alert}`) : S(verdictOf(p).status, "short")) : p === null ? "?" : "…";
+        const label = p ? (profileOf(p).alert ? alertLabel(p) : S(verdictOf(p).status, "short")) : p === null ? "?" : "…";
         return (
           <Pressable key={code} onPress={() => p && onOpen(code, { product: p })} accessibilityRole="button" accessibilityLabel={p ? `${nameOf(p)}, ${label}` : code}
             style={{ position: "absolute", left: h.rect.x + h.rect.w / 2 - 70, top: Math.max(insets.top + 60, h.rect.y - 46), width: 140, alignItems: "center" }}>

@@ -17,6 +17,7 @@ const FEATS = [
   ["compare", "#4C64D6", '<path d="M4 8h13l-3-3M20 16H7l3 3"/>'],
   ["basket", "#E0457B", '<path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>'],
   ["offline", "#2F6FC0", '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>'],
+  ["family", "#E46A3C", '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.3"/><path d="M3.5 19c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2M14.5 15c.8-.6 1.6-.8 2.5-.8 2.2 0 4 1.7 4 4"/>'],
   ["history", "#8A63DA", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
 ];
 
@@ -91,6 +92,12 @@ export default function PremiumScreen({ onClose, feature, toast }) {
               <Text style={{ color: C.brand, fontWeight: "800", fontSize: 15 }}>{t("premium.manage_store")} ↗</Text>
             </Pressable>
           </View>
+        ) : !st.enabled ? (
+          // Achat pas encore ouvert : toutes les fonctions restent gratuites en attendant
+          <View style={{ padding: 16, borderRadius: R.lg, gap: 6, alignItems: "center", backgroundColor: isDark() ? "#3A2C08" : "#FBF1D3", borderWidth: 1, borderColor: isDark() ? "#5A4512" : "#EED79A" }}>
+            <Text style={{ fontSize: 16, fontWeight: "900", color: isDark() ? "#F0C75E" : "#8A5F00" }}>{t("premium.soon")}</Text>
+            <Muted style={{ textAlign: "center", fontSize: 14, lineHeight: 20 }}>{t("premium.soon_p")}</Muted>
+          </View>
         ) : plans === null ? (
           <Row gap={10} style={{ justifyContent: "center", paddingVertical: 20 }}><ActivityIndicator color={C.brand} /><Muted>{t("premium.loading")}</Muted></Row>
         ) : !plans.length ? (
@@ -125,7 +132,7 @@ export default function PremiumScreen({ onClose, feature, toast }) {
           </View>
         )}
 
-        {!on ? (
+        {!on && st.enabled ? (
           <Pressable onPress={doRestore} disabled={busy} accessibilityRole="button" style={{ alignItems: "center", paddingVertical: 6 }}>
             <Text style={{ color: C.brand, fontWeight: "800", fontSize: 15 }}>{t("premium.restore")}</Text>
           </Pressable>

@@ -5,7 +5,7 @@ import { createClient } from "../../public/lib/off.js";
 import { getLang } from "./i18n";
 import { getSettings, getCachedRaw, cacheRaw, getLocal, setPack, getEntry } from "./storage";
 
-const HEADERS = { "User-Agent": "Bayyin/1.0 (https://github.com/agozel5/bayyin)", Accept: "application/json" };
+const HEADERS = { "User-Agent": "Bayyin/1.0 (application mobile)", Accept: "application/json" };
 
 async function getJson(url, ms = 12000) {
   const ctrl = new AbortController();

@@ -1,5 +1,6 @@
 // Carte image du verdict à partager (WhatsApp, Instagram…), même mise en page que la version web.
 // Dessinée hors de l'écran puis photographiée (react-native-view-shot) en 1080 × 1920.
+import { SITE } from "../config";
 import React, { forwardRef, useMemo } from "react";
 import { View, Text, Image } from "react-native";
 import Svg, { Rect, Path, Circle } from "react-native-svg";
@@ -12,7 +13,8 @@ import { qrMatrix } from "../../../public/lib/qr.js";
 export const SHARE_W = 360, SHARE_H = 640;
 const COLORS = { halal_certifie: "#128A4E", halal_probable: "#2E7F45", mashbouh: "#BF650A", haram: "#C3362D", inconnu: "#5F6B65" };
 const GRADE = { excellent: "#169B57", bon: "#7DBE45", mediocre: "#EE8A1F", mauvais: "#E0423A" };
-export const shareUrl = (code) => `https://agozel5.github.io/bayyin/?p=${encodeURIComponent(code)}`;
+// Lien de la fiche : seulement quand un nom de domaine propre est réglé (config.js)
+export const shareUrl = (code) => (SITE ? `${SITE}?p=${encodeURIComponent(code)}` : "");
 
 function Mark({ status, color }) {
   const d = status === "halal_certifie" || status === "halal_probable" ? "M13 25l7 7 15-15" : status === "haram" ? "M16 16l16 16M32 16L16 32" : status === "mashbouh" ? null : "M14 24h20";
@@ -80,12 +82,12 @@ const ShareCard = forwardRef(function ShareCard({ p }, ref) {
           </View>
         </View>
       ) : null}
-      {/^\d+$/.test(p.code) ? (
+      {/^\d+$/.test(p.code) && SITE ? (
         <View style={{ flexDirection: row, alignItems: "center", gap: 14, marginTop: "auto" }}>
           <View style={{ padding: 7, borderRadius: 9, backgroundColor: "#fff" }}><Qr text={shareUrl(p.code)} size={60} /></View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ fontSize: 14, fontWeight: "800", color: "#15211A", textAlign: ta }}>{t("share.scan_line")}</Text>
-            <Text style={{ fontSize: 11, color: "#12724F", fontWeight: "600", textAlign: ta }}>agozel5.github.io/bayyin</Text>
+            <Text style={{ fontSize: 11, color: "#12724F", fontWeight: "600", textAlign: ta }}>{SITE.replace(/^https?:\/\//, "").replace(/\/$/, "")}</Text>
           </View>
         </View>
       ) : <Text style={{ marginTop: "auto", fontSize: 12, color: "#5D6A63", textAlign: ta }}>{t("share.footer")}</Text>}

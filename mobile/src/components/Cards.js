@@ -6,7 +6,7 @@ import { Art, Glyph } from "./Art";
 import { C, R, VERDICT, GRADE_COLORS, ALERT_COLORS, STATUS_COLORS, dir, lift } from "../theme";
 const STATUS_PILL = (st) => STATUS_COLORS[st];
 import { t } from "../i18n";
-import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf } from "../view";
+import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf, alertLabel } from "../view";
 import { productArtKey, artByKey } from "../../../public/lib/product-art.js";
 import { haptic } from "../motion";
 
@@ -82,7 +82,7 @@ export function ProductCard({ p, onPress, fav, width = 214 }) {
       </View>
       <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}>
         <ScoreDot p={p} />
-        {alert ? <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: ALERT_COLORS[alert][1] }}><Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "700" }}>{t(`alert.short.${alert}`)}</Text></View> : null}
+        {alert ? <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: ALERT_COLORS[alert][1] }}><Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "700" }}>{alertLabel(p)}</Text></View> : null}
       </View>
     </Pressable>
   );
@@ -108,7 +108,7 @@ export function ListRow({ p, onPress, fav, when, first }) {
             <Text style={{ color: fg, fontSize: 12, fontWeight: "800" }}>{S(st, "short")}</Text>
           </View>
           <ScoreDot p={p} size={12.5} />
-          {alert ? <Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "800" }}>{t(`alert.short.${alert}`)}</Text> : null}
+          {alert ? <Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "800" }}>{alertLabel(p)}</Text> : null}
           {fav ? <Glyph name="star" size={14} color="#E9A100" /> : null}
         </View>
       </View>

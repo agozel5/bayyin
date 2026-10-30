@@ -18,6 +18,18 @@ import { rankByRelevance } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
 
 const RECENT = "bayyin:recent_q";
+// Pertinence d'un groupe de résultats : le nom ou la marque contient la recherche, et le verdict est connu
+const norm = (x) => String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+function fit(list, q) {
+  const n = norm(q);
+  if (!n) return 0;
+  return list.slice(0, 8).reduce((sum, p) => {
+    const hay = ` ${norm(p.brand)} ${norm(p.name)} `;
+    const hit = hay.includes(` ${n} `) ? 3 : hay.includes(n) ? 2 : 0;
+    const known = p.verdict && p.verdict.status !== "inconnu" ? 1 : 0;
+    return sum + hit + known;
+  }, 0) / Math.max(1, Math.min(8, list.length)) * Math.min(8, list.length) ** 0.5;
+}
 const IDEAS = (kind) => kind === "beauty"
   ? [[t("sidea.mascara"), "r:mascaras"], [t("sidea.lipstick"), "r:lipsticks"], [t("sidea.foundation"), "r:complexion"], ["Nivea", "r:body_creams"], ["Garnier", "r:shampoos"], [t("sidea.nail"), "r:nail_polishes"], ["Maybelline", "r:makeup_other"]]
   : [["Nutella", "r:spreads"], ["Haribo", "r:candies"], ["Isla Délice", "r:sausages"], [t("search.idea_milk"), "f:dairy"], [t("search.idea_chicken"), "f:poultry"], ["Kinder", "r:chocolates"], ["Danone", "r:yogurts"]];
@@ -173,8 +185,12 @@ export default function SearchScreen({ onOpen, onScan }) {
             <>
               <Muted style={{ fontSize: 13.5 }}>{tn("search.results", total)}{state.alt ? ` · ${t("search.alt", { q: state.alt })}` : ""}</Muted>
               {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={onOpen} /> : null}
-              {r.food.length ? <Group title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={onOpen} /> : null}
-              {r.beauty.length ? <Group title={t("search.g_beauty")} count list={r.beauty} onOpen={onOpen} /> : null}
+              {(() => {
+                // Le groupe qui correspond le mieux à la recherche passe en premier (« nivea » : cosmétiques d'abord)
+                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={onOpen} /> : null;
+                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={onOpen} /> : null;
+                return fit(r.beauty, state.q) > fit(r.food, state.q) ? [beautyG, foodG] : [foodG, beautyG];
+              })()}
             </>
           ) : all0.length ? <Muted style={{ textAlign: "center" }}>{t("search.f.none")}</Muted> : !state.foodFailed ? (
             <Message title={t("search.none.t")} text={t("search.none.p", { q: state.q })} />

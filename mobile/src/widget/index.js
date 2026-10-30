@@ -17,15 +17,16 @@ export function updateWidgets(history) {
     try {
       const W = require("./ios-widget").default;
       const d = widgetData(history);
-      if (W) W.updateSnapshot({ n: d.n, week: d.n ? d.week : d.labels.none || d.week, scan: d.scan });
+      if (W) W.updateSnapshot({ n: d.n, ok: d.ok, doubt: d.doubt, bad: d.bad, share: d.share, week: d.week, scan: d.scan, title: d.title, words: d.words,
+        recent: d.recent.slice(0, 4).map((r) => ({ name: r.name, brand: r.brand, g: r.g, label: r.label })) });
     } catch { /* module absent */ }
     return;
   }
   if (Platform.OS !== "android") return;
   try {
     const { requestWidgetUpdate } = require("react-native-android-widget");
-    const { HomeWidget } = require("./HomeWidget");
+    const { widgetFor, WIDGET_NAMES } = require("./HomeWidget");
     const data = widgetData(history);
-    requestWidgetUpdate({ widgetName: "BayyinHome", renderWidget: () => <HomeWidget data={data} />, widgetNotFound: () => {} }).catch(() => {});
+    for (const name of WIDGET_NAMES) requestWidgetUpdate({ widgetName: name, renderWidget: () => widgetFor(name, data), widgetNotFound: () => {} }).catch(() => {});
   } catch { /* module absent */ }
 }

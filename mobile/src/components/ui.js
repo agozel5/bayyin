@@ -4,7 +4,7 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet, Image, Animated }
 import Icon from "./Icon";
 import { C, R, STATUS_COLORS, GRADE_COLORS, ALERT_COLORS, dir } from "../theme";
 import { t } from "../i18n";
-import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf } from "../view";
+import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf, alertLabel } from "../view";
 import { haptic, ms } from "../motion";
 
 // Les grandes polices du téléphone sont respectées, avec une limite pour garder la mise en page lisible.
@@ -31,7 +31,7 @@ export function Row({ children, style, gap = 10 }) {
 
 export function Btn({ title, onPress, kind = "primary", icon, style, disabled, a11yHint }) {
   const bg = kind === "primary" ? C.brand : kind === "white" ? "#fff" : C.tint;
-  const fg = kind === "primary" ? "#fff" : C.fg;
+  const fg = kind === "primary" ? "#fff" : kind === "white" ? "#16241C" : C.fg;
   return (
     <Pressable
       onPress={(e) => {
@@ -90,7 +90,7 @@ export function Loading({ text }) {
 
 export function Message({ title, text, children }) {
   return (
-    <View style={styles.msg}>
+    <View style={{ backgroundColor: C.tint, borderRadius: R.lg, padding: 20, gap: 8 }}>
       <Txt style={{ fontWeight: "800", fontSize: 17 }}>{title}</Txt>
       <Muted>{text}</Muted>
       {children ? <View style={{ gap: 10, marginTop: 6 }}>{children}</View> : null}
@@ -110,9 +110,9 @@ export function ProductRow({ p, onPress, fav = false, when = "" }) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [styles.row, { flexDirection: dir().row, backgroundColor: pressed ? C.tint : "transparent" }]}
+      style={({ pressed }) => [styles.row, { borderBottomColor: C.line, flexDirection: dir().row, backgroundColor: pressed ? C.tint : "transparent" }]}
     >
-      {p.image ? <Image source={{ uri: p.image }} style={styles.rowImg} resizeMode="contain" accessible={false} /> : (
+      {p.image ? <Image source={{ uri: p.image }} style={[styles.rowImg, { borderColor: C.line }]} resizeMode="contain" accessible={false} /> : (
         <View style={[styles.rowImg, { backgroundColor: C.tint, borderColor: C.tint, alignItems: "center", justifyContent: "center" }]}>
           <Icon name={p.local ? "doc" : kind === "medicine" ? "pill" : kind === "beauty" ? "drop" : "box"} color={C.faint} size={22} />
         </View>
@@ -123,7 +123,7 @@ export function ProductRow({ p, onPress, fav = false, when = "" }) {
         <Row gap={8} style={{ flexWrap: "wrap" }}>
           <StatusPill status={verdictOf(p).status} />
           <MiniScore p={p} />
-          {alert ? <Pill text={t(`alert.short.${alert}`)} colors={ALERT_COLORS[alert]} /> : null}
+          {alert ? <Pill text={alertLabel(p)} colors={ALERT_COLORS[alert]} /> : null}
           {fav ? <Icon name="star" size={16} color="#E9A100" fill="#E9A100" /> : null}
         </Row>
       </View>

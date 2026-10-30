@@ -277,29 +277,47 @@ export function chainSteps(p, v) {
     cert,
   ];
 }
+// Animation d'arrivée de la chaîne (comme le web) : chaque pastille apparaît à son tour,
+// le trait se trace vers la suivante, le nom et le détail montent en fondu.
+function useStagger(n, key) {
+  const vals = useRef([]).current;
+  while (vals.length < n) vals.push(new Animated.Value(ms(1) ? 0 : 1));
+  useEffect(() => {
+    if (!ms(1)) return;
+    vals.forEach((x) => x.setValue(0));
+    Animated.stagger(170, vals.slice(0, n).map((x) => Animated.timing(x, { toValue: 1, duration: 520, easing: Easing.bezier(0.3, 1.3, 0.5, 1), useNativeDriver: false }))).start();
+  }, [key]);
+  return vals;
+}
 export function Chain({ p, v }) {
-  if (kindOf(p) === "medicine") return null;
-  const steps = chainSteps(p, v);
+  const steps = kindOf(p) === "medicine" ? [] : chainSteps(p, v);
+  const an = useStagger(4, `${p.code}:${steps.map((x) => x.state).join(",")}`);
+  if (!steps.length) return null;
   const col = (s) => ({ ok: C.cert, bad: C.haram, warn: C.doubt, na: C.faint, none: C.faint })[s];
+  const pop = (x, d = 0) => ({ opacity: x.interpolate({ inputRange: [0, 0.4 + d, 1], outputRange: [0, 1, 1], extrapolate: "clamp" }), transform: [{ scale: x.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }) }] });
+  const up = (x) => ({ opacity: x.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0, 1] }), transform: [{ translateY: x.interpolate({ inputRange: [0, 1], outputRange: [4, 0] }) }] });
   return (
     <View style={{ flexDirection: dir().row, backgroundColor: C.tint, borderRadius: R.lg, paddingVertical: 14, paddingHorizontal: 6 }}
       accessibilityLabel={steps.map((s) => `${t(`chain.s.${s.id}`)} : ${s.sub}`).join(" · ")}>
       {/* Traits entre les étapes : un calque derrière les pastilles (sinon un trait passerait sur la pastille précédente) */}
       <View pointerEvents="none" style={{ position: "absolute", top: 14 + 20, left: `${50 / steps.length}%`, right: `${50 / steps.length}%`, height: 3, flexDirection: dir().row, paddingHorizontal: 6 }}>
         {steps.slice(1).map((s, i) => (
-          <View key={s.id} style={{ flex: 1, marginHorizontal: 22, height: 3, borderRadius: 2, backgroundColor: steps[i].state === "ok" && s.state !== "na" && s.state !== "none" ? col(s.state) : C.tint2 }} />
+          <View key={s.id} style={{ flex: 1, marginHorizontal: 22, height: 3, borderRadius: 2, backgroundColor: C.tint2, flexDirection: dir().row, overflow: "hidden" }}>
+            <Animated.View style={{ height: 3, borderRadius: 2, width: an[i + 1].interpolate({ inputRange: [0, 0.6], outputRange: ["0%", "100%"], extrapolate: "clamp" }),
+              backgroundColor: steps[i].state === "ok" && s.state !== "na" && s.state !== "none" ? col(s.state) : C.tint2 }} />
+          </View>
         ))}
       </View>
       {steps.map((s, i) => (
         <View key={s.id} style={{ flex: 1, alignItems: "center", gap: 6 }}>
-          <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: col(s.state), backgroundColor: C.surface, alignItems: "center", justifyContent: "center" }}>
+          <Animated.View style={[{ width: 44, height: 44, borderRadius: 22, borderWidth: 2.5, borderColor: col(s.state), backgroundColor: C.surface, alignItems: "center", justifyContent: "center" }, pop(an[i])]}>
             <Glyph paths={CHAIN_ICO[s.id]} size={21} color={col(s.state)} />
-            <View style={{ position: "absolute", bottom: -4, [dir().rtl ? "left" : "right"]: -4, width: 20, height: 20, borderRadius: 10, backgroundColor: col(s.state), borderWidth: 2, borderColor: C.tint, alignItems: "center", justifyContent: "center" }}>
+            <Animated.View style={[{ position: "absolute", bottom: -4, [dir().rtl ? "left" : "right"]: -4, width: 20, height: 20, borderRadius: 10, backgroundColor: col(s.state), borderWidth: 2, borderColor: C.tint, alignItems: "center", justifyContent: "center" }, pop(an[i], 0.3)]}>
               <Glyph paths={MARK[s.state]} size={12} color="#fff" width={3} />
-            </View>
-          </View>
-          <Text numberOfLines={1} style={{ fontSize: 12.5, fontWeight: "800", color: C.fg }}>{t(`chain.s.${s.id}`)}</Text>
-          <Text numberOfLines={2} style={{ fontSize: 11.5, lineHeight: 14, color: s.state === "bad" || s.state === "warn" ? col(s.state) : C.muted, textAlign: "center", paddingHorizontal: 2 }}>{s.sub}</Text>
+            </Animated.View>
+          </Animated.View>
+          <Animated.Text numberOfLines={1} style={[{ fontSize: 12.5, fontWeight: "800", color: C.fg }, up(an[i])]}>{t(`chain.s.${s.id}`)}</Animated.Text>
+          <Animated.Text numberOfLines={2} style={[{ fontSize: 11.5, lineHeight: 14, color: s.state === "bad" || s.state === "warn" ? col(s.state) : C.muted, textAlign: "center", paddingHorizontal: 2, fontWeight: s.state === "bad" || s.state === "warn" ? "700" : "400" }, up(an[i])]}>{s.sub}</Animated.Text>
         </View>
       ))}
     </View>

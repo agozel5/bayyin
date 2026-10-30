@@ -8,7 +8,7 @@ export function parseLink(url) {
   const s = String(url);
   const m = s.match(/[?&#]p=([0-9]{6,14})/) || s.match(/^bayyin:\/\/(?:p|product)\/([0-9]{6,14})/);
   if (m) return { type: "product", code: m[1] };
-  const k = s.match(/^bayyin:\/\/(scan|search|history|rankings|additives|settings)/);
+  const k = s.match(/^bayyin:\/\/(scan|search|history|rankings|additives|settings|basket|photo|places)/);
   return k ? { type: k[1] } : null;
 }
 

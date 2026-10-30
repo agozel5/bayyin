@@ -1,7 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row } from "../components/ui";
@@ -15,10 +15,12 @@ import { COSMETIC_RULES } from "../../../public/lib/cosmetic.js";
 import { mascot } from "../../../public/lib/mascot.js";
 import { getSettings, setSettings, setSchool, setTopic, toggleAllergen, setDiet, toggleDistrust, resetSettings, getHistory, clearHistory, localCount, addMember, removeMember, toggleMemberAllergen, setMemberDiet } from "../storage";
 import { downloadPack } from "../api";
+import { downloadRankings } from "../rankcache";
 import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
 import { premiumEnabled, isPremium, canUse } from "../premium";
 import { S } from "../view";
 import { haptic, ms } from "../motion";
+import { CONTACT_EMAIL, mailto } from "../config";
 import { useEdgeSwipe } from "../components/EdgeSwipe";
 import { Collapse, Chevron } from "../components/Reveal";
 import { getBasket } from "../basket";
@@ -28,6 +30,8 @@ import { CERTIFIER_INFO } from "../../../public/lib/certifiers.js";
 import { I } from "../../../public/lib/icons.js";
 
 const open = (url) => Linking.openURL(url).catch(() => {});
+// Page de réglage ouverte : on peut la faire défiler jusqu'au champ quand le clavier s'ouvre
+const pageScroll = React.createRef();
 // Confirmation discrète après chaque réglage (comme la version web)
 let say = null;
 const saved = (msg) => { haptic.success(); say && say(msg); };
@@ -217,7 +221,7 @@ function FamilyBlock() {
       })}
       {st.members.length < 8 ? (
         <View style={{ flexDirection: dir().row, gap: 8 }}>
-          <TextInput value={name} onChangeText={setName} placeholder={t("family.name_ph")} placeholderTextColor={C.faint} maxLength={24} returnKeyType="done" onSubmitEditing={add}
+          <TextInput value={name} onChangeText={setName} onFocus={() => setTimeout(() => pageScroll.current && pageScroll.current.scrollToEnd({ animated: true }), 350)} placeholder={t("family.name_ph")} placeholderTextColor={C.faint} maxLength={24} returnKeyType="done" onSubmitEditing={add}
             style={{ flex: 1, minWidth: 0, width: 10, borderWidth: 1, borderColor: C.line, borderRadius: R.md, paddingHorizontal: 14, paddingVertical: 11, fontSize: 16, color: C.fg, backgroundColor: C.surface, textAlign: dir().ta }} />
           <Pressable onPress={add} disabled={!name.trim()} accessibilityRole="button"
             style={({ pressed }) => ({ paddingHorizontal: 18, justifyContent: "center", borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand, opacity: name.trim() ? 1 : 0.5 })}>
@@ -352,14 +356,18 @@ function OfflinePage() {
   const st = getSettings();
   const [packing, setPacking] = useState(null);
   const [err, setErr] = useState(false);
+  const [ranks, setRanks] = useState(null);
   const pack = async () => {
     if (packing !== null || !canUse("offline")) return;
     setErr(false); setPacking(0);
     try {
       const n = await downloadPack((count) => setPacking(count));
-      haptic.success(); setPacking(null);
-      setSettings({ packAt: Date.now(), packCount: n });
-    } catch { setPacking(null); setErr(true); }
+      // Les classements aussi, pour les consulter sans réseau
+      setRanks([0, 0]);
+      const r = await downloadRankings((k, total) => setRanks([k, total])).catch(() => 0);
+      haptic.success(); setPacking(null); setRanks(null);
+      setSettings({ packAt: Date.now(), packCount: n, packRanks: r });
+    } catch { setPacking(null); setRanks(null); setErr(true); }
   };
   return (
     <Block>
@@ -368,9 +376,11 @@ function OfflinePage() {
         style={({ pressed }) => ({ paddingVertical: 15, borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand, alignItems: "center", opacity: packing !== null ? 0.6 : 1 })}>
         <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>{t(st.packAt ? "settings.offline_update" : "settings.offline_btn")}</Text>
       </Pressable>
-      {packing !== null ? <Muted>{t("settings.offline_progress", { n: packing })}</Muted>
+      {ranks ? <Muted>{t("offline.ranks_progress", { n: ranks[0], t: ranks[1] || "…" })}</Muted>
+        : packing !== null ? <Muted>{t("settings.offline_progress", { n: packing })}</Muted>
         : err ? <Muted style={{ color: C.haram }}>{t("settings.offline_error")}</Muted>
-        : st.packAt ? <Muted>{t("settings.offline_done", { n: st.packCount, d: new Date(st.packAt).toLocaleDateString(locale(), { day: "numeric", month: "long" }) })}</Muted> : null}
+        : st.packAt ? <Muted>{t("settings.offline_done", { n: st.packCount, d: new Date(st.packAt).toLocaleDateString(locale(), { day: "numeric", month: "long" }) })}{st.packRanks ? ` ${t("offline.ranks_done", { n: st.packRanks })}` : ""}</Muted> : null}
+      <Muted style={{ fontSize: 13, lineHeight: 19 }}>{t("offline.limits")}</Muted>
     </Block>
   );
 }
@@ -756,7 +766,8 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
     const P = PAGES[page];
     return (
       <Animated.View {...swipe.panHandlers} style={[slideStyle, { backgroundColor: C.bg }]}>
-      <ScrollView key={page} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView key={page} ref={pageScroll} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <Row gap={6}>
           <Pressable onPress={() => setPage(null)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
             <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
@@ -770,6 +781,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         ) : null}
         <P toast={toast} onTour={onTour} />
       </ScrollView>
+      </KeyboardAvoidingView>
       </Animated.View>
     );
   }
@@ -791,9 +803,10 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
           </Pressable>
         ))}
       </View>
-      {premiumEnabled() && onPremium ? (
+      {/* Bayyin Premium : toujours visible ; « bientôt disponible » tant que l'achat n'est pas ouvert */}
+      {onPremium ? (
         <Group>
-          <MenuRow id="premium" first title={t("premium.card_t")} value={isPremium() ? t("premium.active_t") : t("premium.card_p")} onPress={onPremium} />
+          <MenuRow id="premium" first title={t("premium.card_t")} value={!premiumEnabled() ? t("premium.soon") : isPremium() ? t("premium.active_t") : t("premium.card_p")} onPress={onPremium} />
         </Group>
       ) : null}
       <Group title={t("settings.g_prefs")}>
@@ -811,9 +824,9 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         {["notes", "how", "sources", "privacy", "limits"].map((id, i) => <MenuRow key={id} id={id} first={i === 0} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
       </Group>
       <Group title={t("settings.g_links")}>
-        <MenuRow id="feedback" first external title={t("fb.title")} value={t("fb.row")} onPress={() => open("https://github.com/agozel5/bayyin/issues/new")} />
-        <MenuRow id="off" external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
-        <MenuRow id="report" external title={t("link.report.t")} value={t("link.report.d")} onPress={() => open("https://github.com/agozel5/bayyin/issues")} />
+        {CONTACT_EMAIL ? <MenuRow id="feedback" first external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
+        <MenuRow id="off" first={!CONTACT_EMAIL} external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
+        {CONTACT_EMAIL ? <MenuRow id="report" external title={t("link.report.t")} value={t("link.report.d")} onPress={() => open(mailto("Bayyin"))} /> : null}
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
     </ScrollView>

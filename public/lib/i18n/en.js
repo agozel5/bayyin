@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-30-1", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -110,7 +110,7 @@ export default {
   "decision.douteux": "Doubtful",
   "decision.interdit": "Forbidden",
   "settings.offline": "Offline",
-  "settings.offline_p": "Products you've viewed stay available offline. You can also download the 500 most scanned products in France and the medicines database (about 6 MB).",
+  "settings.offline_p": "Products you've viewed stay available offline. You can also download the 1,000 most scanned products in France and the medicines database (about 8 MB).",
   "settings.offline_btn": "Download popular products",
   "settings.offline_update": "Update popular products",
   "settings.offline_progress": "Downloading… {n} products",
@@ -135,7 +135,7 @@ export default {
   "link.off.t": "Open Food Facts",
   "link.off.d": "Add or correct a product",
   "link.report.t": "Report a mistake",
-  "link.report.d": "On GitHub",
+  "link.report.d": "By e-mail",
   "link.demo_exit.t": "Leave demo mode",
   "link.demo_exit.d": "Back to real Open Food Facts data",
   "fine.data": "Data",
@@ -583,7 +583,7 @@ export default {
   "ask.copied": "Message copied",
   "ask.subject": "Question about ingredient origin: {name}",
   "ask.body": "Hello,\n\nI eat halal and would like to buy your product \"{name}\" ({brand}, barcode {code}).\n\nCould you tell me the origin of the following ingredients (plant, microbial or animal; if animal, which species and slaughter method)?\n{list}\n\nThank you in advance for your reply.\nBest regards",
-  "share.footer": "Checked with Bayyin · agozel5.github.io/bayyin",
+  "share.footer": "Checked with Bayyin",
   "share.saved": "Image saved",
   "basket.mode": "Shopping mode",
   "basket.mode_on": "Shopping mode: on",

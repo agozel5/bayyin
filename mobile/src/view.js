@@ -58,3 +58,17 @@ export function errorText(err) {
   if (err && err.code === "server") return t("msg.server");
   return t("msg.unexpected");
 }
+
+/** Étiquette courte d'une alerte de profil (comme le web) : l'allergène ou le régime, et le prénom
+ *  du membre de la famille concerné (« Lait · Sara »). Vide s'il n'y a pas d'alerte. */
+export function alertLabel(p) {
+  const pr = profileOf(p);
+  if (!pr.alert) return "";
+  const al = (x) => t(`allergen.${x}`);
+  const word = pr.contains.length
+    ? al(pr.contains[0]) + (pr.contains.length > 1 ? ` +${pr.contains.length - 1}` : "")
+    : pr.diet
+      ? t(`alert.tag.${pr.diet.id}.${pr.diet.level}`)
+      : pr.traces.length ? t("alert.tag.traces", { x: al(pr.traces[0]) }) : t(`alert.short.${pr.alert}`);
+  return pr.who ? `${word} · ${pr.who}` : word;
+}

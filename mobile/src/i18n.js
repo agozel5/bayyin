@@ -19,25 +19,25 @@ const NATIVE = {
     "cam.err.denied.p": "Bayyin a besoin de la caméra pour lire les codes-barres. Autorisez-la dans les réglages du téléphone.",
     "cam.allow": "Autoriser la caméra",
     "cam.open_settings": "Ouvrir les réglages",
-    "settings.offline_p": "Les fiches déjà consultées restent disponibles sans réseau. Téléchargez en plus les 500 produits les plus scannés en France (environ 3 Mo).",
+    "settings.offline_p": "Les fiches déjà consultées restent disponibles sans réseau. Téléchargez en plus les 1 000 produits les plus scannés en France et tous les classements (environ 10 Mo, de préférence en Wi-Fi).",
   },
   en: {
     "cam.err.denied.p": "Bayyin needs the camera to read barcodes. Allow it in your phone settings.",
     "cam.allow": "Allow camera",
     "cam.open_settings": "Open settings",
-    "settings.offline_p": "Products you have already viewed stay available offline. You can also download the 500 most scanned products in France (about 3 MB).",
+    "settings.offline_p": "Products you have already viewed stay available offline. You can also download the 1,000 most scanned products in France and all the rankings (about 10 MB, preferably on Wi-Fi).",
   },
   ar: {
     "cam.err.denied.p": "يحتاج بيّن إلى الكاميرا لقراءة الرموز الشريطية. اسمح بها من إعدادات الهاتف.",
     "cam.allow": "السماح بالكاميرا",
     "cam.open_settings": "فتح الإعدادات",
-    "settings.offline_p": "تبقى المنتجات التي اطّلعت عليها متاحة دون اتصال. ويمكنك أيضًا تنزيل أكثر 500 منتج مسحًا في فرنسا (نحو 3 ميغابايت).",
+    "settings.offline_p": "تبقى المنتجات التي اطّلعت عليها متاحة دون اتصال. ويمكنك أيضًا تنزيل أكثر 1000 منتج مسحًا في فرنسا وجميع التصنيفات (نحو 10 ميغابايت، ويُفضّل عبر Wi-Fi).",
   },
   tr: {
     "cam.err.denied.p": "Bayyin barkodları okumak için kameraya ihtiyaç duyar. Telefon ayarlarından izin verin.",
     "cam.allow": "Kameraya izin ver",
     "cam.open_settings": "Ayarları aç",
-    "settings.offline_p": "Daha önce baktığınız ürünler çevrimdışı da görüntülenebilir. Ayrıca Fransa'da en çok taranan 500 ürünü indirebilirsiniz (yaklaşık 3 MB).",
+    "settings.offline_p": "Daha önce baktığınız ürünler çevrimdışı da görüntülenebilir. Ayrıca Fransa'da en çok taranan 1.000 ürünü ve tüm sıralamaları indirebilirsiniz (yaklaşık 10 MB, tercihen Wi-Fi ile).",
   },
 };
 

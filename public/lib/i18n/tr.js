@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-30-1", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -110,7 +110,7 @@ export default {
   "decision.douteux": "Şüpheli",
   "decision.interdit": "Haram",
   "settings.offline": "Çevrimdışı",
-  "settings.offline_p": "Baktığınız ürünler çevrimdışı da kullanılabilir. Ayrıca Fransa'da en çok taranan 500 ürünü ve ilaç veritabanını indirebilirsiniz (yaklaşık 6 MB).",
+  "settings.offline_p": "Baktığınız ürünler çevrimdışı da kullanılabilir. Ayrıca Fransa'da en çok taranan 1.000 ürünü ve ilaç veritabanını indirebilirsiniz (yaklaşık 8 MB).",
   "settings.offline_btn": "Popüler ürünleri indir",
   "settings.offline_update": "Popüler ürünleri güncelle",
   "settings.offline_progress": "İndiriliyor… {n} ürün",
@@ -135,7 +135,7 @@ export default {
   "link.off.t": "Open Food Facts",
   "link.off.d": "Ürün ekle veya düzelt",
   "link.report.t": "Hata bildir",
-  "link.report.d": "GitHub üzerinde",
+  "link.report.d": "E-posta ile",
   "link.demo_exit.t": "Demo modundan çık",
   "link.demo_exit.d": "Gerçek Open Food Facts verilerine dön",
   "fine.data": "Veriler",
@@ -583,7 +583,7 @@ export default {
   "ask.copied": "Mesaj kopyalandı",
   "ask.subject": "İçeriklerin kaynağı hakkında soru: {name}",
   "ask.body": "Merhaba,\n\nHelal besleniyorum ve \"{name}\" ({brand}, barkod {code}) ürününüzü almak istiyorum.\n\nAşağıdaki içeriklerin kaynağını (bitkisel, mikrobiyal veya hayvansal; hayvansalsa hangi tür ve hangi kesim yöntemi) belirtebilir misiniz?\n{list}\n\nYanıtınız için şimdiden teşekkürler.\nSaygılarımla",
-  "share.footer": "Bayyin ile kontrol edildi · agozel5.github.io/bayyin",
+  "share.footer": "Bayyin ile kontrol edildi",
   "share.saved": "Görsel kaydedildi",
   "basket.mode": "Alışveriş modu",
   "basket.mode_on": "Alışveriş modu: açık",

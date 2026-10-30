@@ -108,14 +108,49 @@
           "widgets": [
             {
               "name": "BayyinHome",
-              "label": "Bayyin",
+              "label": "Bayyin · Bilan",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
               "targetCellHeight": 2,
-              "description": "Scanner un produit et le bilan de votre semaine",
+              "description": "Le bilan de la semaine et le bouton Scanner",
               "previewImage": "./assets/widget-preview.png",
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            },
+            {
+              "name": "BayyinScan",
+              "label": "Bayyin · Scanner",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "description": "Scanner un produit en un geste",
+              "previewImage": "./assets/widget-preview-scan.png",
               "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "BayyinQuick",
+              "label": "Bayyin · Raccourcis",
+              "minWidth": "250dp",
+              "minHeight": "50dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 1,
+              "description": "Scanner, ingrédients, recherche, mode courses",
+              "previewImage": "./assets/widget-preview-quick.png",
+              "updatePeriodMillis": 0
+            },
+            {
+              "name": "BayyinRecent",
+              "label": "Bayyin · Derniers produits",
+              "minWidth": "250dp",
+              "minHeight": "250dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 4,
+              "description": "Le bilan, les derniers produits et des raccourcis",
+              "previewImage": "./assets/widget-preview-recent.png",
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
             }
           ]
         }
@@ -127,10 +162,15 @@
             {
               "name": "BayyinWidget",
               "displayName": "Bayyin",
-              "description": "Scanner un produit et le bilan de votre semaine",
+              "description": "Le bilan de la semaine, les derniers produits et le scan",
               "ios": {
                 "supportedFamilies": [
-                  "systemSmall"
+                  "systemSmall",
+                  "systemMedium",
+                  "systemLarge",
+                  "accessoryCircular",
+                  "accessoryRectangular",
+                  "accessoryInline"
                 ]
               }
             }
@@ -169,7 +209,9 @@
       },
       "eas": {
         "projectId": "115e79e5-92bf-4f5f-b8d2-f54574fe2798"
-      }
+      },
+      "contactEmail": "",
+      "site": ""
     }
   }
 }

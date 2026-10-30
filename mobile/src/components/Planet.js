@@ -10,6 +10,7 @@ import { t, getLang } from "../i18n";
 import { fmt } from "../view";
 import { fetchEnvironment } from "../api";
 import { Reveal, Collapse, Chevron } from "./Reveal";
+import LetterScale from "./LetterScale";
 import { ENV_ART, FAMILY_ART, RANK_ART, NUT_ART } from "../../../public/lib/rank-art.js";
 import { loadWorld, resolveOrigin, flagOf, countryName } from "../../../public/lib/world.js";
 
@@ -69,19 +70,7 @@ function EnvRow({ art, title, sub, right, first, children }) {
 }
 
 function GsScale({ grade }) {
-  return (
-    <View style={{ flexDirection: "row", gap: 4, alignItems: "center", direction: "ltr" }} accessible accessibilityLabel={`Green-Score ${grade}`}>
-      {GS.map(([g, l, c]) => {
-        const on = g === grade;
-        return (
-          <View key={g} style={{ flex: on ? 1.3 : 1, paddingVertical: on ? 8 : 5, borderRadius: 9, backgroundColor: on ? c : c + "66", alignItems: "center",
-            shadowColor: c, shadowOpacity: on ? 0.5 : 0, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }}>
-            <Text style={{ color: "#fff", fontWeight: "800", fontSize: on ? 16 : 12, opacity: on ? 1 : 0.85 }}>{l}</Text>
-          </View>
-        );
-      })}
-    </View>
-  );
+  return <LetterScale label={`Green-Score ${grade}`} value={grade} items={GS} activeFlex={1.3} />;
 }
 
 function ProdGauge({ value }) {

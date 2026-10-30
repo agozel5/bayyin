@@ -1,6 +1,6 @@
 // Le système demande le contenu du widget (ajout, mise à jour périodique), parfois app fermée.
 import React from "react";
-import { HomeWidget } from "./HomeWidget";
+import { widgetFor } from "./HomeWidget";
 import { widgetData } from "./data";
 
 export async function widgetTaskHandler(props) {
@@ -11,7 +11,7 @@ export async function widgetTaskHandler(props) {
     case "WIDGET_ADDED":
     case "WIDGET_UPDATE":
     case "WIDGET_RESIZED":
-      props.renderWidget(<HomeWidget data={widgetData(getHistory())} />);
+      props.renderWidget(widgetFor(props.widgetInfo && props.widgetInfo.widgetName, widgetData(getHistory())));
       break;
     default:
       break;

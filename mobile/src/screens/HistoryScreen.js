@@ -86,6 +86,10 @@ function DayBar({ i, children, h, weeksAgo }) {
   );
 }
 
+const weekRange = ({ start, end }) => {
+  const f = new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" });
+  return `${f.format(start)} – ${f.format(end - 864e5)}`;
+};
 function weekBounds(weeksAgo) {
   const end = new Date(); end.setHours(0, 0, 0, 0);
   end.setDate(end.getDate() + 1 - 7 * weeksAgo);
@@ -170,6 +174,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
   const [confirm, setConfirm] = useState(false);
   const [weeksAgo, setWeeksAgo] = useState(0);
+  const [period, setPeriod] = useState("week");
   // Sans Premium (quand il est en vente) : les 30 derniers jours, favoris compris
   const full = getHistory();
   const all = isPremium() ? full : full.filter((e) => e.fav || e.at > Date.now() - FREE_HISTORY_DAYS * 864e5);
@@ -189,10 +194,16 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
     );
   }
 
+  // Bilan de la semaine (celle choisie dans le graphique) ou depuis le début
+  const wb = weekBounds(weeksAgo);
+  const inWeek = (e, b) => e.at >= b.start && e.at < b.end;
+  const base = period === "week" ? all.filter((e) => inWeek(e, wb)) : all;
+  const prevN = all.filter((e) => inWeek(e, weekBounds(weeksAgo + 1))).length;
   const counts = {};
-  all.forEach((e) => { const st = verdictOf(e.p).status; counts[st] = (counts[st] || 0) + 1; });
-  const scores = all.map((e) => scoreOf(e.p)).filter(Boolean).map((x) => x.score);
+  base.forEach((e) => { const st = verdictOf(e.p).status; counts[st] = (counts[st] || 0) + 1; });
+  const scores = base.map((e) => scoreOf(e.p)).filter(Boolean).map((x) => x.score);
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const okShare = base.length ? Math.round((((counts.halal_certifie || 0) + (counts.halal_probable || 0)) / base.length) * 100) : 0;
   const shown = all.filter(FILTERS.find((f) => f.id === filter).test);
 
   return (
@@ -211,9 +222,35 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
       ) : null}
 
       <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
-        <Txt style={{ fontWeight: "800", fontSize: 18 }}>{t("bilan.title")}</Txt>
+        <Row style={{ justifyContent: "space-between" }}>
+          <Txt style={{ fontWeight: "800", fontSize: 18, flex: 1 }}>{t("bilan.title")}</Txt>
+          {/* Semaine / depuis le début */}
+          <View style={{ flexDirection: dir().row, padding: 3, borderRadius: 99, backgroundColor: C.tint }} accessibilityRole="tablist">
+            {["week", "all"].map((k) => (
+              <Pressable key={k} onPress={() => { haptic.tap(); setPeriod(k); }} accessibilityRole="tab" accessibilityState={{ selected: period === k }}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: period === k ? C.surface : "transparent" }}>
+                <Text style={{ fontSize: 13, fontWeight: period === k ? "800" : "600", color: period === k ? C.fg : C.muted }}>{t(`bilan.p_${k}`)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Row>
+        {period === "week" ? (
+          <FadeIn key={`wk${weeksAgo}`} distance={4}>
+            <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <Text style={{ fontSize: 13.5, color: C.muted, textAlign: dir().ta }}>{weeksAgo ? t("bilan.week_of", { range: weekRange(wb) }) : t("bilan.this_week")}</Text>
+              {base.length || prevN ? (
+                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: base.length >= prevN ? C.brandSoft : C.tint }}>
+                  <Text style={{ fontSize: 12, fontWeight: "800", color: base.length >= prevN ? C.brandDark : C.muted }}>
+                    {base.length === prevN ? t("bilan.same") : `${base.length > prevN ? "+" : "−"}${Math.abs(base.length - prevN)} ${t("bilan.vs_prev")}`}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </FadeIn>
+        ) : null}
+        {base.length ? (
         <Row gap={18}>
-          <Donut counts={counts} total={all.length} />
+          <Donut counts={counts} total={base.length} />
           <View style={{ flex: 1, gap: 8 }}>
             {ORDER.filter((s) => counts[s]).map((s, i) => (
               <FadeIn key={s} delay={150 + i * 90}><Row gap={8}>
@@ -225,6 +262,24 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
             ))}
           </View>
         </Row>
+        ) : (
+          <View style={{ alignItems: "center", paddingVertical: 18, gap: 4 }}>
+            <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg }}>{t("bilan.week_empty")}</Text>
+            <Muted style={{ fontSize: 13.5, textAlign: "center" }}>{t("bilan.week_empty_p")}</Muted>
+          </View>
+        )}
+        {base.length ? (
+          <View style={{ flexDirection: dir().row, gap: 10 }}>
+            {[["ok", okShare + " %", t("bilan.k_halal"), C.cert], ["n", String(base.length), t(base.length === 1 ? "history.count_one" : "history.count_other"), C.fg], ["bad", String((counts.haram || 0) + (counts.mashbouh || 0)), t("bilan.k_avoid"), (counts.haram || 0) + (counts.mashbouh || 0) ? C.doubt : C.muted]].map(([k, v, l, c], i) => (
+              <FadeIn key={k + period + weeksAgo} delay={200 + i * 80} style={{ flex: 1 }}>
+                <View style={{ padding: 10, borderRadius: R.md, backgroundColor: C.tint, alignItems: "center", gap: 2 }}>
+                  <Text style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }}>{v}</Text>
+                  <Text numberOfLines={2} style={{ fontSize: 11.5, color: C.muted, textAlign: "center" }}>{l}</Text>
+                </View>
+              </FadeIn>
+            ))}
+          </View>
+        ) : null}
         <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
         {avg !== null ? <AvgGauge avg={avg} /> : null}
       </View>

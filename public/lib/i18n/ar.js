@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-30-1", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -110,7 +110,7 @@ export default {
   "decision.douteux": "مشبوه",
   "decision.interdit": "حرام",
   "settings.offline": "دون اتصال",
-  "settings.offline_p": "تبقى المنتجات التي اطّلعت عليها متاحة دون اتصال. ويمكنك أيضًا تنزيل أكثر 500 منتج مسحًا في فرنسا وقاعدة الأدوية (نحو 6 ميغابايت).",
+  "settings.offline_p": "تبقى المنتجات التي اطّلعت عليها متاحة دون اتصال. ويمكنك أيضًا تنزيل أكثر 1000 منتج مسحًا في فرنسا وقاعدة الأدوية (نحو 8 ميغابايت).",
   "settings.offline_btn": "تنزيل المنتجات الشائعة",
   "settings.offline_update": "تحديث المنتجات الشائعة",
   "settings.offline_progress": "جارٍ التنزيل… {n} منتج",
@@ -135,7 +135,7 @@ export default {
   "link.off.t": "Open Food Facts",
   "link.off.d": "إضافة منتج أو تصحيحه",
   "link.report.t": "الإبلاغ عن خطأ",
-  "link.report.d": "على GitHub",
+  "link.report.d": "عبر البريد الإلكتروني",
   "link.demo_exit.t": "الخروج من الوضع التجريبي",
   "link.demo_exit.d": "العودة إلى بيانات Open Food Facts الحقيقية",
   "fine.data": "البيانات",
@@ -583,7 +583,7 @@ export default {
   "ask.copied": "تم نسخ الرسالة",
   "ask.subject": "سؤال عن مصدر المكونات: {name}",
   "ask.body": "السلام عليكم،\n\nأنا ألتزم بالحلال وأرغب في شراء منتجكم «{name}» ({brand}، الرمز الشريطي {code}).\n\nهل يمكنكم توضيح مصدر المكونات التالية (نباتي أو ميكروبي أو حيواني، وإن كان حيوانيًا فما نوع الحيوان وطريقة الذبح)؟\n{list}\n\nشكرًا مقدمًا على ردكم.\nمع التحية",
-  "share.footer": "تم التحقق عبر بيّن · agozel5.github.io/bayyin",
+  "share.footer": "تم التحقق عبر بيّن",
   "share.saved": "تم حفظ الصورة",
   "basket.mode": "وضع التسوق",
   "basket.mode_on": "وضع التسوق: مفعّل",
