@@ -51,6 +51,12 @@ Lors de la première compilation avec EAS, acceptez la création des « capabili
 Sur Android, un lien de partage propose d'ouvrir Bayyin. Sur iPhone, il faut un fichier `apple-app-site-association` à la **racine** du domaine, ce que GitHub Pages ne permet pas pour `agozel5.github.io/bayyin`.
 Deux options plus tard : un domaine à vous (par exemple `bayyin.app`), ou le dépôt `agozel5.github.io`. En attendant, le lien ouvre le site, qui affiche la même fiche.
 
+## Mettre à jour le code sur le PC
+
+Dans le dossier `mobile` : `npm run maj`. La commande remet `package.json` et `app.json` comme sur GitHub
+(l'installation des modules les modifie à chaque fois), récupère la dernière version, puis réinstalle les modules.
+Ensuite seulement : `npx eas-cli@latest build -p ios --profile production --auto-submit`.
+
 ## Compilation
 
 - **Android** : onglet Actions → « App mobile » → Run workflow. L'APK est publié dans la release `android-latest`.
