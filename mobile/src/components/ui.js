@@ -20,7 +20,7 @@ export function Txt({ style, children, ...rest }) {
 
 export const H1 = ({ children, style }) => <Txt accessibilityRole="header" style={[{ fontSize: 30, lineHeight: 35, fontWeight: "800", letterSpacing: -0.5 }, style]}>{children}</Txt>;
 export const H2 = ({ children, style }) => <Txt accessibilityRole="header" style={[{ fontSize: 20, lineHeight: 26, fontWeight: "800" }, style]}>{children}</Txt>;
-export const Muted = ({ children, style }) => <Txt style={[{ color: C.muted, fontSize: 15, lineHeight: 22 }, style]}>{children}</Txt>;
+export const Muted = ({ children, style, ...rest }) => <Txt {...rest} style={[{ color: C.muted, fontSize: 15, lineHeight: 22 }, style]}>{children}</Txt>;
 export const Label = ({ children, style }) => (
   <Txt style={[{ color: C.muted, fontSize: 12, fontWeight: "800", letterSpacing: dir().rtl ? 0 : 0.8, textTransform: "uppercase" }, style]}>{children}</Txt>
 );
