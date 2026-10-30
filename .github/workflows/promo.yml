@@ -1,0 +1,44 @@
+name: Vidéo promotionnelle (voix off)
+
+# Filme l'app réelle (avec les vraies photos des produits) et assemble la vidéo des réseaux sociaux
+# avec la voix off (Piper, voix « Siwis », CC BY 4.0). Résultat déposé sur la branche promo-video.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Outils
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install playwright numpy && python -m playwright install --with-deps chromium
+      - name: Voix (Piper)
+        run: |
+          mkdir -p /tmp/piper && cd /tmp/piper
+          curl -sL https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz | tar xz
+          mkdir -p voice && curl -sL https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-fr-siwis-medium.tar.gz | tar xz -C voice
+      - name: Vidéo
+        env:
+          PIPER_DIR: /tmp/piper
+        run: |
+          PORT=3123 node src/server.js & sleep 3
+          mkdir -p /tmp/out
+          python scripts/motion/promo.py /tmp/out/Bayyin-promo-voix.mp4
+      - name: Déposer sur la branche promo-video
+        run: |
+          cd /tmp/out && git init -q -b promo-video
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" add -A
+          git -c user.name="bayyin-bot" -c user.email="actions@users.noreply.github.com" commit -qm "Vidéo promotionnelle ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" promo-video
