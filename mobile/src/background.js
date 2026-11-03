@@ -14,7 +14,9 @@ if (Platform.OS !== "web") {
         const { checkRecalls, notifyRecalls } = require("./recalls");
         await initStorage();
         setLang(getSettings().lang);
-        await notifyRecalls(await checkRecalls({ force: true }));
+        const hits = await checkRecalls({ force: true });
+        await notifyRecalls(hits);
+        try { require("./widget").updateWidgets(require("./storage").getHistory(), hits.map((h) => h.code)); } catch { /* widgets absents */ }
         return BackgroundTask.BackgroundTaskResult.Success;
       } catch {
         return BackgroundTask.BackgroundTaskResult.Failed;

@@ -10,6 +10,7 @@ import { t, locale } from "../i18n";
 import { haptic } from "../motion";
 import { getPlans, buy, restore, isPremium, premiumState, onPremium, manageUrl } from "../premium";
 import { mascot } from "../../../public/lib/mascot.js";
+import { LegalDoc } from "./SettingsScreen";
 
 const FEATS = [
   ["rankings", "#E2A812", '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>'],
@@ -26,6 +27,7 @@ export default function PremiumScreen({ onClose, feature, toast }) {
   const [plans, setPlans] = useState(null); // null : chargement ; [] : indisponible
   const [pick, setPick] = useState("year");
   const [busy, setBusy] = useState(false);
+  const [doc, setDoc] = useState(null); // conditions ou confidentialité dépliées en bas de page
   const [, setTick] = useState(0);
   useEffect(() => onPremium(() => setTick((n) => n + 1)), []);
   useEffect(() => { getPlans().then(setPlans).catch(() => setPlans([])); }, []);
@@ -128,7 +130,8 @@ export default function PremiumScreen({ onClose, feature, toast }) {
                 shadowColor: "#D9A21B", shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5 })}>
               {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "900", fontSize: 17 }}>{plan && plan.trialDays ? t("premium.cta_trial", { n: plan.trialDays }) : t("premium.cta")}</Text>}
             </Pressable>
-            <Muted style={{ fontSize: 12, lineHeight: 17, textAlign: "center" }}>{t("premium.store_legal", { store })}</Muted>
+            {plan && plan.trialDays ? <Text style={{ textAlign: "center", fontSize: 14.5, fontWeight: "800", color: C.fg }}>{t("premium.trial_line", { n: plan.trialDays, price: `${plan.price}${t(plan.id === "year" ? "premium.per_year" : "premium.per_month")}` })}</Text> : null}
+            <Muted style={{ fontSize: 12, lineHeight: 17, textAlign: "center" }}>{plan && plan.trialDays ? t("premium.terms_fine", { store }) : t("premium.store_legal", { store })}</Muted>
           </View>
         )}
 
@@ -142,6 +145,16 @@ export default function PremiumScreen({ onClose, feature, toast }) {
           <Txt style={{ fontWeight: "800", fontSize: 14.5 }}>{t("premium.free_t")}</Txt>
           <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("premium.free_p")}</Muted>
         </View>
+
+        {/* Conditions de l'abonnement et confidentialité, lisibles avant l'achat */}
+        <Row gap={18} style={{ justifyContent: "center" }}>
+          {[["sales", "premium.link_terms"], ["privacy", "premium.link_privacy"]].map(([id, k]) => (
+            <Pressable key={id} onPress={() => { haptic.tap(); setDoc(doc === id ? null : id); }} accessibilityRole="button" hitSlop={8}>
+              <Text style={{ color: C.muted, fontSize: 13.5, fontWeight: "700", textDecorationLine: "underline" }}>{t(k)}</Text>
+            </Pressable>
+          ))}
+        </Row>
+        {doc ? <LegalDoc key={doc} id={doc} open /> : null}
       </View>
     </ScrollView>
   );

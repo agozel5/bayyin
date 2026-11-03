@@ -17,7 +17,7 @@ import { Khatam } from "./components/Cards";
 import Guard from "./components/Guard";
 import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
-import { useEdgeSwipe, InnerBackContext } from "./components/EdgeSwipe";
+import { useEdgeSwipe, InnerBackContext, underStyle, underShade } from "./components/EdgeSwipe";
 import BasketScreen from "./screens/BasketScreen";
 import PremiumScreen from "./screens/PremiumScreen";
 import PlacesScreen from "./screens/PlacesScreen";
@@ -151,11 +151,14 @@ function Toast({ text }) {
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
 const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare"];
-function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
+function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, shared, under, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
-  const back = () => { if (inner.current) { inner.current(); return true; } onBack(); return false; };
-  const swipe = useEdgeSwipe(back, SLIDE.includes(kind) || kind === "ocr");
+  // Glissement depuis le bord : l'écran est déjà sorti quand le doigt lâche, on le retire sans autre animation
+  const back = () => { if (inner.current) { inner.current(); return true; } (onSwipeGone || onBack)(); return false; };
+  const canSwipe = (SLIDE.includes(kind) || kind === "ocr") && !hidden;
+  // sous-page intérieure ouverte (rayon des classements…) : c'est elle qui gère le glissement
+  const swipe = useEdgeSwipe(back, () => canSwipe && !inner.current, hidden ? {} : shared);
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: ms(kind === "camera" ? 180 : 260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, []);
@@ -164,8 +167,10 @@ function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
     Animated.timing(v, { toValue: 0, duration: ms(200), easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => onGone && onGone());
   }, [leaving]);
   const side = dir().rtl ? -1 : 1;
-  const transform =
-    SLIDE.includes(kind)
+  const moving = SLIDE.includes(kind) || kind === "ocr";
+  const transform = under && shared
+    ? underStyle(shared.dx, shared.active).transform // écran du dessous : il glisse avec le doigt
+    : SLIDE.includes(kind)
       ? [{ translateX: Animated.add(v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }), swipe.dx) }]
       : kind === "ocr"
         ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }, { translateX: swipe.dx }]
@@ -177,9 +182,11 @@ function Layer({ kind, instant, leaving, onGone, hidden, onBack, children }) {
       importantForAccessibility={hidden ? "no-hide-descendants" : "auto"}
       accessibilityElementsHidden={!!hidden}
       accessibilityViewIsModal={!hidden}
-      style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: v, transform }]}
+      style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: under ? 1 : v, transform },
+        !hidden && moving ? { shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 18, shadowOffset: { width: -side * 4, height: 0 } } : null]}
     >
       <InnerBackContext.Provider value={inner}><Guard onBack={onBack}>{children}</Guard></InnerBackContext.Provider>
+      {under && shared ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }, underShade(shared.dx, shared.active)]} /> : null}
     </Animated.View>
   );
 }
@@ -192,6 +199,8 @@ function Main() {
   const [, setTick] = useState(0);
   const [toastText, setToastText] = useState(null);
   const [manualOpen, setManualOpen] = useState(false);
+  // Glissement de retour : valeurs partagées entre l'écran du dessus et celui du dessous
+  const swipeShared = useRef({ dx: new Animated.Value(0), active: new Animated.Value(0) }).current;
   const [homeStatus, setHomeStatus] = useState(null);
   const [focus, setFocus] = useState({ target: null, n: 0 });
   const [tour, setTour] = useState(null); // étape de la visite guidée affichée, ou null
@@ -233,6 +242,7 @@ function Main() {
   const refreshRecalls = useCallback(async (force = false) => {
     const hits = await checkRecalls({ force }).catch(() => []);
     setRecalls(hits);
+    updateWidgets(getHistory(), hits.map((h) => h.code)); // bandeau « rappel » des widgets
     notifyRecalls(hits, { send: false }).catch(() => {});
   }, []);
   useEffect(() => {
@@ -362,6 +372,7 @@ function Main() {
   const changeTab = (id) => {
     clearStack();
     setBasketMode(false);
+    setManualOpen(false); // « Taper le code » se referme quand on change d'onglet
     setTab(id);
   };
   // Caméra fermée : le prochain scan repart du mode normal (pas du mode courses)
@@ -470,12 +481,13 @@ function Main() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style={(top && (top.type === "camera" || top.type === "aisle") && leaving !== top.key) || isDark() ? "light" : "dark"} />
-      <View key={getLang() + (isDark() ? "d" : "l")} style={{ flex: 1 }} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
+      <Animated.View key={getLang() + (isDark() ? "d" : "l")} style={[{ flex: 1 }, stack.length === 1 && SLIDE.includes(stack[0].type) ? underStyle(swipeShared.dx, swipeShared.active) : null]} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           <Guard key={tab}>{page}</Guard>
         </FadeIn>
         <TabBar tab={tab} onTab={(id) => { if (id === "scan" && tab === "scan") openCamera(); else changeTab(id); }} />
-      </View>
+        {stack.length === 1 && SLIDE.includes(stack[0].type) ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }, underShade(swipeShared.dx, swipeShared.active)]} /> : null}
+      </Animated.View>
       {visible.map((item) => {
         const isTop = item === top;
         return (
@@ -484,9 +496,12 @@ function Main() {
             kind={item.type}
             instant={!isTop}
             hidden={!isTop}
+            under={!isTop && SLIDE.includes(top.type)}
+            shared={swipeShared}
             leaving={leaving === item.key}
             onGone={() => removeTop(item.key)}
             onBack={pop}
+            onSwipeGone={() => removeTop(item.key)}
           >
             {renderScreen(item)}
           </Layer>

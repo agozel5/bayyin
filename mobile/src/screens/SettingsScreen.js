@@ -1,7 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
@@ -18,6 +18,7 @@ import { downloadPack } from "../api";
 import { downloadRankings } from "../rankcache";
 import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
 import { premiumEnabled, isPremium, canUse } from "../premium";
+import { legalDoc, LEGAL_IDS } from "../legal";
 import { S } from "../view";
 import { haptic, ms } from "../motion";
 import { CONTACT_EMAIL, mailto } from "../config";
@@ -47,6 +48,7 @@ const SI = {
   sources: ['#4C64D6', I.doc],
   privacy: ['#46526A', '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'],
   limits: ['#F0BC33', I.alert],
+  legal: ['#5A6472', '<path d="M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a2.8 2.8 0 0 0 5 0zM19 7l-2.5 6a2.8 2.8 0 0 0 5 0z"/>'],
   feedback: ['#1897D6', '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z"/>'],
   off: ['#8B5A3C', I.box],
   premium: ['#D9A21B', '<path d="M5 18h14M5 18l-1.5-9 5 3.5L12 6l3.5 6.5 5-3.5L19 18"/>'],
@@ -744,7 +746,41 @@ function LimitsPage() {
   );
 }
 
-const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage };
+// Informations légales : quatre documents dépliables (textes en français, voir legal.js)
+export function LegalDoc({ id, open: initial }) {
+  const [open, setOpen] = useState(!!initial);
+  const d = legalDoc(id);
+  return (
+    <View style={[{ backgroundColor: C.surface, borderRadius: 18, overflow: "hidden" }, lift()]}>
+      <Pressable onPress={() => { haptic.tap(); setOpen(!open); }} accessibilityRole="button" accessibilityState={{ expanded: open }}
+        style={{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 16 }}>
+        <Text style={{ flex: 1, fontSize: 16.5, fontWeight: "800", color: C.fg, textAlign: dir().ta }}>{d.title}</Text>
+        <View style={{ transform: [{ rotate: open ? "90deg" : "0deg" }] }}><Glyph name="chev" size={17} color={C.faint} /></View>
+      </Pressable>
+      {open ? (
+        <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 12 }}>
+          {d.intro ? <Text style={{ fontSize: 13, lineHeight: 19, color: C.muted }}>{d.intro}</Text> : null}
+          {d.sections.map(([h, ps]) => (
+            <View key={h} style={{ gap: 6 }}>
+              <Text style={{ fontSize: 14.5, fontWeight: "800", color: C.brandDark }}>{h}</Text>
+              {ps.map((x, i) => <Text key={i} style={{ fontSize: 14, lineHeight: 21, color: C.fg }}>{x}</Text>)}
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+function LegalPage() {
+  return (
+    <View style={{ gap: 12 }}>
+      {getSettings().lang !== "fr" ? <Muted style={{ fontSize: 13, lineHeight: 19 }}>{t("legal.fr_only")}</Muted> : null}
+      {LEGAL_IDS.map((id) => <LegalDoc key={id} id={id} />)}
+    </View>
+  );
+}
+
+const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
 
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
@@ -760,29 +796,43 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   }, [focus && focus.n]);
   useEffect(() => {
     if (!page) return;
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => { setPage(null); return true; });
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => { closePage(); return true; });
     return () => sub.remove();
   }, [page]);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.settingsPage = setPage; // captures automatiques (web)
   // Page qui arrive en glissant depuis le bord ; retour par glissement du doigt depuis le bord
-  const swipe = useEdgeSwipe(() => { setPage(null); return true; }, !!page);
+  // La page s'ouvre par-dessus le menu (qui reste dessous) ; le glissement depuis le bord la fait suivre
+  // le doigt pendant que le menu revient en place, comme sur iPhone.
+  const swipe = useEdgeSwipe(() => { setPage(null); return false; }, !!page);
   const slide = useRef(new Animated.Value(1)).current;
   useEffect(() => {
+    if (!page) return;
     slide.setValue(ms(1) ? 0 : 1);
-    Animated.timing(slide, { toValue: 1, duration: ms(260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    Animated.timing(slide, { toValue: 1, duration: ms(280), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [page]);
   const side = dir().rtl ? -1 : 1;
-  const slideStyle = { flex: 1, opacity: slide, transform: [{ translateX: Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [side * (page ? 34 : -34), 0] }), swipe.dx) }] };
+  const Wd = Dimensions.get("window").width;
+  const closePage = () => {
+    if (!ms(1)) return setPage(null);
+    swipe.active.setValue(1);
+    Animated.timing(swipe.dx, { toValue: side * Wd, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => {
+      setPage(null); requestAnimationFrame(() => { swipe.dx.setValue(0); swipe.active.setValue(0); });
+    });
+  };
+  const pageStyle = { transform: [{ translateX: Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [side * Wd, 0] }), swipe.dx) }] };
+  // menu dessous : décalé vers la gauche pendant l'ouverture, revient avec le doigt
+  const menuStyle = page ? { transform: [{ translateX: Animated.add(Animated.multiply(slide, -side * Wd * 0.3), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, Wd * 0.3] : [-Wd * 0.3, 0], extrapolate: "clamp" }))) }] } : null;
 
   const scroll = { paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 120, gap: 16 };
+  let pageEl = null;
   if (page) {
     const P = PAGES[page];
-    return (
-      <Animated.View {...swipe.panHandlers} style={[slideStyle, { backgroundColor: C.bg }]}>
+    pageEl = (
+      <Animated.View {...swipe.panHandlers} style={[StyleSheet.absoluteFill, pageStyle, { backgroundColor: C.bg, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 18, shadowOffset: { width: -side * 4, height: 0 } }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView key={page} ref={pageScroll} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <Row gap={6}>
-          <Pressable onPress={() => setPage(null)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
+          <Pressable onPress={closePage} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
             <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
           </Pressable>
           <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: "800", letterSpacing: -0.4, color: C.fg }}>{t(`settings.menu.${page}`)}</Text>
@@ -804,7 +854,8 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   const version = (Constants.expoConfig && Constants.expoConfig.version) || "";
   const go = (id) => () => setPage(id);
   return (
-    <Animated.View style={slideStyle}>
+    <View style={{ flex: 1 }}>
+    <Animated.View style={[{ flex: 1 }, menuStyle]} importantForAccessibility={page ? "no-hide-descendants" : "auto"} pointerEvents={page ? "none" : "auto"}>
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll}>
       <PageHead title={t("settings.title")} />
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 8 }, lift()]}>
@@ -835,6 +886,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
       </Group>
       <Group title={t("settings.g_about")}>
         {["notes", "how", "sources", "privacy", "limits"].map((id, i) => <MenuRow key={id} id={id} first={i === 0} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
+        <MenuRow id="legal" title={t("settings.menu.legal")} value={t("legal.row")} onPress={go("legal")} />
       </Group>
       <Group title={t("settings.g_links")}>
         {CONTACT_EMAIL ? <MenuRow id="feedback" first external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
@@ -843,6 +895,9 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
     </ScrollView>
+    {page ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: Animated.add(Animated.multiply(slide, 0.18), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, -0.18] : [-0.18, 0], extrapolate: "clamp" }))) }]} /> : null}
     </Animated.View>
+    {pageEl}
+    </View>
   );
 }

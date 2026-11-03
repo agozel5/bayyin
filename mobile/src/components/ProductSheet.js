@@ -474,9 +474,10 @@ function AlternativesSection({ p, onOpen }) {
   useEffect(() => {
     let alive = true;
     setState({ loading: true, list: [], best: false, error: false });
-    fetchAlternatives(p)
-      .then((list) => alive && setState({ loading: false, list, best: !!list.best, error: false }))
-      .catch(() => alive && setState({ loading: false, list: [], best: false, error: true }));
+    let fast = null;
+    fetchAlternatives(p, (list) => { fast = list; alive && setState({ loading: false, list, best: !!list.best, error: false }); })
+      .then((list) => alive && (list.length || !fast) && setState({ loading: false, list, best: !!list.best, error: false }))
+      .catch(() => alive && !fast && setState({ loading: false, list: [], best: false, error: true }));
     return () => { alive = false; };
   }, [p.code]);
   // Rien à proposer : pas de section vide

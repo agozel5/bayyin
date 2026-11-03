@@ -130,6 +130,17 @@
               "updatePeriodMillis": 1800000
             },
             {
+              "name": "BayyinLast",
+              "label": "Bayyin · Dernier produit",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "description": "Le dernier produit scanné et son verdict",
+              "previewImage": "./assets/widget-preview-last.png",
+              "updatePeriodMillis": 1800000
+            },
+            {
               "name": "BayyinQuick",
               "label": "Bayyin · Raccourcis",
               "minWidth": "250dp",
@@ -211,7 +222,18 @@
         "projectId": "115e79e5-92bf-4f5f-b8d2-f54574fe2798"
       },
       "contactEmail": "",
-      "site": ""
+      "site": "",
+      "legal": {
+        "name": "",
+        "siret": "",
+        "address": "",
+        "email": "",
+        "phone": "",
+        "mediator": {
+          "name": "",
+          "url": ""
+        }
+      }
     }
   }
 }

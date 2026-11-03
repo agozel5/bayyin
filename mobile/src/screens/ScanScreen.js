@@ -105,6 +105,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
     const digits = code.replace(/\D/g, "");
     if (digits.length < 8 || digits.length > 14) { haptic.error(); return setError(true); }
     setError(null);
+    setCode(""); setManualOpen(false); // le champ ne reste pas ouvert au retour sur l'accueil
     onOpen(digits, { fromScan: true });
   };
 

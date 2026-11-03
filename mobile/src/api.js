@@ -2,6 +2,9 @@
 import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny, greenScore } from "./core";
 import { setCosmeticDb, cosmeticDbVersion } from "../../public/lib/cosmetic.js";
 import { createClient } from "../../public/lib/off.js";
+import { RANK_CATEGORIES } from "../../public/lib/rankings.js";
+import { rankProductsCached } from "./rankcache";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLang } from "./i18n";
 import { getSettings, getCachedRaw, cacheRaw, getLocal, setPack, getEntry } from "./storage";
 
@@ -104,11 +107,39 @@ export async function searchProducts(q) {
 }
 
 /** Alternatives du même type, halal et mieux notées, qui respectent le profil */
-export async function fetchAlternatives(product) {
+// Alternatives : affichées tout de suite quand c'est possible, puis précisées.
+//  1. dernières alternatives trouvées pour ce produit (gardées 7 jours sur le téléphone) ;
+//  2. sinon le classement du même rayon (fichier du site, rapide et gardé hors connexion) ;
+//  3. puis la recherche par catégorie d'Open Food Facts (plus lente), qui remplace le résultat.
+const ALT_KEY = (code) => "bayyin:alt:" + code;
+const fitProfile = (list) => {
+  const st = getSettings();
+  return list.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, st), st.profile).alert);
+};
+export async function fetchAlternatives(product, onFast) {
+  try {
+    const s = await AsyncStorage.getItem(ALT_KEY(product.code));
+    const old = s ? JSON.parse(s) : null;
+    if (old && Date.now() - old.at < 7 * 864e5 && old.raws.length) {
+      const list = fitProfile(old.raws.map(show)); list.best = !!old.best;
+      onFast && onFast(list);
+      if (Date.now() - old.at < 864e5) return list; // récent : pas besoin de chercher à nouveau
+    } else if (onFast) {
+      const cats = new Set(product.categories || []);
+      const rc = RANK_CATEGORIES.find((c) => c.kind === (product.kind === "beauty" ? "beauty" : "food") && c.tags.some((tg) => cats.has(tg)));
+      if (rc) {
+        rankProductsCached(rc.id).then((raws) => {
+          const pool = (Array.isArray(raws) ? raws : []).map(show);
+          const list = fitProfile(pickAlternatives(product, pool, 6));
+          if (list.length) onFast(list);
+        }).catch(() => {});
+      }
+    }
+  } catch { /* stockage indisponible */ }
   const found = await offClient.alternatives(product);
-  const profile = getSettings().profile;
-  const alts = found.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, getSettings()), profile).alert);
+  const alts = fitProfile(found);
   alts.best = !!found.best;
+  AsyncStorage.setItem(ALT_KEY(product.code), JSON.stringify({ at: Date.now(), best: alts.best, raws: alts.map((a) => compact(a.raw || a)) })).catch(() => {});
   return alts;
 }
 

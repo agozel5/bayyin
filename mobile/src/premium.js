@@ -50,7 +50,7 @@ export async function initPremium() {
 export async function getPlans() {
   if (preview) return [
     { id: "year", price: PREVIEW_PRICES.year, perMonth: "1,25 €", trialDays: PREVIEW_PRICES.trialDays },
-    { id: "month", price: PREVIEW_PRICES.month, trialDays: 0 },
+    { id: "month", price: PREVIEW_PRICES.month, trialDays: PREVIEW_PRICES.trialDays },
   ];
   const Purchases = P();
   if (!Purchases) return [];

@@ -1,9 +1,10 @@
 // Comparer deux produits côte à côte : halal, note santé, nutriments, additifs, NOVA, profil.
 // La case en vert indique le meilleur des deux.
-import React, { useCallback, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Animated } from "react-native";
-import { RevealProvider, useRevealRoot, Reveal, useGrow } from "../components/Reveal";
-import { useInnerBack } from "../components/EdgeSwipe";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable, Animated, Easing } from "react-native";
+import SubStack from "../components/SubStack";
+import { FadeIn } from "../components/ui";
+import { ms } from "../motion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, Btn } from "../components/ui";
 import { Art, Glyph } from "../components/Art";
@@ -66,11 +67,12 @@ function Cell({ children, win, dot }) {
 
 // Ligne du tableau : elle apparaît en glissant quand elle arrive à l'écran, puis ses barres se remplissent
 function CmpRow({ r, i }) {
-  const ref = useRef(null);
-  const g = useGrow(ref, { duration: 750, delay: 120 });
+  // Tout apparaît à l'ouverture, ligne après ligne (sans attendre qu'on fasse défiler)
+  const g = useRef(new Animated.Value(ms(1) ? 0 : 1)).current;
+  useEffect(() => { Animated.timing(g, { toValue: 1, duration: ms(750), delay: ms(250 + i * 70), easing: Easing.bezier(0.2, 0.8, 0.2, 1), useNativeDriver: false }).start(); }, []);
   return (
-    <Reveal delay={Math.min(i, 3) * 40}>
-      <View ref={ref} collapsable={false} style={{ borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+    <FadeIn delay={150 + i * 70}>
+      <View style={{ borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
         <Text style={{ paddingHorizontal: 14, paddingTop: 10, fontSize: 13.5, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{r.label}</Text>
         <View style={{ flexDirection: dir().row }}>
           <Cell win={r.w[0]} dot={r.da}>{r.x}</Cell>
@@ -90,7 +92,7 @@ function CmpRow({ r, i }) {
           </View>
         ) : null}
       </View>
-    </Reveal>
+    </FadeIn>
   );
 }
 
@@ -134,20 +136,20 @@ export default function CompareScreen({ base: baseCode, baseP, onClose, onOpen, 
   if (typeof window !== "undefined") window.__bayyinCompare = (x, y) => { setA((getEntry(x) || {}).p || null); setB((getEntry(y) || {}).p || null); };
   const back = () => (b ? setB(null) : a && !baseCode ? setA(null) : onClose());
   const others = a ? all.filter((p) => p.code !== a.code && kindOf(p) === kindOf(a)) : [];
-  const reveal = useRevealRoot();
-  // Geste de retour : d'abord revenir au choix du second produit
-  const toPick = useCallback(() => setB(null), []);
-  useInnerBack(b ? toPick : null);
-  return (
-    <RevealProvider value={reveal.value}>
-    <ScrollView onScroll={reveal.onScroll} scrollEventThrottle={16} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
-      <Row gap={6}>
-        <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
-          <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
-        </Pressable>
-        <Text accessibilityRole="header" style={{ flex: 1, fontSize: 24, fontWeight: "800", letterSpacing: -0.4, color: C.fg, textAlign: dir().ta }}>{t("cmp.title")}</Text>
-      </Row>
-      {a && b ? <Table a={a} b={b} onOpen={(code) => onOpen(code)} /> : all.length < 2 ? (
+  const pad = { paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 };
+  const head = (onBack) => (
+    <Row gap={6}>
+      <Pressable onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
+        <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
+      </Pressable>
+      <Text accessibilityRole="header" style={{ flex: 1, fontSize: 24, fontWeight: "800", letterSpacing: -0.4, color: C.fg, textAlign: dir().ta }}>{t("cmp.title")}</Text>
+    </Row>
+  );
+  // Le tableau s'ouvre par-dessus le choix des produits : retour en glissant depuis le bord
+  const picker = (
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}>
+      {head(back)}
+      {all.length < 2 ? (
         <View style={[{ alignItems: "center", gap: 10, padding: 24, borderRadius: R.xl, backgroundColor: C.surface }, lift()]}>
           <Art xml={mascot("search", { size: 110 })} size={110} />
           <Txt style={{ fontWeight: "800", fontSize: 18 }}>{t("cmp.need_two.t")}</Txt>
@@ -165,6 +167,14 @@ export default function CompareScreen({ base: baseCode, baseP, onClose, onOpen, 
         </View>
       )}
     </ScrollView>
-    </RevealProvider>
+  );
+  return (
+    <SubStack topKey={a && b ? `${a.code}:${b.code}` : null} onBack={() => setB(null)} base={picker}
+      top={a && b ? (close) => (
+        <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}>
+          {head(close)}
+          <Table a={a} b={b} onOpen={(code) => onOpen(code)} />
+        </ScrollView>
+      ) : null} />
   );
 }
