@@ -102,7 +102,9 @@ export function analyzeDish(item, prefs = DEFAULT_PREFS) {
       if (ids.has(f.id)) continue;
       ids.add(f.id);
       // un ingrédient seulement « fréquent » n'est jamais plus grave que « à vérifier »
-      extra.push({ ...f, hidden: true, sure, severity: !sure && f.severity === "haram" ? "mashbouh" : f.severity });
+      // le nom de l'ingrédient tel qu'il est écrit (avec ses accents), pas sa forme normalisée
+      const orig = list.join(", ").split(/,\s*/).find((x) => normalize(x) === f.source);
+      extra.push({ ...f, source: orig || f.source, hidden: true, sure, severity: !sure && f.severity === "haram" ? "mashbouh" : f.severity });
     }
   }
   // Viande : le restaurant peut servir de la viande halal ; c'est une question à lui poser, pas un interdit,
