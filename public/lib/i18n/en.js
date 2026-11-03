@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-03-1", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -466,6 +466,7 @@ export default {
   "detail.med_link": "Official medicine page (leaflet and SmPC) ↗",
   "detail.med_source": "Data: French public medicines database (ANSM, HAS).",
   "detail.med_holder": "Laboratory",
+  "detail.med_list": "Composition copied from the box (Open Food Facts)",
   "detail.obf_link": "See the product on Open Beauty Facts ↗",
   "detail.beauty_note": "No health score",
   "settings.profile": "My profile",

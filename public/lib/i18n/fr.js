@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-03-1", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -480,6 +480,7 @@ export default {
   "detail.med_link": "Fiche officielle du médicament (notice et RCP) ↗",
   "detail.med_source": "Données : Base de données publique des médicaments (ANSM, HAS).",
   "detail.med_holder": "Laboratoire",
+  "detail.med_list": "Composition recopiée de la boîte (Open Food Facts)",
   "detail.obf_link": "Voir la fiche sur Open Beauty Facts ↗",
   "detail.beauty_note": "Pas de note santé",
   "settings.profile": "Mon profil",

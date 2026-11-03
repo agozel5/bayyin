@@ -8,7 +8,7 @@ import { classify, ingredientsText, DEFAULT_PREFS } from "./rules.js";
 import { analyzeHealth } from "./health.js";
 import { analyzeCosmetic } from "./cosmetic.js";
 import { classifyBeauty } from "./beauty.js";
-import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE } from "./medicine.js";
+import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE, withProductData } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
 import { rankByRelevance, translateQuery, relevance, normalize as normalizeText } from "./search.js";
 
@@ -99,7 +99,10 @@ export function present(p, prefs = DEFAULT_PREFS) {
   if (kind === "medicine") {
     return {
       code: p.code, kind, name: p.product_name || "", names: { any: p.product_name }, brand: p.brands || "",
-      quantity: null, image: null, ingredients: "", categories: [], form: p.med_form || "", cis: p.med_cis || "",
+      quantity: normQuantity(p.quantity), image: p.image_front_small_url || p.image_front_url || null,
+      // photos et excipients venus de la fiche Open Food Facts du même code (voir withProductData)
+      photos: [["front", p.image_front_url || p.image_front_small_url], ["ingredients", p.image_ingredients_url]].filter(([, u]) => u).map(([k, u]) => ({ k, u })),
+      ingredients: p.ingredients_text_fr || p.ingredients_text || "", categories: [], form: p.med_form || "", cis: p.med_cis || "",
       offUrl: p.med_cis ? medNoticeUrl(p.med_cis) : "", verdict: classifyMedicine(p, prefs), health: null, raw, local: false,
     };
   }
@@ -316,7 +319,19 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
       if (rawCache.has(code)) return show(rawCache.get(code));
       let raw = null;
       if (isMedicineCode(code)) {
-        raw = await medicine(code); // fichiers servis avec l'app : disponibles aussi en démo
+        // Base publique (référence) et, en même temps, la fiche Open Food Facts / Open Beauty Facts du
+        // même code : ses photos et la liste des excipients complètent la fiche ; sans fiche dans la
+        // base publique (médicament retiré, produit de parapharmacie), la fiche collaborative est montrée.
+        const [med, other] = await Promise.all([
+          medicine(code).catch(() => null),
+          demo ? null : (async () => {
+            const data = await getJson(productUrl(code), 12000).catch(() => null);
+            if (data && data.status === 1 && data.product) return { code, ...data.product };
+            const beauty = await getJson(beautyUrl(code)).catch(() => null);
+            return beauty && beauty.status === 1 && beauty.product ? { code, kind: "beauty", ...beauty.product } : null;
+          })(),
+        ]);
+        raw = med ? withProductData(med, other) : other;
       } else if (demo) {
         raw = FIXTURES[code] || null;
       } else {

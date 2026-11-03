@@ -5,7 +5,7 @@
 // La base publique ne donne pas la liste des excipients : le verdict s'appuie sur la forme
 // (une gélule a presque toujours une enveloppe en gélatine), et renvoie vers la notice officielle.
 
-import { normalize, SCHOOLS, DEFAULT_PREFS, TOPIC_OF, SEVERITY_OF } from "./rules.js";
+import { normalize, SCHOOLS, DEFAULT_PREFS, TOPIC_OF, SEVERITY_OF, classify } from "./rules.js";
 
 // GitHub Pages : hébergement conçu pour un grand nombre de téléchargements (le site sert les mêmes fichiers)
 export const MED_DATA_BASE = "https://agozel5.github.io/bayyin/data/med/";
@@ -18,6 +18,17 @@ export const medNoticeUrl = (cis) => `https://base-donnees-publique.medicaments.
 export function medicineRaw(code, row) {
   const [name, form, holder, cis] = row;
   return { code, kind: "medicine", product_name: name, brands: holder || "", med_form: form || "", med_cis: cis || "" };
+}
+
+// Fiche Open Food Facts / Open Beauty Facts du même code (photos, liste des excipients recopiée
+// par un contributeur) : ajoutée à la fiche de la base publique, qui reste la référence.
+const EXTRA_KEYS = ["image_front_small_url", "image_front_url", "image_ingredients_url", "quantity", "ingredients_text", "ingredients_text_fr", "lang"];
+export function withProductData(med, other) {
+  if (!med || !other) return med || null;
+  const out = { ...med };
+  for (const k of EXTRA_KEYS) if (other[k] && !out[k]) out[k] = other[k];
+  if (other.product_name_fr || other.product_name) out.alt_name = other.product_name_fr || other.product_name;
+  return out;
 }
 
 const FORM_RULES = [
@@ -49,7 +60,16 @@ export function classifyMedicine(product, prefs = DEFAULT_PREFS) {
     }
     flags.push(f);
   }
-  const status = flags.some((f) => f.severity === "haram") ? "haram" : flags.some((f) => f.severity === "mashbouh") ? "mashbouh" : "inconnu";
+  // Excipients recopiés depuis la boîte (Open Food Facts) : analysés comme une liste d'ingrédients
+  let readList = false;
+  if (product.ingredients_text || product.ingredients_text_fr) {
+    try {
+      const r = classify({ ...product, kind: undefined }, prefs);
+      readList = true;
+      for (const f of r.flags || []) flags.push({ ...f, severity: f.severity === "haram" ? "mashbouh" : f.severity });
+    } catch { /* liste illisible */ }
+  }
+  const status = flags.some((f) => f.severity === "haram") ? "haram" : flags.some((f) => f.severity === "mashbouh") ? "mashbouh" : readList ? "halal_probable" : "inconnu";
   const notes = [status === "inconnu" ? "med_excipients" : "med_notice", "med_necessity"];
   return { status, certification: null, flags, notes, vegan: false, vegetarian: false };
 }

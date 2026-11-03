@@ -240,6 +240,12 @@ function MedicineSection({ p }) {
           </Row>
         ) : null}
       </View>
+      {p.ingredients ? (
+        <View style={{ gap: 4 }}>
+          <Muted style={{ fontSize: 13, fontWeight: "700" }}>{t("detail.med_list")}</Muted>
+          <Txt style={{ fontSize: 14.5, lineHeight: 21 }}>{p.ingredients}</Txt>
+        </View>
+      ) : null}
       <Row gap={10} style={{ alignItems: "flex-start" }}>
         <Icon name="bulb" size={20} color={C.brand} />
         <Txt style={{ flex: 1 }}>{t("detail.med_ask")}</Txt>

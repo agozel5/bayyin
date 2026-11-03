@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-03-1", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -466,6 +466,7 @@ export default {
   "detail.med_link": "İlacın resmî sayfası (prospektüs ve KÜB) ↗",
   "detail.med_source": "Veri: Fransa kamu ilaç veritabanı (ANSM, HAS).",
   "detail.med_holder": "Laboratuvar",
+  "detail.med_list": "Kutudan aktarılan bileşim (Open Food Facts)",
   "detail.obf_link": "Ürünü Open Beauty Facts'te gör ↗",
   "detail.beauty_note": "Sağlık puanı yok",
   "settings.profile": "Profilim",

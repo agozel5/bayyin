@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-10-30-2", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-03-1", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -466,6 +466,7 @@ export default {
   "detail.med_link": "الصفحة الرسمية للدواء (النشرة وملخص الخصائص) ↗",
   "detail.med_source": "البيانات: قاعدة البيانات العامة للأدوية في فرنسا (ANSM، HAS).",
   "detail.med_holder": "المختبر",
+  "detail.med_list": "التركيب المنقول من العلبة (Open Food Facts)",
   "detail.obf_link": "عرض المنتج على Open Beauty Facts ↗",
   "detail.beauty_note": "بلا تقييم صحي",
   "settings.profile": "ملفي الشخصي",

@@ -1,5 +1,6 @@
 // Accès à Open Food Facts depuis l'app, avec repli hors connexion.
 import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny, greenScore } from "./core";
+import { withProductData } from "../../public/lib/medicine.js";
 import { setCosmeticDb, cosmeticDbVersion } from "../../public/lib/cosmetic.js";
 import { createClient } from "../../public/lib/off.js";
 import { RANK_CATEGORIES } from "../../public/lib/rankings.js";
@@ -53,13 +54,27 @@ async function fetchMedicine(code) {
 }
 
 // Cherche dans Open Food Facts, puis dans Open Beauty Facts (cosmétiques, hygiène).
-async function fetchRemote(code) {
-  if (isMedicineCode(code)) return fetchMedicine(code);
-  const data = await getJson(productUrl(code));
+// Une seconde tentative si Open Food Facts répond mal (serveur chargé) : comme sur le site.
+async function getJsonRetry(url, ms) {
+  try { return await getJson(url, ms); } catch {
+    await new Promise((r) => setTimeout(r, 700));
+    return getJson(url, ms);
+  }
+}
+async function fetchCollab(code) {
+  const data = await getJsonRetry(productUrl(code));
   if (data && data.status === 1 && data.product) return compact({ code, ...data.product });
-  const beauty = await getJson(`${OBF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`).catch(() => null);
+  const beauty = await getJsonRetry(`${OBF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`).catch(() => null);
   if (beauty && beauty.status === 1 && beauty.product) return compact({ code, kind: "beauty", ...beauty.product });
   return null;
+}
+async function fetchRemote(code) {
+  if (isMedicineCode(code)) {
+    // Base publique des médicaments et fiche Open Food Facts du même code (photos, excipients), en même temps
+    const [med, other] = await Promise.all([fetchMedicine(code).catch(() => null), fetchCollab(code).catch(() => null)]);
+    return med ? withProductData(med, other) : other;
+  }
+  return fetchCollab(code);
 }
 
 export async function fetchProduct(code) {

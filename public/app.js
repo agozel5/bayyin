@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-10-30-2";
+const APP_BUILD = "2026-11-03-1";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -321,6 +321,7 @@ function medicineSection(p) {
     <p class="lead">${t("detail.med_lead")}</p>
     <div class="kv"><div><span>${t("detail.med_form")}</span><strong>${esc(p.form || "—")}</strong></div>
     ${p.brand ? `<div><span>${t("detail.med_holder")}</span><strong>${esc(p.brand)}</strong></div>` : ""}</div>
+    ${p.ingredients ? `<p class="notes"><strong>${t("detail.med_list")}</strong><br>${esc(p.ingredients)}</p>` : ""}
     <p class="advice">${svg(I.bulb)}<span>${t("detail.med_ask")}</span></p>
     <p class="notes">${t("detail.med_source")}</p>
   </section>`;
