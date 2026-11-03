@@ -43,6 +43,9 @@ export function legalDoc(id) {
         "• Vous scannez ou recherchez un produit : le code-barres ou les mots tapés sont envoyés à Open Food Facts ou Open Beauty Facts (association française) pour trouver la fiche.",
         "• Vous cherchez des commerces halal : la zone de recherche (autour de votre position, si vous l'autorisez, ou de la ville tapée) est envoyée à OpenStreetMap (serveurs Overpass et Nominatim) et à ses serveurs de cartes. La position n'est pas gardée.",
         "• Vous lisez une étiquette par photo : la lecture se fait sur le téléphone ; l'outil de lecture (Tesseract) est téléchargé depuis jsDelivr, qui voit l'adresse IP comme pour toute page web.",
+        "• Mode voyage et carte de restaurant : la photo est lue sur le téléphone et n'est envoyée nulle part.",
+        "• Carte des marques : le nom de la marque est envoyé à Open Food Facts et Open Beauty Facts pour trouver ses produits.",
+        "• Alerte « la recette a changé » (si elle est activée) : tous les quelques jours, les codes-barres de vos favoris et de vos produits récents sont envoyés à Open Food Facts pour comparer leur liste d'ingrédients.",
         "• L'application télécharge ses fichiers de données (classements, médicaments, rappels) et ses mises à jour : GitHub et Expo voient l'adresse IP et le modèle de l'appareil, comme pour toute connexion.",
         "• Vous souscrivez à Bayyin Premium : le paiement est traité par Apple ou Google, qui ne communiquent ni votre nom ni vos coordonnées bancaires. L'abonnement est vérifié par RevenueCat (RevenueCat, Inc., États-Unis) à l'aide d'un identifiant anonyme et du reçu d'achat.",
         "• Vous nous écrivez : votre message et votre adresse e-mail, le temps de vous répondre.",
@@ -78,7 +81,7 @@ export function legalDoc(id) {
     title: "Conditions de l'abonnement",
     intro: `En vigueur au ${UPDATED}. Éditeur : ${editor} (${contact}).`,
     sections: [
-      ["Ce que comprend Premium", ["Bayyin Premium donne accès au mode rayon, au mode courses, à la comparaison de produits, à tous les classements, aux profils de la famille, au téléchargement hors connexion et à un historique sur douze mois. Le scan, le verdict halal, la note santé, les alertes allergies et les rappels de produits restent gratuits."]],
+      ["Ce que comprend Premium", ["Bayyin Premium donne accès au mode rayon, au mode courses, à la comparaison de produits, à tous les classements, aux profils de la famille, au mode voyage, à l'alerte « la recette a changé », au téléchargement hors connexion et à un historique sur douze mois. Le scan, le verdict halal, la note santé, les alertes allergies, les rappels de produits, la lecture de carte de restaurant et la carte des marques restent gratuits."]],
       ["Prix et paiement", ["Les offres (mensuelle et annuelle) et leur prix toutes taxes comprises sont affichés dans l'application avant l'achat. Le paiement est fait par votre compte Apple (App Store) ou Google (Google Play), qui encaisse le prix et vous adresse le reçu."]],
       ["Essai gratuit de 7 jours", ["À la première souscription, un essai gratuit de 7 jours peut être proposé. Rien n'est prélevé pendant l'essai. Sans résiliation au moins 24 heures avant sa fin, l'abonnement payant commence automatiquement au prix affiché. Un seul essai par compte."]],
       ["Renouvellement et résiliation", ["L'abonnement se renouvelle automatiquement pour la même durée, sauf résiliation au moins 24 heures avant la fin de la période en cours. Vous pouvez résilier à tout moment, sans frais, dans les réglages de votre compte Apple ou Google, ou depuis l'application (Réglages › Bayyin Premium › Gérer mon abonnement). La résiliation prend effet à la fin de la période déjà payée."]],

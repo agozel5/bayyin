@@ -18,6 +18,7 @@ import { ProductCard } from "./Cards";
 import { I } from "../../../public/lib/icons.js";
 import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
+import RecipeBox from "./RecipeBox";
 import RecallBox from "./Recall";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
@@ -614,9 +615,24 @@ function LinkRow({ text, url, muted = false }) {
   );
 }
 
+// Carte de la marque : tous ses produits classés par verdict
+function BrandLink({ brand, onBrand }) {
+  return (
+    <Pressable onPress={() => { haptic.tap(); onBrand(brand); }} accessibilityRole="button"
+      style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, padding: 16, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+      <Tile color="#8A63DA" paths='<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8" r="1.5"/>' size={42} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Txt style={{ fontWeight: "800", fontSize: 16 }} numberOfLines={1}>{t("brand.link_t", { b: brand })}</Txt>
+        <Muted style={{ fontSize: 13.5, lineHeight: 18 }}>{t("brand.link_p")}</Muted>
+      </View>
+      <Glyph name="chev" size={17} color={C.faint} />
+    </Pressable>
+  );
+}
+
 // Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
 // Contenu de la fiche en blocs (fonction simple, sans état : l'onglet ouvert est gardé par la fiche)
-function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onHeroEnd, onTabChange, tab, setTab }) {
+function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onBrand, onHeroEnd, onTabChange, tab, setTab }) {
   const v = verdictOf(p);
   const kind = kindOf(p);
   const food = kind === "food";
@@ -667,9 +683,10 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
   // la fiche est rendue en blocs séparés, directement dans la liste qui défile.
   return [
     <View key="head" style={{ gap: 14, paddingBottom: 14 }} onLayout={(e) => onHeroEnd && onHeroEnd(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
-      <FadeIn><Top2 p={p} /></FadeIn>
+      <FadeIn><Top2 p={p} onBrand={onBrand} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
       <RecallBox p={p} />
+      {isBarcode(p.code) ? <RecipeBox code={p.code} /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
     </View>,
@@ -679,6 +696,7 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
     <View key="body" style={{ gap: 14 }}>
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
       {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {onBrand && p.brand && !p.local && kind !== "medicine" ? <BrandLink brand={p.brand} onBrand={onBrand} /> : null}
       <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
@@ -718,7 +736,7 @@ function SheetSkeleton() {
   );
 }
 
-export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
+export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, onBrand, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
@@ -880,7 +898,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
             <Btn title={t("detail.photo_ingredients")} icon="doc" kind="white" onPress={() => onOcr(code)} />
           </Message>
         ) : p ? (
-          productBlocks({ p, scanned: !!fromScan, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, tab, setTab,
+          productBlocks({ p, scanned: !!fromScan, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onBrand, tab, setTab,
             onHeroEnd: (y) => { heroEnd.current = y; }, onTabChange: () => setTimeout(reveal.check, 120) })
         ) : null}
       </Animated.ScrollView>

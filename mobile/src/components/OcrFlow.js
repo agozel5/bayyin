@@ -18,8 +18,8 @@ const OCR_LANGS = { fr: "fra+eng", en: "eng+fra", tr: "tur+eng", ar: "ara+eng" }
 
 // Lecture par le téléphone (Apple Vision, Google ML Kit) : instantanée et sans réseau.
 // L'arabe et les échecs passent par Tesseract (même moteur que la version web).
-async function nativeText(uri) {
-  if (Platform.OS === "web" || getLang() === "ar") return null;
+export async function nativeText(uri, { arabicOk = false } = {}) {
+  if (Platform.OS === "web" || (getLang() === "ar" && !arabicOk)) return null;
   try {
     const X = require("expo-text-extractor");
     if (X.isSupported === false) return null;
@@ -31,7 +31,7 @@ async function nativeText(uri) {
   }
 }
 
-const ocrHtml = (img, langs) => `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body>
+export const ocrHtml = (img, langs) => `<!doctype html><html><head><meta name="viewport" content="width=device-width"></head><body>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script>
 const send = (o) => window.ReactNativeWebView.postMessage(JSON.stringify(o));

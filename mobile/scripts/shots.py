@@ -79,7 +79,7 @@ def run(lang, scheme):
         for tab in ["search", "history", "additives", "settings"]:
             ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
         p.set_viewport_size({"width": 390, "height": 1700})
-        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits"]:
+        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal"]:
             ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         ev("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
         # Carte de partage
@@ -104,7 +104,22 @@ def run(lang, scheme):
         ev("window.__bayyin.openCompare()"); p.wait_for_timeout(900)
         ev(f"window.__bayyinCompare && window.__bayyinCompare('{CODES[0]}', '{CODES[2]}')"); p.wait_for_timeout(1200); shot("compare")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        # Nouveaux outils : mode voyage, carte de restaurant, carte des marques, alerte recette
+        ev("window.__bayyin.openTool('travel')"); p.wait_for_timeout(900); shot("travel-intro")
+        ev("window.__bayyinTravel && window.__bayyinTravel('Zutaten: Zucker, Glukosesirup, Schweinegelatine, Säuerungsmittel: Citronensäure, Weinessig, Aroma, Farbstoff: echtes Karmin. Kann Spuren von Milch und Haselnüssen enthalten.')"); p.wait_for_timeout(1200); shot("travel")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.openTool('menu')"); p.wait_for_timeout(900); shot("menu-intro")
+        ev("window.__bayyinMenu && window.__bayyinMenu('ENTRÉES\\nVelouté de potimarron 7,50 €\\nSalade lyonnaise 9 €\\navec œuf poché et croûtons\\nPLATS\\nSpaghetti carbonara 14 €\\nBœuf bourguignon 18 €\\nPavé de saumon, riz basmati 17 €\\nEntrecôte grillée, frites 22 €\\nDESSERTS\\nPanna cotta aux fruits rouges 7 €\\nTarte aux pommes 6,50 €\\nBaba au rhum 8 €')"); p.wait_for_timeout(1200); shot("menu")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.openTool('brand')"); p.wait_for_timeout(900); shot("brand-pick")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.openTool('brand', { brand: 'Haribo' })"); p.wait_for_timeout(9000); shot("brand")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
+        ev(f"window.__bayyin.recipeDemo({{ code: '{CODES[0]}', name: 'Produit suivi', before: 'halal_probable', after: 'mashbouh', added: ['gélatine', 'arôme naturel'], removed: ['agar-agar'], addedE: ['E471'], removedE: [] }})"); p.wait_for_timeout(500)
+        ev("window.__bayyin.setTab('history')"); ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home-recipe")
+        ev(f"window.__bayyin.openProduct('{CODES[0]}')"); p.wait_for_timeout(2500); shot("recipe")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Alerte personnelle : lait et fruits à coque dans le profil (yaourt : contient du lait, traces de fruits à coque)
         ev("window.__bayyin.setSettings({ profile: { allergens: ['en:milk', 'en:nuts', 'en:eggs'], diet: null } })"); p.wait_for_timeout(400)
         ev(f"window.__bayyin.openProduct('{CODES[1]}')"); p.wait_for_timeout(2500); shot("alert")

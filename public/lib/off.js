@@ -10,6 +10,7 @@ import { analyzeCosmetic } from "./cosmetic.js";
 import { classifyBeauty } from "./beauty.js";
 import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE, withProductData } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
+import { brandTag, mainBrand } from "./brand.js";
 import { rankByRelevance, translateQuery, relevance, normalize as normalizeText } from "./search.js";
 
 export const OFF_BASE = "https://world.openfoodfacts.org";
@@ -400,6 +401,19 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         foodFailed,
         beautyFailed,
       };
+    },
+
+    // -> produits d'une marque (les plus scannés), aliments et cosmétiques, présentés
+    async brand(name) {
+      const tag = brandTag(name);
+      if (!tag) return [];
+      if (demo) return Object.values(FIXTURES).filter((p) => brandTag(mainBrand(p.brands)) === tag).map(show);
+      const url = (base) => `${base}/api/v2/search?brands_tags=${encodeURIComponent(tag)}&sort_by=unique_scans_n&page_size=100&fields=${FIELDS}`;
+      const [food, beauty] = await Promise.allSettled([getJson(url(OFF_BASE), 20000, { tries: 2 }), getJson(url(OBF_BASE), 15000)]);
+      if (food.status === "rejected" && beauty.status === "rejected") throw food.reason;
+      const list = (r, kind) => (r.status === "fulfilled" && r.value && r.value.products ? r.value.products : [])
+        .filter((p) => p.code && (p.product_name || p.product_name_fr)).map((p) => (kind ? { ...p, kind } : p));
+      return [...list(food), ...list(beauty, "beauty")].map((p) => { rawCache.set(p.code, p); return show(p); });
     },
 
     // -> impact environnemental (Green-Score, ex-Eco-Score), chargé seulement quand on ouvre l'onglet

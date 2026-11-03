@@ -22,8 +22,9 @@ import { haptic } from "../motion";
 const open = (url) => Linking.openURL(url).catch(() => {});
 
 // ---------- en-tête : photo, nom, marque · quantité, code ----------
-export function Top({ p }) {
+export function Top({ p, onBrand }) {
   const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).join(" · ");
+  const brandOk = onBrand && p.brand && !p.local && p.kind !== "medicine";
   const [zoom, setZoom] = useState(false);
   const nPhotos = photoList(p).length;
   const hasPhotos = nPhotos > 0;
@@ -47,7 +48,12 @@ export function Top({ p }) {
       {hasPhotos ? <PhotoZoom p={p} visible={zoom} onClose={() => setZoom(false)} /> : null}
       <View style={{ flex: 1, gap: 4 }}>
         <Txt style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }} numberOfLines={3}>{nameOf(p)}</Txt>
-        {meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
+        {brandOk ? (
+          // la marque mène à sa carte (tous ses produits classés par verdict)
+          <Pressable onPress={() => { haptic.tap(); onBrand(p.brand); }} accessibilityRole="link" hitSlop={6}>
+            <Muted numberOfLines={1}><Text style={{ color: C.brand, fontWeight: "700" }}>{p.brand}</Text>{normQuantity(p.quantity) ? ` · ${normQuantity(p.quantity)}` : ""}</Muted>
+          </Pressable>
+        ) : meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
         {/^\d+$/.test(p.code) ? <Text style={{ color: C.faint, fontSize: 13, fontVariant: ["tabular-nums"], letterSpacing: 0.5, textAlign: dir().ta }}>{p.code}</Text> : null}
       </View>
     </Row>

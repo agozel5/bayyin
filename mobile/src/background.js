@@ -17,6 +17,7 @@ if (Platform.OS !== "web") {
         const hits = await checkRecalls({ force: true });
         await notifyRecalls(hits);
         try { require("./widget").updateWidgets(require("./storage").getHistory(), hits.map((h) => h.code)); } catch { /* widgets absents */ }
+        try { const R = require("./recipewatch"); await R.notifyChanges(await R.checkRecipes()); } catch { /* alerte recette indisponible */ }
         return BackgroundTask.BackgroundTaskResult.Success;
       } catch {
         return BackgroundTask.BackgroundTaskResult.Failed;

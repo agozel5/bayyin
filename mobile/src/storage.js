@@ -51,6 +51,7 @@ export async function initStorage() {
     onboarded: !!s.onboarded,
     toured: !!s.toured,
     notif: s.notif !== false, // alertes de rappel (si le téléphone les autorise)
+    recipeAlerts: s.recipeAlerts !== false, // alerte quand la recette d'un produit suivi change
     notifAsked: !!s.notifAsked,
     scans: s.scans || 0, // nombre de fiches ouvertes (demande d'avis)
     reviewAsked: s.reviewAsked || 0,
@@ -154,6 +155,13 @@ export function toggleFav(code) {
   emit("history");
   const e = getEntry(code);
   return !!(e && e.fav);
+}
+/** Remplace la fiche d'un produit de l'historique sans changer sa place (recette mise à jour) */
+export function updateEntry(code, p) {
+  if (!getEntry(code)) return;
+  history = history.map((e) => (e.code === code ? { ...e, p } : e));
+  save(K.history, history);
+  emit("history");
 }
 /** Retire un seul produit de l'historique (glisser la ligne) */
 export function removeFromHistory(code) {

@@ -23,6 +23,9 @@ import PremiumScreen from "./screens/PremiumScreen";
 import PlacesScreen from "./screens/PlacesScreen";
 import CompareScreen from "./screens/CompareScreen";
 import AisleScreen from "./screens/AisleScreen";
+import TravelScreen from "./screens/TravelScreen";
+import MenuScreen from "./screens/MenuScreen";
+import BrandScreen from "./screens/BrandScreen";
 import { initPremium, setPremiumAsk, canUse, onPremium, setPreview } from "./premium";
 import { loadBasket, onBasket, getBasket, addToBasket, setBasketProduct } from "./basket";
 import { fetchProduct } from "./api";
@@ -39,6 +42,7 @@ import { checkRecalls, dismissRecalls, notifyRecalls, setupNotifications, askNot
 import { registerBackground } from "./background";
 import { listenLinks, setQuickActions } from "./links";
 import { updateWidgets } from "./widget";
+import { loadChanges, onChanges, unseenChanges, checkRecipes, markSeen, injectChange } from "./recipewatch";
 import { normalizeScan } from "./core";
 import { FadeIn } from "./components/ui";
 import { haptic, ms, announce } from "./motion";
@@ -150,7 +154,7 @@ function Toast({ text }) {
 
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
-const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare"];
+const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare", "travel", "menu", "brand"];
 function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, shared, under, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
@@ -245,7 +249,14 @@ function Main() {
   // Rappels : vérifiés au démarrage, au retour dans l'app et en arrière-plan
   const [recalls, setRecalls] = useState([]);
   const openRef = useRef(null);
+  // Recettes modifiées des produits suivis (vérifiées au plus toutes les six heures)
+  const [recipeChanges, setRecipeChanges] = useState([]);
+  useEffect(() => {
+    loadChanges().then(() => setRecipeChanges(unseenChanges()));
+    return onChanges(() => setRecipeChanges(unseenChanges()));
+  }, []);
   const refreshRecalls = useCallback(async (force = false) => {
+    checkRecipes().catch(() => {});
     const hits = await checkRecalls({ force }).catch(() => []);
     setRecalls(hits);
     updateWidgets(getHistory(), hits.map((h) => h.code)); // bandeau « rappel » des widgets
@@ -406,12 +417,17 @@ function Main() {
         onRankings={() => push({ type: "rankings" })}
         onAisle={() => { if (canUse("aisle")) push({ type: "aisle" }); }}
         onPlaces={() => push({ type: "places" })}
+        onTravel={() => { if (canUse("travel")) push({ type: "travel" }); }}
+        onMenu={() => push({ type: "menu" })}
+        onBrands={() => push({ type: "brand" })}
         onCompare={() => { if (canUse("compare")) push({ type: "compare" }); }}
         onBasketMode={() => { if (!canUse("basket")) return; setBasketMode(true); openCamera(); }}
         onOpenBasket={() => push({ type: "basket" })}
         basketCount={basketCount}
         recalls={recalls}
         onDismissRecalls={() => { dismissRecalls(recalls); setRecalls([]); }}
+        recipeChanges={recipeChanges}
+        onDismissChanges={() => markSeen(recipeChanges.map((c) => c.code))}
         manualOpen={manualOpen}
         setManualOpen={setManualOpen}
         status={homeStatus}
@@ -456,10 +472,14 @@ function Main() {
           onGotoSettings={() => gotoSettings()}
           onGotoProfile={gotoProfile}
           onCompare={(code, bp) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: bp }); }}
+          onBrand={(brand) => push({ type: "brand", brand })}
           toast={toast}
         />
       );
     if (item.type === "places") return <PlacesScreen onClose={pop} />;
+    if (item.type === "travel") return <TravelScreen onClose={pop} onOpenProduct={(p) => push({ type: "sheet", code: p.code, product: p, fromScan: false })} />;
+    if (item.type === "menu") return <MenuScreen onClose={pop} />;
+    if (item.type === "brand") return <BrandScreen brand={item.brand} onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "compare") return <CompareScreen base={item.base} baseP={item.baseP} onClose={pop} onScan={() => openCamera({ replace: true })} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
     if (item.type === "aisle") return <AisleScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;
@@ -485,7 +505,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.

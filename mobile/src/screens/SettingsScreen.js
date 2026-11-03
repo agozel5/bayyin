@@ -18,6 +18,7 @@ import { downloadPack } from "../api";
 import { downloadRankings } from "../rankcache";
 import { askNotifications, notificationsGranted, checkRecalls } from "../recalls";
 import { premiumEnabled, isPremium, canUse } from "../premium";
+import { checkRecipes } from "../recipewatch";
 import { legalDoc, LEGAL_IDS } from "../legal";
 import { S } from "../view";
 import { haptic, ms } from "../motion";
@@ -556,6 +557,7 @@ function NotifPage() {
   const st = getSettings();
   const [granted, setGranted] = useState(null);
   const [hits, setHits] = useState(null);
+  const [rec, setRec] = useState(null);
   useEffect(() => { if (Platform.OS !== "web") notificationsGranted().then(setGranted); }, []);
   const toggle = async (v) => {
     setSettings({ notif: v });
@@ -578,6 +580,19 @@ function NotifPage() {
           </View>
         ) : null}
         <Muted style={{ fontSize: 13 }}>{t("notif.when")}</Muted>
+      </Block>
+      {/* Alerte « la recette a changé » (favoris et produits récents) */}
+      <Block title={t("recipe.set_t")}>
+        <Muted>{t("recipe.set_p")}</Muted>
+        <Row gap={12} style={{ paddingVertical: 6 }}>
+          <Txt style={{ flex: 1, fontWeight: "700" }}>{t("recipe.switch")}</Txt>
+          <Switch on={!!st.recipeAlerts} onPress={() => { if (!st.recipeAlerts && !canUse("recipe")) return; setSettings({ recipeAlerts: !st.recipeAlerts }); }} label={t("recipe.switch")} />
+        </Row>
+        <Pressable onPress={async () => { haptic.tap(); setRec(await checkRecipes({ force: true, max: 30 })); }} accessibilityRole="button"
+          style={({ pressed }) => ({ paddingVertical: 13, borderRadius: 14, alignItems: "center", backgroundColor: pressed ? C.tint2 : C.tint, opacity: st.recipeAlerts ? 1 : 0.5 })} disabled={!st.recipeAlerts}>
+          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15 }}>{t("recipe.check")}</Text>
+        </Pressable>
+        {rec ? <Txt style={{ fontWeight: "700", color: rec.length ? STATUS_COLORS.mashbouh[0] : C.brand }}>{rec.length ? tn("recipe.home", rec.length) : t("recipe.none")}</Txt> : null}
       </Block>
       <Block>
         <Pressable onPress={async () => { haptic.tap(); setHits(await checkRecalls({ force: true })); }} accessibilityRole="button"
