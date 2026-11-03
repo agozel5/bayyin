@@ -113,7 +113,7 @@ def run(lang, scheme):
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyin.openTool('brand')"); p.wait_for_timeout(900); shot("brand-pick")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
-        ev("window.__bayyin.openTool('brand', { brand: 'Haribo' })"); p.wait_for_timeout(9000); shot("brand")
+        ev("window.__bayyin.openTool('brand', { brand: 'Haribo' })"); p.wait_for_timeout(25000); shot("brand")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
         ev(f"window.__bayyin.recipeDemo({{ code: '{CODES[0]}', name: 'Produit suivi', before: 'halal_probable', after: 'mashbouh', added: ['gélatine', 'arôme naturel'], removed: ['agar-agar'], addedE: ['E471'], removedE: [] }})"); p.wait_for_timeout(500)

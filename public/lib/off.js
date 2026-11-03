@@ -409,8 +409,18 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
       if (!tag) return [];
       if (demo) return Object.values(FIXTURES).filter((p) => brandTag(mainBrand(p.brands)) === tag).map(show);
       const url = (base) => `${base}/api/v2/search?brands_tags=${encodeURIComponent(tag)}&sort_by=unique_scans_n&page_size=100&fields=${FIELDS}`;
-      const [food, beauty] = await Promise.allSettled([getJson(url(OFF_BASE), 20000, { tries: 2 }), getJson(url(OBF_BASE), 15000)]);
-      if (food.status === "rejected" && beauty.status === "rejected") throw food.reason;
+      // Recherche classique d'Open Food Facts : prend le relais quand l'API de recherche est lente ou vide
+      const legacy = (base) => `${base}/cgi/search.pl?action=process&tagtype_0=brands&tag_contains_0=contains&tag_0=${encodeURIComponent(tag)}` +
+        `&sort_by=unique_scans_n&page_size=100&json=1&fields=${FIELDS}`;
+      const one = async (base, ms) => {
+        try {
+          const d = await getJson(url(base), ms, { tries: 2 });
+          if (d && d.products && d.products.length) return d;
+        } catch { /* on essaie la recherche classique */ }
+        return getJson(legacy(base), ms, { tries: 2 });
+      };
+      const [food, beauty] = await Promise.allSettled([one(OFF_BASE, 15000), one(OBF_BASE, 12000)]);
+      if (food.status === "rejected" && (beauty.status === "rejected" || !(beauty.value && beauty.value.products && beauty.value.products.length))) throw food.reason;
       const list = (r, kind) => (r.status === "fulfilled" && r.value && r.value.products ? r.value.products : [])
         .filter((p) => p.code && (p.product_name || p.product_name_fr)).map((p) => (kind ? { ...p, kind } : p));
       return [...list(food), ...list(beauty, "beauty")].map((p) => { rawCache.set(p.code, p); return show(p); });

@@ -31,7 +31,7 @@ function Dish({ d }) {
           <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 6, marginTop: 2 }}>
             {reasons.map((f) => {
               const [c, b] = SEV_COLORS[f.severity] || SEV_COLORS.info;
-              const text = f.ask ? t("menu.ask_meat") : f.hidden ? t(f.sure ? "menu.hidden_sure" : "menu.hidden_maybe", { x: flagLabel(f).toLowerCase() }) : flagLabel(f);
+              const text = f.ask ? t("menu.ask_meat") : f.hidden ? t(f.sure ? "menu.hidden_sure" : "menu.hidden_maybe", { x: (getSettings().lang === "fr" && f.source) || flagLabel(f).toLowerCase() }) : flagLabel(f);
               return <Text key={f.id} style={{ color: c, backgroundColor: b, fontWeight: "700", fontSize: 12.5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99, overflow: "hidden" }}>{text}</Text>;
             })}
           </View>
