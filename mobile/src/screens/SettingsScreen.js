@@ -803,8 +803,9 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   // Page qui arrive en glissant depuis le bord ; retour par glissement du doigt depuis le bord
   // La page s'ouvre par-dessus le menu (qui reste dessous) ; le glissement depuis le bord la fait suivre
   // le doigt pendant que le menu revient en place, comme sur iPhone.
-  const swipe = useEdgeSwipe(() => { setPage(null); return false; }, !!page);
-  const slide = useRef(new Animated.Value(1)).current;
+  const slide = useRef(new Animated.Value(0)).current; // 0 : page fermée (hors de l'écran), 1 : ouverte
+  // Fin du geste : la page est sortie de l'écran ; tout revient à zéro d'un coup (menu en place)
+  const swipe = useEdgeSwipe(() => { slide.setValue(0); setPage(null); return true; }, !!page);
   useEffect(() => {
     if (!page) return;
     slide.setValue(ms(1) ? 0 : 1);
@@ -813,15 +814,16 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   const side = dir().rtl ? -1 : 1;
   const Wd = Dimensions.get("window").width;
   const closePage = () => {
-    if (!ms(1)) return setPage(null);
+    if (!ms(1)) { slide.setValue(0); return setPage(null); }
     swipe.active.setValue(1);
     Animated.timing(swipe.dx, { toValue: side * Wd, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => {
-      setPage(null); requestAnimationFrame(() => { swipe.dx.setValue(0); swipe.active.setValue(0); });
+      slide.setValue(0); swipe.dx.setValue(0); swipe.active.setValue(0); setPage(null);
     });
   };
   const pageStyle = { transform: [{ translateX: Animated.add(slide.interpolate({ inputRange: [0, 1], outputRange: [side * Wd, 0] }), swipe.dx) }] };
   // menu dessous : décalé vers la gauche pendant l'ouverture, revient avec le doigt
-  const menuStyle = page ? { transform: [{ translateX: Animated.add(Animated.multiply(slide, -side * Wd * 0.3), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, Wd * 0.3] : [-Wd * 0.3, 0], extrapolate: "clamp" }))) }] } : null;
+  // toujours attaché (un style animé retiré laisse le menu décalé) ; slide vaut 0 quand aucune page n'est ouverte
+  const menuStyle = { transform: [{ translateX: Animated.add(Animated.multiply(slide, -side * Wd * 0.3), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, Wd * 0.3] : [-Wd * 0.3, 0], extrapolate: "clamp" }))) }] };
 
   const scroll = { paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 120, gap: 16 };
   let pageEl = null;
@@ -895,7 +897,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
     </ScrollView>
-    {page ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: Animated.add(Animated.multiply(slide, 0.18), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, -0.18] : [-0.18, 0], extrapolate: "clamp" }))) }]} /> : null}
+    {<Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: Animated.add(Animated.multiply(slide, 0.18), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, -0.18] : [-0.18, 0], extrapolate: "clamp" }))) }]} />}
     </Animated.View>
     {pageEl}
     </View>

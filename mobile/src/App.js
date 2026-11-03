@@ -1,7 +1,7 @@
 // Bayyin — application native (iOS et Android).
 // Cinq onglets en bas, et une pile d'écrans par-dessus : caméra, fiche produit, lecture d'étiquette.
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, BackHandler, Animated, Easing, StyleSheet, Platform, Appearance, AppState } from "react-native";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { View, Text, Pressable, BackHandler, Animated, Easing, Dimensions, StyleSheet, Platform, Appearance, AppState } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -155,23 +155,24 @@ function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, sh
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
   // Glissement depuis le bord : l'écran est déjà sorti quand le doigt lâche, on le retire sans autre animation
-  const back = () => { if (inner.current) { inner.current(); return true; } (onSwipeGone || onBack)(); return false; };
+  const back = () => { if (inner.current) { inner.current(); return true; } if (onSwipeGone) { onSwipeGone(); return "manual"; } onBack(); return false; };
   const canSwipe = (SLIDE.includes(kind) || kind === "ocr") && !hidden;
   // sous-page intérieure ouverte (rayon des classements…) : c'est elle qui gère le glissement
   const swipe = useEdgeSwipe(back, () => canSwipe && !inner.current, hidden ? {} : shared);
   useEffect(() => {
-    Animated.timing(v, { toValue: 1, duration: ms(kind === "camera" ? 180 : 260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    Animated.timing(v, { toValue: 1, duration: ms(kind === "camera" ? 180 : SLIDE.includes(kind) ? 320 : 260), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, []);
   useEffect(() => {
     if (!leaving) return;
-    Animated.timing(v, { toValue: 0, duration: ms(200), easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => onGone && onGone());
+    Animated.timing(v, { toValue: 0, duration: ms(SLIDE.includes(kind) ? 260 : 200), easing: SLIDE.includes(kind) ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic), useNativeDriver: true }).start(() => onGone && onGone());
   }, [leaving]);
   const side = dir().rtl ? -1 : 1;
   const moving = SLIDE.includes(kind) || kind === "ocr";
   const transform = under && shared
     ? underStyle(shared.dx, shared.active).transform // écran du dessous : il glisse avec le doigt
     : SLIDE.includes(kind)
-      ? [{ translateX: Animated.add(v.interpolate({ inputRange: [0, 1], outputRange: [side * 70, 0] }), swipe.dx) }]
+      // arrive depuis le bord, opaque, comme sur iPhone (plus de fondu qui laisse voir l'écran du dessous)
+      ? [{ translateX: Animated.add(v.interpolate({ inputRange: [0, 1], outputRange: [side * Dimensions.get("window").width, 0] }), swipe.dx) }]
       : kind === "ocr"
         ? [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [80, 0] }) }, { translateX: swipe.dx }]
         : [];
@@ -182,7 +183,7 @@ function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, sh
       importantForAccessibility={hidden ? "no-hide-descendants" : "auto"}
       accessibilityElementsHidden={!!hidden}
       accessibilityViewIsModal={!hidden}
-      style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: under ? 1 : v, transform },
+      style={[StyleSheet.absoluteFill, { backgroundColor: kind === "camera" || kind === "aisle" ? "#000" : C.bg, opacity: under || SLIDE.includes(kind) ? 1 : v, transform },
         !hidden && moving ? { shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 18, shadowOffset: { width: -side * 4, height: 0 } } : null]}
     >
       <InnerBackContext.Provider value={inner}><Guard onBack={onBack}>{children}</Guard></InnerBackContext.Provider>
@@ -201,6 +202,11 @@ function Main() {
   const [manualOpen, setManualOpen] = useState(false);
   // Glissement de retour : valeurs partagées entre l'écran du dessus et celui du dessous
   const swipeShared = useRef({ dx: new Animated.Value(0), active: new Animated.Value(0) }).current;
+  // Les onglets glissent avec le doigt seulement quand ils sont juste sous l'écran du dessus. Le style
+  // animé reste toujours attaché (un style animé retiré laisse la vue à sa dernière position).
+  const tabGate = useRef(new Animated.Value(0)).current;
+  const tabActive = useRef(Animated.multiply(swipeShared.active, tabGate)).current;
+  const swipedAway = useRef(false);
   const [homeStatus, setHomeStatus] = useState(null);
   const [focus, setFocus] = useState({ target: null, n: 0 });
   const [tour, setTour] = useState(null); // étape de la visite guidée affichée, ou null
@@ -276,6 +282,13 @@ function Main() {
     setStack((s) => (s.length && s[s.length - 1].key === key ? s.slice(0, -1) : s));
     setLeaving(null);
   };
+  const removeSwiped = (key) => { swipedAway.current = true; removeTop(key); };
+  // Après chaque changement de la pile, avant l'affichage : position du glissement remise à zéro
+  // (écran retiré par le geste) et onglets reliés au geste seulement s'ils sont juste dessous.
+  useLayoutEffect(() => {
+    tabGate.setValue(stack.length === 1 && SLIDE.includes(stack[0].type) ? 1 : 0);
+    if (swipedAway.current) { swipedAway.current = false; swipeShared.dx.setValue(0); swipeShared.active.setValue(0); }
+  }, [stack]);
   const clearStack = () => {
     setLeaving(null);
     setStack([]);
@@ -481,12 +494,12 @@ function Main() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style={(top && (top.type === "camera" || top.type === "aisle") && leaving !== top.key) || isDark() ? "light" : "dark"} />
-      <Animated.View key={getLang() + (isDark() ? "d" : "l")} style={[{ flex: 1 }, stack.length === 1 && SLIDE.includes(stack[0].type) ? underStyle(swipeShared.dx, swipeShared.active) : null]} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
+      <Animated.View key={getLang() + (isDark() ? "d" : "l")} style={[{ flex: 1 }, underStyle(swipeShared.dx, tabActive)]} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           <Guard key={tab}>{page}</Guard>
         </FadeIn>
         <TabBar tab={tab} onTab={(id) => { if (id === "scan" && tab === "scan") openCamera(); else changeTab(id); }} />
-        {stack.length === 1 && SLIDE.includes(stack[0].type) ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }, underShade(swipeShared.dx, swipeShared.active)]} /> : null}
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }, underShade(swipeShared.dx, tabActive)]} />
       </Animated.View>
       {visible.map((item) => {
         const isTop = item === top;
@@ -501,7 +514,7 @@ function Main() {
             leaving={leaving === item.key}
             onGone={() => removeTop(item.key)}
             onBack={pop}
-            onSwipeGone={() => removeTop(item.key)}
+            onSwipeGone={() => removeSwiped(item.key)}
           >
             {renderScreen(item)}
           </Layer>

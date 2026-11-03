@@ -42,8 +42,9 @@ export function useEdgeSwipe(onBack, enabled = true, opts = {}) {
       if (d > W * 0.33 || v > 0.5) {
         haptic.tap();
         Animated.timing(X, { toValue: (dir().rtl ? -1 : 1) * W, duration: Math.max(120, 260 * (1 - d / W)), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => {
+          // true : remise à zéro tout de suite ; "manual" : le propriétaire remet à zéro quand l'écran est retiré
           const stay = back.current && back.current();
-          if (stay === true) reset(); else requestAnimationFrame(() => requestAnimationFrame(reset));
+          if (stay === true) reset(); else if (stay !== "manual") requestAnimationFrame(() => requestAnimationFrame(reset));
         });
       } else Animated.spring(X, { toValue: 0, useNativeDriver: true, friction: 9, tension: 80 }).start(() => vals.current.active.setValue(0));
     },
