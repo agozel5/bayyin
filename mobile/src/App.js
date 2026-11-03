@@ -25,7 +25,6 @@ import CompareScreen from "./screens/CompareScreen";
 import AisleScreen from "./screens/AisleScreen";
 import TravelScreen from "./screens/TravelScreen";
 import MenuScreen from "./screens/MenuScreen";
-import BrandScreen from "./screens/BrandScreen";
 import { initPremium, setPremiumAsk, canUse, onPremium, setPreview } from "./premium";
 import { loadBasket, onBasket, getBasket, addToBasket, setBasketProduct } from "./basket";
 import { fetchProduct } from "./api";
@@ -154,7 +153,7 @@ function Toast({ text }) {
 
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
-const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare", "travel", "menu", "brand"];
+const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare", "travel", "menu"];
 function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, shared, under, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
@@ -419,7 +418,6 @@ function Main() {
         onPlaces={() => push({ type: "places" })}
         onTravel={() => { if (canUse("travel")) push({ type: "travel" }); }}
         onMenu={() => push({ type: "menu" })}
-        onBrands={() => push({ type: "brand" })}
         onCompare={() => { if (canUse("compare")) push({ type: "compare" }); }}
         onBasketMode={() => { if (!canUse("basket")) return; setBasketMode(true); openCamera(); }}
         onOpenBasket={() => push({ type: "basket" })}
@@ -472,14 +470,12 @@ function Main() {
           onGotoSettings={() => gotoSettings()}
           onGotoProfile={gotoProfile}
           onCompare={(code, bp) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: bp }); }}
-          onBrand={(brand) => push({ type: "brand", brand })}
           toast={toast}
         />
       );
     if (item.type === "places") return <PlacesScreen onClose={pop} />;
     if (item.type === "travel") return <TravelScreen onClose={pop} onOpenProduct={(p) => push({ type: "sheet", code: p.code, product: p, fromScan: false })} />;
     if (item.type === "menu") return <MenuScreen onClose={pop} />;
-    if (item.type === "brand") return <BrandScreen brand={item.brand} onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "compare") return <CompareScreen base={item.base} baseP={item.baseP} onClose={pop} onScan={() => openCamera({ replace: true })} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
     if (item.type === "aisle") return <AisleScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;

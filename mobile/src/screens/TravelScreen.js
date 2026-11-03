@@ -5,7 +5,7 @@ import React, { useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { Glyph } from "../components/Art";
-import { Chip, ChipRow } from "../components/Controls";
+import { Chip } from "../components/Controls";
 import { ToolPage, ToolIntro, ToolBtn, Reading, pickImage, useTextReader, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
 import { C, R, dir, lift, STATUS_COLORS, SEV_COLORS } from "../theme";
 import { t } from "../i18n";
@@ -88,10 +88,10 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
           ) : null}
           <View style={{ gap: 8 }}>
             <Muted style={{ fontSize: 13.5, fontWeight: "700" }}>{t("travel.lang_label")}</Muted>
-            <ChipRow>
+            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
               <Chip text={t("travel.lang.auto")} on={lang === "auto"} onPress={() => setLang("auto")} />
               {TRAVEL_LANGS.map((l) => <Chip key={l} text={`${FLAG[l]} ${t(`travel.lang.${l}`)}`} on={lang === l} onPress={() => setLang(l)} />)}
-            </ChipRow>
+            </View>
           </View>
         </>
       ) : null}
@@ -103,9 +103,9 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
           {/* Langue reconnue : modifiable */}
           <View style={{ gap: 8 }}>
             <Muted style={{ fontSize: 13.5, fontWeight: "700" }}>{t("travel.detected")}</Muted>
-            <ChipRow>
+            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
               {TRAVEL_LANGS.map((l) => <Chip key={l} text={`${FLAG[l]} ${t(`travel.lang.${l}`)}`} on={res.lang === l} onPress={() => setShown(l)} />)}
-            </ChipRow>
+            </View>
           </View>
 
           {/* Verdict */}

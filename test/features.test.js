@@ -1,10 +1,9 @@
-// Mode voyage, carte de restaurant, alerte recette, carte des marques
+// Mode voyage, carte de restaurant, alerte recette
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { detectLang, translateIngredients, travelRaw } from "../public/lib/travel.js";
 import { menuItems, analyzeDish, analyzeMenu } from "../public/lib/menu.js";
 import { diffRecipe, worse } from "../public/lib/recipe.js";
-import { brandTag, summarizeBrand, mainBrand } from "../public/lib/brand.js";
 import { present } from "../public/lib/off.js";
 import { SCHOOLS } from "../public/lib/rules.js";
 
@@ -72,18 +71,4 @@ test("recette : seuls les vrais changements comptent", () => {
   assert.ok(worse("halal_probable", "haram"));
   assert.ok(!worse("mashbouh", "halal_probable"));
   assert.equal(diffRecipe(a, { ingredients_text_fr: "" }), null);
-});
-
-test("marque : identifiant et résumé", () => {
-  assert.equal(brandTag("Saint Michel"), "saint-michel");
-  assert.equal(brandTag("Ben & Jerry's"), "ben-jerry-s");
-  assert.equal(mainBrand("Lu, Mondelez"), "Lu");
-  const s = summarizeBrand([
-    present({ code: "1", product_name: "A", ingredients_text: "sucre, farine", labels_tags: ["en:halal"] }),
-    present({ code: "2", product_name: "B", ingredients_text: "sucre, gélatine de porc" }),
-    present({ code: "3", product_name: "C", ingredients_text: "sucre, farine" }),
-  ]);
-  assert.equal(s.total, 3);
-  assert.equal(s.groups.haram.length, 1);
-  assert.equal(s.share, 67);
 });

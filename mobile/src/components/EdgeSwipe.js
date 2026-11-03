@@ -5,7 +5,7 @@ import { Animated, PanResponder, Dimensions, BackHandler, Easing } from "react-n
 import { dir } from "../theme";
 import { haptic } from "../motion";
 
-const EDGE = 28;
+const EDGE = 22; // largeur du bord qui déclenche le retour (les listes horizontales commencent après)
 /**
  * opts.dx / opts.active : valeurs partagées (l'écran du dessous les lit pour glisser avec, comme sur iPhone).
  * onBack() : renvoie true si l'écran reste (retour « intérieur ») ; sinon l'écran est retiré tout de suite

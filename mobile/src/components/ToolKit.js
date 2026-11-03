@@ -1,14 +1,14 @@
 // Briques des outils photo (mode voyage, carte de restaurant) et des pages d'outils :
 // en-tête avec retour, carte d'accueil illustrée, choix de la photo, lecture du texte.
-import React, { useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable, Platform, Modal, Animated, Easing } from "react-native";
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tile, Glyph } from "./Art";
 import { Txt, Muted } from "./ui";
 import { C, R, dir, lift } from "../theme";
 import { t } from "../i18n";
-import { haptic } from "../motion";
+import { haptic, ms } from "../motion";
 import { nativeText, ocrHtml } from "./OcrFlow";
 
 /** Page d'outil : titre, retour, contenu qui défile */
@@ -70,8 +70,12 @@ export function ToolBtn({ text, icon, paths, onPress, soft, disabled }) {
 /** Photo prise ou choisie -> { uri, base64, mime } ; null si annulé ; "denied" sans autorisation */
 export async function pickImage(source = "camera") {
   const ImagePicker = require("expo-image-picker");
-  const perm = source === "camera" ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return "denied";
+  // Galerie : le sélecteur de photos du système ne demande aucune autorisation (iOS 14+, Android 13+) ;
+  // la demander ferait fermer l'app sur iPhone (aucun accès à la photothèque n'est déclaré).
+  if (source === "camera") {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) return "denied";
+  }
   const opts = { mediaTypes: ["images"], quality: 0.7, base64: true, exif: false };
   const res = source === "camera" ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled || !res.assets || !res.assets[0] || !res.assets[0].base64) return null;
@@ -128,11 +132,53 @@ export function Reading({ progress, text }) {
 
 export const TOOL_ICONS = {
   travel: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
+  ingredients: '<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 12h6M9 15.5h6"/>',
   menu: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.2 1.2-3 3.6-3 6.5V13h3"/>',
-  brand: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8" r="1.5"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.4"/>',
   gallery: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   recipe: '<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 13l2 2 4-4"/>',
 };
-export const TOOL_COLORS = { travel: "#2F8FCF", menu: "#E46A3C", brand: "#8A63DA" };
+export const TOOL_COLORS = { travel: "#2F8FCF", menu: "#E46A3C", ingredients: "#1A9C68" };
+
+/** Feuille de choix qui monte du bas de l'écran (ex. : que voulez-vous photographier ?) */
+export function ChoiceSheet({ visible, title, items, onClose }) {
+  const insets = useSafeAreaInsets();
+  const y = useRef(new Animated.Value(1)).current;
+  const [shown, setShown] = useState(visible);
+  useEffect(() => {
+    if (visible) {
+      setShown(true);
+      y.setValue(1);
+      Animated.timing(y, { toValue: 0, duration: ms(280), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    } else if (shown) {
+      Animated.timing(y, { toValue: 1, duration: ms(200), easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => setShown(false));
+    }
+  }, [visible]);
+  const pick = (it) => { haptic.tap(); onClose(); setTimeout(() => it.onPress && it.onPress(), ms(1) ? 220 : 0); };
+  return (
+    <Modal visible={shown} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <Animated.View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", opacity: y.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("sheet.back")} />
+      </Animated.View>
+      <Animated.View accessibilityViewIsModal style={{ position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingHorizontal: 18, paddingTop: 10, paddingBottom: insets.bottom + 18, gap: 12, transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [0, 520] }) }] }}>
+        <View style={{ alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: C.line }} />
+        <Txt accessibilityRole="header" style={{ fontSize: 20, fontWeight: "800", paddingHorizontal: 4 }}>{title}</Txt>
+        <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, overflow: "hidden" }, lift()]}>
+          {items.map((it, i) => (
+            <Pressable key={it.id} onPress={() => pick(it)} accessibilityRole="button" accessibilityLabel={`${it.title}. ${it.sub || ""}`}
+              style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 14, padding: 16, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line, backgroundColor: pressed ? C.tint : "transparent" })}>
+              <Tile color={it.color} paths={it.paths} size={44} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Txt style={{ fontWeight: "800", fontSize: 16.5 }}>{it.title}</Txt>
+                {it.sub ? <Muted style={{ fontSize: 13.5, lineHeight: 18 }}>{it.sub}</Muted> : null}
+              </View>
+              <Glyph name="chev" size={17} color={C.faint} />
+            </Pressable>
+          ))}
+        </View>
+      </Animated.View>
+    </Modal>
+  );
+}

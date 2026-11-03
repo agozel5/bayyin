@@ -10,7 +10,6 @@ import { analyzeCosmetic } from "./cosmetic.js";
 import { classifyBeauty } from "./beauty.js";
 import { classifyMedicine, medNoticeUrl, isMedicineCode, medShard, medicineRaw, MED_DATA_BASE, withProductData } from "./medicine.js";
 import { FIXTURES } from "./fixtures.js";
-import { brandTag, mainBrand } from "./brand.js";
 import { rankByRelevance, translateQuery, relevance, normalize as normalizeText } from "./search.js";
 
 export const OFF_BASE = "https://world.openfoodfacts.org";
@@ -401,29 +400,6 @@ export function createClient({ demo = false, prefs = () => DEFAULT_PREFS, medBas
         foodFailed,
         beautyFailed,
       };
-    },
-
-    // -> produits d'une marque (les plus scannés), aliments et cosmétiques, présentés
-    async brand(name) {
-      const tag = brandTag(name);
-      if (!tag) return [];
-      if (demo) return Object.values(FIXTURES).filter((p) => brandTag(mainBrand(p.brands)) === tag).map(show);
-      const url = (base) => `${base}/api/v2/search?brands_tags=${encodeURIComponent(tag)}&sort_by=unique_scans_n&page_size=100&fields=${FIELDS}`;
-      // Recherche classique d'Open Food Facts : prend le relais quand l'API de recherche est lente ou vide
-      const legacy = (base) => `${base}/cgi/search.pl?action=process&tagtype_0=brands&tag_contains_0=contains&tag_0=${encodeURIComponent(tag)}` +
-        `&sort_by=unique_scans_n&page_size=100&json=1&fields=${FIELDS}`;
-      const one = async (base, ms) => {
-        try {
-          const d = await getJson(url(base), ms, { tries: 2 });
-          if (d && d.products && d.products.length) return d;
-        } catch { /* on essaie la recherche classique */ }
-        return getJson(legacy(base), ms, { tries: 2 });
-      };
-      const [food, beauty] = await Promise.allSettled([one(OFF_BASE, 15000), one(OBF_BASE, 12000)]);
-      if (food.status === "rejected" && (beauty.status === "rejected" || !(beauty.value && beauty.value.products && beauty.value.products.length))) throw food.reason;
-      const list = (r, kind) => (r.status === "fulfilled" && r.value && r.value.products ? r.value.products : [])
-        .filter((p) => p.code && (p.product_name || p.product_name_fr)).map((p) => (kind ? { ...p, kind } : p));
-      return [...list(food), ...list(beauty, "beauty")].map((p) => { rawCache.set(p.code, p); return show(p); });
     },
 
     // -> impact environnemental (Green-Score, ex-Eco-Score), chargé seulement quand on ouvre l'onglet

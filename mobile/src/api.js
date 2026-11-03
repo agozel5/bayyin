@@ -215,28 +215,5 @@ export function loadCosing() {
   return cosingLoading;
 }
 
-// Carte d'une marque : produits gardés un jour sur le téléphone (réouverture instantanée, hors connexion)
-const BRAND_KEY = (tag) => "bayyin:brand:" + tag;
-export async function fetchBrand(name, onCached) {
-  const { brandTag } = require("../../public/lib/brand.js");
-  const tag = brandTag(name);
-  if (!tag) return [];
-  let cached = null;
-  try { const s = await AsyncStorage.getItem(BRAND_KEY(tag)); cached = s ? JSON.parse(s) : null; } catch { /* rien en mémoire */ }
-  if (cached && cached.raws && cached.raws.length) {
-    const list = cached.raws.map(show);
-    if (Date.now() - cached.at < 864e5) return list;
-    onCached && onCached(list);
-  }
-  try {
-    const list = await offClient.brand(name);
-    AsyncStorage.setItem(BRAND_KEY(tag), JSON.stringify({ at: Date.now(), raws: list.map((p) => compact({ ...p.raw, code: p.code })) })).catch(() => {});
-    return list;
-  } catch (e) {
-    if (cached && cached.raws && cached.raws.length) return cached.raws.map(show);
-    throw e;
-  }
-}
-
 /** Fiche à jour depuis Open Food Facts ou Open Beauty Facts, sans passer par la mémoire (alerte recette) */
 export const fetchFresh = (code) => fetchCollab(code);
