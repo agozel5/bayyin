@@ -3,7 +3,7 @@ annexe III : 381 lignes
 annexe IV : 154 lignes
 annexe V : 58 lignes
 annexe VI : 34 lignes
-inventaire annoncé : 33655
+inventaire annoncé : 33656
 fonctions : 83
 ADHESIVE (ASC) : 20 / 20
 ANTI-SEBORRHEIC (ASC) : 150 / 150
@@ -17,7 +17,7 @@ ANTIPERSPIRANT (ASC) : 40 / 40
 ANTIPLAQUE (ASC) : 82 / 82
 ANTISTATIC (ASC) : 1079 / 1079
 ASTRINGENT (ASC) : 590 / 590
-BINDING (ASC) : 556 / 556
+BINDING (ASC) : 557 / 557
 BLEACHING (ASC) : 365 / 365
 BUFFERING (ASC) : 218 / 218
 BULKING (ASC) : 217 / 217
@@ -33,7 +33,7 @@ EMULSION STABILISING (ASC) : 726 / 726
 EPILATING (ASC) : 2 / 2
 EXFOLIATING (ASC) : 156 / 156
 EYELASH CONDITIONING (ASC) : 29 / 29
-FILM FORMING (ASC) : 1362 / 1362
+FILM FORMING (ASC) : 1363 / 1363
 FLAVOURING (ASC) : 197 / 197
 FOAMING (ASC) : 205 / 205
 FRAGRANCE (ASC) : 1546 / 1546
@@ -47,7 +47,7 @@ KERATOLYTIC (ASC) : 20 / 20
 LIGHT STABILIZER (ASC) : 178 / 178
 LYTIC (ASC) : 1 / 1
 MOISTURISING (ASC) : 72 / 72
-NAIL CONDITIONING (ASC) : 218 / 218
+NAIL CONDITIONING (ASC) : 219 / 219
 NAIL SCULPTING (ASC) : 18 / 18
 NOT REPORTED (ASC) : 308 / 308
 OPACIFYING (ASC) : 229 / 229
@@ -89,6 +89,6 @@ VISCOSITY CONTROLLING (ASC) : 1463 / 1463
 ABRASIVE (ASC) : 388 / 388
 ABSORBENT (ASC) : 192 / 192
 sans fonction (ASC) : 192 / 192
-ingrédients récupérés : 33639
-noms : 33601, fonctions : 82, interdits : 858, CMR : 86, allergènes : 132
+ingrédients récupérés : 33640
+noms : 33602, fonctions : 82, interdits : 858, CMR : 86, allergènes : 132
 écrit : /home/runner/work/bayyin/bayyin/public/data/cosing.json
