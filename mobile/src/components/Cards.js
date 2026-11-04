@@ -1,7 +1,7 @@
 // Cartes produit, motif du bandeau et vignettes, au style de la version web.
 import { Img } from "./Img";
 import React from "react";
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Art, Glyph } from "./Art";
 import { C, R, VERDICT, GRADE_COLORS, ALERT_COLORS, STATUS_COLORS, dir, lift } from "../theme";

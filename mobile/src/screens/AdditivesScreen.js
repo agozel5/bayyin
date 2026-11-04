@@ -3,9 +3,9 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable, ScrollView, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Txt, Muted, Row } from "../components/ui";
+import { Txt, Muted } from "../components/ui";
 import { PageHead, SearchBox, Chip, ChipRow, Segmented } from "../components/Controls";
-import { AdditiveRow, additiveRow, eFunctions } from "../components/Additives";
+import { AdditiveRow, additiveRow } from "../components/Additives";
 import { Pill2 } from "../components/SheetParts";
 import { Glyph } from "../components/Art";
 import { Collapse, Chevron } from "../components/Reveal";

@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { recentRecalls, matchRecent, isActive } from "../../public/lib/recalls.js";
 import { getHistory, getEntry, getSettings, setSettings } from "./storage";
-import { t, tn, locale } from "./i18n";
+import { t, locale } from "./i18n";
 import { nameOf } from "./view";
 
 const K = { check: "bayyin:recall_check", seen: "bayyin:recall_seen", notified: "bayyin:recall_notified" };

@@ -6,7 +6,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Btn, Loading } from "../components/ui";
 import { Glyph } from "../components/Art";
-import { C, STATUS_COLORS } from "../theme";
+import { C } from "../theme";
 import { t, tn } from "../i18n";
 import { haptic } from "../motion";
 import { normalizeScan } from "../core";

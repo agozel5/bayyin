@@ -5,7 +5,7 @@ import { View, Text, Pressable, Linking } from "react-native";
 import { Txt, Muted, Row } from "./ui";
 import { Glyph, Art } from "./Art";
 import { C, R, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, STATUS_COLORS, dir } from "../theme";
-import { t, tn } from "../i18n";
+import { t } from "../i18n";
 import { SOURCE_BY_ID } from "../core";
 import { loadCosing } from "../api";
 import { analyzeCosmetic, cosmeticDbVersion } from "../../../public/lib/cosmetic.js";

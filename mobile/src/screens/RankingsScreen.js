@@ -1,9 +1,9 @@
 // Classements : les produits halal les mieux notés pour la santé, rayon par rayon (selon vos réglages).
 // Les listes sont préparées chaque semaine sur le site (data/rankings/<rayon>.json).
 import { Img, prefetchImages } from "../components/Img";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import SubStack from "../components/SubStack";
-import { View, Text, ScrollView, Pressable, Image } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, Loading } from "../components/ui";
 import { Segmented, Chip } from "../components/Controls";

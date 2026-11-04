@@ -1,18 +1,17 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
 import { Img, prefetchImages } from "./Img";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Image, Linking, Share, Animated, Easing, Platform } from "react-native";
-import Svg, { Circle } from "react-native-svg";
+import { View, Text, ScrollView, Pressable, Linking, Share, Animated, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
-import { Txt, H2, Muted, Label, Row, Btn, Pill, StatusPill, MiniScore, Loading, Message, Skeleton, FadeIn } from "./ui";
-import { haptic, ms, announce } from "../motion";
-import { isDark, C, R, ALERT_COLORS, STATUS_COLORS, SEV_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir, lift } from "../theme";
-import { t, tn, tPlain } from "../i18n";
-import { SOURCE_BY_ID, RISK_SOURCES, FLAG_SOURCES, isMedicineCode } from "../core";
+import { Txt, H2, Muted, Label, Row, Btn, Pill, Message, Skeleton, FadeIn } from "./ui";
+import { haptic, announce } from "../motion";
+import { isDark, C, R, ALERT_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir, lift } from "../theme";
+import { t, tn } from "../i18n";
+import { SOURCE_BY_ID, RISK_SOURCES, isMedicineCode } from "../core";
 import { fetchProduct, fetchAlternatives } from "../api";
 import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../storage";
-import { verdictOf, nameOf, scoreOf, S, isBarcode, flagLabel, flagReason, noteText, fmt, errorText, kindOf, profileOf } from "../view";
+import { verdictOf, nameOf, scoreOf, S, isBarcode, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
 import { Glyph, Art, Tile } from "./Art";
 import { ProductCard } from "./Cards";
@@ -25,14 +24,12 @@ import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } fro
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
 import { mailto } from "../config";
 import LetterScale from "./LetterScale";
-import ShareCard, { shareUrl, SHARE_W } from "./ShareCard";
+import ShareCard, { shareUrl } from "./ShareCard";
 import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
 import { NUT_ART, ALLERGEN_ART } from "../../../public/lib/rank-art.js";
 
-const STATUS_ICON = { halal_certifie: "check", halal_probable: "check", mashbouh: "question", haram: "cross", inconnu: "dash" };
 const open = (url) => Linking.openURL(url).catch(() => {});
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // ---------------------------------------------------------------------------
 // Petits éléments
@@ -88,98 +85,8 @@ function Expand({ head, children, initial = false }) {
   );
 }
 
-function Ring({ value, color, size = 58 }) {
-  const w = 6;
-  const r = (size - w) / 2;
-  const len = 2 * Math.PI * r;
-  // L'anneau se remplit jusqu'à la note
-  const v = useRef(new Animated.Value(ms(1) ? 0 : value || 0)).current;
-  useEffect(() => {
-    Animated.timing(v, { toValue: value || 0, duration: ms(700), delay: ms(150), easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-  }, [value]);
-  const dash = v.interpolate({ inputRange: [0, 100], outputRange: [0, len] });
-  return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.line} strokeWidth={w} fill="none" />
-        {value ? (
-          <AnimatedCircle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={w} fill="none" strokeLinecap="round"
-            strokeDasharray={[len, len]} strokeDashoffset={Animated.subtract(len, dash)} />
-        ) : null}
-      </Svg>
-      <Text maxFontSizeMultiplier={1.2} style={{ fontWeight: "800", fontSize: value ? 18 : 20, color: C.fg }}>{value || "?"}</Text>
-    </View>
-  );
-}
 
-// ---------------------------------------------------------------------------
-// Blocs de la fiche
-// ---------------------------------------------------------------------------
-function Top({ p }) {
-  const meta = [p.brand, p.quantity].filter(Boolean).join(" · ");
-  return (
-    <Row gap={14} style={{ alignItems: "flex-start" }}>
-      {p.image ? (
-        <Img uri={p.image} style={{ width: 84, height: 84, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: "#fff" }} />
-      ) : (
-        <View style={{ width: 84, height: 84, borderRadius: 16, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}>
-          <Icon name={p.local ? "doc" : "box"} size={30} color={C.faint} />
-        </View>
-      )}
-      <View style={{ flex: 1, gap: 4 }}>
-        <Txt style={{ fontSize: 21, lineHeight: 26, fontWeight: "800" }}>{nameOf(p)}</Txt>
-        {meta ? <Muted>{meta}</Muted> : null}
-        {isBarcode(p.code) ? <Text style={{ color: C.faint, fontSize: 13, textAlign: dir().ta }}>{p.code}</Text> : null}
-      </View>
-    </Row>
-  );
-}
 
-function Tiles({ p, v }) {
-  const s = scoreOf(p);
-  const [fg, bg] = STATUS_COLORS[v.status];
-  const tile = { flex: 1, borderRadius: R.lg, padding: 14, gap: 10, minHeight: 128 };
-  return (
-    <View style={{ flexDirection: dir().row, gap: 10 }}>
-      <View style={[tile, { backgroundColor: bg }]} accessible accessibilityLabel={`${t("detail.halal")} : ${S(v.status, "label")}`}>
-        <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: fg, alignItems: "center", justifyContent: "center" }}>
-          <Icon name={STATUS_ICON[v.status]} size={26} color="#fff" width={2.8} />
-        </View>
-        <View>
-          <Label style={{ color: fg }}>{t("detail.halal")}</Label>
-          <Txt style={{ fontSize: 18, lineHeight: 23, fontWeight: "800", color: fg }}>{S(v.status, "label")}</Txt>
-        </View>
-      </View>
-      {kindOf(p) !== "food" ? (
-        <View style={[tile, { backgroundColor: C.tint }]} accessible accessibilityLabel={t(`kind.${kindOf(p)}`)}>
-          <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
-            <Icon name={kindOf(p) === "medicine" ? "pill" : "drop"} size={24} color={C.brand} />
-          </View>
-          <View>
-            <Label>{t(`kind.${kindOf(p)}`)}</Label>
-            <Txt style={{ fontSize: 16, lineHeight: 21, fontWeight: "800" }} numberOfLines={3}>
-              {kindOf(p) === "medicine" ? p.form || t("kind.medicine") : t("detail.beauty_note")}
-            </Txt>
-          </View>
-        </View>
-      ) : (
-      <View
-        style={[tile, { backgroundColor: C.tint }]}
-        accessible
-        accessibilityLabel={`${t("detail.health")} : ${s ? `${s.score}/100, ${t(`grade.${s.grade}`)}` : t("detail.not_rated")}`}
-      >
-        <Ring value={s ? s.score : 0} color={s ? GRADE_COLORS[s.grade] : C.faint} />
-        <View>
-          <Label>{t("detail.health")}</Label>
-          <Txt style={{ fontSize: 18, lineHeight: 23, fontWeight: "800", color: s ? GRADE_COLORS[s.grade] : C.muted }}>
-            {s ? t(`grade.${s.grade}`) : t("detail.not_rated")}
-          </Txt>
-        </View>
-      </View>
-      )}
-    </View>
-  );
-}
 
 // Alerte personnelle (allergies, régime) en haut de la fiche
 function ProfileAlert({ p, onGotoProfile }) {
@@ -257,53 +164,7 @@ function MedicineSection({ p }) {
   );
 }
 
-function FlagCard({ f, onGotoSettings }) {
-  const colors = SEV_COLORS[f.severity];
-  return (
-    <View style={{ borderRadius: R.md, padding: 14, gap: 6, backgroundColor: C.tint, borderStartWidth: 4, borderStartColor: colors[0] }}>
-      <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Txt style={{ fontWeight: "800", flex: 1 }}>{flagLabel(f)}</Txt>
-        <Pill text={t(`sev.${f.severity}`)} colors={colors} />
-      </Row>
-      <Muted>{flagReason(f)}</Muted>
-      {f.covered ? (
-        <Muted style={{ fontSize: 13 }}>{t("detail.covered")}</Muted>
-      ) : f.topic && f.decision ? (
-        <Txt style={{ fontSize: 13, lineHeight: 19, color: C.muted }}>
-          {t("detail.by_setting", { topic: t(`topic.${f.topic}`), d: t(`decision.${f.decision}`).toLowerCase() })}{" "}
-          <Text onPress={onGotoSettings} style={{ color: C.brand, fontWeight: "700" }}>{t("detail.change_setting")}</Text>
-        </Txt>
-      ) : null}
-      {f.source && !f.code ? <Muted style={{ fontSize: 13 }}>{t("detail.found_in", { s: f.source })}</Muted> : null}
-      <SourceLine ids={FLAG_SOURCES[f.id]} />
-    </View>
-  );
-}
 
-function HalalSection({ p, v, onGotoSettings, onOcr }) {
-  const notes = [...(p.local ? [t("detail.local")] : []), ...v.notes.map(noteText)];
-  return (
-    <Section title={t("detail.halal")}>
-      {kindOf(p) !== "medicine" || v.status !== "inconnu" ? <Txt>{S(v.status, "lead")}</Txt> : null}
-      {v.certification ? (
-        <Row gap={8} style={{ backgroundColor: C.brandSoft, borderRadius: R.md, padding: 12 }}>
-          <Icon name="shield" size={20} color={C.brand} />
-          <Txt style={{ color: C.brandDark, fontWeight: "700", flex: 1 }}>
-            {t("detail.certified")}
-            {v.certification.organisme ? " · " + v.certification.organisme : ""}
-          </Txt>
-        </Row>
-      ) : null}
-      {notes.map((n, i) => (
-        <Muted key={i}>{n}</Muted>
-      ))}
-      {v.flags.map((f, i) => (
-        <FlagCard key={f.id + i} f={f} onGotoSettings={onGotoSettings} />
-      ))}
-      {v.status === "inconnu" && isBarcode(p.code) && kindOf(p) === "food" ? <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(p.code)} /> : null}
-    </Section>
-  );
-}
 
 // Jauge tricolore avec repère du produit (comme la version web)
 function Gauge({ n }) {
@@ -461,21 +322,6 @@ function WatchSection({ p }) {
   );
 }
 
-function AltCard({ a, onOpen }) {
-  return (
-    <Pressable onPress={() => onOpen(a.code)} style={({ pressed }) => ({ width: 150, borderRadius: R.lg, padding: 12, gap: 6, backgroundColor: pressed ? C.tint2 : C.tint })}>
-      {a.image ? (
-        <Img uri={a.image} style={{ width: "100%", height: 96, borderRadius: 12, backgroundColor: "#fff" }} />
-      ) : (
-        <View style={{ width: "100%", height: 96, borderRadius: 12, backgroundColor: "#fff" }} />
-      )}
-      <Txt style={{ fontWeight: "700", fontSize: 14, lineHeight: 18 }} numberOfLines={2}>{nameOf(a)}</Txt>
-      {a.brand ? <Muted style={{ fontSize: 12, lineHeight: 16 }} numberOfLines={1}>{a.brand}</Muted> : null}
-      <StatusPill status={verdictOf(a).status} />
-      <MiniScore p={a} />
-    </Pressable>
-  );
-}
 
 function AlternativesSection({ p, onOpen }) {
   const [state, setState] = useState({ loading: true, list: [], best: false, error: false });
@@ -506,41 +352,6 @@ function AlternativesSection({ p, onOpen }) {
   );
 }
 
-function AllAdditivesSection({ p, v }) {
-  if (!p.raw || p.local) return null;
-  const keys = [...new Set((p.raw.additives_tags || []).map((tag) => String(tag).replace(/^\w+:/, "").toLowerCase()))].filter((k) => /^e\d{3,4}[a-z]*$/.test(k));
-  if (!keys.length) {
-    return (
-      <Section title={t("detail.all_additives")}>
-        <Muted>{t("detail.add_none")}</Muted>
-      </Section>
-    );
-  }
-  const baseOf = (k) => k.match(/^e\d+/)[0];
-  const shown = keys.filter((k) => !(k === baseOf(k) && keys.some((o) => o !== k && baseOf(o) === k)));
-  return (
-    <Section title={t("detail.all_additives")} sub={String(shown.length)}>
-      {shown.map((k) => {
-        const flag = v.flags.find((f) => f.id === k || f.id === baseOf(k));
-        const risk = ((p.health && p.health.additives) || []).find((a) => a.code.toLowerCase() === k || a.code.toLowerCase() === baseOf(k));
-        const name = risk ? t(`addname.${risk.code.toLowerCase()}`) : flag ? flagLabel(flag).replace(/^E\w+ · /, "") : "";
-        return (
-          <View key={k} style={{ gap: 6, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-            <Row>
-              <Text style={{ fontWeight: "800", color: C.fg, minWidth: 54 }}>{k.toUpperCase()}</Text>
-              <Txt style={{ flex: 1, fontSize: 15 }}>{name}</Txt>
-            </Row>
-            <Row gap={6} style={{ flexWrap: "wrap" }}>
-              {flag ? <Pill text={`${t("detail.halal")} · ${t(`sev.${flag.severity}`)}`} colors={SEV_COLORS[flag.severity]} /> : null}
-              {risk ? <Pill text={t(`risk.short.${risk.level}`)} colors={RISK_COLORS[risk.level]} /> : null}
-              {!flag && !risk ? <Muted style={{ fontSize: 13 }}>{t("detail.add_ok")}</Muted> : null}
-            </Row>
-          </View>
-        );
-      })}
-    </Section>
-  );
-}
 
 function ExtraSections({ p }) {
   const h = p.health;

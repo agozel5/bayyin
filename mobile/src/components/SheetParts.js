@@ -1,13 +1,13 @@
 // Pièces de la fiche produit, au design de la version web : en-tête, bandeau du verdict,
 // fiabilité, chaîne de vérification, étiquette surlignée, points relevés, onglets.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Image, Linking, Animated, Easing, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Linking, Animated, Easing, ActivityIndicator } from "react-native";
 import { loadCertified, verifyCertification } from "../../../public/lib/certcheck.js";
 import { longDate } from "../recalls";
 import { ms } from "../motion";
 import PhotoZoom, { photoList } from "./PhotoZoom";
 import Svg, { Circle, Rect, Defs, LinearGradient, RadialGradient, Stop } from "react-native-svg";
-import { Glyph, Tile } from "./Art";
+import { Glyph } from "./Art";
 import { Khatam, Thumb, STATUS_GLYPH } from "./Cards";
 import { Txt, Muted, Row, FadeIn } from "./ui";
 import { C, R, VERDICT, GRADE_COLORS, SEV_COLORS, RISK_COLORS, mix, dir, lift, isDark } from "../theme";

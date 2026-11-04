@@ -8,7 +8,7 @@ import Svg, { Path, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Btn, Loading } from "./ui";
 import { Art, Glyph } from "./Art";
-import { C, R } from "../theme";
+import { C } from "../theme";
 import { t } from "../i18n";
 import { normalizeScan } from "../core";
 import { STATUS_COLORS } from "../theme";

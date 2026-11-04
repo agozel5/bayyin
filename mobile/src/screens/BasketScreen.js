@@ -11,7 +11,7 @@ import { fetchProduct } from "../api";
 import { getEntry } from "../storage";
 import { verdictOf, profileOf, scoreOf } from "../view";
 import { HEALTH_GRADES } from "../core";
-import { getBasket, onBasket, setBasketProduct, clearBasket, removeFromBasket } from "../basket";
+import { getBasket, onBasket, setBasketProduct, clearBasket } from "../basket";
 import { haptic } from "../motion";
 import { mascot } from "../../../public/lib/mascot.js";
 
