@@ -6,9 +6,13 @@ import { Image as RNImage, Platform } from "react-native";
 let EImage = null;
 try { EImage = Platform.OS === "web" ? null : require("expo-image").Image; } catch { EImage = null; }
 
-export function Img({ uri, style, fit = "contain", onError, transition = 160 }) {
+// Aperçu flou (ThumbHash, calculé avec les classements) : une courte chaîne, vérifiée avant usage
+const THUMB = /^[A-Za-z0-9+/]{16,64}={0,2}$/;
+
+export function Img({ uri, style, fit = "contain", onError, transition = 160, thumb }) {
   if (!uri) return null;
-  if (EImage) return <EImage source={{ uri }} style={style} contentFit={fit} cachePolicy="memory-disk" transition={transition} recyclingKey={uri} onError={onError} accessible={false} />;
+  if (EImage) return <EImage source={{ uri }} style={style} contentFit={fit} cachePolicy="memory-disk" transition={transition} recyclingKey={uri} onError={onError} accessible={false}
+    placeholder={thumb && THUMB.test(thumb) ? { thumbhash: thumb } : undefined} placeholderContentFit={fit} />;
   return <RNImage source={{ uri }} style={style} resizeMode={fit} onError={onError} accessible={false} />;
 }
 

@@ -106,7 +106,7 @@ function Ranking({ cat, onBack, onOpen }) {
                 <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: i < 3 ? MEDAL[i] : "transparent" }}>
                   <Text style={{ fontWeight: "800", fontSize: 14, color: i < 3 ? "#fff" : C.muted }}>{i + 1}</Text>
                 </View>
-                {p.image ? <Img uri={p.image} style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: "#fff" }} />
+                {p.image ? <Img uri={p.image} thumb={p.raw && p.raw.th} style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: "#fff" }} />
                   : <ArtTile xml={RANK_ART[cat.id]} size={52} radius={12} />}
                 <View style={{ flex: 1, gap: 3 }}>
                   <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: "700", color: C.fg, lineHeight: 19, textAlign: dir().ta }}>{nameOf(p)}</Text>

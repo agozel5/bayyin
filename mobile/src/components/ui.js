@@ -113,7 +113,7 @@ export function ProductRow({ p, onPress, fav = false, when = "" }) {
       accessibilityLabel={label}
       style={({ pressed }) => [styles.row, { borderBottomColor: C.line, flexDirection: dir().row, backgroundColor: pressed ? C.tint : "transparent" }]}
     >
-      {p.image ? <Img uri={p.image} style={[styles.rowImg, { borderColor: C.line }]} /> : (
+      {p.image ? <Img uri={p.image} thumb={p.raw && p.raw.th} style={[styles.rowImg, { borderColor: C.line }]} /> : (
         <View style={[styles.rowImg, { backgroundColor: C.tint, borderColor: C.tint, alignItems: "center", justifyContent: "center" }]}>
           <Icon name={p.local ? "doc" : kind === "medicine" ? "pill" : kind === "beauty" ? "drop" : "box"} color={C.faint} size={22} />
         </View>
