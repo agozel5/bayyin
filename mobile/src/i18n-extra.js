@@ -1,6 +1,8 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
 export const EXTRA = {
   fr: {
+    "notif.check_recalls": "Vérifier les rappels maintenant",
+    "recipe.check_btn": "Vérifier les recettes maintenant",
     "menu.on_photo": "Sur votre carte",
     "menu.zoom": "Agrandir",
     "menu.tap_hint": "Touchez un plat surligné pour voir pourquoi.",
@@ -166,6 +168,8 @@ export const EXTRA = {
     "widget.scan": "Scanner",
   },
   en: {
+    "notif.check_recalls": "Check for recalls now",
+    "recipe.check_btn": "Check recipes now",
     "menu.on_photo": "On your menu",
     "menu.zoom": "Enlarge",
     "menu.tap_hint": "Tap a highlighted dish to see why.",
@@ -331,6 +335,8 @@ export const EXTRA = {
     "widget.scan": "Scan",
   },
   ar: {
+    "notif.check_recalls": "التحقق من عمليات السحب الآن",
+    "recipe.check_btn": "التحقق من الوصفات الآن",
     "menu.on_photo": "على قائمتك",
     "menu.zoom": "تكبير",
     "menu.tap_hint": "المس طبقًا مظلَّلًا لترى السبب.",
@@ -496,6 +502,8 @@ export const EXTRA = {
     "widget.scan": "مسح",
   },
   tr: {
+    "notif.check_recalls": "Geri çağırmaları şimdi kontrol et",
+    "recipe.check_btn": "Tarifleri şimdi kontrol et",
     "menu.on_photo": "Menünüzde",
     "menu.zoom": "Büyüt",
     "menu.tap_hint": "Nedenini görmek için işaretli bir yemeğe dokunun.",

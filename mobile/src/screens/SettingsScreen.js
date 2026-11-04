@@ -580,6 +580,11 @@ function NotifPage() {
           </View>
         ) : null}
         <Muted style={{ fontSize: 13 }}>{t("notif.when")}</Muted>
+        <Pressable onPress={async () => { haptic.tap(); setHits(await checkRecalls({ force: true })); }} accessibilityRole="button"
+          style={({ pressed }) => ({ paddingVertical: 13, borderRadius: 14, alignItems: "center", backgroundColor: pressed ? C.tint2 : C.tint })}>
+          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15 }}>{t("notif.check_recalls")}</Text>
+        </Pressable>
+        {hits ? <Txt style={{ fontWeight: "700", color: hits.length ? STATUS_COLORS.haram[0] : C.brand }}>{hits.length ? tn("recall.home", hits.length) : t("notif.none")}</Txt> : null}
       </Block>
       {/* Alerte « la recette a changé » (favoris et produits récents) */}
       <Block title={t("recipe.set_t")}>
@@ -590,17 +595,11 @@ function NotifPage() {
         </Row>
         <Pressable onPress={async () => { haptic.tap(); setRec(await checkRecipes({ force: true, max: 30 })); }} accessibilityRole="button"
           style={({ pressed }) => ({ paddingVertical: 13, borderRadius: 14, alignItems: "center", backgroundColor: pressed ? C.tint2 : C.tint, opacity: st.recipeAlerts ? 1 : 0.5 })} disabled={!st.recipeAlerts}>
-          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15 }}>{t("recipe.check")}</Text>
+          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15 }}>{t("recipe.check_btn")}</Text>
         </Pressable>
         {rec ? <Txt style={{ fontWeight: "700", color: rec.length ? STATUS_COLORS.mashbouh[0] : C.brand }}>{rec.length ? tn("recipe.home", rec.length) : t("recipe.none")}</Txt> : null}
       </Block>
-      <Block>
-        <Pressable onPress={async () => { haptic.tap(); setHits(await checkRecalls({ force: true })); }} accessibilityRole="button"
-          style={({ pressed }) => ({ paddingVertical: 13, borderRadius: 14, alignItems: "center", backgroundColor: pressed ? C.tint2 : C.tint })}>
-          <Text style={{ fontWeight: "800", color: C.fg, fontSize: 15 }}>{t("notif.check")}</Text>
-        </Pressable>
-        {hits ? <Txt style={{ fontWeight: "700", color: hits.length ? STATUS_COLORS.haram[0] : C.brand }}>{hits.length ? tn("recall.home", hits.length) : t("notif.none")}</Txt> : null}
-      </Block>
+
     </View>
   );
 }
