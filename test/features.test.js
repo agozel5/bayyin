@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { detectLang, translateIngredients, travelRaw } from "../public/lib/travel.js";
-import { menuItems, analyzeDish, analyzeMenu } from "../public/lib/menu.js";
+import { menuItems, analyzeDish, analyzeMenu, linesFromWords } from "../public/lib/menu.js";
 import { diffRecipe, worse } from "../public/lib/recipe.js";
 import { present } from "../public/lib/off.js";
 import { SCHOOLS } from "../public/lib/rules.js";
@@ -103,4 +103,21 @@ test("carte lue avec la position des lignes : intertitres plus gros, description
   const sol = analyzeMenu(JSON.parse(readFileSync(new URL("./fixtures/menu-el-sol-lines.json", import.meta.url), "utf8")));
   assert.ok(sol.dishes.some((d) => /Albondigas/.test(d.title) && d.status === "mashbouh"));
   assert.ok(!sol.dishes.some((d) => /^(Pour ouvrir|Nos «raciones»|Del mar)/.test(d.title)));
+});
+
+test("carte en deux colonnes lue mot par mot : colonnes séparées, plats jamais mélangés d'une colonne à l'autre", async () => {
+  const { readFileSync } = await import("node:fs");
+  const words = JSON.parse(readFileSync(new URL("./fixtures/menu-el-sol-words.json", import.meta.url), "utf8"));
+  const lines = linesFromWords(words);
+  assert.equal(new Set(lines.map((l) => l.col)).size, 2);
+  const { dishes } = analyzeMenu(lines);
+  for (const d of dishes) {
+    const w = Math.max(...d.boxes.map((b) => b.x1)) - Math.min(...d.boxes.map((b) => b.x0));
+    assert.ok(w < 0.55, `« ${d.title} » tient dans une colonne`);
+    assert.equal(new Set(d.boxes.map((b) => b.col)).size, 1);
+  }
+  const by = (re) => dishes.find((d) => re.test(d.title));
+  assert.ok(!/Sorpresa/.test(by(/ventr.che/).desc), "la salade de la colonne de gauche ne reçoit pas un plat de droite");
+  assert.equal(by(/Sorpresa/).status, "haram");
+  assert.ok(!dishes.some((d) => /achetés|^page$|^El Sol$/.test(d.title)), "légendes et bas de page ignorés");
 });

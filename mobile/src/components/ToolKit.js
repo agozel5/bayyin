@@ -115,7 +115,9 @@ export function useTextReader() {
       const n = (v) => Math.max(0, Math.min(1, Number(v) || 0));
       const lines = (Array.isArray(msg.lines) ? msg.lines : []).slice(0, 400).filter((l) => l && typeof l.t === "string")
         .map((l) => ({ t: l.t.slice(0, 300), x0: n(l.x0), y0: n(l.y0), x1: n(l.x1), y1: n(l.y1), c: Number(l.c) || 0 }));
-      j.resolve({ text, lines });
+      const words = (Array.isArray(msg.words) ? msg.words : []).slice(0, 2500).filter((w) => w && typeof w.t === "string")
+        .map((w) => ({ t: w.t.slice(0, 60), x0: n(w.x0), y0: n(w.y0), x1: n(w.x1), y1: n(w.y1) }));
+      j.resolve({ text, lines, words });
     });
     if (msg.type === "error") finish((j) => j.reject(new Error(msg.message)));
   };

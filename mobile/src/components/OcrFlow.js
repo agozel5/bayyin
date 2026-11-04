@@ -77,7 +77,8 @@ async function prepare(src) {
     // Lignes avec leur position (proportions de l'image) : la carte de restaurant les surligne sur la photo
     const W = canvas.width, H = canvas.height;
     const lines = ((data && data.lines) || []).slice(0, 400).map((l) => ({ t: l.text, x0: l.bbox.x0 / W, y0: l.bbox.y0 / H, x1: l.bbox.x1 / W, y1: l.bbox.y1 / H, c: l.confidence }));
-    send({ type: "done", text: (data && data.text) || "", lines });
+    const words = ((data && data.words) || []).slice(0, 2500).map((w) => ({ t: w.text, x0: w.bbox.x0 / W, y0: w.bbox.y0 / H, x1: w.bbox.x1 / W, y1: w.bbox.y1 / H }));
+    send({ type: "done", text: (data && data.text) || "", lines, words });
     worker.terminate();
   } catch (e) {
     send({ type: "error", message: String((e && e.message) || e) });

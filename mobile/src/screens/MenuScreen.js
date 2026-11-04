@@ -11,7 +11,7 @@ import { t, tn } from "../i18n";
 import { haptic, ms } from "../motion";
 import { flagLabel } from "../view";
 import { getSettings } from "../storage";
-import { analyzeMenu } from "../../../public/lib/menu.js";
+import { analyzeMenu, linesFromWords } from "../../../public/lib/menu.js";
 
 const GROUP = { haram: "haram", mashbouh: "mashbouh", ok: "halal_probable" };
 const OCR_LANGS = { fr: "fra+eng", en: "eng+fra", tr: "tur+eng+fra", ar: "fra+eng" };
@@ -72,14 +72,17 @@ function MenuPhoto({ photo, dishes, filter, selected, onSelect, width }) {
       <Image source={{ uri: photo.uri }} style={{ width, height: h }} resizeMode="cover" accessible={false} />
       {dishes.map((d, i) => {
         if (!d.boxes || !d.boxes.length) return null;
+        const ub = unionBox(d.boxes);
+        if (ub.y1 - ub.y0 > 0.2 || ub.x1 - ub.x0 > 0.95) return null; // position douteuse : pas d'encadré trompeur
         const show = filter === "all" ? true : d.status === filter;
         if (!show && i !== selected) return null;
         const b = unionBox(d.boxes);
         const [fg] = STATUS_COLORS[GROUP[d.status]];
         const sel = i === selected;
         const quiet = d.status === "ok" && filter === "all" && !sel; // rien de signalé : simple soulignement
+        // rien de signalé : petite barre verte dans la marge (ne cache pas le texte voisin)
         const style = { position: "absolute", left: b.x0 * width, top: b.y0 * h, width: (b.x1 - b.x0) * width, height: (b.y1 - b.y0) * h,
-          borderRadius: 4, borderWidth: sel ? 3 : quiet ? 0 : 2, borderBottomWidth: sel ? 3 : 2, borderColor: fg, backgroundColor: quiet ? "transparent" : fg + (sel ? "55" : "38") };
+          borderRadius: 4, borderWidth: sel ? 3 : quiet ? 0 : 2, borderLeftWidth: sel ? 3 : quiet ? 4 : 2, borderColor: fg, backgroundColor: quiet ? "transparent" : fg + (sel ? "55" : "38") };
         return (
           <Pressable key={i} onPress={() => { haptic.tap(); onSelect(i); }} accessibilityRole="button" accessibilityLabel={`${d.title}, ${t(`menu.st.${d.status}`)}`} hitSlop={4} style={style}>
             {sel ? <Animated.View pointerEvents="none" style={{ position: "absolute", left: -3, right: -3, top: -3, bottom: -3, borderRadius: 6, borderWidth: 3, borderColor: "#fff", opacity: pulse }} /> : null}
@@ -152,7 +155,9 @@ export default function MenuScreen({ onClose }) {
       if (!raw || raw.replace(/[^\p{L}]/gu, "").length < 6) return setStep("empty");
       haptic.success();
       setText(raw);
-      setLines(typeof out === "string" || !out.lines.length ? null : out.lines);
+      // lignes refaites à partir des mots (colonnes séparées), sinon celles du lecteur
+      const ls = typeof out === "string" ? null : out.words && out.words.length ? linesFromWords(out.words) : out.lines;
+      setLines(ls && ls.length ? ls : null);
       setPhoto(img.width && img.height ? { uri: img.uri, width: img.width, height: img.height } : null);
       reset();
     } catch {

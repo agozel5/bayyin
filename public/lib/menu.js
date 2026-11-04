@@ -61,26 +61,81 @@ const DISHES = [
 const SECTIONS = /^(entrees?|starters?|plats?( principaux)?|mains?|desserts?|boissons?|drinks?|vins?|bieres?|cocktails?|aperitifs?|menu( du jour| enfant)?|formules?|pizzas?|pates|burgers?|salades?|sandwichs?|accompagnements?|sides?|fromages?|softs?|boissons chaudes|antipasti|primi|secondi|dolci|tapas|vorspeisen|hauptgerichte|nachspeisen|getranke)$/;
 
 // Puces de liste, telles que la lecture de photo les rend souvent (•, +, «, ¢, &, *…), avec un éventuel chiffre parasite devant
-const BULLET = /^\s*(?:\d{1,2}\s+)?(?:[•·+«»¢&*▪●◦○■□►▸–—-]\s*)+/;
+const BULLET = /^\s*(?:(?:\d{1,2}\s+)?[•·+«»¢&*▪●◦○■□►▸]\s*|[–—-]\s+)+/;
 const PRICE = /\d+(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)|\d+[.,]\d{2}\s*$|\d+(?:[.,]\d{1,2})?\s*[E€]\s*$/i;
 
 const NOTE = /^(servi chaud|servis? (froid|chaud)|prix nets?|service compris|tous (les|nos) (produits|plats|prix)|(\* ?)?ces .{0,20}plats sont|plat fait maison|allergenes?|tva)/;
 
 // Ligne de carte -> texte utile (sans prix, points de conduite ni puces)
+// Bruit de lecture devant le nom : signes, ou 1 à 3 capitales isolées (icône lue « SB | - », « GB »),
+// retirés seulement si un vrai mot (Majuscule + minuscule) suit
+function stripNoise(s) {
+  const m = s.match(/^(?:[^\p{L}«"(]+|\p{Lu}{1,3}(?=[\s|.\-]))+/u);
+  if (!m) return s;
+  const rest = s.slice(m[0].length);
+  return /^[«"(]?\p{Lu}\p{Ll}/u.test(rest) ? rest : s.replace(/^[^\p{L}«"(]+/u, "");
+}
 function clean(line) {
-  return String(line || "")
+  return stripNoise(String(line || ""))
     .replace(BULLET, "")
     .replace(/\d+[.,]\d{1,2}\s*(€|eur\b|euros?\b)?|\d+\s*(€|eur\b|euros?\b)|€\s*\d+([.,]\d{1,2})?|\d+\s*E\s*$/gi, " ")
     .replace(/[.…_·]{3,}[\w.]*|-{3,}/g, " ")
     // points de conduite mal lus (« cisssidccsssss… ») : mots trop longs ou aux lettres répétées
     .replace(/\S{22,}|\S*(\p{L})\1{3,}\S*/gu, " ")
-    // bruit de lecture devant le nom (icône lue « GB », « & », « ¢ »…)
-    .replace(/^(?:[^\p{L}«"(]+|\p{Lu}{1,3}\s+(?=\p{Lu}\p{Ll}))+/u, "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/[.,:;\s]+$/, "");
 }
 const letters = (s) => (s.match(/\p{L}/gu) || []).length;
+
+/**
+ * Mots lus avec leur position [{ t, x0, y0, x1, y1 }] -> lignes de la carte, colonne par colonne.
+ * Le lecteur réunit parfois deux colonnes sur une même ligne : ici, une ligne est coupée à la gouttière
+ * entre les colonnes, après un prix, et là où l'espace entre deux mots est trop grand.
+ */
+export function linesFromWords(words) {
+  const ws = (words || []).filter((w) => w && typeof w.t === "string" && w.t.trim() && w.x1 > w.x0 && w.y1 > w.y0);
+  if (!ws.length) return [];
+  const hs = ws.map((w) => w.y1 - w.y0).sort((a, b) => a - b);
+  const wh = hs[Math.floor(hs.length / 2)]; // hauteur habituelle d'un mot
+  // Gouttière : bande verticale (entre 25 % et 75 % de la largeur) que presque aucun mot ne traverse
+  const BINS = 100, cover = new Array(BINS).fill(0);
+  for (const w of ws) for (let b = Math.floor(w.x0 * BINS); b <= Math.min(BINS - 1, Math.floor(w.x1 * BINS)); b++) cover[b]++;
+  let split = null, best = 0;
+  for (let b = 25; b <= 75; b++) {
+    if (cover[b] > ws.length * 0.01) continue;
+    let e = b; while (e + 1 <= 75 && cover[e + 1] <= ws.length * 0.01) e++;
+    if (e - b + 1 > best) { best = e - b + 1; split = (b + e + 1) / 2 / BINS; }
+    b = e;
+  }
+  const col = (w) => (split != null && (w.x0 + w.x1) / 2 > split ? 1 : 0);
+  // Rangées : mots dont le milieu vertical est proche
+  const sorted = [...ws].sort((a, b) => (a.y0 + a.y1) - (b.y0 + b.y1));
+  const rows = [];
+  for (const w of sorted) {
+    const cy = (w.y0 + w.y1) / 2;
+    const r = rows.find((x) => x.col === col(w) && Math.abs(x.cy - cy) < wh * 0.55);
+    if (r) { r.ws.push(w); r.cy = (r.cy * (r.ws.length - 1) + cy) / r.ws.length; } else rows.push({ col: col(w), cy, ws: [w] });
+  }
+  const isPrice = (t) => /\d\s*€$|^€$|\d[.,]\d{2}$/.test(t);
+  const lines = [];
+  for (const r of rows) {
+    r.ws.sort((a, b) => a.x0 - b.x0);
+    let cur = null;
+    r.ws.forEach((w, i) => {
+      const prev = r.ws[i - 1];
+      const gap = prev ? w.x0 - prev.x1 : 0;
+      const cut = !cur || gap > wh * 2.4 || (prev && isPrice(prev.t) && gap > wh * 0.5);
+      if (cut) { cur = { words: [], col: r.col }; lines.push(cur); }
+      cur.words.push(w);
+    });
+  }
+  return lines.map((l) => ({
+    t: l.words.map((w) => w.t).join(" "), col: l.col,
+    x0: Math.min(...l.words.map((w) => w.x0)), y0: Math.min(...l.words.map((w) => w.y0)),
+    x1: Math.max(...l.words.map((w) => w.x1)), y1: Math.max(...l.words.map((w) => w.y1)),
+  })).sort((a, b) => (a.col - b.col) || (a.y0 - b.y0) || (a.x0 - b.x0));
+}
 
 /**
  * Découpe la carte en plats { title, desc, section, boxes }.
@@ -92,7 +147,7 @@ export function menuItems(input) {
     .map((r) => ({ ...r, t: r.t.replace(/\n+/g, " ") }))
     .filter((r) => letters(r.t) >= 3);
   const bulleted = rows.filter((r) => BULLET.test(r.t)).length >= 3; // carte à puces : chaque plat commence par une puce
-  const priced = rows.filter((r) => PRICE.test(r.t)).length >= Math.max(3, rows.length * 0.25); // carte avec prix
+  const priced = rows.filter((r) => PRICE.test(r.t)).length >= Math.max(3, rows.length * 0.15); // carte avec prix
   // hauteur habituelle d'une ligne de plat (lignes avec prix, sinon toutes)
   const hs = rows.filter((r) => r.box && (!priced || PRICE.test(r.t))).map((r) => r.box.y1 - r.box.y0).sort((a, b) => a - b);
   const mid = hs.length ? hs[Math.floor(hs.length / 2)] : 0;
@@ -117,12 +172,18 @@ export function menuItems(input) {
       || (big && line.split(/\s+/).length <= 8));
     if (header) { section = title.replace(/[.…:!]+$/, ""); prevPriced = false; continue; }
     const prev = items[items.length - 1];
-    const continues = prev && !bullet && ((bulleted && !price) || /^[a-zà-ÿ(,&]/.test(line) || /^(avec|et|servi|accompagn|sauce|garni|with|served|and)\b/i.test(line)
+    // avec les positions : une suite de plat est juste en dessous, dans la même colonne
+    const last = prev && prev.boxes.length ? prev.boxes[prev.boxes.length - 1] : null;
+    const near = !box || !last || ((box.col ?? 0) === (last.col ?? 0) && box.y0 - last.y1 < Math.max(h, mid) * 1.6 && box.y0 >= last.y0 && box.x0 < last.x1 && box.x1 > last.x0);
+    const continues = prev && !bullet && near && ((bulleted && !price) || /^[a-zà-ÿ(,&]/.test(line) || /^(avec|et|servi|accompagn|sauce|garni|with|served|and)\b/i.test(line)
       || (small && !price) || (priced && !price && prevPriced));
     if (continues) {
       prev.desc = prev.desc ? `${prev.desc} ${line}` : line;
       if (box) prev.boxes.push(box);
       if (price) prevPriced = true;
+    } else if (priced && !price && !bullet) {
+      // carte avec prix : une ligne isolée, sans prix ni puce, n'est pas un plat (légende, mention, bas de page)
+      prevPriced = false;
     } else {
       items.push({ title: line, desc: "", section, boxes: box ? [box] : [] });
       prevPriced = price;
