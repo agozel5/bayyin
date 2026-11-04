@@ -799,10 +799,12 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
           captureRef(cardRef, { format: "png", quality: 1, width: 1080, height: 1920, result: "tmpfile" }),
           new Promise((_, ko) => setTimeout(() => ko(new Error("capture")), 5000)),
         ]);
-        setCard(false);
         const file = String(uri).startsWith("file://") ? uri : `file://${uri}`;
-        if (await Sharing.isAvailableAsync()) { await Sharing.shareAsync(file, { mimeType: "image/png", UTI: "public.png", dialogTitle: nameOf(p) }); return; }
-        if (Platform.OS === "ios") { await Share.share({ url: file, message: text + link }); return; }
+        // iPhone : la feuille de partage du système (WhatsApp, Messages…) avec l'image et le texte.
+        // (avec expo-sharing, WhatsApp s'ouvrait puis se refermait aussitôt.)
+        if (Platform.OS === "ios") { await Share.share({ url: file, message: text + link }); setCard(false); return; }
+        if (await Sharing.isAvailableAsync()) { await Sharing.shareAsync(file, { mimeType: "image/png", dialogTitle: nameOf(p) }); setCard(false); return; }
+        setCard(false);
       } catch { setCard(false); }
     }
     Share.share({ message: text + link }).catch(() => {});
