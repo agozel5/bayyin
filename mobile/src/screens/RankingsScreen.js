@@ -1,5 +1,6 @@
 // Classements : les produits halal les mieux notés pour la santé, rayon par rayon (selon vos réglages).
 // Les listes sont préparées chaque semaine sur le site (data/rankings/<rayon>.json).
+import { Img, prefetchImages } from "../components/Img";
 import React, { useCallback, useEffect, useState } from "react";
 import SubStack from "../components/SubStack";
 import { View, Text, ScrollView, Pressable, Image } from "react-native";
@@ -13,7 +14,7 @@ import { getSettings } from "../storage";
 import { present } from "../core";
 import { nameOf, S, profileOf } from "../view";
 import { RANK_CATEGORIES, rankList, rankTab } from "../../../public/lib/rankings.js";
-import { rankIndexCached as rankIndex, rankProductsCached as rankProducts } from "../rankcache";
+import { rankIndexCached as rankIndex, rankProductsFast } from "../rankcache";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { mascot } from "../../../public/lib/mascot.js";
 import { haptic } from "../motion";
@@ -69,7 +70,13 @@ function CategoryList({ onPick, onBack }) {
 function Ranking({ cat, onBack, onOpen }) {
   const [raws, setRaws] = useState(null);
   const [certOnly, setCertOnly] = useState(false);
-  useEffect(() => { rankProducts(cat.id).then(setRaws).catch(() => setRaws(false)); }, [cat.id]);
+  // Rayon gardé sur le téléphone : affiché tout de suite, puis remplacé par la version du jour
+  useEffect(() => {
+    let live = true;
+    const show = (r) => { if (!live) return; setRaws(r); prefetchImages(r.map((x) => x.image_front_small_url || x.image_front_url)); };
+    rankProductsFast(cat.id, show).then(show).catch(() => live && setRaws((x) => x || false));
+    return () => { live = false; };
+  }, [cat.id]);
   const st = getSettings();
   const list = raws ? rankList(raws, {
     present: (raw) => present(raw, st),
@@ -99,7 +106,7 @@ function Ranking({ cat, onBack, onOpen }) {
                 <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: i < 3 ? MEDAL[i] : "transparent" }}>
                   <Text style={{ fontWeight: "800", fontSize: 14, color: i < 3 ? "#fff" : C.muted }}>{i + 1}</Text>
                 </View>
-                {p.image ? <Image source={{ uri: p.image }} resizeMode="contain" style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: "#fff" }} />
+                {p.image ? <Img uri={p.image} style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: "#fff" }} />
                   : <ArtTile xml={RANK_ART[cat.id]} size={52} radius={12} />}
                 <View style={{ flex: 1, gap: 3 }}>
                   <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: "700", color: C.fg, lineHeight: 19, textAlign: dir().ta }}>{nameOf(p)}</Text>

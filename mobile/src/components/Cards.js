@@ -1,4 +1,5 @@
 // Cartes produit, motif du bandeau et vignettes, au style de la version web.
+import { Img } from "./Img";
 import React from "react";
 import { View, Text, Pressable, Image } from "react-native";
 import { SvgXml } from "react-native-svg";
@@ -37,7 +38,7 @@ export function Thumb({ p, size = 56, radius = 14 }) {
   const art = artOf(p);
   const [, setFail] = React.useState(0);
   if (p.image && !broken.has(p.image))
-    return <Image source={{ uri: p.image }} accessible={false} resizeMode="contain" onError={() => { broken.add(p.image); setFail((n) => n + 1); }}
+    return <Img uri={p.image} onError={() => { broken.add(p.image); setFail((n) => n + 1); }}
       style={{ width: size, height: size, borderRadius: radius, backgroundColor: "#fff" }} />;
   return (
     <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: art ? C.artBg : C.tint, alignItems: "center", justifyContent: "center" }}>

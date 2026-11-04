@@ -26,7 +26,11 @@ const DISHES = [
   [/\bchou farci\b/, "chair à saucisse", false],
   [/\bhot.?dog\b/, "saucisse de porc", false],
   [/\bbratwurst\b|\bcurrywurst\b|\bweisswurst\b|\bschweinebraten\b|\bschnitzel wiener art\b/, "porc", false],
-  [/\bjamon\b|\bserrano\b|\biberico\b|\bprosciutto\b|\bmortadell[ea]\b|\bsalami\b|\bspeck\b/, "porc", true],
+  [/\bjamon\b|\bserrano\b|\bprosciutto\b|\bmortadell[ea]\b|\bsalami\b|\bspeck\b/, "porc", true],
+  // Charcuterie et viandes de porc espagnoles (bellota : porc ibérique nourri aux glands)
+  [/\blomo\b|\bchoric\w*|\bsalchich\w*|\bsobrasada\b|\bfuet\b|\bmorcilla\b|\bcochinillo\b|\bsecreto\b|\bpluma iberica\b|\bpresa iberica\b|\bpaleta\b|\bbellota\b|\btorreznos?\b|\bcochon\b|\bcarnitas\b|\bpulled pork\b/, "porc", true],
+  [/\bpata negra\b|\b(jambon|charcuterie|planche) iberique\b/, "porc", true],
+  [/\balbondigas\b|\bboulettes?\b|\bmeatballs?\b|\bpolpette\b/, "viande", true],
   [/\bpaella\b/, "chorizo, fruits de mer", false],
   // Alcool dans la cuisson ou la sauce
   [/\bbourguignon\b|\bcoq au vin\b|\bboeuf mode\b|\bdaube\b/, "vin rouge", true],
@@ -34,7 +38,9 @@ const DISHES = [
   [/\bfondue (savoyarde|au fromage)\b|\bfondue\b/, "vin blanc, kirsch", false],
   [/\brisotto\b/, "vin blanc", false],
   [/\bcarbonade\b|\bwelsh\b/, "bière", true],
-  [/\bsauce (au )?(vin|porto|madere|cognac|marsala)\b|\bau (porto|madere|cognac|calvados|whisky)\b/, "alcool", true],
+  [/\bsauce (au )?(vin|porto|madere|cognac|marsala)\b|\bau (porto|madere|cognac|calvados|whisky)\b|\b(d.)?oporto\b|\bal (vino|jerez)\b|\bau cidre\b|\ba la biere\b/, "alcool", true],
+  // Fromages affinés : présure animale (obligatoire pour plusieurs appellations : parmesan, manchego, comté…)
+  [/\bparmesan\b|\bparmigiano\b|\bgrana padano\b|\bpecorino\b|\bmanchego\b|\bcomte\b|\bgruyere\b|\bbeaufort\b|\broquefort\b|\bemmental\b/, "présure animale", false],
   [/\bsauce au poivre\b/, "cognac", false],
   [/\bbeurre blanc\b/, "vin blanc", false],
   [/\bflambee?s?\b/, "alcool", true],
@@ -54,31 +60,50 @@ const DISHES = [
 // Titres de rubriques (on les garde comme intertitres, ils ne sont pas analysés)
 const SECTIONS = /^(entrees?|starters?|plats?( principaux)?|mains?|desserts?|boissons?|drinks?|vins?|bieres?|cocktails?|aperitifs?|menu( du jour| enfant)?|formules?|pizzas?|pates|burgers?|salades?|sandwichs?|accompagnements?|sides?|fromages?|softs?|boissons chaudes|antipasti|primi|secondi|dolci|tapas|vorspeisen|hauptgerichte|nachspeisen|getranke)$/;
 
-// Ligne de carte -> texte utile (sans prix ni numéros)
+// Puces de liste, telles que la lecture de photo les rend souvent (•, +, «, ¢, &, *…), avec un éventuel chiffre parasite devant
+const BULLET = /^\s*(?:\d{1,2}\s+)?(?:[•·+«»¢&*▪●◦○■□►▸–—-]\s*)+/;
+const PRICE = /\d+(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)|\d+[.,]\d{2}\s*$/i;
+
+const NOTE = /^(servi chaud|servis? (froid|chaud)|prix nets?|service compris|tous (les|nos) (produits|plats|prix)|(\* ?)?ces .{0,20}plats sont|plat fait maison|allergenes?|tva)/;
+
+// Ligne de carte -> texte utile (sans prix, points de conduite ni puces)
 function clean(line) {
   return String(line || "")
+    .replace(BULLET, "")
     .replace(/\d+[.,]\d{1,2}\s*(€|eur\b|euros?\b)?|\d+\s*(€|eur\b|euros?\b)|€\s*\d+([.,]\d{1,2})?/gi, " ")
-    .replace(/\.{2,}|_{2,}|-{3,}/g, " ")
-    .replace(/^\s*[\d•*·\-–—]+[.)]?\s*/, "")
+    .replace(/[.…_·]{3,}[\w.]*|-{3,}/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/[.,:;\s]+$/, "");
 }
 const letters = (s) => (s.match(/\p{L}/gu) || []).length;
 
 /** Découpe le texte lu en plats { title, desc, section } (une description suit son plat). */
 export function menuItems(text) {
+  const lines = String(text || "").split(/\n+/).filter((l) => letters(l) >= 3);
+  // Carte à puces : chaque plat commence par une puce, les autres lignes complètent le plat précédent
+  const bulleted = lines.filter((l) => BULLET.test(l)).length >= 3;
   const items = [];
   let section = null;
-  for (const rawLine of String(text || "").split(/\n+/)) {
-    const line = clean(rawLine);
+  let prevCont = false;
+  for (const raw of lines) {
+    const bullet = BULLET.test(raw);
+    const price = PRICE.test(raw);
+    const line = clean(raw);
     if (letters(line) < 3) continue;
-    const n = normalize(line);
-    if (SECTIONS.test(n.replace(/[:.!]/g, "").trim())) { section = line.replace(/[:.]+$/, ""); continue; }
+    const n = normalize(line).replace(/[:.!]/g, "").trim();
+    // intertitre : mot de rubrique connu, ou ligne sans puce ni prix qui finit par « … »
+    // mentions de bas de carte (légende, prix nets…) : pas des plats
+    if (NOTE.test(n)) continue;
+    // intertitre : rubrique connue, ou ligne sans puce ni prix qui commence par une majuscule et finit par « … »
+    const title = line.replace(/^(?:[^\p{L}«"]+|\p{Ll}{1,2}\s+|\d\s+)+(?=[\p{Lu}«"])/u, ""); // bruit de lecture devant le titre (« ae Del mar »)
+    const header = !bullet && !price && (SECTIONS.test(n) || (/^[\p{Lu}«"]/u.test(title) && /(\.\.\.|…)\s*$/.test(raw.trim())) || (/^[^a-zà-ÿ]*$/.test(line) && line.split(/\s+/).length <= 4));
+    if (header) { section = title.replace(/[.…:]+$/, ""); prevCont = false; continue; }
     const prev = items[items.length - 1];
-    // suite d'une description : commence par une minuscule, « avec », « et », une virgule ou une parenthèse
-    const continues = prev && (/^[a-zà-ÿ(,&+]/.test(line) || /^(avec|et|servi|accompagn|sauce|garni|with|served|and)\b/i.test(line));
+    const continues = prev && !bullet && (bulleted || /^[a-zà-ÿ(,&]/.test(line) || /^(avec|et|servi|accompagn|sauce|garni|with|served|and)\b/i.test(line));
     if (continues) prev.desc = prev.desc ? `${prev.desc} ${line}` : line;
     else items.push({ title: line, desc: "", section });
+    prevCont = continues;
   }
   return items.slice(0, 80);
 }

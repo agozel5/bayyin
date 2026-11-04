@@ -1,4 +1,5 @@
 // Briques d'interface réutilisées par tous les écrans.
+import { Img } from "./Img";
 import React, { useEffect, useRef } from "react";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Image, Animated } from "react-native";
 import Icon from "./Icon";
@@ -112,7 +113,7 @@ export function ProductRow({ p, onPress, fav = false, when = "" }) {
       accessibilityLabel={label}
       style={({ pressed }) => [styles.row, { borderBottomColor: C.line, flexDirection: dir().row, backgroundColor: pressed ? C.tint : "transparent" }]}
     >
-      {p.image ? <Image source={{ uri: p.image }} style={[styles.rowImg, { borderColor: C.line }]} resizeMode="contain" accessible={false} /> : (
+      {p.image ? <Img uri={p.image} style={[styles.rowImg, { borderColor: C.line }]} /> : (
         <View style={[styles.rowImg, { backgroundColor: C.tint, borderColor: C.tint, alignItems: "center", justifyContent: "center" }]}>
           <Icon name={p.local ? "doc" : kind === "medicine" ? "pill" : kind === "beauty" ? "drop" : "box"} color={C.faint} size={22} />
         </View>

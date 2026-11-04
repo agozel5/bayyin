@@ -1,4 +1,5 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
+import { Img, prefetchImages } from "./Img";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Image, Linking, Share, Animated, Easing, Platform } from "react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -119,7 +120,7 @@ function Top({ p }) {
   return (
     <Row gap={14} style={{ alignItems: "flex-start" }}>
       {p.image ? (
-        <Image source={{ uri: p.image }} style={{ width: 84, height: 84, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: "#fff" }} resizeMode="contain" accessible={false} />
+        <Img uri={p.image} style={{ width: 84, height: 84, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: "#fff" }} />
       ) : (
         <View style={{ width: 84, height: 84, borderRadius: 16, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}>
           <Icon name={p.local ? "doc" : "box"} size={30} color={C.faint} />
@@ -464,7 +465,7 @@ function AltCard({ a, onOpen }) {
   return (
     <Pressable onPress={() => onOpen(a.code)} style={({ pressed }) => ({ width: 150, borderRadius: R.lg, padding: 12, gap: 6, backgroundColor: pressed ? C.tint2 : C.tint })}>
       {a.image ? (
-        <Image source={{ uri: a.image }} style={{ width: "100%", height: 96, borderRadius: 12, backgroundColor: "#fff" }} resizeMode="contain" />
+        <Img uri={a.image} style={{ width: "100%", height: 96, borderRadius: 12, backgroundColor: "#fff" }} />
       ) : (
         <View style={{ width: "100%", height: 96, borderRadius: 12, backgroundColor: "#fff" }} />
       )}
@@ -482,8 +483,9 @@ function AlternativesSection({ p, onOpen }) {
     let alive = true;
     setState({ loading: true, list: [], best: false, error: false });
     let fast = null;
-    fetchAlternatives(p, (list) => { fast = list; alive && setState({ loading: false, list, best: !!list.best, error: false }); })
-      .then((list) => alive && (list.length || !fast) && setState({ loading: false, list, best: !!list.best, error: false }))
+    const pics = (list) => prefetchImages(list.map((a) => a.image)); // photos téléchargées pendant l'affichage
+    fetchAlternatives(p, (list) => { fast = list; pics(list); alive && setState({ loading: false, list, best: !!list.best, error: false }); })
+      .then((list) => { pics(list); return alive && (list.length || !fast) && setState({ loading: false, list, best: !!list.best, error: false }); })
       .catch(() => alive && !fast && setState({ loading: false, list: [], best: false, error: true }));
     return () => { alive = false; };
   }, [p.code]);
@@ -843,7 +845,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
           <FadeIn distance={0}>
             <Pressable onPress={() => scrollRef.current && scrollRef.current.scrollTo({ y: 0, animated: true })} accessibilityRole="button" accessibilityLabel={nameOf(p)} hitSlop={6}
               style={{ width: 36, height: 36, borderRadius: 9, overflow: "hidden", backgroundColor: "#fff", marginHorizontal: 2 }}>
-              <Image source={{ uri: p.image }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+              <Img uri={p.image} style={{ width: 36, height: 36 }} transition={0} />
             </Pressable>
           </FadeIn>
         ) : p && onCompare && kindOf(p) !== "medicine" ? (

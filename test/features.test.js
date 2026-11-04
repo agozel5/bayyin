@@ -72,3 +72,18 @@ test("recette : seuls les vrais changements comptent", () => {
   assert.ok(!worse("mashbouh", "halal_probable"));
   assert.equal(diffRecipe(a, { ingredients_text_fr: "" }), null);
 });
+
+test("carte réelle lue par photo (tapas espagnoles) : puces, intertitres, charcuterie et alcool", async () => {
+  const { readFileSync } = await import("node:fs");
+  const text = readFileSync(new URL("./fixtures/menu-el-sol.txt", import.meta.url), "utf8");
+  const { dishes } = analyzeMenu(text);
+  const by = (re) => dishes.find((d) => re.test(d.title));
+  assert.ok(!dishes.some((d) => /Del mar|Servi chaud|Nos «raciones»/.test(d.title)), "intertitres et légendes ne sont pas des plats");
+  assert.equal(by(/Lomo Bellota/).status, "haram");
+  assert.equal(by(/Choricitos/).status, "haram");
+  assert.equal(by(/Sorpresa/).status, "haram"); // cochon et réduction de porto
+  assert.equal(by(/Albondigas/).status, "mashbouh");
+  assert.equal(by(/morue/).status, "ok");
+  assert.equal(by(/Patatas bravas/).status, "ok");
+  assert.equal(by(/Racién de jambon/).section, "Nos «raciones» ibériques EL SOL");
+});
