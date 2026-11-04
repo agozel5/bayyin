@@ -1,6 +1,8 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
 export const EXTRA = {
   fr: {
+    "travel.detected_short": "Langue reconnue",
+    "travel.auto_p": "Bayyin reconnaît la langue tout seul.",
     "photo.choose_t": "Que voulez-vous photographier ?",
     "photo.ing_t": "Une liste d'ingrédients",
     "photo.ing_p": "Produit sans code-barres ou fiche incomplète.",
@@ -159,6 +161,8 @@ export const EXTRA = {
     "widget.scan": "Scanner",
   },
   en: {
+    "travel.detected_short": "Detected language",
+    "travel.auto_p": "Bayyin recognises the language by itself.",
     "photo.choose_t": "What do you want to photograph?",
     "photo.ing_t": "An ingredient list",
     "photo.ing_p": "A product without a barcode or with an incomplete page.",
@@ -317,6 +321,8 @@ export const EXTRA = {
     "widget.scan": "Scan",
   },
   ar: {
+    "travel.detected_short": "اللغة المكتشفة",
+    "travel.auto_p": "يتعرّف بيّن على اللغة تلقائيًا.",
     "photo.choose_t": "ماذا تريد أن تصوّر؟",
     "photo.ing_t": "قائمة مكونات",
     "photo.ing_p": "منتج بلا رمز شريطي أو بصفحة ناقصة.",
@@ -475,6 +481,8 @@ export const EXTRA = {
     "widget.scan": "مسح",
   },
   tr: {
+    "travel.detected_short": "Algılanan dil",
+    "travel.auto_p": "Bayyin dili kendisi tanır.",
     "photo.choose_t": "Neyin fotoğrafını çekmek istiyorsunuz?",
     "photo.ing_t": "Bir içindekiler listesi",
     "photo.ing_p": "Barkodsuz veya sayfası eksik bir ürün.",

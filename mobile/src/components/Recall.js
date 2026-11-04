@@ -8,6 +8,7 @@ import { t, tn } from "../i18n";
 import { haptic } from "../motion";
 import { recallsFor, isActive } from "../../../public/lib/recalls.js";
 import { cap, longDate } from "../recalls";
+import { safeUrl } from "./SafeWebView";
 
 export default function RecallBox({ p }) {
   const [list, setList] = useState([]);
@@ -47,8 +48,8 @@ export default function RecallBox({ p }) {
           </View>
         ))}
         <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("recall.lot")}</Muted>
-        {f.u ? (
-          <Pressable onPress={() => Linking.openURL(f.u).catch(() => {})} accessibilityRole="link">
+        {safeUrl(f.u) ? (
+          <Pressable onPress={() => Linking.openURL(safeUrl(f.u)).catch(() => {})} accessibilityRole="link">
             <Text style={{ color: fg, fontWeight: "800", fontSize: 14.5, textAlign: dir().ta }}>{t("recall.link")} ↗</Text>
           </Pressable>
         ) : null}

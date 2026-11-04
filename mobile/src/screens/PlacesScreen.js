@@ -13,7 +13,8 @@ import { fetchPlaces, livePlaces, geocode, directionsUrl, osmUrl, RADII, CATEGOR
 import { PLACE_ART } from "../../../public/lib/rank-art.js";
 import { mascot } from "../../../public/lib/mascot.js";
 
-const open = (url) => Linking.openURL(url).catch(() => {});
+// Adresses venues d'OpenStreetMap (modifiable par tous) : seulement le web, le téléphone, l'e-mail et les plans
+const open = (url) => { if (/^(https?:\/\/|tel:|mailto:|geo:|maps:)/i.test(String(url || "").trim())) Linking.openURL(url).catch(() => {}); };
 const fmtDistance = (m) => (m < 950 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${(m / 1000).toLocaleString(locale(), { maximumFractionDigits: m < 9950 ? 1 : 0 })} km`);
 
 function SmallBtn({ text, onPress, primary }) {

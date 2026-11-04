@@ -108,6 +108,8 @@ def run(lang, scheme):
         ev("window.__bayyinPhotoMenu && window.__bayyinPhotoMenu(true)"); p.wait_for_timeout(900); shot("photo-menu")
         ev("window.__bayyinPhotoMenu && window.__bayyinPhotoMenu(false)"); p.wait_for_timeout(600)
         ev("window.__bayyin.openTool('travel')"); p.wait_for_timeout(900); shot("travel-intro")
+        ev("window.__bayyinTravelLang && window.__bayyinTravelLang('before')"); p.wait_for_timeout(900); shot("travel-lang")
+        ev("window.__bayyinTravelLang && window.__bayyinTravelLang(null)"); p.wait_for_timeout(600)
         ev("window.__bayyinTravel && window.__bayyinTravel('Zutaten: Zucker, Glukosesirup, Schweinegelatine, Säuerungsmittel: Citronensäure, Weinessig, Aroma, Farbstoff: echtes Karmin. Kann Spuren von Milch und Haselnüssen enthalten.')"); p.wait_for_timeout(1200); shot("travel")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyin.openTool('menu')"); p.wait_for_timeout(900); shot("menu-intro")

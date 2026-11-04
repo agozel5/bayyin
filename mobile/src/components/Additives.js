@@ -1,5 +1,6 @@
 // Additifs : nom, fonction, picto d'origine, statut halal (selon le réglage) et risque santé,
 // avec le détail qui s'ouvre au toucher. Même présentation que la version web (onglet Additifs et Composition).
+import { safeUrl } from "./SafeWebView";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Linking, Animated, Easing } from "react-native";
 import { Art, Glyph } from "./Art";
@@ -129,7 +130,7 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
             <RiskScale level={r.health.level} />
             <Txt style={{ fontSize: 15, lineHeight: 21 }}>{r.health.level ? r.health.reason : t("add.health_ok")}</Txt>
             {r.it.a ? <Muted style={{ fontSize: 13 }}>{t("add.anses")}</Muted> : null}
-            {r.it.u ? <Text onPress={() => Linking.openURL(r.it.u).catch(() => {})} style={{ color: C.brand, fontWeight: "700", fontSize: 13.5, marginTop: 2, textAlign: dir().ta }}>{t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) })} ↗</Text> : null}
+            {safeUrl(r.it.u) ? <Text onPress={() => Linking.openURL(safeUrl(r.it.u)).catch(() => {})} style={{ color: C.brand, fontWeight: "700", fontSize: 13.5, marginTop: 2, textAlign: dir().ta }}>{t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) })} ↗</Text> : null}
           </Field>
         </FadeIn>
       ) : null}

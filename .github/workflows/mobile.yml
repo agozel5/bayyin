@@ -57,7 +57,11 @@ jobs:
         env:
           CI_TIMEOUT: 100m
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.workers.max=4 -Dkotlin.daemon.jvm.options=-Xmx2g
-        run: ../scripts/ci-run.sh "Gradle assembleRelease" ./gradlew assembleRelease --no-daemon --console=plain -PreactNativeArchitectures=${{ inputs.abis || 'arm64-v8a' }}
+          ABIS: ${{ inputs.abis || 'arm64-v8a' }}
+        # Architectures : variable vérifiée (lettres, chiffres, tirets, virgules), jamais collée telle quelle
+        run: |
+          [[ "$ABIS" =~ ^[a-z0-9_,-]+$ ]] || { echo "Architectures invalides"; exit 1; }
+          ../scripts/ci-run.sh "Gradle assembleRelease" ./gradlew assembleRelease --no-daemon --console=plain -PreactNativeArchitectures="$ABIS"
       - name: Renommer l'APK
         run: cp android/app/build/outputs/apk/release/app-release.apk ../Bayyin.apk
       - uses: actions/upload-artifact@v4

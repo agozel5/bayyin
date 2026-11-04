@@ -1,12 +1,11 @@
 // Mode voyage : photo de la liste d'ingrédients d'un produit acheté à l'étranger. Le texte est lu sur
 // le téléphone, sa langue reconnue, les mots importants traduits (porc, gélatine, alcool, présure,
 // allergènes…), puis analysé avec les mêmes règles qu'en France.
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { Glyph } from "../components/Art";
-import { Chip } from "../components/Controls";
-import { ToolPage, ToolIntro, ToolBtn, Reading, pickImage, useTextReader, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
+import { ToolPage, ToolIntro, ToolBtn, Reading, pickImage, useTextReader, ChoiceSheet, SettingLine, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
 import { C, R, dir, lift, STATUS_COLORS, SEV_COLORS } from "../theme";
 import { t } from "../i18n";
 import { haptic } from "../motion";
@@ -32,8 +31,12 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
   const [shown, setShown] = useState(null); // langue retenue pour la traduction
   const [editing, setEditing] = useState(false);
   const [full, setFull] = useState(false);
+  const [picker, setPicker] = useState(null); // choix de la langue : "before" (avant la photo) ou "after" (correction)
+  const lastPicker = useRef("before"); // garde la liste affichée pendant la fermeture de la feuille
+  if (picker) lastPicker.current = picker;
+  const pk = picker || lastPicker.current;
   const reader = useTextReader();
-  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinTravel = (txt, l) => { setText(txt); setShown(l || detectLang(txt)); setEditing(false); setStep("result"); }; // captures automatiques (web)
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinTravelLang = (k) => setPicker(k); window.__bayyinTravel = (txt, l) => { setText(txt); setShown(l || detectLang(txt)); setEditing(false); setStep("result"); }; // captures automatiques (web)
 
   const go = async (source) => {
     let img;
@@ -76,6 +79,7 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
         <>
           <ToolIntro color={TOOL_COLORS.travel} paths={TOOL_ICONS.travel} title={t("travel.intro_t")} text={t("travel.intro_p")}
             points={[t("travel.pt1"), t("travel.pt2"), t("travel.pt3")]}>
+            <SettingLine label={t("travel.lang_label")} value={lang === "auto" ? t("travel.lang.auto") : `${FLAG[lang]} ${t(`travel.lang.${lang}`)}`} onPress={() => setPicker("before")} />
             <ToolBtn text={t("travel.take")} paths={TOOL_ICONS.camera} onPress={() => go("camera")} />
             <ToolBtn soft text={t("tool.gallery")} paths={TOOL_ICONS.gallery} onPress={() => go("library")} />
           </ToolIntro>
@@ -86,13 +90,6 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
               </Txt>
             </View>
           ) : null}
-          <View style={{ gap: 8 }}>
-            <Muted style={{ fontSize: 13.5, fontWeight: "700" }}>{t("travel.lang_label")}</Muted>
-            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-              <Chip text={t("travel.lang.auto")} on={lang === "auto"} onPress={() => setLang("auto")} />
-              {TRAVEL_LANGS.map((l) => <Chip key={l} text={`${FLAG[l]} ${t(`travel.lang.${l}`)}`} on={lang === l} onPress={() => setLang(l)} />)}
-            </View>
-          </View>
         </>
       ) : null}
 
@@ -101,12 +98,7 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
       {step === "result" && res ? (
         <FadeIn style={{ gap: 16 }}>
           {/* Langue reconnue : modifiable */}
-          <View style={{ gap: 8 }}>
-            <Muted style={{ fontSize: 13.5, fontWeight: "700" }}>{t("travel.detected")}</Muted>
-            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-              {TRAVEL_LANGS.map((l) => <Chip key={l} text={`${FLAG[l]} ${t(`travel.lang.${l}`)}`} on={res.lang === l} onPress={() => setShown(l)} />)}
-            </View>
-          </View>
+          <SettingLine label={t("travel.detected_short")} value={`${FLAG[res.lang]} ${t(`travel.lang.${res.lang}`)}`} onPress={() => setPicker("after")} />
 
           {/* Verdict */}
           {(() => {
@@ -172,6 +164,10 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
         </FadeIn>
       ) : null}
       {reader.element}
+      <ChoiceSheet visible={!!picker} onClose={() => setPicker(null)} title={t("travel.lang_label")}
+        selected={pk === "after" ? (res && res.lang) : lang}
+        items={[...(pk === "after" ? [] : [{ id: "auto", emoji: "🌐", title: t("travel.lang.auto"), sub: t("travel.auto_p") }]),
+          ...TRAVEL_LANGS.map((l) => ({ id: l, emoji: FLAG[l], title: t(`travel.lang.${l}`) }))].map((it) => ({ ...it, onPress: () => (pk === "after" ? setShown(it.id) : setLang(it.id)) }))} />
     </ToolPage>
   );
 }

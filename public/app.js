@@ -6,7 +6,7 @@ import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, 
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-11-04-1";
+const APP_BUILD = "2026-11-04-2";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -143,6 +143,9 @@ const statusPill = (st) => `<span class="pill s-${st}"><span class="dot"></span>
 // Cosmétiques : la note est recalculée quand la base CosIng arrive (chargée après l'ouverture de l'app)
 // Aliments : une note calculée avec une ancienne méthode est recalculée (si la fiche gardée le permet)
 const healthStale = (p) => p && kindOf(p) === "food" && !p.local && p.health && p.health.v !== HEALTH_VERSION;
+// Lien venu de données extérieures : seulement une adresse web (jamais « javascript: » ni « data: »)
+const safeHref = (u) => (/^https?:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "");
+
 function healthOf(p) {
   if (healthStale(p) && p.raw && p.raw.nutriments) p.health = analyzeHealth(p.raw);
   if (p && p.raw && kindOf(p) === "beauty" && cosmeticDbVersion() && (!p.health || p.health.dbVersion !== cosmeticDbVersion())) {
@@ -1364,7 +1367,7 @@ function recallHtml(list) {
     <p class="recall-name">${esc(cap(f.n))}${f.b ? ` · ${esc(cap(f.b))}` : ""}</p>
     <dl>${row("recall.motif", f.m)}${row("recall.risk", f.r)}${row("recall.todo", f.a)}</dl>
     <p class="recall-lot">${t("recall.lot")}</p>
-    ${f.u ? `<a class="recall-link" href="${esc(f.u)}" target="_blank" rel="noopener">${t("recall.link")} ↗</a>` : ""}
+    ${safeHref(f.u) ? `<a class="recall-link" href="${esc(safeHref(f.u))}" target="_blank" rel="noopener">${t("recall.link")} ↗</a>` : ""}
     ${list.length > 1 ? `<p class="recall-more">${esc(tn("recall.more", list.length - 1))}</p>` : ""}
   </section>`;
 }
@@ -1384,7 +1387,7 @@ async function loadCertCheck(p) {
   }
   const date = r.updated ? longDate(r.updated) : "";
   const vars = { org: c.organisme, date, match: r.match ? `\u2066${r.match}\u2069` : "" }; // isolé : lisible aussi en arabe
-  const link = r.url ? ` <a href="${esc(r.url)}" target="_blank" rel="noopener">${t("certv.list", { org: c.organisme })} ↗</a>` : "";
+  const link = safeHref(r.url) ? ` <a href="${esc(safeHref(r.url))}" target="_blank" rel="noopener">${t("certv.list", { org: c.organisme })} ↗</a>` : "";
   const state = r.status === "stamp" ? "verified" : r.status === "brand" ? "listed" : "missing";
   card.dataset.state = state;
   $("certBadge").innerHTML = `${state === "missing" ? "" : svg(I.check)}${esc(t(`certv.badge.${state}`))}`;
@@ -2997,7 +3000,7 @@ const aeRow = (r) => {
         ${r.halal.topic ? `<span class="add-setting">${esc(t("add.your_setting", { d: t(`decision.${prefs().topics[r.halal.topic]}`).toLowerCase() }))} · <a href="#settings" data-goto-settings>${t("detail.change_setting")}</a></span>` : ""}</dd></div>
       <div><dt>${t("add.e_health")}</dt><dd>${riskScale(r.health.level || "none")}${r.health.level ? esc(r.health.reason) : esc(t("add.health_ok"))}
         ${r.it.a ? `<span class="add-setting">${t("add.anses")}</span>` : ""}
-        ${r.it.u ? `<a class="ae-src" href="${esc(r.it.u)}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
+        ${safeHref(r.it.u) ? `<a class="ae-src" href="${esc(safeHref(r.it.u))}" target="_blank" rel="noopener">${esc(t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) }))} ↗</a>` : ""}</dd></div>
       ${r.mine ? `<p class="ae-mine">${esc(tn("add.in_mine", r.mine))}</p>` : ""}
     </dl>
   </details>`;
@@ -4196,8 +4199,13 @@ function loadLeaflet() {
     const css = document.createElement("link");
     css.rel = "stylesheet";
     css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
+    // Intégrité des sous-ressources : le fichier est refusé s'il a été modifié sur le serveur du CDN
+    css.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+    css.crossOrigin = "anonymous";
     document.head.appendChild(css);
     const js = document.createElement("script");
+    js.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo= sha256-hdRVtFIkFfa63EKg59F8kZ0QA0fWuJWL0Nxzj97NbVA=";
+    js.crossOrigin = "anonymous";
     js.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
     js.onload = () => resolve(window.L);
     js.onerror = () => { leafletReady = null; reject(new Error("leaflet")); };

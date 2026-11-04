@@ -53,7 +53,8 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
+      "allowBackup": false
     },
     "plugins": [
       [

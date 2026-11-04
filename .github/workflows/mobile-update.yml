@@ -66,4 +66,8 @@ jobs:
             git pull --rebase origin main && git push origin HEAD:main
           fi
       - name: Publier la mise à jour
-        run: npx --yes eas-cli@latest update --channel "${{ inputs.channel }}" --message "${{ inputs.message }}" --non-interactive
+        # Les champs saisis passent par des variables (jamais collés dans la commande : pas d'injection)
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          MESSAGE: ${{ inputs.message }}
+        run: npx --yes eas-cli@latest update --channel "$CHANNEL" --message "$MESSAGE" --non-interactive

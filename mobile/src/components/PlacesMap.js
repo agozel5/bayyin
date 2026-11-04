@@ -1,7 +1,7 @@
 // Carte OpenStreetMap (Leaflet) dans une WebView : aucune clé de service nécessaire.
 import React, { useMemo, useRef, useEffect } from "react";
 import { View } from "react-native";
-import { WebView } from "react-native-webview";
+import SafeWebView, { safeJson, PAGE_BASE } from "./SafeWebView";
 import { C, R, isDark } from "../theme";
 
 // Mêmes épingles que le site : couleur selon le halal, pictogramme selon le type de commerce
@@ -13,8 +13,11 @@ const ICON = {
   bakery: '<path d="M4 15c0-4.4 3.6-8 8-8s8 3.6 8 8v2H4z"/><path d="M9 9.5l1 5M15 9.5l-1 5M12 8v6.5"/>',
   other: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
 };
+// Empreintes de Leaflet 1.9.4 : le fichier est refusé s'il a été modifié sur le serveur (intégrité des sous-ressources)
+export const LEAFLET_JS_SRI = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo= sha256-hdRVtFIkFfa63EKg59F8kZ0QA0fWuJWL0Nxzj97NbVA=";
+export const LEAFLET_CSS_SRI = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
 const html = (center, places, dark) => `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="${LEAFLET_CSS_SRI}" crossorigin="anonymous">
 <style>html,body,#m{margin:0;height:100%;background:${dark ? "#1B231E" : "#E8EEE9"}}
 .pin{width:34px;height:34px;box-sizing:border-box;border-radius:50% 50% 50% 6px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;color:#fff;border:2.5px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);transition:transform .2s}
 .pin svg{width:17px;height:17px;transform:rotate(45deg);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -22,9 +25,9 @@ const html = (center, places, dark) => `<!doctype html><html><head><meta name="v
 .me{width:18px;height:18px;box-sizing:border-box;border-radius:50%;background:#2F7BF5;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,123,245,.25)}
 .leaflet-control-attribution{font-size:10px}
 ${dark ? ".leaflet-tile-pane{filter:brightness(.6) invert(1) contrast(3) hue-rotate(200deg) saturate(.3) brightness(.7)}.leaflet-bar a{background:#1B241F;color:#E8EEEA;border-color:#28332D}" : ""}</style></head><body><div id="m"></div>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="${LEAFLET_JS_SRI}" crossorigin="anonymous"></script>
 <script>
-const C=${JSON.stringify(center)},P=${JSON.stringify(places)};
+const C=${safeJson(center)},P=${safeJson(places)};
 const send=(o)=>window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify(o));
 const m=L.map("m",{zoomControl:false}).setView([C.lat,C.lon],14);
 L.control.zoom({position:"bottomright"}).addTo(m);
@@ -45,12 +48,12 @@ export default function PlacesMap({ center, places, selected, onSelect, height =
   const doc = useMemo(() => html(center, places.slice(0, 120).map((p) => ({ id: p.id, lat: p.lat, lon: p.lon, n: p.name || "", c: PIN()[p.halal] || PIN().yes, i: ICON[p.cat] || ICON.other })), isDark()),
     [center.lat, center.lon, places.map((p) => p.id).join(","), isDark()]);
   useEffect(() => {
-    if (selected && ref.current && ref.current.injectJavaScript) ref.current.injectJavaScript(`window.focusPlace&&window.focusPlace(${JSON.stringify(selected)});true;`);
+    if (selected && ref.current && ref.current.injectJavaScript) ref.current.injectJavaScript(`window.focusPlace&&window.focusPlace(${safeJson(String(selected))});true;`);
   }, [selected]);
   return (
     <View style={{ height, borderRadius: R.lg, overflow: "hidden", backgroundColor: C.tint }}>
-      <WebView ref={ref} source={{ html: doc, baseUrl: "https://agozel5.github.io/bayyin/" }} originWhitelist={["*"]} javaScriptEnabled style={{ flex: 1 }}
-        onMessage={(e) => { try { const m = JSON.parse(e.nativeEvent.data); if (m.id) onSelect && onSelect(m.id); } catch { /* message inconnu */ } }} />
+      <SafeWebView ref={ref} source={{ html: doc, baseUrl: PAGE_BASE }} style={{ flex: 1 }}
+        onMessage={(e) => { try { const m = JSON.parse(e.nativeEvent.data); if (m && typeof m.id === "string" && places.some((p) => p.id === m.id)) onSelect && onSelect(m.id); } catch { /* message inconnu */ } }} />
     </View>
   );
 }

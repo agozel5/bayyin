@@ -3,7 +3,7 @@
 // (même moteur et même prétraitement que la version web).
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from "react-native";
-import { WebView } from "react-native-webview";
+import SafeWebView, { safeJson, PAGE_BASE } from "./SafeWebView";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Art, Glyph } from "./Art";
@@ -69,8 +69,8 @@ async function prepare(src) {
 (async () => {
   try {
     if (!window.Tesseract) throw new Error("tesseract");
-    const canvas = await prepare(${JSON.stringify(img)});
-    const worker = await Tesseract.createWorker(${JSON.stringify(langs)}, 1, {
+    const canvas = await prepare(${safeJson(img)});
+    const worker = await Tesseract.createWorker(${safeJson(langs)}, 1, {
       logger: (m) => { if (m && m.status === "recognizing text") send({ type: "progress", n: Math.round((m.progress || 0) * 100) }); },
     });
     const { data } = await worker.recognize(canvas);
@@ -125,7 +125,9 @@ export default function OcrFlow({ code, photo, onDone, onClose }) {
   const readPhoto = () => {
     setProgress(0);
     setStep("reading");
-    setHtml(ocrHtml(String(photo).replace(/\.(100|200|400)\.jpg$/, ".full.jpg"), OCR_LANGS[getLang()] || OCR_LANGS.fr));
+    const url = String(photo).replace(/\.(100|200|400)\.jpg$/, ".full.jpg");
+    if (!/^https:\/\/[a-z.]*open(food|beauty)facts\.org\//.test(url)) return setStep("error"); // seulement les photos d'Open Food Facts
+    setHtml(ocrHtml(url, OCR_LANGS[getLang()] || OCR_LANGS.fr));
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setStep((s) => (s === "reading" ? "error" : s)), 120000);
   };
@@ -141,11 +143,11 @@ export default function OcrFlow({ code, photo, onDone, onClose }) {
     } catch {
       return;
     }
-    if (msg.type === "progress") setProgress(msg.n);
+    if (msg.type === "progress") setProgress(Math.max(0, Math.min(100, Number(msg.n) || 0)));
     if (msg.type === "done") {
       clearTimeout(timer.current);
       setHtml(null);
-      const clean = cleanOcrText(msg.text);
+      const clean = cleanOcrText(String(msg.text || "").slice(0, 20000));
       if (!clean || clean.replace(/[^\p{L}]/gu, "").length < 6) return setStep("empty");
       setText(clean);
       setStep("review");
@@ -234,10 +236,8 @@ export default function OcrFlow({ code, photo, onDone, onClose }) {
 
       {html ? (
         <View style={{ position: "absolute", width: 1, height: 1, opacity: 0, left: 0, bottom: 0 }} pointerEvents="none">
-          <WebView
-            source={{ html, baseUrl: "https://agozel5.github.io/bayyin/" }}
-            originWhitelist={["*"]}
-            javaScriptEnabled
+          <SafeWebView
+            source={{ html, baseUrl: PAGE_BASE }}
             onMessage={onMessage}
             onError={() => setStep("error")}
           />

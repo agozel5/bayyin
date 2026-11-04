@@ -2,7 +2,7 @@
 // en-tête avec retour, carte d'accueil illustrée, choix de la photo, lecture du texte.
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Platform, Modal, Animated, Easing } from "react-native";
-import { WebView } from "react-native-webview";
+import SafeWebView, { PAGE_BASE } from "./SafeWebView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tile, Glyph } from "./Art";
 import { Txt, Muted } from "./ui";
@@ -104,13 +104,13 @@ export function useTextReader() {
   const onMessage = (e) => {
     let msg;
     try { msg = JSON.parse(e.nativeEvent.data); } catch { return; }
-    if (msg.type === "progress") setProgress(msg.n);
-    if (msg.type === "done") finish((j) => j.resolve(msg.text || ""));
+    if (msg.type === "progress") setProgress(Math.max(0, Math.min(100, Number(msg.n) || 0)));
+    if (msg.type === "done") finish((j) => j.resolve(String(msg.text || "").slice(0, 20000)));
     if (msg.type === "error") finish((j) => j.reject(new Error(msg.message)));
   };
   const element = html && Platform.OS !== "web" ? (
     <View style={{ position: "absolute", width: 1, height: 1, opacity: 0, left: 0, bottom: 0 }} pointerEvents="none">
-      <WebView source={{ html, baseUrl: "https://agozel5.github.io/bayyin/" }} originWhitelist={["*"]} javaScriptEnabled onMessage={onMessage}
+      <SafeWebView source={{ html, baseUrl: PAGE_BASE }} onMessage={onMessage}
         onError={() => finish((j) => j.reject(new Error("webview")))} />
     </View>
   ) : null;
@@ -142,7 +142,7 @@ export const TOOL_ICONS = {
 export const TOOL_COLORS = { travel: "#2F8FCF", menu: "#E46A3C", ingredients: "#1A9C68" };
 
 /** Feuille de choix qui monte du bas de l'écran (ex. : que voulez-vous photographier ?) */
-export function ChoiceSheet({ visible, title, items, onClose }) {
+export function ChoiceSheet({ visible, title, items, onClose, selected }) {
   const insets = useSafeAreaInsets();
   const y = useRef(new Animated.Value(1)).current;
   const [shown, setShown] = useState(visible);
@@ -162,23 +162,38 @@ export function ChoiceSheet({ visible, title, items, onClose }) {
         <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("sheet.back")} />
       </Animated.View>
       <Animated.View accessibilityViewIsModal style={{ position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-        paddingHorizontal: 18, paddingTop: 10, paddingBottom: insets.bottom + 18, gap: 12, transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [0, 520] }) }] }}>
+        paddingHorizontal: 18, paddingTop: 10, paddingBottom: insets.bottom + 18, gap: 12, transform: [{ translateY: y.interpolate({ inputRange: [0, 1], outputRange: [0, 760] }) }] }}>
         <View style={{ alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: C.line }} />
         <Txt accessibilityRole="header" style={{ fontSize: 20, fontWeight: "800", paddingHorizontal: 4 }}>{title}</Txt>
-        <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, overflow: "hidden" }, lift()]}>
+        <ScrollView style={[{ backgroundColor: C.surface, borderRadius: R.xl, maxHeight: 520 }, lift()]} bounces={false}>
           {items.map((it, i) => (
             <Pressable key={it.id} onPress={() => pick(it)} accessibilityRole="button" accessibilityLabel={`${it.title}. ${it.sub || ""}`}
               style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 14, padding: 16, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line, backgroundColor: pressed ? C.tint : "transparent" })}>
-              <Tile color={it.color} paths={it.paths} size={44} />
+              {it.emoji ? (
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.tint, alignItems: "center", justifyContent: "center" }}><Text style={{ fontSize: 24 }}>{it.emoji}</Text></View>
+              ) : <Tile color={it.color} paths={it.paths} size={44} />}
               <View style={{ flex: 1, gap: 2 }}>
                 <Txt style={{ fontWeight: "800", fontSize: 16.5 }}>{it.title}</Txt>
                 {it.sub ? <Muted style={{ fontSize: 13.5, lineHeight: 18 }}>{it.sub}</Muted> : null}
               </View>
-              <Glyph name="chev" size={17} color={C.faint} />
+              {selected === undefined ? <Glyph name="chev" size={17} color={C.faint} />
+                : selected === it.id ? <Glyph name="check" size={20} color={C.brand} width={2.6} /> : <View style={{ width: 20 }} />}
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
       </Animated.View>
     </Modal>
+  );
+}
+
+/** Ligne de réglage dans une carte : libellé à gauche, valeur et flèche à droite */
+export function SettingLine({ label, value, onPress }) {
+  return (
+    <Pressable onPress={() => { haptic.tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={`${label}, ${value}`}
+      style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 14, backgroundColor: pressed ? C.tint2 : C.tint })}>
+      <Text style={{ flex: 1, fontSize: 15, color: C.muted, textAlign: dir().ta }} numberOfLines={1}>{label}</Text>
+      <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg }} numberOfLines={1}>{value}</Text>
+      <Glyph name="chev" size={16} color={C.faint} />
+    </Pressable>
   );
 }
