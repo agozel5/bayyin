@@ -114,6 +114,11 @@ def run(lang, scheme):
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyin.openTool('menu')"); p.wait_for_timeout(900); shot("menu-intro")
         ev("window.__bayyinMenu && window.__bayyinMenu('ENTRÉES\\nVelouté de potimarron 7,50 €\\nSalade lyonnaise 9 €\\navec œuf poché et croûtons\\nPLATS\\nSpaghetti carbonara 14 €\\nBœuf bourguignon 18 €\\nPavé de saumon, riz basmati 17 €\\nEntrecôte grillée, frites 22 €\\nDESSERTS\\nPanna cotta aux fruits rouges 7 €\\nTarte aux pommes 6,50 €\\nBaba au rhum 8 €')"); p.wait_for_timeout(1200); shot("menu")
+        import base64, json as _json
+        fx = Path(__file__).parent / "fixtures"
+        uri = "data:image/jpeg;base64," + base64.b64encode((fx / "menu-demo.jpg").read_bytes()).decode()
+        ev(f"window.__bayyinMenuPhoto && window.__bayyinMenuPhoto({_json.dumps(uri)}, 1200, 1500, {(fx / 'menu-demo-lines.json').read_text()})"); p.wait_for_timeout(1500); shot("menu-photo")
+        ev("window.__bayyinMenuSelect && window.__bayyinMenuSelect(1)"); p.wait_for_timeout(900); shot("menu-photo-sel")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
         ev(f"window.__bayyin.recipeDemo({{ code: '{CODES[0]}', name: 'Produit suivi', before: 'halal_probable', after: 'mashbouh', added: ['gélatine', 'arôme naturel'], removed: ['agar-agar'], addedE: ['E471'], removedE: [] }})"); p.wait_for_timeout(500)

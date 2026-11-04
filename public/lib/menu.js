@@ -51,7 +51,7 @@ const DISHES = [
   [/\bforet.?noire\b/, "kirsch", false],
   [/\bsangria\b|\bspritz\b|\bmojito\b|\bkir\b|\bpastis\b/, "alcool", true],
   // Viande : l'abattage est à demander au restaurant
-  [/\b(entrecote|steak|bavette|faux.?filet|rumsteck|onglet|cote de boeuf|tartare|burgers?|cheeseburger|kebab|kefta|merguez|magret|confit|gigot|souris d.?agneau|brochettes?|cordon.?bleu|escalope|blanquette|pot.?au.?feu|hachis parmentier|lasagnes?|bolognaise|chili con carne|tajine|couscous|nuggets?|wings|cote d.?agneau|carpaccio|osso.?buco|schnitzel|gyros|shawarma|chawarma)\b/, "viande", true],
+  [/\b(entrec\w{1,2}te|steak|bavette|faux.?filet|rumsteck|onglet|cote de boeuf|tartare|burgers?|cheeseburger|kebab|kefta|merguez|magret|confit|gigot|souris d.?agneau|brochettes?|cordon.?bleu|escalope|blanquette|pot.?au.?feu|hachis parmentier|lasagnes?|bolognaise|chili con carne|tajine|couscous|nuggets?|wings|cote d.?agneau|carpaccio|osso.?buco|schnitzel|gyros|shawarma|chawarma)\b/, "viande", true],
   // Gélatine
   [/\bpanna cotta\b|\bbavarois\b|\bcharlotte\b|\bmousse de fruits\b|\bentremets\b/, "gélatine", false],
   [/\bcheesecake\b|\bguimauve\b|\bmarshmallow\b|\bgelee\b|\baspic\b/, "gélatine", false],
@@ -62,7 +62,7 @@ const SECTIONS = /^(entrees?|starters?|plats?( principaux)?|mains?|desserts?|boi
 
 // Puces de liste, telles que la lecture de photo les rend souvent (•, +, «, ¢, &, *…), avec un éventuel chiffre parasite devant
 const BULLET = /^\s*(?:\d{1,2}\s+)?(?:[•·+«»¢&*▪●◦○■□►▸–—-]\s*)+/;
-const PRICE = /\d+(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)|\d+[.,]\d{2}\s*$/i;
+const PRICE = /\d+(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)|\d+[.,]\d{2}\s*$|\d+(?:[.,]\d{1,2})?\s*[E€]\s*$/i;
 
 const NOTE = /^(servi chaud|servis? (froid|chaud)|prix nets?|service compris|tous (les|nos) (produits|plats|prix)|(\* ?)?ces .{0,20}plats sont|plat fait maison|allergenes?|tva)/;
 
@@ -70,42 +70,65 @@ const NOTE = /^(servi chaud|servis? (froid|chaud)|prix nets?|service compris|tou
 function clean(line) {
   return String(line || "")
     .replace(BULLET, "")
-    .replace(/\d+[.,]\d{1,2}\s*(€|eur\b|euros?\b)?|\d+\s*(€|eur\b|euros?\b)|€\s*\d+([.,]\d{1,2})?/gi, " ")
+    .replace(/\d+[.,]\d{1,2}\s*(€|eur\b|euros?\b)?|\d+\s*(€|eur\b|euros?\b)|€\s*\d+([.,]\d{1,2})?|\d+\s*E\s*$/gi, " ")
     .replace(/[.…_·]{3,}[\w.]*|-{3,}/g, " ")
+    // points de conduite mal lus (« cisssidccsssss… ») : mots trop longs ou aux lettres répétées
+    .replace(/\S{22,}|\S*(\p{L})\1{3,}\S*/gu, " ")
+    // bruit de lecture devant le nom (icône lue « GB », « & », « ¢ »…)
+    .replace(/^(?:[^\p{L}«"(]+|\p{Lu}{1,3}\s+(?=\p{Lu}\p{Ll}))+/u, "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/[.,:;\s]+$/, "");
 }
 const letters = (s) => (s.match(/\p{L}/gu) || []).length;
 
-/** Découpe le texte lu en plats { title, desc, section } (une description suit son plat). */
-export function menuItems(text) {
-  const lines = String(text || "").split(/\n+/).filter((l) => letters(l) >= 3);
-  // Carte à puces : chaque plat commence par une puce, les autres lignes complètent le plat précédent
-  const bulleted = lines.filter((l) => BULLET.test(l)).length >= 3;
+/**
+ * Découpe la carte en plats { title, desc, section, boxes }.
+ * `input` : le texte lu, ou les lignes lues avec leur position [{ t, x0, y0, x1, y1 }] (proportions de la photo).
+ * Avec les positions, la taille du texte aide : un intertitre est écrit plus gros, une description plus petit.
+ */
+export function menuItems(input) {
+  const rows = (Array.isArray(input) ? input.map((l) => ({ t: String(l.t || ""), box: l })) : String(input || "").split(/\n+/).map((t) => ({ t, box: null })))
+    .map((r) => ({ ...r, t: r.t.replace(/\n+/g, " ") }))
+    .filter((r) => letters(r.t) >= 3);
+  const bulleted = rows.filter((r) => BULLET.test(r.t)).length >= 3; // carte à puces : chaque plat commence par une puce
+  const priced = rows.filter((r) => PRICE.test(r.t)).length >= Math.max(3, rows.length * 0.25); // carte avec prix
+  // hauteur habituelle d'une ligne de plat (lignes avec prix, sinon toutes)
+  const hs = rows.filter((r) => r.box && (!priced || PRICE.test(r.t))).map((r) => r.box.y1 - r.box.y0).sort((a, b) => a - b);
+  const mid = hs.length ? hs[Math.floor(hs.length / 2)] : 0;
   const items = [];
   let section = null;
-  let prevCont = false;
-  for (const raw of lines) {
+  let prevPriced = false;
+  for (const { t: raw, box } of rows) {
     const bullet = BULLET.test(raw);
-    const price = PRICE.test(raw);
+    // un prix, ou des points de conduite (même mal lus) : c'est la ligne d'un plat
+    const price = PRICE.test(raw) || /(\p{L})\1{3,}|[.·…_]{4,}|\S{22,}/u.test(raw);
     const line = clean(raw);
     if (letters(line) < 3) continue;
     const n = normalize(line).replace(/[:.!]/g, "").trim();
-    // intertitre : mot de rubrique connu, ou ligne sans puce ni prix qui finit par « … »
-    // mentions de bas de carte (légende, prix nets…) : pas des plats
-    if (NOTE.test(n)) continue;
-    // intertitre : rubrique connue, ou ligne sans puce ni prix qui commence par une majuscule et finit par « … »
-    const title = line.replace(/^(?:[^\p{L}«"]+|\p{Ll}{1,2}\s+|\d\s+)+(?=[\p{Lu}«"])/u, ""); // bruit de lecture devant le titre (« ae Del mar »)
-    const header = !bullet && !price && (SECTIONS.test(n) || (/^[\p{Lu}«"]/u.test(title) && /(\.\.\.|…)\s*$/.test(raw.trim())) || (/^[^a-zà-ÿ]*$/.test(line) && line.split(/\s+/).length <= 4));
-    if (header) { section = title.replace(/[.…:]+$/, ""); prevCont = false; continue; }
+    if (NOTE.test(n)) continue; // mentions de bas de carte (légende, prix nets…) : pas des plats
+    const h = box ? box.y1 - box.y0 : 0;
+    const big = !!(mid && h >= mid * 1.3), small = !!(mid && h <= mid * 0.82);
+    // intertitre : rubrique connue, ligne finie par « … », ligne en capitales, ou écrite plus gros, sans puce ni prix
+    const title = line.replace(/^(?:[^\p{L}«"]+|\p{L}{1,2}\s+|\d\s+)+(?=[\p{Lu}«"])/u, ""); // bruit de lecture devant le titre (« ae Del mar »)
+    const header = !bullet && !price && (SECTIONS.test(n) || /^[\p{Lu}«"]/u.test(title)) && (SECTIONS.test(n)
+      || (/^[\p{Lu}«"]/u.test(title) && /(\.\.\.|…)\s*$/.test(raw.trim()))
+      || (/^[^a-zà-ÿ]*$/.test(line) && line.split(/\s+/).length <= 4)
+      || (big && line.split(/\s+/).length <= 8));
+    if (header) { section = title.replace(/[.…:!]+$/, ""); prevPriced = false; continue; }
     const prev = items[items.length - 1];
-    const continues = prev && !bullet && (bulleted || /^[a-zà-ÿ(,&]/.test(line) || /^(avec|et|servi|accompagn|sauce|garni|with|served|and)\b/i.test(line));
-    if (continues) prev.desc = prev.desc ? `${prev.desc} ${line}` : line;
-    else items.push({ title: line, desc: "", section });
-    prevCont = continues;
+    const continues = prev && !bullet && ((bulleted && !price) || /^[a-zà-ÿ(,&]/.test(line) || /^(avec|et|servi|accompagn|sauce|garni|with|served|and)\b/i.test(line)
+      || (small && !price) || (priced && !price && prevPriced));
+    if (continues) {
+      prev.desc = prev.desc ? `${prev.desc} ${line}` : line;
+      if (box) prev.boxes.push(box);
+      if (price) prevPriced = true;
+    } else {
+      items.push({ title: line, desc: "", section, boxes: box ? [box] : [] });
+      prevPriced = price;
+    }
   }
-  return items.slice(0, 80);
+  return items.slice(0, 100);
 }
 
 /** Analyse un plat -> { status, flags: [{ id, severity, hidden }], hidden: "ingrédients probables" } */
@@ -113,7 +136,9 @@ export function analyzeDish(item, prefs = DEFAULT_PREFS) {
   const text = `${item.title} ${item.desc || ""}`;
   const n = normalize(text);
   const hiddenSure = [], hiddenMaybe = [];
-  for (const [re, add, sure] of DISHES) if (re.test(n)) (sure ? hiddenSure : hiddenMaybe).push(add);
+  // poisson ou légumes nommés (« carpaccio de saumon », « burger végétarien ») : la viande devinée ne compte pas
+  const noMeat = /\b(saumon|thon|poisson|cabillaud|daurade|dorade|bar|loup|truite|sardines?|anchois|crevettes?|poulpe|calamars?|vegetarien\w*|vegan\w*|vegetal\w*|legumes?|falafels?|halloumi|tofu)\b/.test(n);
+  for (const [re, add, sure] of DISHES) if (re.test(n) && !(add === "viande" && noMeat)) (sure ? hiddenSure : hiddenMaybe).push(add);
   // rubrique des vins, bières, cocktails ou apéritifs : boisson alcoolisée, sauf mention « sans alcool »
   if (item.section && /^(vins?|bieres?|cocktails?|aperitifs?|digestifs?)\b/.test(normalize(item.section)) && !/sans alcool|alcohol.?free|0[.,]0 ?%|virgin|mocktail/.test(n)) hiddenSure.push("alcool");
   const seen = (r) => classify({ ingredients_text: r, categories_tags: [] }, prefs).flags.filter((f) => f.severity !== "info" || f.topic);
@@ -142,8 +167,8 @@ export function analyzeDish(item, prefs = DEFAULT_PREFS) {
 }
 
 /** Carte complète -> plats analysés, groupés : à éviter, à vérifier, rien de signalé */
-export function analyzeMenu(text, prefs = DEFAULT_PREFS) {
-  const dishes = menuItems(text).map((it) => ({ ...it, ...analyzeDish(it, prefs) }));
+export function analyzeMenu(input, prefs = DEFAULT_PREFS) {
+  const dishes = menuItems(input).map((it) => ({ ...it, ...analyzeDish(it, prefs) }));
   const count = { haram: 0, mashbouh: 0, ok: 0 };
   dishes.forEach((d) => count[d.status]++);
   return { dishes, count };

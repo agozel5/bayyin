@@ -1,6 +1,11 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
 export const EXTRA = {
   fr: {
+    "menu.on_photo": "Sur votre carte",
+    "menu.zoom": "Agrandir",
+    "menu.tap_hint": "Touchez un plat surligné pour voir pourquoi.",
+    "menu.find_hint": "Montre le plat sur la photo de la carte.",
+    "menu.reading": "Lecture de la carte…",
     "travel.detected_short": "Langue reconnue",
     "travel.auto_p": "Bayyin reconnaît la langue tout seul.",
     "photo.choose_t": "Que voulez-vous photographier ?",
@@ -161,6 +166,11 @@ export const EXTRA = {
     "widget.scan": "Scanner",
   },
   en: {
+    "menu.on_photo": "On your menu",
+    "menu.zoom": "Enlarge",
+    "menu.tap_hint": "Tap a highlighted dish to see why.",
+    "menu.find_hint": "Shows the dish on the photo of the menu.",
+    "menu.reading": "Reading the menu…",
     "travel.detected_short": "Detected language",
     "travel.auto_p": "Bayyin recognises the language by itself.",
     "photo.choose_t": "What do you want to photograph?",
@@ -321,6 +331,11 @@ export const EXTRA = {
     "widget.scan": "Scan",
   },
   ar: {
+    "menu.on_photo": "على قائمتك",
+    "menu.zoom": "تكبير",
+    "menu.tap_hint": "المس طبقًا مظلَّلًا لترى السبب.",
+    "menu.find_hint": "يُظهر الطبق على صورة القائمة.",
+    "menu.reading": "قراءة القائمة…",
     "travel.detected_short": "اللغة المكتشفة",
     "travel.auto_p": "يتعرّف بيّن على اللغة تلقائيًا.",
     "photo.choose_t": "ماذا تريد أن تصوّر؟",
@@ -481,6 +496,11 @@ export const EXTRA = {
     "widget.scan": "مسح",
   },
   tr: {
+    "menu.on_photo": "Menünüzde",
+    "menu.zoom": "Büyüt",
+    "menu.tap_hint": "Nedenini görmek için işaretli bir yemeğe dokunun.",
+    "menu.find_hint": "Yemeği menü fotoğrafında gösterir.",
+    "menu.reading": "Menü okunuyor…",
     "travel.detected_short": "Algılanan dil",
     "travel.auto_p": "Bayyin dili kendisi tanır.",
     "photo.choose_t": "Neyin fotoğrafını çekmek istiyorsunuz?",

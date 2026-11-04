@@ -87,3 +87,20 @@ test("carte réelle lue par photo (tapas espagnoles) : puces, intertitres, charc
   assert.equal(by(/Patatas bravas/).status, "ok");
   assert.equal(by(/Racién de jambon/).section, "Nos «raciones» ibériques EL SOL");
 });
+
+test("carte lue avec la position des lignes : intertitres plus gros, descriptions plus petites, chaque plat situé", async () => {
+  const { readFileSync } = await import("node:fs");
+  const lines = JSON.parse(readFileSync(new URL("../mobile/scripts/fixtures/menu-demo-lines.json", import.meta.url), "utf8"));
+  const { dishes, count } = analyzeMenu(lines);
+  assert.deepEqual(dishes.map((d) => d.section).filter((x, i, a) => a.indexOf(x) === i), ["Entrées", "Plats", "Desserts", "Boissons"]);
+  assert.ok(dishes.every((d) => d.boxes.length >= 1), "chaque plat a sa place sur la photo");
+  const by = (re) => dishes.find((d) => re.test(d.title));
+  assert.equal(by(/lyonnaise/).status, "haram"); // lardons dans la description
+  assert.equal(by(/Carpaccio de saumon/).status, "ok"); // poisson : pas de viande devinée
+  assert.equal(by(/Baba au rhum/).title, "Baba au rhum");
+  assert.equal(by(/Mousse/).status, "ok");
+  assert.equal(count.haram, 3);
+  const sol = analyzeMenu(JSON.parse(readFileSync(new URL("./fixtures/menu-el-sol-lines.json", import.meta.url), "utf8")));
+  assert.ok(sol.dishes.some((d) => /Albondigas/.test(d.title) && d.status === "mashbouh"));
+  assert.ok(!sol.dishes.some((d) => /^(Pour ouvrir|Nos «raciones»|Del mar)/.test(d.title)));
+});

@@ -80,7 +80,7 @@ export async function pickImage(source = "camera") {
   const res = source === "camera" ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled || !res.assets || !res.assets[0] || !res.assets[0].base64) return null;
   const a = res.assets[0];
-  return { uri: a.uri, base64: a.base64, mime: a.mimeType || "image/jpeg" };
+  return { uri: a.uri, base64: a.base64, mime: a.mimeType || "image/jpeg", width: a.width || 0, height: a.height || 0 };
 }
 
 /**
@@ -92,12 +92,15 @@ export function useTextReader() {
   const [progress, setProgress] = useState(0);
   const job = useRef(null);
   const finish = (fn) => { const j = job.current; job.current = null; setHtml(null); if (j) { clearTimeout(j.timer); fn(j); } };
-  const read = async (img, langs) => {
+  // boxes : lecture avec la position de chaque ligne -> { text, lines } (toujours par Tesseract)
+  const read = async (img, langs, { boxes = false } = {}) => {
     setProgress(0);
-    const quick = await nativeText(img.uri, { arabicOk: true });
-    if (quick) return quick;
+    if (!boxes) {
+      const quick = await nativeText(img.uri, { arabicOk: true });
+      if (quick) return quick;
+    }
     return new Promise((resolve, reject) => {
-      job.current = { resolve, reject, timer: setTimeout(() => finish((j) => j.reject(new Error("timeout"))), 120000) };
+      job.current = { resolve, reject, boxes, timer: setTimeout(() => finish((j) => j.reject(new Error("timeout"))), 180000) };
       setHtml(ocrHtml(`data:${img.mime};base64,${img.base64}`, langs));
     });
   };
@@ -105,7 +108,15 @@ export function useTextReader() {
     let msg;
     try { msg = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (msg.type === "progress") setProgress(Math.max(0, Math.min(100, Number(msg.n) || 0)));
-    if (msg.type === "done") finish((j) => j.resolve(String(msg.text || "").slice(0, 20000)));
+    if (msg.type === "done") finish((j) => {
+      const text = String(msg.text || "").slice(0, 20000);
+      if (!j.boxes) return j.resolve(text);
+      // positions vérifiées : nombres entre 0 et 1, texte limité
+      const n = (v) => Math.max(0, Math.min(1, Number(v) || 0));
+      const lines = (Array.isArray(msg.lines) ? msg.lines : []).slice(0, 400).filter((l) => l && typeof l.t === "string")
+        .map((l) => ({ t: l.t.slice(0, 300), x0: n(l.x0), y0: n(l.y0), x1: n(l.x1), y1: n(l.y1), c: Number(l.c) || 0 }));
+      j.resolve({ text, lines });
+    });
     if (msg.type === "error") finish((j) => j.reject(new Error(msg.message)));
   };
   const element = html && Platform.OS !== "web" ? (
