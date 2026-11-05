@@ -19,7 +19,7 @@ for f in (PUB / "data" / "rankings").glob("*.json"):
     d = json.loads(f.read_text())
     if isinstance(d, list):
         for x in d:
-            if isinstance(x, dict) and x.get("code") in CODES + [BEAUTY]: PRODUCTS[x["code"]] = x
+            if isinstance(x, dict) and x.get("code") in CODES + [BEAUTY, NOPHOTO]: PRODUCTS[x["code"]] = x
 
 class H(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
