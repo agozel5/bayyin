@@ -61,6 +61,7 @@ export default function SearchScreen({ onOpen, onScan }) {
   const [recent, setRecent] = useState([]);
   const ticket = useRef(0);
   const timer = useRef(null);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinSearchState = (s) => { setQ((s && s.q) || ""); setState(s || {}); };
 
   useEffect(() => { AsyncStorage.getItem(RECENT).then((s) => setRecent(s ? JSON.parse(s) : [])).catch(() => {}); }, []);
   const remember = (query) => {

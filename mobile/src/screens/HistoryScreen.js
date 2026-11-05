@@ -175,6 +175,7 @@ function groups(entries) {
 
 export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistFilter = setFilter;
   const [confirm, setConfirm] = useState(false);
   const [weeksAgo, setWeeksAgo] = useState(0);
   const [period, setPeriod] = useState("week");

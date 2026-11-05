@@ -69,6 +69,7 @@ function CategoryList({ onPick, onBack }) {
 
 function Ranking({ cat, onBack, onOpen }) {
   const [raws, setRaws] = useState(null);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinRankRaws = setRaws;
   const [certOnly, setCertOnly] = useState(false);
   // Rayon gardé sur le téléphone : affiché tout de suite, puis remplacé par la version du jour
   useEffect(() => {

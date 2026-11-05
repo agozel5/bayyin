@@ -580,6 +580,7 @@ export default function App() {
     return () => sub.remove();
   }, []);
   const [splash, setSplash] = useState(true);
+  if (typeof window !== "undefined") window.__bayyinSplash = (f) => setSplash(!!f);
   useEffect(() => {
     initStorage()
       .catch(() => {})
