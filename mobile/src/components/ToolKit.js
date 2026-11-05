@@ -177,7 +177,7 @@ export function ScanReading({ photo, progress = 0, steps = [], tips = [], color 
       {/* La photo, parcourue par le trait de lecture */}
       <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ borderRadius: 18, overflow: "hidden", backgroundColor: "#0B1410", height: ph || 220 }}>
         {photo && photo.uri && w ? <Image source={{ uri: photo.uri }} style={{ width: w, height: ph }} resizeMode="cover" accessible={false} /> : null}
-        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(6,20,14,0.42)" }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(6,20,14,0.26)" }} />
         {/* coins du cadre */}
         {[[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y], i) => (
           <View key={i} pointerEvents="none" style={{ position: "absolute", width: 30, height: 30, [x ? "right" : "left"]: 12, [y ? "bottom" : "top"]: 12,
