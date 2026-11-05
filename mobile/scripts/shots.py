@@ -13,7 +13,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 PUB = Path(__file__).resolve().parents[2] / "public"
 CODES = ["3291980533795", "6111250471695", "3256224124870"]
 BEAUTY = "3567730300185"  # shampooing (Open Beauty Facts)
-NOPHOTO = "7503021781208"  # tortillas de maïs sans photo sur Open Food Facts
+NOPHOTO = "3282779069519"  # crème sans photo sur Open Beauty Facts
 PRODUCTS = {}
 for f in (PUB / "data" / "rankings").glob("*.json"):
     d = json.loads(f.read_text())
@@ -34,14 +34,14 @@ def run(lang, scheme):
         ctx.add_init_script("try{localStorage.setItem('bayyin:settings', %s)}catch(e){}" % json.dumps(json.dumps({"lang": lang, "theme": scheme, "onboarded": True, "toured": True})))
         def prod(r):
             if "ecoscore" in r.request.url: return r.continue_()  # onglet Planète : vraies données d'Open Food Facts
-            code = next((c for c in PRODUCTS if c in r.request.url and c != BEAUTY), None)
+            code = next((c for c in PRODUCTS if c in r.request.url and c not in (BEAUTY, NOPHOTO)), None)
             r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
                       body=json.dumps({"status": 1, "product": {"code": code, **PRODUCTS[code]}} if code else {"status": 0}))
         ctx.route(re.compile(r".*openfoodfacts\.org/api/v[0-9]/product/.*"), prod)
         def beauty(r):
-            ok = BEAUTY in r.request.url and BEAUTY in PRODUCTS
+            code = next((c for c in (BEAUTY, NOPHOTO) if c in r.request.url and c in PRODUCTS), None)
             r.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
-                      body=json.dumps({"status": 1, "product": {"code": BEAUTY, **PRODUCTS[BEAUTY]}} if ok else {"status": 0}))
+                      body=json.dumps({"status": 1, "product": {"code": code, **PRODUCTS[code]}} if code else {"status": 0}))
         ctx.route(re.compile(r".*world\.openbeautyfacts\.org/api/.*"), beauty)
         def ranks(r):
             f = PUB / "data" / "rankings" / r.request.url.split("/data/rankings/")[1].split("?")[0]
