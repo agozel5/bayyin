@@ -13,7 +13,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 PUB = Path(__file__).resolve().parents[2] / "public"
 CODES = ["3291980533795", "6111250471695", "3256224124870"]
 BEAUTY = "3567730300185"  # shampooing (Open Beauty Facts)
-NOPHOTO = "0671959001013"  # galettes de maïs sans photo sur Open Food Facts
+NOPHOTO = "7503021781208"  # tortillas de maïs sans photo sur Open Food Facts
 PRODUCTS = {}
 for f in (PUB / "data" / "rankings").glob("*.json"):
     d = json.loads(f.read_text())
@@ -89,7 +89,9 @@ def run(lang, scheme):
         for tab in ["search", "history", "additives", "settings"]:
             ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
         ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(600)
+        p.set_viewport_size({"width": 390, "height": 1700})
         ev("window.__bayyinHistFilter && window.__bayyinHistFilter('fav')"); p.wait_for_timeout(900); shot("empty-fav")
+        p.set_viewport_size({"width": 390, "height": 844})
         ev("window.__bayyinHistFilter && window.__bayyinHistFilter('all')")
         # Fiche sans photo, et l'instant du verdict après un scan
         ev(f"window.__bayyin.openProduct('{NOPHOTO}')"); p.wait_for_timeout(2500); shot("sheet-nophoto")
