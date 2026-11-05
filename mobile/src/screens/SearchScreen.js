@@ -5,6 +5,7 @@ import { View, Text, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Muted, Message, Row, Txt, Btn, Skeleton } from "../components/ui";
 import Screen from "../components/Screen";
+import EmptyState from "../components/Empty";
 import { PageHead, SearchBox, Chip, Segmented } from "../components/Controls";
 import { ListRow } from "../components/Cards";
 import { Art, Tile, Glyph } from "../components/Art";
@@ -61,6 +62,7 @@ export default function SearchScreen({ onOpen, onScan }) {
   const [recent, setRecent] = useState([]);
   const ticket = useRef(0);
   const timer = useRef(null);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinSearchState = (s) => { setQ((s && s.q) || ""); setState(s || {}); }; // captures automatiques (web)
 
   useEffect(() => { AsyncStorage.getItem(RECENT).then((s) => setRecent(s ? JSON.parse(s) : [])).catch(() => {}); }, []);
   const remember = (query) => {
@@ -160,7 +162,7 @@ export default function SearchScreen({ onOpen, onScan }) {
       ) : null}
 
       {state.short ? <Message title={t("search.short.t")} text={t("search.short.p")} /> : null}
-      {state.notFound ? <Message title={t("msg.notfound.t")} text={t("msg.notfound.p", { code: state.notFound })} /> : null}
+      {state.notFound ? <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code: state.notFound })} action={t("home.scan")} onAction={onScan} /> : null}
       {state.error ? <Message title={t("msg.error.t")} text={errorText(state.error)}><Btn title={t("msg.retry")} onPress={() => run(q, { force: true })} /></Message> : null}
       {state.single ? <Group list={state.single} onOpen={onOpen} /> : null}
 
@@ -192,8 +194,8 @@ export default function SearchScreen({ onOpen, onScan }) {
                 return fit(r.beauty, state.q) > fit(r.food, state.q) ? [beautyG, foodG] : [foodG, beautyG];
               })()}
             </>
-          ) : all0.length ? <Muted style={{ textAlign: "center" }}>{t("search.f.none")}</Muted> : !state.foodFailed ? (
-            <Message title={t("search.none.t")} text={t("search.none.p", { q: state.q })} />
+          ) : all0.length ? <EmptyState compact pose="empty" size={84} title={t("search.f.none")} second={t("history.show_all_res")} onSecond={() => setFilter("all")} /> : !state.foodFailed ? (
+            <EmptyState pose="search" title={t("search.none.t")} text={t("search.none.p", { q: state.q })} action={t("search.none_scan")} onAction={onScan} />
           ) : null}
         </View>
       ) : null}

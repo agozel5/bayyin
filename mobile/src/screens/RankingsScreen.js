@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import SubStack from "../components/SubStack";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Txt, Muted, Row, Loading } from "../components/ui";
+import { Txt, Muted, Row, Skeleton } from "../components/ui";
 import { Segmented, Chip } from "../components/Controls";
 import { Art, ArtTile, Glyph } from "../components/Art";
 import { C, R, GRADE_COLORS, STATUS_COLORS, dir, lift } from "../theme";
@@ -69,6 +69,7 @@ function CategoryList({ onPick, onBack }) {
 
 function Ranking({ cat, onBack, onOpen }) {
   const [raws, setRaws] = useState(null);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinRankRaws = setRaws; // captures automatiques (web)
   const [certOnly, setCertOnly] = useState(false);
   // Rayon gardé sur le téléphone : affiché tout de suite, puis remplacé par la version du jour
   useEffect(() => {
@@ -92,7 +93,7 @@ function Ranking({ cat, onBack, onOpen }) {
         <Chip text={t("rank.f.cert")} on={certOnly} onPress={() => setCertOnly(true)} />
       </Row>
       <Muted style={{ fontSize: 13 }}>{t("rank.basis", { school: t(`school.${st.school}`) })}</Muted>
-      {raws === null ? <Loading text={t("msg.loading")} /> : raws === false ? (
+      {raws === null ? <RankSkeleton label={t("msg.loading")} /> : raws === false ? (
         <View style={{ alignItems: "center", gap: 6, paddingVertical: 24 }}><Txt style={{ fontWeight: "800" }}>{t("rank.error.t")}</Txt><Muted>{t("rank.error.p")}</Muted></View>
       ) : list.length ? (
         <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
@@ -148,5 +149,21 @@ export default function RankingsScreen({ onClose, onOpen }) {
       base={<ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}><CategoryList onPick={setCat} onBack={onClose} /></ScrollView>}
       top={cat ? (close) => <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}><Ranking cat={cat} onBack={close} onOpen={onOpen} /></ScrollView> : null}
     />
+  );
+}
+
+// Squelette du classement pendant le chargement : la forme des lignes à venir
+function RankSkeleton({ label }) {
+  return (
+    <View accessible accessibilityLabel={label} style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <View key={i} style={{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 12, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+          <Skeleton width={28} height={28} radius={14} />
+          <Skeleton width={52} height={52} radius={12} />
+          <View style={{ flex: 1, gap: 8 }}><Skeleton height={14} width={i % 2 ? "70%" : "85%"} /><Skeleton height={11} width="40%" /></View>
+          <Skeleton width={44} height={44} radius={12} />
+        </View>
+      ))}
+    </View>
   );
 }

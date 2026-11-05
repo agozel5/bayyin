@@ -1,11 +1,13 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
 import { Img, prefetchImages } from "./Img";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, Share, Animated, Platform } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, Share, Animated, Easing, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
 import { Txt, H2, Muted, Label, Row, Btn, Pill, Message, Skeleton, FadeIn } from "./ui";
-import { haptic, announce } from "../motion";
+import { haptic, announce, ms } from "../motion";
+import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import EmptyState from "./Empty";
 import { isDark, C, R, ALERT_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NOVA_COLORS, dir, lift } from "../theme";
 import { t, tn } from "../i18n";
 import { SOURCE_BY_ID, RISK_SOURCES, isMedicineCode } from "../core";
@@ -507,6 +509,35 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
 }
 const VERDICT_DOT = (st) => ({ halal_certifie: "#169B57", halal_probable: "#3E8A49", mashbouh: "#EE8A1F", haram: "#E0423A", inconnu: "#97A39C" })[st];
 
+// Après un scan : un voile de la couleur du verdict descend du haut de l'écran et s'efface,
+// en même temps que la vibration (réussite, attention ou erreur)
+const FLASH = { halal_certifie: "#169B57", halal_probable: "#3E8A49", mashbouh: "#EE8A1F", haram: "#E0423A", inconnu: "#97A39C" };
+function VerdictFlash({ status }) {
+  const v = useRef(new Animated.Value(0)).current;
+  const [done, setDone] = useState(!ms(1));
+  useEffect(() => {
+    if (!ms(1)) return;
+    if (typeof window !== "undefined" && window.__bayyinFlashHold) return v.setValue(1); // captures : le voile à son maximum
+    Animated.sequence([
+      Animated.timing(v, { toValue: 1, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(v, { toValue: 2, duration: 820, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start(() => setDone(true));
+  }, []);
+  if (done) return null;
+  const color = FLASH[status] || FLASH.inconnu;
+  return (
+    <Animated.View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "75%", opacity: v.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 0] }),
+      transform: [{ translateY: v.interpolate({ inputRange: [0, 1, 2], outputRange: [-30, 0, 40] }) }] }}>
+      <Svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
+        <Defs><LinearGradient id="vflash" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={color} stopOpacity={0.5} /><Stop offset="0.45" stopColor={color} stopOpacity={0.18} /><Stop offset="1" stopColor={color} stopOpacity={0} />
+        </LinearGradient></Defs>
+        <Rect x="0" y="0" width="100" height="100" fill="url(#vflash)" />
+      </Svg>
+    </Animated.View>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Fiche complète (chargement, en-tête, favoris, partage)
 // ---------------------------------------------------------------------------
@@ -685,11 +716,9 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
           <SheetSkeleton />
         ) : state.notFound ? (
           isMedicineCode(code) ? (
-            <Message title={t("msg.notfound.t")} text={t("msg.med_notfound", { code })} />
+            <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.med_notfound", { code })} />
           ) : (
-            <Message title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })}>
-              <Btn title={t("detail.photo_ingredients")} icon="doc" onPress={() => onOcr(code)} />
-            </Message>
+            <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })} action={t("detail.photo_ingredients")} onAction={() => onOcr(code)} />
           )
         ) : state.error ? (
           <Message title={t("msg.load_error.t")} text={errorText(state.error)}>
@@ -702,6 +731,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
         ) : null}
       </Animated.ScrollView>
       </RevealProvider>
+      {fromScan && p && !state.loading ? <VerdictFlash key={p.code} status={verdictOf(p).status} /> : null}
 
       {card && p ? (
         // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)
