@@ -1620,4 +1620,12 @@ export default {
   "add.fn": "الوظيفة:",
   // ---------- Audit 2 : NOVA ----------
   "hsum.nova3": "معالجة معتدلة",
+  // ---------- Finitions du design ----------
+  "history.empty_fav_t": "لا توجد مفضلة بعد",
+  "history.empty_fav_p": "اضغط على النجمة في صفحة المنتج لتجده هنا.",
+  "history.show_all": "عرض كل السجل",
+  "history.show_all_res": "عرض كل النتائج",
+  "search.none_scan": "امسح الرمز الشريطي",
+  "sheet.add_photo": "إضافة صورة",
+  "sheet.add_photo_p": "لا توجد صورة لهذا المنتج بعد: يمكنك إضافة صورة على Open Food Facts.",
 };

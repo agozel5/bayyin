@@ -11,6 +11,7 @@ import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
 import { t, tn, locale } from "../i18n";
 import { getHistory, clearHistory, removeFromHistory } from "../storage";
 import SwipeRow from "../components/SwipeRow";
+import EmptyState from "../components/Empty";
 import { verdictOf, relTime, S, scoreOf } from "../view";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic, ms } from "../motion";
@@ -175,6 +176,7 @@ function groups(entries) {
 
 export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistFilter = setFilter; // captures automatiques (web)
   const [confirm, setConfirm] = useState(false);
   const [weeksAgo, setWeeksAgo] = useState(0);
   const [period, setPeriod] = useState("week");
@@ -187,12 +189,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
     return (
       <Screen>
         <PageHead title={t("history.title")} sub={t("history.sub")} />
-        <View style={{ alignItems: "center", gap: 10, paddingVertical: 36 }}>
-          <View style={{ width: 96, height: 96, borderRadius: 28, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={RANK_ART.mueslis} size={70} /></View>
-          <Text style={{ fontSize: 19, fontWeight: "800", color: C.fg, textAlign: "center" }}>{t("history.empty.t")}</Text>
-          <Text style={{ fontSize: 15, lineHeight: 22, color: C.muted, textAlign: "center" }}>{t("history.empty.p")}</Text>
-          <Pressable onPress={onScan} style={{ marginTop: 8, paddingHorizontal: 22, paddingVertical: 14, borderRadius: R.md, backgroundColor: C.brand }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>{t("home.scan")}</Text></Pressable>
-        </View>
+        <EmptyState pose="hello" title={t("history.empty.t")} text={t("history.empty.p")} action={t("home.scan")} onAction={onScan} />
       </Screen>
     );
   }
@@ -303,7 +300,9 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
             ))}
           </View>
         </View>
-      )) : <Muted style={{ textAlign: "center", paddingVertical: 24 }}>{t(filter === "fav" ? "history.empty_fav" : "history.empty_cat")}</Muted>}
+      )) : (filter === "fav"
+        ? <EmptyState compact pose="star" size={92} title={t("history.empty_fav_t")} text={t("history.empty_fav_p")} second={t("history.show_all")} onSecond={() => setFilter("all")} />
+        : <EmptyState compact pose="search" size={92} title={t("history.empty_cat")} second={t("history.show_all")} onSecond={() => setFilter("all")} />)}
 
       {confirm ? (
         <Row gap={16} style={{ justifyContent: "center", flexWrap: "wrap" }}>

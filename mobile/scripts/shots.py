@@ -13,6 +13,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 PUB = Path(__file__).resolve().parents[2] / "public"
 CODES = ["3291980533795", "6111250471695", "3256224124870"]
 BEAUTY = "3567730300185"  # shampooing (Open Beauty Facts)
+NOPHOTO = "0671959001013"  # galettes de maïs sans photo sur Open Food Facts
 PRODUCTS = {}
 for f in (PUB / "data" / "rankings").glob("*.json"):
     d = json.loads(f.read_text())
@@ -60,6 +61,15 @@ def run(lang, scheme):
             except Exception as e: errs.append(f"evaluate {js[:80]}: {str(e)[:300]}")
         def shot(name, full=False): p.screenshot(path=str(OUT / f"{tag}-{name}.png"), full_page=full)
         shot("home-first")
+        # Finitions : états vides, chargement, ouverture de l'app (historique encore vide)
+        ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(1000); shot("empty-history")
+        ev("window.__bayyin.setTab('search')"); p.wait_for_timeout(700)
+        ev("window.__bayyinSearchState && window.__bayyinSearchState({ q: 'zzkx', local: [], food: [], beauty: [] })"); p.wait_for_timeout(800); shot("empty-search")
+        ev("window.__bayyinSearchState && window.__bayyinSearchState(null)")
+        ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(700)
+        for n, f in [(1, [0.3, 1]), (2, [1, 1]), (3, [1, 0.5])]:
+            ev(f"window.__bayyinSplash && window.__bayyinSplash({json.dumps(f)})"); p.wait_for_timeout(400); shot(f"splash-{n}")
+        ev("window.__bayyinSplash && window.__bayyinSplash(null)"); p.wait_for_timeout(400)
         for c in CODES:
             ev(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2500)
             shot(f"sheet-{c}")
@@ -78,6 +88,17 @@ def run(lang, scheme):
         ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:
             ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
+        ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(600)
+        ev("window.__bayyinHistFilter && window.__bayyinHistFilter('fav')"); p.wait_for_timeout(900); shot("empty-fav")
+        ev("window.__bayyinHistFilter && window.__bayyinHistFilter('all')")
+        # Fiche sans photo, et l'instant du verdict après un scan
+        ev(f"window.__bayyin.openProduct('{NOPHOTO}')"); p.wait_for_timeout(2500); shot("sheet-nophoto")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyinFlashHold = true")
+        for c in [CODES[0], CODES[1]]:
+            ev(f"window.__bayyin.openProduct('{c}', {{ fromScan: true }})"); p.wait_for_timeout(1800); shot(f"flash-{c}")
+            ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyinFlashHold = false")
         p.set_viewport_size({"width": 390, "height": 1700})
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal"]:
             ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
@@ -155,6 +176,7 @@ def run(lang, scheme):
         ev("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
         for cat in ["spreads", "shampoos"]:
             ev(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
+        ev("window.__bayyinRankRaws && window.__bayyinRankRaws(null)"); p.wait_for_timeout(800); shot("rank-loading")
         ev("window.__bayyinRankCat(null)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         p.set_viewport_size({"width": 390, "height": 844})
         e2 = ev("window.__bayyinErrors || []")

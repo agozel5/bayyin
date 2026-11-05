@@ -551,18 +551,31 @@ function Splash() {
   );
 }
 
-// L'écran de démarrage (même vert que celui du système) s'efface en douceur une fois les données chargées.
-function SplashFade({ onDone }) {
-  const v = useRef(new Animated.Value(1)).current;
-  const scale = v.interpolate({ inputRange: [0, 1], outputRange: [1.15, 1] });
+// Ouverture : sur le vert de l'écran de démarrage du système, une onde part du logo et le nom Bayyin
+// apparaît ; puis l'ensemble s'efface en grandissant légèrement et l'accueil se dévoile.
+function SplashFade({ onDone, freeze }) {
+  const intro = useRef(new Animated.Value(freeze ? freeze[0] : 0)).current;
+  const out = useRef(new Animated.Value(freeze ? freeze[1] : 1)).current;
   useEffect(() => {
-    Animated.timing(v, { toValue: 0, duration: ms(380), delay: ms(120), useNativeDriver: true }).start(onDone);
+    if (freeze) return;
+    if (!ms(1)) return onDone();
+    Animated.sequence([
+      Animated.timing(intro, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.delay(140),
+      Animated.timing(out, { toValue: 0, duration: 340, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+    ]).start(onDone);
   }, []);
+  const ring = (from, to) => ({ opacity: intro.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, from, 0] }), transform: [{ scale: intro.interpolate({ inputRange: [0, 1], outputRange: [1, to] }) }] });
+  const logo = { transform: [{ scale: Animated.multiply(intro.interpolate({ inputRange: [0, 0.35, 1], outputRange: [1, 1.07, 1] }), out.interpolate({ inputRange: [0, 1], outputRange: [1.18, 1] })) }] };
+  const name = { opacity: intro.interpolate({ inputRange: [0.25, 1], outputRange: [0, 1], extrapolate: "clamp" }), transform: [{ translateY: intro.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] };
   return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: C.brand, alignItems: "center", justifyContent: "center", opacity: v }]}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <Logo size={96} />
-      </Animated.View>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: C.brand, alignItems: "center", justifyContent: "center", opacity: out }]}>
+      <View style={{ width: 96, height: 96, alignItems: "center", justifyContent: "center" }}>
+        <Animated.View style={[{ position: "absolute", width: 96, height: 96, borderRadius: 30, borderWidth: 2, borderColor: "#fff" }, ring(0.55, 2.4)]} />
+        <Animated.View style={[{ position: "absolute", width: 96, height: 96, borderRadius: 30, backgroundColor: "#fff" }, ring(0.16, 1.7)]} />
+        <Animated.View style={logo}><Logo size={96} /></Animated.View>
+      </View>
+      <Animated.Text style={[{ position: "absolute", top: "50%", marginTop: 68, color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: 0.6 }, name]}>Bayyin</Animated.Text>
     </Animated.View>
   );
 }
@@ -580,6 +593,8 @@ export default function App() {
     return () => sub.remove();
   }, []);
   const [splash, setSplash] = useState(true);
+  const [freeze, setFreeze] = useState(null); // captures : image fixe de l'animation [intro, sortie]
+  if (typeof window !== "undefined") window.__bayyinSplash = (f) => { setFreeze(f || null); setSplash(!!f); };
   useEffect(() => {
     initStorage()
       .catch(() => {})
@@ -594,7 +609,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       {ok ? <Main /> : <Splash />}
-      {ok && splash ? <SplashFade onDone={() => setSplash(false)} /> : null}
+      {ok && splash ? <SplashFade key={String(freeze)} freeze={freeze} onDone={() => setSplash(false)} /> : null}
     </SafeAreaProvider>
   );
 }

@@ -9,6 +9,7 @@ const STATUS_PILL = (st) => STATUS_COLORS[st];
 import { t } from "../i18n";
 import { S, nameOf, verdictOf, scoreOf, kindOf, profileOf, alertLabel } from "../view";
 import { productArtKey, artByKey } from "../../../public/lib/product-art.js";
+import { RANK_ART, PLACE_ART } from "../../../public/lib/rank-art.js";
 import { haptic } from "../motion";
 
 export const STATUS_GLYPH = {
@@ -34,12 +35,27 @@ export function Khatam({ opacity = 0.22 }) {
 // Vignette : la photo, sinon l'illustration du rayon, sinon une icône
 // Photos qui n'ont pas pu se charger : on passe au dessin du rayon (comme la version web)
 const broken = new Set();
+const loaded = new Set(); // photos déjà affichées une fois
 export function Thumb({ p, size = 56, radius = 14 }) {
-  const art = artOf(p);
-  const [, setFail] = React.useState(0);
-  if (p.image && !broken.has(p.image))
-    return <Img uri={p.image} thumb={p.raw && p.raw.th} onError={() => { broken.add(p.image); setFail((n) => n + 1); }}
-      style={{ width: size, height: size, borderRadius: radius, backgroundColor: "#fff" }} />;
+  const k = kindOf(p);
+  // Sans rayon reconnu : un panier (aliment) ou un flacon (cosmétique) plutôt qu'une boîte vide
+  const art = artOf(p) || (p.local || k === "medicine" ? "" : k === "beauty" ? RANK_ART.body_creams : PLACE_ART.grocery);
+  const [, setTick] = React.useState(0);
+  if (p.image && !broken.has(p.image)) {
+    const th = p.raw && p.raw.th;
+    const waiting = !th && art && !loaded.has(p.image); // le dessin du rayon le temps que la photo arrive
+    return (
+      <View style={{ width: size, height: size }}>
+        <Img uri={p.image} thumb={th} onLoad={() => { if (!loaded.has(p.image)) { loaded.add(p.image); setTick((n) => n + 1); } }} onError={() => { broken.add(p.image); setTick((n) => n + 1); }}
+          style={{ width: size, height: size, borderRadius: radius, backgroundColor: "#fff" }} />
+        {waiting ? (
+          <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, width: size, height: size, borderRadius: radius, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
+            <Art xml={art} size={Math.round(size * 0.62)} />
+          </View>
+        ) : null}
+      </View>
+    );
+  }
   return (
     <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: art ? C.artBg : C.tint, alignItems: "center", justifyContent: "center" }}>
       {art ? <Art xml={art} size={Math.round(size * 0.66)} /> : <Glyph name={p.local ? "doc" : "box"} size={Math.round(size * 0.42)} color={C.faint} />}

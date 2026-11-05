@@ -1634,4 +1634,12 @@ export default {
   "add.fn": "Fonction :",
   // ---------- Audit 2 : NOVA ----------
   "hsum.nova3": "transformation modérée",
+  // ---------- Finitions du design ----------
+  "history.empty_fav_t": "Pas encore de favori",
+  "history.empty_fav_p": "Touchez l'étoile sur une fiche produit pour la retrouver ici.",
+  "history.show_all": "Voir tout l'historique",
+  "history.show_all_res": "Voir tous les résultats",
+  "search.none_scan": "Scanner le code-barres",
+  "sheet.add_photo": "Ajouter une photo",
+  "sheet.add_photo_p": "Ce produit n'a pas encore de photo : vous pouvez en ajouter une sur Open Food Facts.",
 };

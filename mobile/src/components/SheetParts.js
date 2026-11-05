@@ -13,7 +13,7 @@ import { Txt, Muted, Row, FadeIn } from "./ui";
 import { C, R, VERDICT, GRADE_COLORS, SEV_COLORS, RISK_COLORS, mix, dir, lift, isDark } from "../theme";
 import { t, tn } from "../i18n";
 import { getSettings } from "../storage";
-import { S, nameOf, scoreOf, kindOf, flagLabel, flagReason } from "../view";
+import { S, nameOf, scoreOf, kindOf, flagLabel, flagReason, isBarcode } from "../view";
 import { verdictConfidence } from "../../../public/lib/confidence.js";
 import { readLabel } from "../../../public/lib/highlight.js";
 import { normQuantity } from "../../../public/lib/off.js";
@@ -49,6 +49,14 @@ export function Top({ p }) {
         <Txt style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }} numberOfLines={3}>{nameOf(p)}</Txt>
         {meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
         {/^\d+$/.test(p.code) ? <Text style={{ color: C.faint, fontSize: 13, fontVariant: ["tabular-nums"], letterSpacing: 0.5, textAlign: dir().ta }}>{p.code}</Text> : null}
+        {!hasPhotos && isBarcode(p.code) && !p.local && (kindOf(p) === "food" || kindOf(p) === "beauty") ? (
+          <Pressable onPress={() => { haptic.tap(); open(`https://world.${kindOf(p) === "beauty" ? "openbeautyfacts" : "openfoodfacts"}.org/cgi/product.pl?type=edit&code=${p.code}`); }}
+            accessibilityRole="link" accessibilityHint={t("sheet.add_photo_p")} hitSlop={6}
+            style={({ pressed }) => ({ flexDirection: dir().row, alignSelf: "flex-start", alignItems: "center", gap: 6, marginTop: 4, paddingHorizontal: 11, height: 30, borderRadius: 15, backgroundColor: pressed ? C.tint2 : C.tint })}>
+            <Glyph paths='<path d="M4 8.5A2 2 0 0 1 6 6.5h1.6l1.4-2h6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/>' size={16} color={C.brand} width={2.1} />
+            <Text style={{ color: C.brand, fontWeight: "800", fontSize: 13.5 }}>{t("sheet.add_photo")}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </Row>
   );
@@ -115,13 +123,17 @@ export function VerdictHero({ p, v, scanned }) {
   }, [p.code, v.status]);
   // Après un scan : le verdict s'allume (halo autour de la carte, onde de lumière depuis l'icône)
   const glow = useRef(new Animated.Value(scanned && ms(1) ? 0 : 1)).current;
+  const enter = useRef(new Animated.Value(scanned && ms(1) ? 0 : 1)).current; // la carte arrive avec un léger rebond
   const wave = useRef(new Animated.Value(scanned && ms(1) ? 0 : 1)).current;
   const [cardW, setCardW] = useState(0);
   useEffect(() => {
     if (!scanned || !ms(1)) return;
     Animated.timing(glow, { toValue: 1, duration: 1100, delay: 100, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     Animated.timing(wave, { toValue: 1, duration: 1000, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    enter.setValue(0);
+    Animated.spring(enter, { toValue: 1, friction: 6, tension: 120, useNativeDriver: true }).start();
   }, [p.code]);
+
   // Les trois lignes de texte apparaissent l'une après l'autre
   const lines = useRef([0, 1, 2].map(() => new Animated.Value(ms(1) ? 0 : 1))).current;
   useEffect(() => {
@@ -131,7 +143,7 @@ export function VerdictHero({ p, v, scanned }) {
   }, [p.code, v.status]);
   const lineStyle = (i) => ({ opacity: lines[i], transform: [{ translateY: lines[i].interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] });
   return (
-    <View>
+    <Animated.View style={{ transform: [{ scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }}>
     {scanned ? (
       <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, borderRadius: R.xl, borderWidth: 3, borderColor: vc,
         opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }), transform: [{ scaleX: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }) }, { scaleY: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] }} />
@@ -180,7 +192,7 @@ export function VerdictHero({ p, v, scanned }) {
       ) : null}
       <Sheen width={cardW} />
     </View>
-    </View>
+    </Animated.View>
   );
 }
 

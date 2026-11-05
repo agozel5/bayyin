@@ -9,11 +9,11 @@ try { EImage = Platform.OS === "web" ? null : require("expo-image").Image; } cat
 // Aperçu flou (ThumbHash, calculé avec les classements) : une courte chaîne, vérifiée avant usage
 const THUMB = /^[A-Za-z0-9+/]{16,64}={0,2}$/;
 
-export function Img({ uri, style, fit = "contain", onError, transition = 160, thumb }) {
+export function Img({ uri, style, fit = "contain", onError, onLoad, transition = 160, thumb }) {
   if (!uri) return null;
-  if (EImage) return <EImage source={{ uri }} style={style} contentFit={fit} cachePolicy="memory-disk" transition={transition} recyclingKey={uri} onError={onError} accessible={false}
+  if (EImage) return <EImage source={{ uri }} style={style} contentFit={fit} cachePolicy="memory-disk" transition={transition} recyclingKey={uri} onError={onError} onLoad={onLoad} accessible={false}
     placeholder={thumb && THUMB.test(thumb) ? { thumbhash: thumb } : undefined} placeholderContentFit={fit} />;
-  return <RNImage source={{ uri }} style={style} resizeMode={fit} onError={onError} accessible={false} />;
+  return <RNImage source={{ uri }} style={style} resizeMode={fit} onError={onError} onLoad={onLoad} accessible={false} />;
 }
 
 /** Télécharge des photos à l'avance (liste qui s'ouvre, classements gardés pour le hors connexion) */

@@ -1620,4 +1620,12 @@ export default {
   "add.fn": "Function:",
   // ---------- Audit 2 : NOVA ----------
   "hsum.nova3": "moderately processed",
+  // ---------- Finitions du design ----------
+  "history.empty_fav_t": "No favourites yet",
+  "history.empty_fav_p": "Tap the star on a product page to keep it here.",
+  "history.show_all": "Show all history",
+  "history.show_all_res": "Show all results",
+  "search.none_scan": "Scan the barcode",
+  "sheet.add_photo": "Add a photo",
+  "sheet.add_photo_p": "This product has no photo yet: you can add one on Open Food Facts.",
 };

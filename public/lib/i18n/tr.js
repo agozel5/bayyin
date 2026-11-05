@@ -1620,4 +1620,12 @@ export default {
   "add.fn": "İşlev:",
   // ---------- Audit 2 : NOVA ----------
   "hsum.nova3": "orta düzeyde işlenmiş",
+  // ---------- Finitions du design ----------
+  "history.empty_fav_t": "Henüz favori yok",
+  "history.empty_fav_p": "Burada bulmak için ürün sayfasındaki yıldıza dokunun.",
+  "history.show_all": "Tüm geçmişi göster",
+  "history.show_all_res": "Tüm sonuçları göster",
+  "search.none_scan": "Barkodu tara",
+  "sheet.add_photo": "Fotoğraf ekle",
+  "sheet.add_photo_p": "Bu ürünün henüz fotoğrafı yok: Open Food Facts'e ekleyebilirsiniz.",
 };
