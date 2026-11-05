@@ -93,6 +93,24 @@ function ScanOrb({ home, pressed }) {
 }
 
 // Barre d'onglets flottante, arrondie, avec le bouton Scanner en relief au centre
+// Icône d'onglet : la pastille verte s'étire en place et l'icône rebondit quand l'onglet devient actif
+function TabIcon({ id, on, pressed }) {
+  const v = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    if (!ms(1)) return v.setValue(on ? 1 : 0);
+    Animated.spring(v, { toValue: on ? 1 : 0, friction: 6, tension: 160, useNativeDriver: true }).start();
+  }, [on]);
+  const bounce = v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 1.14, 1] });
+  return (
+    <View style={{ paddingHorizontal: 14, paddingVertical: 3, alignItems: "center", justifyContent: "center", transform: [{ scale: pressed ? 0.9 : 1 }] }}>
+      <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 999, backgroundColor: C.brandSoft, opacity: v, transform: [{ scaleX: v.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) }] }]} />
+      <Animated.View style={{ transform: [{ scale: bounce }] }}>
+        <Glyph paths={TAB_GLYPH[id]} size={23} color={on ? C.brand : C.muted} width={on ? 2.2 : 1.9} />
+      </Animated.View>
+    </View>
+  );
+}
+
 function TabBar({ tab, onTab }) {
   const insets = useSafeAreaInsets();
   return (
@@ -120,9 +138,7 @@ function TabBar({ tab, onTab }) {
             >
               {({ pressed }) => (<>
               {scan ? <ScanOrb home={on} pressed={pressed} /> : (
-                <View style={{ paddingHorizontal: 14, paddingVertical: 3, borderRadius: 999, backgroundColor: on ? C.brandSoft : "transparent" }}>
-                  <Glyph paths={TAB_GLYPH[it.id]} size={23} color={on ? C.brand : C.muted} width={on ? 2.2 : 1.9} />
-                </View>
+                <TabIcon id={it.id} on={on} pressed={pressed} />
               )}
               <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: on || scan ? "700" : "600", color: on || scan ? C.brand : C.muted }}>
                 {t(`tab.${it.id}`)}
