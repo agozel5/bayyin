@@ -1,7 +1,7 @@
 // Briques des outils photo (mode voyage, carte de restaurant) et des pages d'outils :
 // en-tête avec retour, carte d'accueil illustrée, choix de la photo, lecture du texte.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Platform, Modal, Animated, Easing } from "react-native";
+import { View, Text, ScrollView, Pressable, Platform, Modal, Animated, Easing, Image } from "react-native";
 import SafeWebView, { PAGE_BASE } from "./SafeWebView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tile, Glyph } from "./Art";
@@ -141,6 +141,104 @@ export function Reading({ progress, text }) {
       </View>
     </View>
   );
+}
+
+/**
+ * Écran de lecture soigné : la photo prise, un trait de lecture qui la parcourt, les étapes qui se cochent
+ * une à une, une barre de progression et des astuces qui défilent.
+ * steps : [{ key, label, until }] — l'étape est terminée quand la progression dépasse `until` (0 à 100).
+ */
+export function ScanReading({ photo, progress = 0, steps = [], tips = [], color = "#1A9C68", title }) {
+  const [w, setW] = useState(0);
+  const sweep = useRef(new Animated.Value(0)).current;
+  const pct = useRef(new Animated.Value(0)).current;
+  const [tip, setTip] = useState(0);
+  useEffect(() => {
+    if (!ms(1)) return undefined;
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(sweep, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(sweep, { toValue: 0, duration: 1700, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  useEffect(() => { Animated.timing(pct, { toValue: progress, duration: 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(); }, [progress]);
+  useEffect(() => {
+    if (tips.length < 2) return undefined;
+    const id = setInterval(() => setTip((n) => (n + 1) % tips.length), 3600);
+    return () => clearInterval(id);
+  }, [tips.length]);
+  const ratio = photo && photo.width && photo.height ? photo.height / photo.width : 1.3;
+  const ph = w ? Math.min(w * ratio, 340) : 0;
+  const cur = steps.findIndex((st) => progress < st.until);
+  const active = cur === -1 ? steps.length - 1 : cur;
+  return (
+    <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 14, gap: 16 }, lift()]}>
+      {/* La photo, parcourue par le trait de lecture */}
+      <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ borderRadius: 18, overflow: "hidden", backgroundColor: "#0B1410", height: ph || 220 }}>
+        {photo && photo.uri && w ? <Image source={{ uri: photo.uri }} style={{ width: w, height: ph }} resizeMode="cover" accessible={false} /> : null}
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(6,20,14,0.42)" }} />
+        {/* coins du cadre */}
+        {[[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y], i) => (
+          <View key={i} pointerEvents="none" style={{ position: "absolute", width: 30, height: 30, [x ? "right" : "left"]: 12, [y ? "bottom" : "top"]: 12,
+            borderColor: "#fff", [x ? "borderRightWidth" : "borderLeftWidth"]: 3, [y ? "borderBottomWidth" : "borderTopWidth"]: 3, [`border${y ? "Bottom" : "Top"}${x ? "Right" : "Left"}Radius`]: 10 }} />
+        ))}
+        {/* trait de lecture avec son halo */}
+        <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, height: 64, top: -32,
+          transform: [{ translateY: sweep.interpolate({ inputRange: [0, 1], outputRange: [20, Math.max(20, (ph || 220) - 20)] }) }] }}>
+          <View style={{ flex: 1, backgroundColor: color, opacity: 0.18 }} />
+          <View style={{ position: "absolute", left: 16, right: 16, top: 31, height: 3, borderRadius: 2, backgroundColor: "#7CF2B8",
+            shadowColor: "#7CF2B8", shadowOpacity: 1, shadowRadius: 10, shadowOffset: { width: 0, height: 0 } }} />
+        </Animated.View>
+        {/* pourcentage */}
+        <View style={{ position: "absolute", [dir().rtl ? "left" : "right"]: 14, bottom: 14, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: "rgba(0,0,0,0.55)" }}>
+          <Text style={{ color: "#fff", fontWeight: "900", fontSize: 15, fontVariant: ["tabular-nums"] }}>{Math.round(progress)} %</Text>
+        </View>
+      </View>
+
+      <View style={{ gap: 12, paddingHorizontal: 4 }}>
+        {title ? <Txt style={{ fontSize: 18, fontWeight: "800" }}>{title}</Txt> : null}
+        <View style={{ height: 8, borderRadius: 4, backgroundColor: C.tint2, overflow: "hidden" }}>
+          <Animated.View style={{ height: 8, borderRadius: 4, backgroundColor: color, width: pct.interpolate({ inputRange: [0, 100], outputRange: ["3%", "100%"], extrapolate: "clamp" }) }} />
+        </View>
+        {/* étapes */}
+        <View style={{ gap: 10 }}>
+          {steps.map((st, i) => {
+            const done = i < active || (cur === -1 && i === active && progress >= 100);
+            const now = i === active && !done;
+            return (
+              <View key={st.key} style={{ flexDirection: dir().row, alignItems: "center", gap: 12 }}>
+                <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center",
+                  backgroundColor: done ? color : now ? color + "22" : C.tint2, borderWidth: now ? 2 : 0, borderColor: color }}>
+                  {done ? <Glyph name="check" size={15} color="#fff" width={3} /> : now ? <PulseDot color={color} /> : null}
+                </View>
+                <Text style={{ flex: 1, fontSize: 15, fontWeight: now ? "800" : "600", color: done || now ? C.fg : C.faint, textAlign: dir().ta }}>{st.label}</Text>
+              </View>
+            );
+          })}
+        </View>
+        {tips.length ? (
+          <View style={{ flexDirection: dir().row, gap: 10, padding: 12, borderRadius: 14, backgroundColor: C.tint, alignItems: "flex-start" }}>
+            <Glyph name="bulb" size={18} color="#D9A81E" />
+            <Txt key={tip} style={{ flex: 1, fontSize: 13.5, lineHeight: 19 }}>{tips[tip]}</Txt>
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+function PulseDot({ color }) {
+  const a = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    if (!ms(1)) return undefined;
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(a, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(a, { toValue: 0.4, duration: 600, useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  return <Animated.View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color, opacity: a, transform: [{ scale: a }] }} />;
 }
 
 export const TOOL_ICONS = {

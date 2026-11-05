@@ -5,7 +5,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { Glyph } from "../components/Art";
-import { ToolPage, ToolIntro, ToolBtn, Reading, pickImage, useTextReader, ChoiceSheet, SettingLine, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
+import { ToolPage, ToolIntro, ToolBtn, ScanReading, pickImage, useTextReader, ChoiceSheet, SettingLine, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
 import { C, R, dir, lift, STATUS_COLORS, SEV_COLORS } from "../theme";
 import { t } from "../i18n";
 import { haptic } from "../motion";
@@ -36,16 +36,20 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
   if (picker) lastPicker.current = picker;
   const pk = picker || lastPicker.current;
   const reader = useTextReader();
-  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinTravelLang = (k) => setPicker(k); window.__bayyinTravel = (txt, l) => { setText(txt); setShown(l || detectLang(txt)); setEditing(false); setStep("result"); }; // captures automatiques (web)
+  const [shot, setShot] = useState(null); // photo en cours de lecture
+  const [over, setOver] = useState(null);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinTravelLang = (k) => setPicker(k); window.__bayyinTravelReading = (uri, width, height, pr) => { setShot({ uri, width, height }); setOver(pr); setStep("reading"); }; window.__bayyinTravel = (txt, l) => { setText(txt); setShown(l || detectLang(txt)); setEditing(false); setStep("result"); }; // captures automatiques (web)
 
   const go = async (source) => {
     let img;
     try { img = await pickImage(source); } catch { return setStep("error"); }
     if (img === "denied") return setStep("denied");
     if (!img) return;
+    setShot(img); setOver(null);
     setStep("reading");
     try {
       const raw = await reader.read(img, TESS[lang] || "deu+spa+ita+eng");
+      setOver(100); await new Promise((r) => setTimeout(r, 650)); // dernière étape visible un instant
       const clean = cleanOcrText(raw);
       if (!clean || clean.replace(/[^\p{L}]/gu, "").length < 6) return setStep("empty");
       haptic.success();
@@ -93,7 +97,11 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
         </>
       ) : null}
 
-      {step === "reading" ? <Reading progress={reader.progress} /> : null}
+      {step === "reading" ? (
+        <ScanReading photo={shot} progress={over != null ? over : Math.max(2, reader.progress)} color={TOOL_COLORS.travel} title={t("travel.reading")}
+          steps={[{ key: "prep", label: t("scan.step.prep"), until: 3 }, { key: "read", label: t("travel.step.read"), until: 99 }, { key: "tr", label: t("travel.step.translate"), until: 101 }]}
+          tips={[t("travel.tip.1"), t("travel.tip.2")]} />
+      ) : null}
 
       {step === "result" && res ? (
         <FadeIn style={{ gap: 16 }}>

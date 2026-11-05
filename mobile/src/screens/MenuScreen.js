@@ -5,7 +5,7 @@ import { View, Text, TextInput, Pressable, Image, Modal, ScrollView, Animated, E
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { Glyph } from "../components/Art";
-import { ToolPage, ToolIntro, ToolBtn, Reading, pickImage, useTextReader, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
+import { ToolPage, ToolIntro, ToolBtn, Reading, ScanReading, pickImage, useTextReader, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";
 import { C, R, dir, lift, STATUS_COLORS, SEV_COLORS } from "../theme";
 import { t, tn } from "../i18n";
 import { haptic, ms } from "../motion";
@@ -135,11 +135,14 @@ export default function MenuScreen({ onClose }) {
   const scrollRef = useRef(null);
   const photoY = useRef(0);
   const reader = useTextReader();
+  const [shot, setShot] = useState(null); // photo en cours de lecture (écran de chargement)
+  const [over, setOver] = useState(null); // progression imposée (fin de lecture, captures)
   const reset = () => { setFilter("all"); setEditing(false); setEdited(false); setSelected(null); setZoom(false); setStep("result"); };
   if (typeof window !== "undefined" && window.__bayyin) { // captures automatiques (web)
     window.__bayyinMenu = (txt) => { setText(txt); setLines(null); setPhoto(null); reset(); };
     window.__bayyinMenuPhoto = (uri, width, height, ls) => { setPhoto({ uri, width, height }); setLines(ls); setText(ls.map((l) => l.t).join("\n")); reset(); };
     window.__bayyinMenuSelect = (i) => setSelected(i);
+    window.__bayyinMenuReading = (uri, width, height, pr, old) => { setShot(old ? null : { uri, width, height }); setOver(pr); setStep("reading"); };
   }
 
   const go = async (source) => {
@@ -147,10 +150,12 @@ export default function MenuScreen({ onClose }) {
     try { img = await pickImage(source); } catch { return setStep("error"); }
     if (img === "denied") return setStep("denied");
     if (!img) return;
+    setShot(img); setOver(null);
     setStep("reading");
     try {
       // lecture avec la position de chaque ligne : les plats sont surlignés sur la photo
       const out = await reader.read(img, OCR_LANGS[getSettings().lang] || OCR_LANGS.fr, { boxes: true });
+      setOver(100); await new Promise((r) => setTimeout(r, 650)); // dernière étape visible un instant
       const raw = typeof out === "string" ? out : out.text;
       if (!raw || raw.replace(/[^\p{L}]/gu, "").length < 6) return setStep("empty");
       haptic.success();
@@ -200,7 +205,11 @@ export default function MenuScreen({ onClose }) {
         </>
       ) : null}
 
-      {step === "reading" ? <Reading progress={reader.progress} text={t("menu.reading")} /> : null}
+      {step === "reading" && !shot && typeof window !== "undefined" && window.__bayyin ? <Reading progress={over || 0} text={t("menu.reading")} /> : step === "reading" ? (
+        <ScanReading photo={shot} progress={over != null ? over : Math.max(2, reader.progress)} color={TOOL_COLORS.menu} title={t("menu.reading")}
+          steps={[{ key: "prep", label: t("scan.step.prep"), until: 3 }, { key: "read", label: t("menu.step.read"), until: 99 }, { key: "dishes", label: t("menu.step.dishes"), until: 101 }]}
+          tips={[t("menu.tip.1"), t("menu.tip.2"), t("menu.tip.3")]} />
+      ) : null}
 
       {step === "result" && res ? (
         <FadeIn style={{ gap: 14 }}>
