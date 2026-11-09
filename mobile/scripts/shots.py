@@ -107,6 +107,7 @@ def run(lang, scheme):
         p.set_viewport_size({"width": 390, "height": 1700})
         ev(f"window.__bayyin.openProduct('{CARREFOUR}')"); p.wait_for_timeout(2500); shot("sheet-boycott")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.setTab('settings')"); p.wait_for_timeout(800)
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal", "boycott"]:
             ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         ev("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
