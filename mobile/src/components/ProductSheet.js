@@ -489,7 +489,7 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
       <RecallBox p={p} />
       {isBarcode(p.code) ? <RecipeBox code={p.code} /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
-      <BoycottBox p={p} />
+      <BoycottBox p={p} onOpen={onOpen} />
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
     </View>,
     <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>

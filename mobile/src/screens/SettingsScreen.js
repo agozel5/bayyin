@@ -1,7 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
 import { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate } from "../components/Boycott";
-import { BOYCOTT, BOYCOTT_SOURCE } from "../../../public/lib/boycott.js";
+import { BOYCOTT, BOYCOTT_SOURCE, kindOfEntry } from "../../../public/lib/boycott.js";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -555,32 +555,74 @@ function HowPage({ onTour }) {
   );
 }
 
-// Appels au boycott : interrupteur, ce que Bayyin signale et d'où vient la liste
+// Appels au boycott : interrupteur général, catégories signalées, et pour chaque entreprise
+// ce que dit la source, les marques reconnues et le lien vers la liste
+function BoycottCompany({ e, first }) {
+  const [open_, setOpen] = useState(false);
+  const isr = e.id === "israel";
+  const brands = e.shown || [];
+  const kind = kindOfEntry(e);
+  return (
+    <View style={{ borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line }}>
+      <Pressable onPress={() => { haptic.tap(); setOpen(!open_); }} accessibilityRole="button" accessibilityState={{ expanded: open_ }}
+        style={{ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 11 }}>
+        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: BOYCOTT_COLOR + "1F", alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: BOYCOTT_COLOR, fontWeight: "900", fontSize: 14 }}>{isr ? "729" : e.company.replace(/^The /, "").slice(0, 2).toUpperCase()}</Text>
+        </View>
+        <View style={{ flex: 1, gap: 1 }}>
+          <Txt style={{ fontWeight: "800" }}>{isr ? t("boycott.israel_row") : e.company}</Txt>
+          <Muted style={{ fontSize: 12.5 }}>{t(`boycott.k.${kind}`)}</Muted>
+        </View>
+        <View style={{ transform: [{ rotate: open_ ? "-90deg" : "90deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
+      </Pressable>
+      {open_ ? (
+        <View style={{ gap: 8, paddingBottom: 12, paddingStart: 46 }}>
+          <Txt style={{ fontSize: 14, lineHeight: 20 }}>{t(kind === "organic" ? "boycott.why.organic" : `boycott.why.${e.id}`)}</Txt>
+          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{isr ? t("boycott.israel_how") : t("boycott.brands", { list: brands.join(", ") })}</Muted>
+        </View>
+      ) : null}
+    </View>
+  );
+}
 function BoycottPage() {
+  const [, force] = useState(0);
   const st = getSettings();
   const on = st.boycott !== false;
-  const named = BOYCOTT.filter((e) => e.company);
+  const kinds = { bds: true, organic: true, israel: true, ...(st.boycottKinds || {}) };
+  const setKind = (k) => { setSettings({ boycottKinds: { ...kinds, [k]: !kinds[k] } }); haptic.tap(); force((n) => n + 1); };
+  const order = [...BOYCOTT.filter((e) => kindOfEntry(e) === "bds"), ...BOYCOTT.filter((e) => kindOfEntry(e) === "israel"), ...BOYCOTT.filter((e) => kindOfEntry(e) === "organic")];
   return (
     <View style={{ gap: 14 }}>
       <Block gap={12}>
         <Row gap={12}>
+          <Tile color={BOYCOTT_COLOR} paths={BOYCOTT_ICON} size={40} />
           <Txt style={{ flex: 1, fontWeight: "800", fontSize: 16 }}>{t("boycott.switch")}</Txt>
-          <Switch on={on} onPress={() => { setSettings({ boycott: !on }); saved(t(on ? "boycott.saved_off" : "boycott.saved_on")); }} label={t("boycott.switch")} />
+          <Switch on={on} onPress={() => { setSettings({ boycott: !on }); saved(t(on ? "boycott.saved_off" : "boycott.saved_on")); force((n) => n + 1); }} label={t("boycott.switch")} />
         </Row>
         <Lead>{t("boycott.intro")}</Lead>
         <Muted style={{ lineHeight: 20 }}>{t("boycott.neutral")}</Muted>
       </Block>
-      <Block title={t("boycott.list_t")} gap={4}>
-        {[...named.filter((e) => e.level === "bds"), { id: "israel" }, ...named.filter((e) => e.level === "organic")].map((e, i) => (
-          <Row key={e.id} gap={12} style={{ paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Txt style={{ fontWeight: "800" }}>{e.id === "israel" ? t("boycott.israel_row") : e.company}</Txt>
-              <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(e.level === "organic" ? "boycott.kind_organic" : "boycott.kind_bds")}</Muted>
-            </View>
-          </Row>
-        ))}
-        <Muted style={{ fontSize: 13, lineHeight: 18, marginTop: 6 }}>{t("boycott.scope")}</Muted>
-        <Text onPress={() => open(BOYCOTT_SOURCE.url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, marginTop: 6, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
+      {on ? (
+        <Block title={t("boycott.kinds_t")} gap={4}>
+          {["bds", "israel", "organic"].map((k, i) => (
+            <Row key={k} gap={12} style={{ paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Txt style={{ fontWeight: "800" }}>{t(`boycott.k.${k}`)}</Txt>
+                <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`boycott.k.${k}.d`)}</Muted>
+              </View>
+              <Switch on={kinds[k]} onPress={() => setKind(k)} label={t(`boycott.k.${k}`)} />
+            </Row>
+          ))}
+        </Block>
+      ) : null}
+      <Block title={t("boycott.list_t")} gap={0}>
+        <Muted style={{ fontSize: 13, lineHeight: 18, marginBottom: 6 }}>{t("boycott.list_p")}</Muted>
+        {order.map((e, i) => <BoycottCompany key={e.id} e={e} first={!i} />)}
+      </Block>
+      <Block title={t("boycott.method_t")} gap={8}>
+        <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.scope")}</Muted>
+        <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.method_p")}</Muted>
+        <Text onPress={() => open(BOYCOTT_SOURCE.url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
       </Block>
     </View>
   );

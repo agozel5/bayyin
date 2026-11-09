@@ -1,4 +1,5 @@
 // Cartes produit, motif du bandeau et vignettes, au style de la version web.
+import { BoycottTag } from "../boycott";
 import { Img } from "./Img";
 import React from "react";
 import { View, Text, Pressable } from "react-native";
@@ -100,6 +101,7 @@ export function ProductCard({ p, onPress, fav, width = 214 }) {
       <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}>
         <ScoreDot p={p} />
         {alert ? <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: ALERT_COLORS[alert][1] }}><Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "700" }}>{alertLabel(p)}</Text></View> : null}
+        <BoycottTag p={p} />
       </View>
     </Pressable>
   );
@@ -126,6 +128,7 @@ export function ListRow({ p, onPress, fav, when, first }) {
           </View>
           <ScoreDot p={p} size={12.5} />
           {alert ? <Text style={{ color: ALERT_COLORS[alert][0], fontSize: 12, fontWeight: "800" }}>{alertLabel(p)}</Text> : null}
+          <BoycottTag p={p} />
           {fav ? <Glyph name="star" size={14} color="#E9A100" /> : null}
         </View>
       </View>

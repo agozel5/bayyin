@@ -1,4 +1,5 @@
 // Accès à Open Food Facts depuis l'app, avec repli hors connexion.
+import { boycottFor } from "./boycott";
 import { present, pickAlternatives, FIELDS, productUrl, OFF_BASE, OffError, isMedicineCode, medShardUrl, medicineRaw, checkProfile, classifyAny, greenScore } from "./core";
 import { withProductData } from "../../public/lib/medicine.js";
 import { setCosmeticDb, cosmeticDbVersion } from "../../public/lib/cosmetic.js";
@@ -129,7 +130,7 @@ export async function searchProducts(q) {
 const ALT_KEY = (code) => "bayyin:alt:" + code;
 const fitProfile = (list) => {
   const st = getSettings();
-  return list.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, st), st.profile).alert);
+  return list.filter((c) => !checkProfile(c.raw, classifyAny(c.raw, st), st.profile).alert && !boycottFor(c));
 };
 export async function fetchAlternatives(product, onFast) {
   try {

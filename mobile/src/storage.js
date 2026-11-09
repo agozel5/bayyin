@@ -53,6 +53,7 @@ export async function initStorage() {
     notif: s.notif !== false, // alertes de rappel (si le téléphone les autorise)
     recipeAlerts: s.recipeAlerts !== false, // alerte quand la recette d'un produit suivi change
     boycott: s.boycott !== false, // afficher les appels au boycott (liste du mouvement BDS)
+    boycottKinds: { bds: true, organic: true, israel: true, ...(s.boycottKinds || {}) }, // catégories signalées
     notifAsked: !!s.notifAsked,
     scans: s.scans || 0, // nombre de fiches ouvertes (demande d'avis)
     reviewAsked: s.reviewAsked || 0,

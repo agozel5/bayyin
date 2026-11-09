@@ -106,6 +106,7 @@ def run(lang, scheme):
         ev("window.__bayyinFlashHold = false")
         p.set_viewport_size({"width": 390, "height": 1700})
         ev(f"window.__bayyin.openProduct('{CARREFOUR}')"); p.wait_for_timeout(2500); shot("sheet-boycott")
+        ev("window.__bayyinBoycottMore && window.__bayyinBoycottMore()"); p.wait_for_timeout(1200); shot("sheet-boycott-more")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyin.setTab('settings')"); p.wait_for_timeout(800)
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal", "boycott"]:
@@ -183,7 +184,7 @@ def run(lang, scheme):
         p.set_viewport_size({"width": 390, "height": 2600})
         ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
         ev("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
-        for cat in ["spreads", "shampoos"]:
+        for cat in ["spreads", "shampoos", "breakfast_cereals"]:
             ev(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
         ev("window.__bayyinRankRaws && window.__bayyinRankRaws(null)"); p.wait_for_timeout(800); shot("rank-loading")
         ev("window.__bayyinRankCat(null)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
