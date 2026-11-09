@@ -21,7 +21,7 @@ export const FIELDS = [
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_tags",
   "image_front_small_url", "image_front_url", "image_ingredients_url", "image_nutrition_url",
   "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "allergens_tags", "traces_tags", "categories_tags",
-  "compared_to_category", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags",
+  "compared_to_category", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags", "origins_tags",
 ].join(",");
 
 export const productUrl = (code) => `${OFF_BASE}/api/v2/product/${code}.json?fields=${FIELDS}`;
@@ -32,7 +32,7 @@ export const beautyUrl = (code) => `${OBF_BASE}/api/v2/product/${code}.json?fiel
 const RAW_KEYS = ["code", "product_name", "product_name_fr", "ingredients_text", "ingredients_text_fr", "ingredients_text_en", "lang", "ingredients_tags",
   "ingredients_text_de", "ingredients_text_es", "ingredients_text_it", "ingredients_text_nl", "ingredients_text_pt", "ingredients_text_tr", "ingredients_text_ar", "ingredients_text_pl",
   "additives_tags", "ingredients_analysis_tags", "labels", "labels_fr", "labels_tags", "categories_tags",
-  "allergens_tags", "traces_tags", "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "kind", "brands", "med_form", "med_cis", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags",
+  "allergens_tags", "traces_tags", "nutriscore_grade", "nutriscore_score", "nutriments", "nova_group", "kind", "brands", "med_form", "med_cis", "states_tags", "emb_codes", "emb_codes_tags", "brands_tags", "origins_tags",
   "quantity", "image_front_small_url", "image_front_url", "image_ingredients_url", "image_nutrition_url", "local", "ocr_from", "th"];
 
 // Type de produit : alimentaire (Open Food Facts), cosmétique (Open Beauty Facts) ou médicament (base publique).

@@ -13,13 +13,14 @@ OUT.mkdir(parents=True, exist_ok=True)
 PUB = Path(__file__).resolve().parents[2] / "public"
 CODES = ["3291980533795", "6111250471695", "3256224124870"]
 BEAUTY = "3567730300185"  # shampooing (Open Beauty Facts)
+CARREFOUR = "3560071190965"  # flocons d'avoine Carrefour (appel au boycott)
 NOPHOTO = "3282779069519"  # crème sans photo sur Open Beauty Facts
 PRODUCTS = {}
 for f in (PUB / "data" / "rankings").glob("*.json"):
     d = json.loads(f.read_text())
     if isinstance(d, list):
         for x in d:
-            if isinstance(x, dict) and x.get("code") in CODES + [BEAUTY, NOPHOTO]: PRODUCTS[x["code"]] = x
+            if isinstance(x, dict) and x.get("code") in CODES + [BEAUTY, NOPHOTO, CARREFOUR]: PRODUCTS[x["code"]] = x
 
 class H(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -89,6 +90,8 @@ def run(lang, scheme):
         for tab in ["search", "history", "additives", "settings"]:
             ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
         ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(600)
+        ev("window.__bayyinWeekGo && window.__bayyinWeekGo(1)"); p.wait_for_timeout(1400); shot("history-prevweek")
+        ev("window.__bayyinWeekGo && window.__bayyinWeekGo(-1)"); p.wait_for_timeout(1200)
         p.set_viewport_size({"width": 390, "height": 1700})
         ev("window.__bayyinHistFilter && window.__bayyinHistFilter('fav')"); p.wait_for_timeout(900); shot("empty-fav")
         p.set_viewport_size({"width": 390, "height": 844})
@@ -102,7 +105,9 @@ def run(lang, scheme):
             ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyinFlashHold = false")
         p.set_viewport_size({"width": 390, "height": 1700})
-        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal"]:
+        ev(f"window.__bayyin.openProduct('{CARREFOUR}')"); p.wait_for_timeout(2500); shot("sheet-boycott")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal", "boycott"]:
             ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         ev("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
         # Carte de partage

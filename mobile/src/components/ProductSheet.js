@@ -22,6 +22,7 @@ import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
 import RecipeBox from "./RecipeBox";
 import RecallBox from "./Recall";
+import BoycottBox from "./Boycott";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
 import { mailto } from "../config";
@@ -488,6 +489,7 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
       <RecallBox p={p} />
       {isBarcode(p.code) ? <RecipeBox code={p.code} /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
+      <BoycottBox p={p} />
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
     </View>,
     <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>

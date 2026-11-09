@@ -1,5 +1,7 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
+import { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate } from "../components/Boycott";
+import { BOYCOTT, BOYCOTT_SOURCE } from "../../../public/lib/boycott.js";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -39,6 +41,7 @@ const saved = (msg) => { haptic.success(); say && say(msg); };
 const SI = {
   lang: ['#3D84DB', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>'],
   profile: ['#E0457B', I.user],
+  boycott: [BOYCOTT_COLOR, BOYCOTT_ICON],
   religion: ['#1FA597', '<path d="M15.5 3.6A8.6 8.6 0 1 0 20.4 16a7 7 0 0 1-4.9-12.4z"/><path d="M17 7.5l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2z"/>'],
   appearance: ['#5A6472', '<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'],
   offline: ['#2F6FC0', '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>'],
@@ -55,7 +58,7 @@ const SI = {
   notif: ['#E0423A', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
   report: ['#5A6472', '<path d="M5.5 21V4M5.5 4h11l-2.2 4 2.2 4h-11"/>'],
 };
-const PAGE_TINT = { lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
+const PAGE_TINT = { boycott: BOYCOTT_COLOR, lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
 
 // ---------- briques ----------
 function Group({ title, children }) {
@@ -552,6 +555,37 @@ function HowPage({ onTour }) {
   );
 }
 
+// Appels au boycott : interrupteur, ce que Bayyin signale et d'où vient la liste
+function BoycottPage() {
+  const st = getSettings();
+  const on = st.boycott !== false;
+  const named = BOYCOTT.filter((e) => e.company);
+  return (
+    <View style={{ gap: 14 }}>
+      <Block gap={12}>
+        <Row gap={12}>
+          <Txt style={{ flex: 1, fontWeight: "800", fontSize: 16 }}>{t("boycott.switch")}</Txt>
+          <Switch on={on} onPress={() => { setSettings({ boycott: !on }); saved(t(on ? "boycott.saved_off" : "boycott.saved_on")); }} label={t("boycott.switch")} />
+        </Row>
+        <Lead>{t("boycott.intro")}</Lead>
+        <Muted style={{ lineHeight: 20 }}>{t("boycott.neutral")}</Muted>
+      </Block>
+      <Block title={t("boycott.list_t")} gap={4}>
+        {[...named.filter((e) => e.level === "bds"), { id: "israel" }, ...named.filter((e) => e.level === "organic")].map((e, i) => (
+          <Row key={e.id} gap={12} style={{ paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Txt style={{ fontWeight: "800" }}>{e.id === "israel" ? t("boycott.israel_row") : e.company}</Txt>
+              <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(e.level === "organic" ? "boycott.kind_organic" : "boycott.kind_bds")}</Muted>
+            </View>
+          </Row>
+        ))}
+        <Muted style={{ fontSize: 13, lineHeight: 18, marginTop: 6 }}>{t("boycott.scope")}</Muted>
+        <Text onPress={() => open(BOYCOTT_SOURCE.url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, marginTop: 6, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
+      </Block>
+    </View>
+  );
+}
+
 function NotifPage() {
   const st = getSettings();
   const [granted, setGranted] = useState(null);
@@ -793,7 +827,7 @@ function LegalPage() {
   );
 }
 
-const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
+const PAGES = { boycott: BoycottPage, notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
 
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
@@ -893,6 +927,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         <MenuRow id="profile" title={t("settings.menu.profile")} value={profText} onPress={go("profile")} />
         <MenuRow id="religion" title={t("settings.menu.religion")} value={t(`school.${st.school}`)} onPress={go("religion")} />
         <MenuRow id="appearance" title={t("settings.menu.appearance")} value={t(`theme.${st.theme}`)} onPress={go("appearance")} />
+        <MenuRow id="boycott" title={t("settings.menu.boycott")} value={t(st.boycott !== false ? "boycott.on" : "boycott.off")} onPress={go("boycott")} />
       </Group>
       <Group title={t("settings.g_data")}>
         <MenuRow id="offline" first title={t("settings.menu.offline")} value={offText} onPress={go("offline")} />
