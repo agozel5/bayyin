@@ -1461,7 +1461,7 @@ export default {
   "chain.cert_none": "No label",
   "chain.cert_ignored": "Body not followed",
   "bilan.title": "My overview",
-  "bilan.week": "Products checked in the last 7 days",
+  "bilan.week": "Products checked this week",
   "bilan.avg": "Average health score",
   "basket.avg_t": "Basket average score",
   "risk.none": "No known risk",

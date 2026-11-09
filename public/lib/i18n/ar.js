@@ -1461,7 +1461,7 @@ export default {
   "chain.cert_none": "بلا شهادة",
   "chain.cert_ignored": "جهة لا تتبعها",
   "bilan.title": "حصيلتي",
-  "bilan.week": "المنتجات التي تم فحصها في آخر 7 أيام",
+  "bilan.week": "المنتجات التي تم فحصها هذا الأسبوع",
   "bilan.avg": "متوسط التقييم الصحي",
   "basket.avg_t": "متوسط تقييم السلة",
   "risk.none": "لا خطر معروف",

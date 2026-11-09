@@ -123,6 +123,7 @@ def run(lang, scheme):
         p.set_viewport_size({"width": 390, "height": 1700})
         ev("window.__bayyinPlacesAt = { lat: 48.8566, lon: 2.3522 }; window.__bayyin.openPlaces()"); p.wait_for_timeout(1200)
         ev("window.__bayyinPlacesLocate && window.__bayyinPlacesLocate()"); p.wait_for_timeout(6000); shot("places")
+        ev("window.__bayyinPlacesPick && window.__bayyinPlacesPick(4)"); p.wait_for_timeout(1800); shot("places-pick")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyin.openCompare()"); p.wait_for_timeout(900)
         ev(f"window.__bayyinCompare && window.__bayyinCompare('{CODES[0]}', '{CODES[2]}')"); p.wait_for_timeout(1200); shot("compare")

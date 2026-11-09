@@ -1475,7 +1475,7 @@ export default {
   "chain.cert_none": "Aucun label",
   "chain.cert_ignored": "Organisme non suivi",
   "bilan.title": "Mon bilan",
-  "bilan.week": "Produits vérifiés ces 7 derniers jours",
+  "bilan.week": "Produits vérifiés cette semaine",
   "bilan.avg": "Note santé moyenne",
   "basket.avg_t": "Note moyenne du panier",
   "risk.none": "Aucun risque connu",

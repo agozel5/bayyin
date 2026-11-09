@@ -1965,6 +1965,7 @@ button.ch-btn .ch-sub{text-decoration:underline;text-decoration-thickness:1px;te
 .day-l{font-size:.7rem;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden}
 .day.today .day-l{color:var(--fg);font-weight:800}
 .day.today .day-fill:not(.zero){box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px color-mix(in srgb,var(--fg) 30%,transparent)}
+.day.future{opacity:.45}
 .gauge.score-gauge,[dir="rtl"] .gauge.score-gauge{margin:0 0 4px}
 .score-gauge .gauge-bar i{border-radius:0}
 .score-gauge .gauge-bar i:first-child{border-radius:999px 0 0 999px}

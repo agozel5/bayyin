@@ -2628,12 +2628,14 @@ function legendHtml(counts, total) {
 // Barres des 7 derniers jours, chaque barre partagée entre les verdicts
 function daysHtml(entries, weeksAgo = 0) {
   const lang = getLang();
-  const day0 = new Date(); day0.setHours(0, 0, 0, 0);
-  day0.setDate(day0.getDate() - 7 * weeksAgo);
+  const mon = new Date(weekBounds(weeksAgo).start);
+  const now = Date.now();
   const days = Array.from({ length: 7 }, (_, i) => {
-    const start = day0.getTime() - (6 - i) * 864e5;
-    const list = entries.filter((e) => e.at >= start && e.at < start + 864e5).map((e) => e.p);
-    return { start, list, counts: statusCounts(list) };
+    const d0 = new Date(mon); d0.setDate(d0.getDate() + i);
+    const d1 = new Date(mon); d1.setDate(d1.getDate() + i + 1);
+    const start = d0.getTime(), end = d1.getTime(); // jours du calendrier (25 h au passage à l'heure d'hiver)
+    const list = entries.filter((e) => e.at >= start && e.at < end).map((e) => e.p);
+    return { start, list, counts: statusCounts(list), today: now >= start && now < end, future: start > now };
   });
   const max = Math.max(1, ...days.map((d) => d.list.length));
   const wd = new Intl.DateTimeFormat(lang === "ar" ? "ar" : lang, { weekday: "short" });
@@ -2641,7 +2643,7 @@ function daysHtml(entries, weeksAgo = 0) {
   return `<div class="days viz" dir="ltr">${days.map((d, i) => {
     const n = d.list.length;
     const segs = STATUS_ORDER.filter((s) => d.counts[s]).map((s) => `<i style="flex:${d.counts[s]};--c:${STATUS_COLOR[s]}"></i>`).join("");
-    return `<div class="day${i === 6 && !weeksAgo ? " today" : ""}" style="--i:${i}" title="${esc(`${full.format(d.start)} : ${n}`)}">
+    return `<div class="day${d.today ? " today" : ""}${d.future ? " future" : ""}" style="--i:${i}" title="${esc(`${full.format(d.start)} : ${n}`)}">
       <span class="day-n">${n || ""}</span>
       <span class="day-bar"><span class="day-fill${n ? "" : " zero"}" style="--h:${n ? Math.max(8, (n / max) * 100) : 4}%">${segs}</span></span>
       <span class="day-l">${esc(wd.format(d.start).replace(/\.$/, ""))}</span></div>`;
@@ -2662,13 +2664,14 @@ const avgScore = (products) => {
 };
 
 // « Mon bilan » en tête de l'historique
-// Bloc « 7 jours » : on remonte d'une semaine en glissant vers la droite, on revient en glissant vers la gauche
+// Bloc « semaine » (lundi → dimanche) : on remonte d'une semaine en glissant vers la droite, on revient en glissant vers la gauche
 let bilanWeek = 0;
 let bilanEntries = [];
+// Semaine du calendrier, du lundi au dimanche (fin exclue : lundi suivant)
 function weekBounds(weeksAgo) {
-  const end = new Date(); end.setHours(0, 0, 0, 0);
-  end.setDate(end.getDate() + 1 - 7 * weeksAgo); // fin (exclue) : lendemain du dernier jour affiché
-  const start = new Date(end); start.setDate(start.getDate() - 7);
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - 7 * weeksAgo);
+  const end = new Date(start); end.setDate(end.getDate() + 7);
   return { start: start.getTime(), end: end.getTime() };
 }
 function weekSecHtml(all) {

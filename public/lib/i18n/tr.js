@@ -1461,7 +1461,7 @@ export default {
   "chain.cert_none": "Sertifika yok",
   "chain.cert_ignored": "Takip edilmeyen kuruluş",
   "bilan.title": "Özetim",
-  "bilan.week": "Son 7 günde kontrol edilen ürünler",
+  "bilan.week": "Bu hafta kontrol edilen ürünler",
   "bilan.avg": "Ortalama sağlık puanı",
   "basket.avg_t": "Sepetin ortalama puanı",
   "risk.none": "Bilinen risk yok",

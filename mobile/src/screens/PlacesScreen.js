@@ -110,12 +110,20 @@ export default function PlacesScreen({ onClose }) {
       set({ loading: false, error: t("places.error") });
     }
   };
-  if (typeof window !== "undefined") window.__bayyinPlacesLocate = locate;
+  // Un commerce touché dans la liste : on remonte en douceur jusqu'à la carte, qui vole vers lui
+  const scroller = useRef(null);
+  const mapY = useRef(0);
+  const pickFromList = (id) => {
+    haptic.tap();
+    set({ selected: id });
+    if (scroller.current) scroller.current.scrollTo({ y: Math.max(0, mapY.current - 12), animated: true });
+  };
+  if (typeof window !== "undefined") { window.__bayyinPlacesLocate = locate; window.__bayyinPlacesPick = (i) => vis[i] && pickFromList(vis[i].id); }
 
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c, st.list.filter((p) => p.cat === c).length]));
   const vis = st.list.filter((p) => st.cat === "all" || p.cat === st.cat);
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 14 }}>
+    <ScrollView ref={scroller} style={{ flex: 1, backgroundColor: C.bg }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 14 }}>
       <Row gap={6}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
           <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
@@ -155,7 +163,11 @@ export default function PlacesScreen({ onClose }) {
       ) : null}
       {/* Comme sur le site : filtres, puis le nombre de commerces, puis la carte */}
       {st.center && !st.loading && !st.error ? <Muted style={{ fontSize: 16, fontWeight: "700", lineHeight: 22 }}>{tn("places.found", vis.length, { where: st.label, r: st.radius / 1000 })}</Muted> : null}
-      {st.center ? <PlacesMap center={st.center} places={vis} selected={st.selected} onSelect={(id) => set({ selected: id })} height={320} /> : null}
+      {st.center ? (
+        <View onLayout={(e) => { mapY.current = e.nativeEvent.layout.y; }}>
+          <PlacesMap center={st.center} places={vis} selected={st.selected} onSelect={(id) => set({ selected: id })} height={320} />
+        </View>
+      ) : null}
 
       {st.loading && !st.list.length ? [0, 1, 2].map((i) => <Skeleton key={i} height={110} radius={18} />) : null}
       {st.center && !st.loading && !st.error && !vis.length ? (
@@ -164,7 +176,7 @@ export default function PlacesScreen({ onClose }) {
           <Muted style={{ textAlign: "center" }}>{t("places.empty_p")}</Muted>
         </View>
       ) : null}
-      {vis.slice(0, 80).map((p) => <PlaceCard key={p.id} p={p} selected={st.selected === p.id} onSelect={(id) => set({ selected: id })} />)}
+      {vis.slice(0, 80).map((p) => <PlaceCard key={p.id} p={p} selected={st.selected === p.id} onSelect={pickFromList} />)}
       <Muted style={{ fontSize: 12.5, lineHeight: 18 }}>{t("places.note")}</Muted>
       <Pressable onPress={() => open("https://www.openstreetmap.org/edit")} accessibilityRole="link"><Text style={{ color: C.brand, fontWeight: "800", textAlign: dir().ta }}>{t("places.add")} ↗</Text></Pressable>
     </ScrollView>
