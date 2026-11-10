@@ -272,7 +272,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
                 </View>
               ) : null}
             </View>
-            <Text numberOfLines={2} maxFontSizeMultiplier={1.2} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontSize: 12, lineHeight: 15, fontWeight: "800", color: C.fg, textAlign: "center" }}>{label}</Text>
+            <Text numberOfLines={2} maxFontSizeMultiplier={1.2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontSize: 12, lineHeight: 15, fontWeight: "800", color: C.fg, textAlign: "center" }}>{label}</Text>
           </Pressable>
         ))}
       </View>
