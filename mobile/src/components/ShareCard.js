@@ -6,7 +6,7 @@ import { View, Text, Image } from "react-native";
 import Svg, { Rect, Path, Circle } from "react-native-svg";
 import { Logo } from "./Icon";
 import { Khatam } from "./Cards";
-import { t, getLang } from "../i18n";
+import { t, getLang, isRTL } from "../i18n";
 import { verdictOf, nameOf, scoreOf, S, kindOf } from "../view";
 import { qrMatrix } from "../../../public/lib/qr.js";
 
@@ -26,7 +26,7 @@ function Mark({ status, color }) {
   );
 }
 
-function Qr({ text, size }) {
+export function Qr({ text, size }) {
   const m = useMemo(() => { try { return qrMatrix(text); } catch { return null; } }, [text]);
   if (!m) return null;
   const n = m.length, cell = size / n;
@@ -39,7 +39,7 @@ const ShareCard = forwardRef(function ShareCard({ p }, ref) {
   const v = verdictOf(p);
   const s = scoreOf(p);
   const vc = COLORS[v.status] || COLORS.inconnu;
-  const rtl = getLang() === "ar";
+  const rtl = isRTL();
   const row = rtl ? "row-reverse" : "row";
   const ta = rtl ? "right" : "left";
   const r = 15, c = 2 * Math.PI * r;

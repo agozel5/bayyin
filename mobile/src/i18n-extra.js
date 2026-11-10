@@ -1,5 +1,15 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
+import de from "./i18n-extra-de";
+import es from "./i18n-extra-es";
+import ur from "./i18n-extra-ur";
+import id from "./i18n-extra-id";
+import nl from "./i18n-extra-nl";
+import it from "./i18n-extra-it";
+import ms from "./i18n-extra-ms";
+import bn from "./i18n-extra-bn";
+
 export const EXTRA = {
+  de, es, ur, id, nl, it, ms, bn,
   fr: {
     "scan.step.prep": "Préparation de la photo",
     "menu.step.read": "Lecture des plats",

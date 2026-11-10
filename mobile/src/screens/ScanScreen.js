@@ -1,5 +1,6 @@
 // Accueil : bandeau vert (bonjour et bilan de la semaine, ou présentation), scan en un geste,
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
+import { BOYCOTT_COLOR, BOYCOTT_ICON } from "../boycott";
 import Ramadan from "../components/Ramadan";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
@@ -89,7 +90,7 @@ function HeroButton({ icon, text, onPress, on }) {
   );
 }
 
-export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onAisle, onPlaces, onCompare, onTravel, onMenu, recipeChanges = [], onOpenChanges, onDismissChanges, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
+export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onBoycott, onAisle, onPlaces, onCompare, onTravel, onMenu, recipeChanges = [], onOpenChanges, onDismissChanges, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState(null);
   const [photoMenu, setPhotoMenu] = useState(false); // choix : liste d'ingrédients, étiquette étrangère, carte de restaurant
@@ -286,6 +287,19 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         </View>
         <Glyph name="chev" size={17} color={C.faint} />
       </Pressable>
+
+      {/* Appels au boycott (si l'option est affichée) */}
+      {getSettings().boycott !== false && onBoycott ? (
+        <Pressable onPress={() => { haptic.tap(); onBoycott(); }} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, paddingVertical: 16, paddingHorizontal: 16, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.98 : 1 }] }, lift()]}>
+          <Tile color={BOYCOTT_COLOR} paths={BOYCOTT_ICON} size={48} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt style={{ fontWeight: "800", fontSize: 17 }}>{t("settings.menu.boycott")}</Txt>
+            <Muted style={{ fontSize: 14, lineHeight: 19 }}>{t("boycott.promo")}</Muted>
+          </View>
+          <Glyph name="chev" size={17} color={C.faint} />
+        </Pressable>
+      ) : null}
 
       {status ? <Message title={status.title} text={status.text} /> : null}
 

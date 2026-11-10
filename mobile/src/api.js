@@ -162,6 +162,24 @@ export async function fetchAlternatives(product, onFast) {
 /** Fiches plus complètes du même produit (même nom, même marque) */
 export const fetchTwins = (product) => offClient.twins(product).catch(() => []);
 
+// Exemples de vrais produits de chaque entreprise visée par un appel au boycott (fichier préparé chaque
+// mois sur le site), gardés 7 jours sur le téléphone et disponibles hors connexion
+const BOYCOTT_URL = "https://agozel5.github.io/bayyin/data/boycott.json";
+const BOYCOTT_KEY = "bayyin:boycott";
+export async function fetchBoycottData() {
+  let old = null;
+  try { old = JSON.parse((await AsyncStorage.getItem(BOYCOTT_KEY)) || "null"); } catch { old = null; }
+  if (old && Date.now() - old.at < 7 * 864e5) return old.data;
+  try {
+    const data = await getJson(BOYCOTT_URL, 15000);
+    if (data && data.companies) {
+      AsyncStorage.setItem(BOYCOTT_KEY, JSON.stringify({ at: Date.now(), data })).catch(() => {});
+      return data;
+    }
+  } catch { /* hors connexion : dernière copie */ }
+  return old ? old.data : { companies: {} };
+}
+
 // Les produits les plus scannés en France, gardés pour le hors connexion.
 export const POPULAR_URL = "https://agozel5.github.io/bayyin/data/popular.json";
 export async function downloadPack(onProgress, pages = 5, pageSize = 100) {

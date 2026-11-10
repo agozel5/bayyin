@@ -1,9 +1,10 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
+import { Qr } from "../components/ShareCard";
 import { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate } from "../components/Boycott";
 import { BOYCOTT, BOYCOTT_SOURCE, kindOfEntry } from "../../../public/lib/boycott.js";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
@@ -23,7 +24,8 @@ import { checkRecipes } from "../recipewatch";
 import { legalDoc, LEGAL_IDS } from "../legal";
 import { S } from "../view";
 import { haptic, ms } from "../motion";
-import { CONTACT_EMAIL, mailto } from "../config";
+import { CONTACT_EMAIL, mailto, WEB } from "../config";
+import { Logo } from "../components/Icon";
 import { useEdgeSwipe } from "../components/EdgeSwipe";
 import { Collapse, Chevron } from "../components/Reveal";
 import { getBasket } from "../basket";
@@ -51,6 +53,8 @@ const SI = {
   sources: ['#4C64D6', I.doc],
   privacy: ['#46526A', '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'],
   limits: ['#F0BC33', I.alert],
+  about: ['#14805A', '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.1"/>'],
+  share: ['#E0457B', '<path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12H5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-1"/>'],
   legal: ['#5A6472', '<path d="M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a2.8 2.8 0 0 0 5 0zM19 7l-2.5 6a2.8 2.8 0 0 0 5 0z"/>'],
   feedback: ['#1897D6', '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z"/>'],
   off: ['#8B5A3C', I.box],
@@ -584,7 +588,7 @@ function BoycottCompany({ e, first }) {
     </View>
   );
 }
-function BoycottPage() {
+function BoycottPage({ onBoycott }) {
   const [, force] = useState(0);
   const st = getSettings();
   const on = st.boycott !== false;
@@ -601,6 +605,12 @@ function BoycottPage() {
         </Row>
         <Lead>{t("boycott.intro")}</Lead>
         <Muted style={{ lineHeight: 20 }}>{t("boycott.neutral")}</Muted>
+        {on && onBoycott ? (
+          <Pressable onPress={() => { haptic.tap(); onBoycott(); }} accessibilityRole="button"
+            style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 13, borderRadius: R.md, backgroundColor: pressed ? "#55439E" : BOYCOTT_COLOR })}>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("boycott.see_list")}</Text>
+          </Pressable>
+        ) : null}
       </Block>
       {on ? (
         <Block title={t("boycott.kinds_t")} gap={4}>
@@ -869,11 +879,76 @@ function LegalPage() {
   );
 }
 
-const PAGES = { boycott: BoycottPage, notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
+// À propos : l'histoire de Bayyin, ses engagements, puis les pages légales (sur le site) et le contact
+const WEB_LEGAL = [["mentions", "legal/mentions.html"], ["privacy", "legal/confidentialite.html"], ["terms", "legal/conditions.html"], ["sales", "legal/abonnement.html"], ["contact", "legal/contact.html"]];
+function AboutPage() {
+  const version = (Constants.expoConfig && Constants.expoConfig.version) || "";
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={[{ borderRadius: 22, padding: 22, gap: 10, alignItems: "center", backgroundColor: C.brand, overflow: "hidden" }, lift()]}>
+        <Logo size={72} />
+        <Text style={{ color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -0.4 }}>Bayyin <Text style={{ fontWeight: "700" }}>بيّن</Text></Text>
+        <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 15, textAlign: "center", lineHeight: 21 }}>{t("about.tagline")}</Text>
+      </View>
+      <Block title={t("about.story_t")} gap={12}>
+        <View style={{ borderStartWidth: 3, borderStartColor: C.brand, paddingStart: 12, gap: 4 }}>
+          <Txt style={{ fontSize: 16, lineHeight: 24, fontStyle: "italic" }}>{t("about.hadith")}</Txt>
+          <Muted style={{ fontSize: 13 }}>{t("about.hadith_src")}</Muted>
+        </View>
+        {["about.story_1", "about.story_2", "about.story_3", "about.story_4"].map((k) => <Txt key={k} style={{ fontSize: 15.5, lineHeight: 23 }}>{t(k)}</Txt>)}
+      </Block>
+      <Block title={t("about.values_t")} gap={4}>
+        <IconList items={[
+          ["#14805A", I.check || '<path d="M5 12.5l4.5 4.5L19 7.5"/>', t("about.value_1")],
+          ["#46526A", '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>', t("about.value_2")],
+          ["#4C64D6", I.doc, t("about.value_3")],
+        ]} />
+      </Block>
+      <Block title={t("about.legal_t")} gap={0}>
+        {WEB_LEGAL.map(([id, path], i) => (
+          <Pressable key={id} onPress={() => { haptic.tap(); open(WEB + path); }} accessibilityRole="link"
+            style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 13, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line, opacity: pressed ? 0.6 : 1 })}>
+            <Txt style={{ flex: 1, fontWeight: "700", fontSize: 15.5 }}>{t(`about.l.${id}`)}</Txt>
+            <Text style={{ color: C.faint, fontSize: 16 }}>↗</Text>
+          </Pressable>
+        ))}
+      </Block>
+      <RecommendBlock />
+      <Muted style={{ fontSize: 12.5, textAlign: "center" }}>Bayyin {version}</Muted>
+    </View>
+  );
+}
+
+// Recommander l'app : partage (message + lien) et QR code à faire scanner par un proche
+function RecommendBlock() {
+  const [qr, setQr] = useState(false);
+  const share = () => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); };
+  return (
+    <Block title={t("share_app.t")} gap={12}>
+      <Muted style={{ lineHeight: 20 }}>{t("share_app.p")}</Muted>
+      <Pressable onPress={share} accessibilityRole="button"
+        style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand })}>
+        <Glyph paths={SI.share[1]} size={19} color="#fff" width={2.2} />
+        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15.5 }}>{t("share_app.btn")}</Text>
+      </Pressable>
+      <Pressable onPress={() => { haptic.tap(); setQr(!qr); }} accessibilityRole="button" style={{ alignSelf: "center", padding: 4 }}>
+        <Text style={{ color: C.brand, fontWeight: "800", fontSize: 14.5 }}>{t(qr ? "share_app.qr_hide" : "share_app.qr")}</Text>
+      </Pressable>
+      {qr ? (
+        <View style={{ alignItems: "center", gap: 8 }}>
+          <View style={{ padding: 14, borderRadius: 18, backgroundColor: "#fff" }}><Qr text={WEB} size={190} /></View>
+          <Muted style={{ fontSize: 13, textAlign: "center" }}>{t("share_app.qr_p")}</Muted>
+        </View>
+      ) : null}
+    </Block>
+  );
+}
+
+const PAGES = { about: AboutPage, boycott: BoycottPage, notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
 
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
-export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
+export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoycott }) {
   say = toast;
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(null);
@@ -933,7 +1008,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
             <Art xml={PAGE_ART[page]} width="100%" height={150} />
           </View>
         ) : null}
-        <P toast={toast} onTour={onTour} />
+        <P toast={toast} onTour={onTour} onBoycott={onBoycott} />
       </ScrollView>
       </KeyboardAvoidingView>
       </Animated.View>
@@ -977,12 +1052,13 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         <MenuRow id="data" title={t("settings.menu.data")} value={tn("settings.data_count", getHistory().length)} onPress={go("data")} />
       </Group>
       <Group title={t("settings.g_about")}>
-        {["notes", "how", "sources", "privacy", "limits"].map((id, i) => <MenuRow key={id} id={id} first={i === 0} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
-        <MenuRow id="legal" title={t("settings.menu.legal")} value={t("legal.row")} onPress={go("legal")} />
+        <MenuRow id="about" first title={t("settings.menu.about")} value={t("about.row")} onPress={go("about")} />
+        {["notes", "how", "sources", "privacy", "limits"].map((id) => <MenuRow key={id} id={id} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
       </Group>
       <Group title={t("settings.g_links")}>
-        {CONTACT_EMAIL ? <MenuRow id="feedback" first external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
-        <MenuRow id="off" first={!CONTACT_EMAIL} external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
+        <MenuRow id="share" first title={t("share_app.t")} value={t("share_app.row")} onPress={() => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); }} />
+        {CONTACT_EMAIL ? <MenuRow id="feedback" external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
+        <MenuRow id="off" external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
         {CONTACT_EMAIL ? <MenuRow id="report" external title={t("link.report.t")} value={t("link.report.d")} onPress={() => open(mailto("Bayyin"))} /> : null}
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
