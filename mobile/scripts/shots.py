@@ -111,6 +111,11 @@ def run(lang, scheme):
         p.set_viewport_size({"width": 390, "height": 1700})
         ev(f"window.__bayyin.openProduct('{CARREFOUR}')"); p.wait_for_timeout(2500); shot("sheet-boycott")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        # Nouvelles langues : l'accueil en ourdou (de droite à gauche), allemand et bengali
+        if lang == "fr" and scheme == "light":
+            for lg in ["ur", "de", "bn"]:
+                ev(f"window.__bayyin.setSettings({{ lang: '{lg}' }})"); ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1500); shot(f"lang-{lg}")
+            ev("window.__bayyin.setSettings({ lang: 'fr' })"); p.wait_for_timeout(800)
         # Page « Appels au boycott » : vues, fiche d'une entreprise, et depuis une fiche produit
         ev("window.__bayyin.openBoycott && window.__bayyin.openBoycott()"); p.wait_for_timeout(2500); shot("boycott-home")
         ev("window.__bayyinBoycottView && window.__bayyinBoycottView('brands')"); p.wait_for_timeout(900); shot("boycott-brands")

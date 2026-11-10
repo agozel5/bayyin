@@ -1689,7 +1689,7 @@ export default {
   "boycott.hero": "BDS hareketinin boykot çağrılarının hedefindeki şirketler ve ürünler, hareketin gösterdiği nedenler ve alternatiflerle.",
   "boycott.stat_companies": "şirket",
   "boycott.stat_brands": "marka",
-  "boycott.stat_mine": "geçmişimde",
+  "boycott.stat_mine": "taranan",
   "boycott.v.companies": "Şirketler",
   "boycott.v.brands": "Markalar",
   "boycott.v.mine": "Ürünlerim",

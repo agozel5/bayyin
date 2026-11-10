@@ -1689,7 +1689,7 @@ export default {
   "boycott.hero": "The companies and products targeted by the BDS movement's boycott calls, with the reasons it gives and alternatives.",
   "boycott.stat_companies": "companies",
   "boycott.stat_brands": "brands",
-  "boycott.stat_mine": "in my history",
+  "boycott.stat_mine": "scanned",
   "boycott.v.companies": "Companies",
   "boycott.v.brands": "Brands",
   "boycott.v.mine": "My products",

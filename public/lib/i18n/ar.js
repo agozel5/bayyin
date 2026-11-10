@@ -1689,7 +1689,7 @@ export default {
   "boycott.hero": "الشركات والمنتجات المستهدفة بدعوات المقاطعة التي تطلقها حركة BDS، مع الأسباب التي تقدمها وبدائل.",
   "boycott.stat_companies": "شركات",
   "boycott.stat_brands": "علامات",
-  "boycott.stat_mine": "في سجلي",
+  "boycott.stat_mine": "ممسوحة",
   "boycott.v.companies": "الشركات",
   "boycott.v.brands": "العلامات",
   "boycott.v.mine": "منتجاتي",

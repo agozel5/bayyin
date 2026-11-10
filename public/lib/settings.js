@@ -3,7 +3,7 @@ import { DEFAULT_PREFS, SCHOOLS, TOPICS, CERTIFIER_IDS } from "./rules.js";
 import { PROFILE_ALLERGENS, DIETS } from "./profile.js";
 
 const KEY = "halalscan_settings_v1";
-export const LANGS = ["fr", "en", "ar", "tr"];
+export const LANGS = ["fr", "en", "ar", "tr", "de", "es", "ur", "id", "nl", "it", "ms", "bn"];
 export const THEMES = ["auto", "light", "dark"];
 export const TEXT_SIZES = ["normal", "large", "xlarge"];
 
