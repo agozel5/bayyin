@@ -1,3 +1,11 @@
-API tabulaire indisponible : HTTP 503 → export data.economie.gouv.fr
-18959 lignes lues depuis data.economie.gouv.fr
-{"updated":"2026-11-10","source":"data.economie.gouv.fr","recalls":4974,"gtins":7286,"recent":461}
+  … 2000 lignes
+  … 4000 lignes
+  … 6000 lignes
+  … 8000 lignes
+  … 10000 lignes
+  … 12000 lignes
+  … 14000 lignes
+  … 16000 lignes
+  … 18000 lignes
+18969 lignes lues depuis tabular-api.data.gouv.fr
+{"updated":"2026-11-11","source":"tabular-api.data.gouv.fr","recalls":4982,"gtins":7292,"recent":465}
