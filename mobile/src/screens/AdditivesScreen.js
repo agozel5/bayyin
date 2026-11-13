@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable, ScrollView, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted } from "../components/ui";
+import { useNavBar } from "../components/NavBar";
 import { PageHead, SearchBox, Chip, ChipRow, Segmented } from "../components/Controls";
 import { AdditiveRow, additiveRow } from "../components/Additives";
 import { Pill2 } from "../components/SheetParts";
@@ -39,6 +40,7 @@ function myCounts() {
 
 export default function AdditivesScreen({ onGotoSettings }) {
   const insets = useSafeAreaInsets();
+  const nav = useNavBar(t("add.title"));
   const [mode, setMode] = useState("codes");
   const [filter, setFilter] = useState("all");
   const [fn, setFn] = useState("");
@@ -123,7 +125,8 @@ export default function AdditivesScreen({ onGotoSettings }) {
     const forceOpen = !!nq || ingrF !== "all" || groups.length === 1;
     const sevPill = (lv, n) => <Pill2 key={lv} text={`${t(`sev.${lv}`)}${n != null ? ` · ${n}` : ""}`} colors={SEV_COLORS[lv] || SEV_COLORS.info} />;
     return (
-      <ScrollView style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap: 12 }}>
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView {...nav.scroll} style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap: 12 }}>
         {header}
         <ChipRow>
           {[["all", "add.f.all"], ["haram", "sev.haram"], ["mashbouh", "sev.mashbouh"], ["info", "sev.info"]].map(([id, key]) => (
@@ -169,13 +172,16 @@ export default function AdditivesScreen({ onGotoSettings }) {
           );
         }) : <View style={{ alignItems: "center", gap: 6, paddingVertical: 30 }}><Text style={{ fontWeight: "800", fontSize: 17, color: C.fg }}>{t("add.empty.t")}</Text><Muted style={{ textAlign: "center" }}>{t("add.empty_halal")}</Muted></View>}
       </ScrollView>
+      {nav.bar}
+      </View>
     );
   }
   const data = list.slice(0, shown);
   return (
     <>
     {fnSheet}
-    <FlatList data={data} keyExtractor={(r) => r.code} ListHeaderComponent={header} initialNumToRender={20} windowSize={9}
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <FlatList {...nav.scroll} data={data} keyExtractor={(r) => r.code} ListHeaderComponent={header} initialNumToRender={20} windowSize={9}
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120 }}
       style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
       renderItem={({ item: r, index }) => (
@@ -190,6 +196,8 @@ export default function AdditivesScreen({ onGotoSettings }) {
         </Pressable>
       ) : list.length ? <Muted style={{ fontSize: 12.5, marginTop: 14, textAlign: "center" }}>{t("add.e_source")}</Muted> : null}
     />
+    {nav.bar}
+    </View>
     </>
   );
 }

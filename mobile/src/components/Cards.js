@@ -108,13 +108,14 @@ export function ProductCard({ p, onPress, fav, width = 214 }) {
 }
 
 // Ligne de liste (historique, recherche) : vignette, nom, marque · moment, verdict, note
-export function ListRow({ p, onPress, fav, when, first }) {
+export function ListRow({ p, onPress, onLongPress, fav, when, first }) {
   const st = verdictOf(p).status;
   const alert = profileOf(p).alert;
   const meta = [kindOf(p) !== "food" ? t(`kind.${kindOf(p)}`) : "", p.brand, when].filter(Boolean).join(" · ");
   const [fg, bg] = STATUS_PILL(st);
   return (
-    <Pressable onPress={() => { haptic.tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={`${nameOf(p)}, ${S(st, "label")}`}
+    <Pressable onPress={() => { haptic.tap(); onPress(); }} onLongPress={onLongPress ? () => { haptic.light(); onLongPress(); } : undefined} delayLongPress={320}
+      accessibilityRole="button" accessibilityLabel={`${nameOf(p)}, ${S(st, "label")}`}
       style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14, backgroundColor: pressed ? C.tint : "transparent",
         borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line })}>
       <Thumb p={p} size={54} />
