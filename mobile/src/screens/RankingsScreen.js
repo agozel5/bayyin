@@ -1,5 +1,6 @@
 // Classements : les produits halal les mieux notés pour la santé, rayon par rayon (selon vos réglages).
 // Les listes sont préparées chaque semaine sur le site (data/rankings/<rayon>.json).
+import EmptyState from "../components/Empty";
 import { BoycottTag, boycottFor } from "../boycott";
 import { Img, prefetchImages } from "../components/Img";
 import React, { useEffect, useState } from "react";
@@ -98,7 +99,7 @@ function Ranking({ cat, onBack, onOpen }) {
       </Row>
       <Muted style={{ fontSize: 13 }}>{t("rank.basis", { school: t(`school.${st.school}`) })}</Muted>
       {raws === null ? <RankSkeleton label={t("msg.loading")} /> : raws === false ? (
-        <View style={{ alignItems: "center", gap: 6, paddingVertical: 24 }}><Txt style={{ fontWeight: "800" }}>{t("rank.error.t")}</Txt><Muted>{t("rank.error.p")}</Muted></View>
+        <EmptyState compact pose="search" size={92} title={t("rank.error.t")} text={t("rank.error.p")} action={t("msg.retry")} onAction={() => { setRaws(null); rankProductsFast(cat.id, setRaws).then(setRaws).catch(() => setRaws(false)); }} />
       ) : list.length ? (
         <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
           {list.map((p, i) => {
