@@ -13,7 +13,6 @@ import CameraScanner from "./components/CameraScanner";
 import OcrFlow from "./components/OcrFlow";
 import ScanScreen from "./screens/ScanScreen";
 import RankingsScreen from "./screens/RankingsScreen";
-import BoycottScreen from "./screens/BoycottScreen";
 import { Khatam } from "./components/Cards";
 import Guard from "./components/Guard";
 import Onboarding from "./components/Onboarding";
@@ -170,7 +169,7 @@ function Toast({ text }) {
 
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
-const SLIDE = ["sheet", "boycott", "rankings", "basket", "premium", "places", "compare", "travel", "menu"];
+const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare", "travel", "menu"];
 function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, shared, under, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
@@ -431,7 +430,6 @@ function Main() {
         onGotoSettings={() => gotoSettings()}
         onGotoProfile={gotoProfile}
         onRankings={() => push({ type: "rankings" })}
-        onBoycott={() => push({ type: "boycott" })}
         onAisle={() => { if (canUse("aisle")) push({ type: "aisle" }); }}
         onPlaces={() => push({ type: "places" })}
         onTravel={() => { if (canUse("travel")) push({ type: "travel" }); }}
@@ -452,7 +450,7 @@ function Main() {
   if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} />;
   if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
-  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} onPremium={() => push({ type: "premium" })} onBoycott={() => push({ type: "boycott" })} />;
+  if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} onPremium={() => push({ type: "premium" })} />;
 
   const renderScreen = (item) => {
     if (item.type === "camera")
@@ -488,7 +486,6 @@ function Main() {
           onGotoSettings={() => gotoSettings()}
           onGotoProfile={gotoProfile}
           onCompare={(code, bp) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: bp }); }}
-          onBoycott={(id, from) => push({ type: "boycott", focus: id, from })}
           toast={toast}
         />
       );
@@ -500,8 +497,6 @@ function Main() {
     if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;
     if (item.type === "basket")
       return <BasketScreen onClose={pop} toast={toast} onScan={() => { setBasketMode(true); openCamera({ replace: true }); }} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
-    if (item.type === "boycott")
-      return <BoycottScreen focus={item.focus} from={item.from} onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "rankings")
       return <RankingsScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "ocr")
@@ -522,7 +517,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBoycott: (focus) => push({ type: "boycott", focus }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.

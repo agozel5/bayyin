@@ -1,5 +1,4 @@
 // Historique : « Mon bilan » (anneau des verdicts, 7 jours, note moyenne), filtres, produits par jour.
-import { boycottFor, BOYCOTT_COLOR, BOYCOTT_ICON } from "../boycott";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -337,15 +336,6 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
             ))}
           </View>
         ) : null}
-        {(() => { // produits de la période concernés par un appel au boycott (si l'option est affichée)
-          const nb = base.filter((e) => boycottFor(e.p)).length;
-          return nb ? (
-            <Row gap={10} style={{ padding: 10, borderRadius: R.md, backgroundColor: BOYCOTT_COLOR + "14" }}>
-              <Glyph paths={BOYCOTT_ICON} size={18} color={BOYCOTT_COLOR} width={2.2} />
-              <Text style={{ flex: 1, fontSize: 13.5, color: C.fg, textAlign: dir().ta }}>{tn("bilan.boycott", nb)}</Text>
-            </Row>
-          ) : null;
-        })()}
         <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
         {avg !== null ? <AvgGauge avg={avg} /> : null}
       </View>

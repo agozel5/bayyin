@@ -121,25 +121,3 @@ test("carte en deux colonnes lue mot par mot : colonnes séparées, plats jamais
   assert.equal(by(/Sorpresa/).status, "haram");
   assert.ok(!dishes.some((d) => /achetés|^page$|^El Sol$/.test(d.title)), "légendes et bas de page ignorés");
 });
-
-// ---------- Appels au boycott ----------
-import { boycottOf } from "../public/lib/boycott.js";
-test("boycott : marques de l'entreprise, marques possédées, origine Israël", () => {
-  assert.equal(boycottOf({ brands: "Carrefour Bio", brands_tags: ["carrefour-bio"] }).id, "carrefour");
-  assert.equal(boycottOf({ brands: "Reflets de France" }).id, "carrefour");
-  assert.equal(boycottOf({ brands: "Fanta" }).level, "organic");
-  assert.equal(boycottOf({ brands: "McDonald's" }).id, "mcdonalds");
-  assert.equal(boycottOf({ brands: "TEVA SANTE", kind: "medicine", code: "3400930000000" }).id, "teva");
-  assert.equal(boycottOf({ origins_tags: ["en:israel"] }).via, "origin");
-  assert.equal(boycottOf({ code: "7290000000001" }).via, "barcode");
-  assert.equal(boycottOf({ brands: "Danone" }), null);
-  assert.equal(boycottOf({ brands: "Teval" }), null); // pas de faux positif sur un préfixe
-  assert.equal(boycottOf({ brands: "Simplement bon" }), null);
-  // Campagnes de BDS France : marques de dattes (les noms courants seulement dans le rayon dattes)
-  assert.equal(boycottOf({ brands: "Jordan River" }).id, "hadiklaim");
-  assert.equal(boycottOf({ brands: "Jordan River" }).kind, "bdsfr");
-  assert.equal(boycottOf({ brands: "Carmel", categories_tags: ["en:dates"] }).id, "dattes");
-  assert.equal(boycottOf({ brands: "Carmel", categories_tags: ["en:wines"] }), null);
-  assert.equal(boycottOf({ brands: "Tropico" }).id, "coca-cola");
-  assert.equal(boycottOf({ brands: "Mehadrin" }, { bdsfr: false }), null);
-});
