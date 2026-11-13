@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-5", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1740,4 +1740,7 @@ export default {
   "boycott.why.dates": "BDS Fransa'ya göre bu hurmalar, işgal altındaki Filistin topraklarında, Ürdün Vadisi'ndeki İsrail yerleşimlerinden geliyor.",
   "boycott.why.eden": "BDS Fransa'ya göre Eden Springs suyu, işgal altındaki Golan'daki kaynaklardan çekiliyor ve Katzrin yerleşiminde şişeleniyor.",
   "boycott.why.ahava": "BDS Fransa, Ahava'yı boykot edilecek İsrail güzellik ürünleri arasında sayıyor.",
+  "support.t": "Bayyin'i destekle",
+  "rate.t": "Uygulamayı değerlendir",
+  "rate.row": "Mağazada bir puan veya yorum çok yardımcı olur",
 };

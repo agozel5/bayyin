@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-5", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "ডেমো",
   "app.offline": "অফলাইন",
@@ -1698,4 +1698,7 @@ export default {
   "boycott.why.dates": "BDS ফ্রান্সের মতে, এই খেজুর আসে অধিকৃত ফিলিস্তিনি ভূখণ্ডে জর্ডান উপত্যকার ইসরায়েলি বসতি থেকে।",
   "boycott.why.eden": "BDS ফ্রান্সের মতে, Eden Springs-এর পানি অধিকৃত গোলানের ঝরনা থেকে তোলা হয় এবং কাতজরিন বসতিতে বোতলজাত করা হয়।",
   "boycott.why.ahava": "BDS ফ্রান্স বয়কটের জন্য ইসরায়েলি সৌন্দর্যপণ্যের মধ্যে Ahava-র নাম উল্লেখ করে।",
+  "support.t": "Bayyin-কে সমর্থন করুন",
+  "rate.t": "অ্যাপটি রেট করুন",
+  "rate.row": "স্টোরে একটি রেটিং বা রিভিউ অনেক সাহায্য করে",
 };

@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-5", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -1740,4 +1740,7 @@ export default {
   "boycott.why.dates": "بحسب BDS فرنسا، تأتي هذه التمور من مستوطنات إسرائيلية في غور الأردن، في الأرض الفلسطينية المحتلة.",
   "boycott.why.eden": "بحسب BDS فرنسا، تُستخرج مياه Eden Springs من ينابيع في الجولان المحتل وتُعبأ في مستوطنة كتسرين.",
   "boycott.why.ahava": "تذكر BDS فرنسا Ahava ضمن مستحضرات التجميل الإسرائيلية التي تدعو إلى مقاطعتها.",
+  "support.t": "ادعم بيّن",
+  "rate.t": "قيّم التطبيق",
+  "rate.row": "تقييم أو مراجعة في المتجر يساعد كثيرًا",
 };

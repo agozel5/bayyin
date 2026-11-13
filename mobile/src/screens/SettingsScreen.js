@@ -1,5 +1,6 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
+import { rateApp } from "../review";
 import { useNavBar } from "../components/NavBar";
 import { Qr } from "../components/ShareCard";
 import { BOYCOTT_COLOR, BOYCOTT_ICON, sourceLine } from "../components/Boycott";
@@ -55,6 +56,7 @@ const SI = {
   privacy: ['#46526A', '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'],
   limits: ['#F0BC33', I.alert],
   about: ['#14805A', '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.1"/>'],
+  rate: ['#E9A100', '<path d="M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>'],
   share: ['#E0457B', '<path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12H5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-1"/>'],
   legal: ['#5A6472', '<path d="M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a2.8 2.8 0 0 0 5 0zM19 7l-2.5 6a2.8 2.8 0 0 0 5 0z"/>'],
   feedback: ['#1897D6', '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z"/>'],
@@ -1057,10 +1059,13 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoyc
         <MenuRow id="about" first title={t("settings.menu.about")} value={t("about.row")} onPress={go("about")} />
         {["notes", "how", "sources", "privacy", "limits"].map((id) => <MenuRow key={id} id={id} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
       </Group>
-      <Group title={t("settings.g_links")}>
+      <Group title={t("support.t")}>
         <MenuRow id="share" first title={t("share_app.t")} value={t("share_app.row")} onPress={() => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); }} />
-        {CONTACT_EMAIL ? <MenuRow id="feedback" external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
-        <MenuRow id="off" external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
+        {Platform.OS !== "web" ? <MenuRow id="rate" title={t("rate.t")} value={t("rate.row")} onPress={() => { haptic.tap(); rateApp(); }} /> : null}
+      </Group>
+      <Group title={t("settings.g_links")}>
+        {CONTACT_EMAIL ? <MenuRow id="feedback" first external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
+        <MenuRow id="off" first={!CONTACT_EMAIL} external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
         {CONTACT_EMAIL ? <MenuRow id="report" external title={t("link.report.t")} value={t("link.report.d")} onPress={() => open(mailto("Bayyin"))} /> : null}
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
