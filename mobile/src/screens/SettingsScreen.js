@@ -1,7 +1,10 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
+import { Qr } from "../components/ShareCard";
+import { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate } from "../components/Boycott";
+import { BOYCOTT, BOYCOTT_SOURCE, kindOfEntry } from "../../../public/lib/boycott.js";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions } from "react-native";
+import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
@@ -21,7 +24,8 @@ import { checkRecipes } from "../recipewatch";
 import { legalDoc, LEGAL_IDS } from "../legal";
 import { S } from "../view";
 import { haptic, ms } from "../motion";
-import { CONTACT_EMAIL, mailto } from "../config";
+import { CONTACT_EMAIL, mailto, WEB } from "../config";
+import { Logo } from "../components/Icon";
 import { useEdgeSwipe } from "../components/EdgeSwipe";
 import { Collapse, Chevron } from "../components/Reveal";
 import { getBasket } from "../basket";
@@ -39,6 +43,7 @@ const saved = (msg) => { haptic.success(); say && say(msg); };
 const SI = {
   lang: ['#3D84DB', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>'],
   profile: ['#E0457B', I.user],
+  boycott: [BOYCOTT_COLOR, BOYCOTT_ICON],
   religion: ['#1FA597', '<path d="M15.5 3.6A8.6 8.6 0 1 0 20.4 16a7 7 0 0 1-4.9-12.4z"/><path d="M17 7.5l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2z"/>'],
   appearance: ['#5A6472', '<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'],
   offline: ['#2F6FC0', '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>'],
@@ -48,6 +53,8 @@ const SI = {
   sources: ['#4C64D6', I.doc],
   privacy: ['#46526A', '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'],
   limits: ['#F0BC33', I.alert],
+  about: ['#14805A', '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.1"/>'],
+  share: ['#E0457B', '<path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12H5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-1"/>'],
   legal: ['#5A6472', '<path d="M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a2.8 2.8 0 0 0 5 0zM19 7l-2.5 6a2.8 2.8 0 0 0 5 0z"/>'],
   feedback: ['#1897D6', '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5z"/>'],
   off: ['#8B5A3C', I.box],
@@ -55,7 +62,7 @@ const SI = {
   notif: ['#E0423A', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
   report: ['#5A6472', '<path d="M5.5 21V4M5.5 4h11l-2.2 4 2.2 4h-11"/>'],
 };
-const PAGE_TINT = { lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
+const PAGE_TINT = { boycott: BOYCOTT_COLOR, lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
 
 // ---------- briques ----------
 function Group({ title, children }) {
@@ -552,6 +559,85 @@ function HowPage({ onTour }) {
   );
 }
 
+// Appels au boycott : interrupteur général, catégories signalées, et pour chaque entreprise
+// ce que dit la source, les marques reconnues et le lien vers la liste
+function BoycottCompany({ e, first }) {
+  const [open_, setOpen] = useState(false);
+  const isr = e.id === "israel";
+  const brands = e.shown || [];
+  const kind = kindOfEntry(e);
+  return (
+    <View style={{ borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line }}>
+      <Pressable onPress={() => { haptic.tap(); setOpen(!open_); }} accessibilityRole="button" accessibilityState={{ expanded: open_ }}
+        style={{ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 11 }}>
+        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: BOYCOTT_COLOR + "1F", alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: BOYCOTT_COLOR, fontWeight: "900", fontSize: 14 }}>{isr ? "729" : e.company.replace(/^The /, "").slice(0, 2).toUpperCase()}</Text>
+        </View>
+        <View style={{ flex: 1, gap: 1 }}>
+          <Txt style={{ fontWeight: "800" }}>{isr ? t("boycott.israel_row") : e.company}</Txt>
+          <Muted style={{ fontSize: 12.5 }}>{t(`boycott.k.${kind}`)}</Muted>
+        </View>
+        <View style={{ transform: [{ rotate: open_ ? "-90deg" : "90deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
+      </Pressable>
+      {open_ ? (
+        <View style={{ gap: 8, paddingBottom: 12, paddingStart: 46 }}>
+          <Txt style={{ fontSize: 14, lineHeight: 20 }}>{t(kind === "organic" ? "boycott.why.organic" : `boycott.why.${e.id}`)}</Txt>
+          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{isr ? t("boycott.israel_how") : t("boycott.brands", { list: brands.join(", ") })}</Muted>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+function BoycottPage({ onBoycott }) {
+  const [, force] = useState(0);
+  const st = getSettings();
+  const on = st.boycott !== false;
+  const kinds = { bds: true, organic: true, israel: true, ...(st.boycottKinds || {}) };
+  const setKind = (k) => { setSettings({ boycottKinds: { ...kinds, [k]: !kinds[k] } }); haptic.tap(); force((n) => n + 1); };
+  const order = [...BOYCOTT.filter((e) => kindOfEntry(e) === "bds"), ...BOYCOTT.filter((e) => kindOfEntry(e) === "israel"), ...BOYCOTT.filter((e) => kindOfEntry(e) === "organic")];
+  return (
+    <View style={{ gap: 14 }}>
+      <Block gap={12}>
+        <Row gap={12}>
+          <Tile color={BOYCOTT_COLOR} paths={BOYCOTT_ICON} size={40} />
+          <Txt style={{ flex: 1, fontWeight: "800", fontSize: 16 }}>{t("boycott.switch")}</Txt>
+          <Switch on={on} onPress={() => { setSettings({ boycott: !on }); saved(t(on ? "boycott.saved_off" : "boycott.saved_on")); force((n) => n + 1); }} label={t("boycott.switch")} />
+        </Row>
+        <Lead>{t("boycott.intro")}</Lead>
+        <Muted style={{ lineHeight: 20 }}>{t("boycott.neutral")}</Muted>
+        {on && onBoycott ? (
+          <Pressable onPress={() => { haptic.tap(); onBoycott(); }} accessibilityRole="button"
+            style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 13, borderRadius: R.md, backgroundColor: pressed ? "#55439E" : BOYCOTT_COLOR })}>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("boycott.see_list")}</Text>
+          </Pressable>
+        ) : null}
+      </Block>
+      {on ? (
+        <Block title={t("boycott.kinds_t")} gap={4}>
+          {["bds", "israel", "organic"].map((k, i) => (
+            <Row key={k} gap={12} style={{ paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Txt style={{ fontWeight: "800" }}>{t(`boycott.k.${k}`)}</Txt>
+                <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`boycott.k.${k}.d`)}</Muted>
+              </View>
+              <Switch on={kinds[k]} onPress={() => setKind(k)} label={t(`boycott.k.${k}`)} />
+            </Row>
+          ))}
+        </Block>
+      ) : null}
+      <Block title={t("boycott.list_t")} gap={0}>
+        <Muted style={{ fontSize: 13, lineHeight: 18, marginBottom: 6 }}>{t("boycott.list_p")}</Muted>
+        {order.map((e, i) => <BoycottCompany key={e.id} e={e} first={!i} />)}
+      </Block>
+      <Block title={t("boycott.method_t")} gap={8}>
+        <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.scope")}</Muted>
+        <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.method_p")}</Muted>
+        <Text onPress={() => open(BOYCOTT_SOURCE.url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
+      </Block>
+    </View>
+  );
+}
+
 function NotifPage() {
   const st = getSettings();
   const [granted, setGranted] = useState(null);
@@ -793,11 +879,76 @@ function LegalPage() {
   );
 }
 
-const PAGES = { notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
+// À propos : l'histoire de Bayyin, ses engagements, puis les pages légales (sur le site) et le contact
+const WEB_LEGAL = [["mentions", "legal/mentions.html"], ["privacy", "legal/confidentialite.html"], ["terms", "legal/conditions.html"], ["sales", "legal/abonnement.html"], ["contact", "legal/contact.html"]];
+function AboutPage() {
+  const version = (Constants.expoConfig && Constants.expoConfig.version) || "";
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={[{ borderRadius: 22, padding: 22, gap: 10, alignItems: "center", backgroundColor: C.brand, overflow: "hidden" }, lift()]}>
+        <Logo size={72} />
+        <Text style={{ color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -0.4 }}>Bayyin <Text style={{ fontWeight: "700" }}>بيّن</Text></Text>
+        <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 15, textAlign: "center", lineHeight: 21 }}>{t("about.tagline")}</Text>
+      </View>
+      <Block title={t("about.story_t")} gap={12}>
+        <View style={{ borderStartWidth: 3, borderStartColor: C.brand, paddingStart: 12, gap: 4 }}>
+          <Txt style={{ fontSize: 16, lineHeight: 24, fontStyle: "italic" }}>{t("about.hadith")}</Txt>
+          <Muted style={{ fontSize: 13 }}>{t("about.hadith_src")}</Muted>
+        </View>
+        {["about.story_1", "about.story_2", "about.story_3", "about.story_4"].map((k) => <Txt key={k} style={{ fontSize: 15.5, lineHeight: 23 }}>{t(k)}</Txt>)}
+      </Block>
+      <Block title={t("about.values_t")} gap={4}>
+        <IconList items={[
+          ["#14805A", I.check || '<path d="M5 12.5l4.5 4.5L19 7.5"/>', t("about.value_1")],
+          ["#46526A", '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>', t("about.value_2")],
+          ["#4C64D6", I.doc, t("about.value_3")],
+        ]} />
+      </Block>
+      <Block title={t("about.legal_t")} gap={0}>
+        {WEB_LEGAL.map(([id, path], i) => (
+          <Pressable key={id} onPress={() => { haptic.tap(); open(WEB + path); }} accessibilityRole="link"
+            style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 13, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line, opacity: pressed ? 0.6 : 1 })}>
+            <Txt style={{ flex: 1, fontWeight: "700", fontSize: 15.5 }}>{t(`about.l.${id}`)}</Txt>
+            <Text style={{ color: C.faint, fontSize: 16 }}>↗</Text>
+          </Pressable>
+        ))}
+      </Block>
+      <RecommendBlock />
+      <Muted style={{ fontSize: 12.5, textAlign: "center" }}>Bayyin {version}</Muted>
+    </View>
+  );
+}
+
+// Recommander l'app : partage (message + lien) et QR code à faire scanner par un proche
+function RecommendBlock() {
+  const [qr, setQr] = useState(false);
+  const share = () => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); };
+  return (
+    <Block title={t("share_app.t")} gap={12}>
+      <Muted style={{ lineHeight: 20 }}>{t("share_app.p")}</Muted>
+      <Pressable onPress={share} accessibilityRole="button"
+        style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand })}>
+        <Glyph paths={SI.share[1]} size={19} color="#fff" width={2.2} />
+        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15.5 }}>{t("share_app.btn")}</Text>
+      </Pressable>
+      <Pressable onPress={() => { haptic.tap(); setQr(!qr); }} accessibilityRole="button" style={{ alignSelf: "center", padding: 4 }}>
+        <Text style={{ color: C.brand, fontWeight: "800", fontSize: 14.5 }}>{t(qr ? "share_app.qr_hide" : "share_app.qr")}</Text>
+      </Pressable>
+      {qr ? (
+        <View style={{ alignItems: "center", gap: 8 }}>
+          <View style={{ padding: 14, borderRadius: 18, backgroundColor: "#fff" }}><Qr text={WEB} size={190} /></View>
+          <Muted style={{ fontSize: 13, textAlign: "center" }}>{t("share_app.qr_p")}</Muted>
+        </View>
+      ) : null}
+    </Block>
+  );
+}
+
+const PAGES = { about: AboutPage, boycott: BoycottPage, notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
 
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
-export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
+export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoycott }) {
   say = toast;
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(null);
@@ -857,7 +1008,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
             <Art xml={PAGE_ART[page]} width="100%" height={150} />
           </View>
         ) : null}
-        <P toast={toast} onTour={onTour} />
+        <P toast={toast} onTour={onTour} onBoycott={onBoycott} />
       </ScrollView>
       </KeyboardAvoidingView>
       </Animated.View>
@@ -893,6 +1044,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         <MenuRow id="profile" title={t("settings.menu.profile")} value={profText} onPress={go("profile")} />
         <MenuRow id="religion" title={t("settings.menu.religion")} value={t(`school.${st.school}`)} onPress={go("religion")} />
         <MenuRow id="appearance" title={t("settings.menu.appearance")} value={t(`theme.${st.theme}`)} onPress={go("appearance")} />
+        <MenuRow id="boycott" title={t("settings.menu.boycott")} value={t(st.boycott !== false ? "boycott.on" : "boycott.off")} onPress={go("boycott")} />
       </Group>
       <Group title={t("settings.g_data")}>
         <MenuRow id="offline" first title={t("settings.menu.offline")} value={offText} onPress={go("offline")} />
@@ -900,12 +1052,13 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         <MenuRow id="data" title={t("settings.menu.data")} value={tn("settings.data_count", getHistory().length)} onPress={go("data")} />
       </Group>
       <Group title={t("settings.g_about")}>
-        {["notes", "how", "sources", "privacy", "limits"].map((id, i) => <MenuRow key={id} id={id} first={i === 0} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
-        <MenuRow id="legal" title={t("settings.menu.legal")} value={t("legal.row")} onPress={go("legal")} />
+        <MenuRow id="about" first title={t("settings.menu.about")} value={t("about.row")} onPress={go("about")} />
+        {["notes", "how", "sources", "privacy", "limits"].map((id) => <MenuRow key={id} id={id} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
       </Group>
       <Group title={t("settings.g_links")}>
-        {CONTACT_EMAIL ? <MenuRow id="feedback" first external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
-        <MenuRow id="off" first={!CONTACT_EMAIL} external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
+        <MenuRow id="share" first title={t("share_app.t")} value={t("share_app.row")} onPress={() => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); }} />
+        {CONTACT_EMAIL ? <MenuRow id="feedback" external title={t("fb.title")} value={t("fb.row")} onPress={() => open(mailto(`Bayyin · ${t("fb.title")}`))} /> : null}
+        <MenuRow id="off" external title={t("link.off.t")} value={t("link.off.d")} onPress={() => open("https://fr.openfoodfacts.org")} />
         {CONTACT_EMAIL ? <MenuRow id="report" external title={t("link.report.t")} value={t("link.report.d")} onPress={() => open(mailto("Bayyin"))} /> : null}
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>

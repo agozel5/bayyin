@@ -1,6 +1,7 @@
 // Historique : « Mon bilan » (anneau des verdicts, 7 jours, note moyenne), filtres, produits par jour.
+import { boycottFor, BOYCOTT_COLOR, BOYCOTT_ICON } from "../boycott";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, Easing } from "react-native";
+import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
@@ -92,10 +93,11 @@ const weekRange = ({ start, end }) => {
   const f = new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" });
   return `${f.format(start)} – ${f.format(end - 864e5)}`;
 };
+// Semaine du calendrier, du lundi au dimanche ; weeksAgo = 0 pour la semaine en cours
 function weekBounds(weeksAgo) {
-  const end = new Date(); end.setHours(0, 0, 0, 0);
-  end.setDate(end.getDate() + 1 - 7 * weeksAgo);
-  const start = new Date(end); start.setDate(start.getDate() - 7);
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - 7 * weeksAgo);
+  const end = new Date(start); end.setDate(end.getDate() + 7);
   return { start: start.getTime(), end: end.getTime() };
 }
 
@@ -103,6 +105,7 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
   const oldest = all.length ? Math.min(...all.map((e) => e.at)) : Date.now();
   const maxWeeks = Math.max(0, Math.ceil((weekBounds(0).start - oldest) / (7 * 864e5)));
   const { start, end } = weekBounds(weeksAgo);
+  const now = Date.now();
   // Jours du calendrier (et non des tranches de 24 h : le passage à l'heure d'hiver fait un jour de 25 h)
   const days = [...Array(7)].map((_, i) => {
     const d0 = new Date(start); d0.setDate(d0.getDate() + i); const s = d0.getTime();
@@ -110,7 +113,7 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
     const list = all.filter((e) => e.at >= s && e.at < e1);
     const c = {};
     list.forEach((e) => { const st = verdictOf(e.p).status; c[st] = (c[st] || 0) + 1; });
-    return { s, n: list.length, c };
+    return { s, n: list.length, c, today: now >= s && now < e1, future: s > now };
   });
   const max = Math.max(1, ...days.map((d) => d.n));
   const n = days.reduce((a, d) => a + d.n, 0);
@@ -120,8 +123,43 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
     const f = new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" });
     title = t("bilan.week_range", { range: `${f.format(start)} – ${f.format(end - 864e5)}` });
   }
+  const canPrev = weeksAgo < maxWeeks, canNext = weeksAgo > 0;
+
+  // Glisser du doigt sur les barres pour changer de semaine (vers la droite : semaine précédente)
+  const x = useRef(new Animated.Value(0)).current;
+  const wRef = useRef(320);
+  const st = useRef({}); st.current = { weeksAgo, canPrev, canNext, setWeeksAgo };
+  const go = (step) => { // step = +1 : semaine précédente
+    const { weeksAgo: w, setWeeksAgo: set } = st.current;
+    haptic.tap();
+    const W = wRef.current;
+    if (!ms(1)) { x.setValue(0); return set(w + step); }
+    Animated.timing(x, { toValue: step > 0 ? W : -W, duration: 170, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => {
+      set(w + step);
+      x.setValue(step > 0 ? -W * 0.6 : W * 0.6);
+      Animated.spring(x, { toValue: 0, friction: 9, tension: 90, useNativeDriver: true }).start();
+    });
+  };
+  const pan = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.4,
+    onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.4,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderMove: (_, g) => {
+      const ok = g.dx > 0 ? st.current.canPrev : st.current.canNext;
+      x.setValue(ok ? g.dx : g.dx * 0.25); // résiste quand il n'y a plus de semaine de ce côté
+    },
+    onPanResponderRelease: (_, g) => {
+      const step = g.dx > 0 ? 1 : -1;
+      const ok = step > 0 ? st.current.canPrev : st.current.canNext;
+      if (ok && (Math.abs(g.dx) > 50 || Math.abs(g.vx) > 0.5)) go(step);
+      else Animated.spring(x, { toValue: 0, friction: 7, useNativeDriver: true }).start();
+    },
+    onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
+  })).current;
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinWeekGo = go; // captures automatiques (web)
+
   const Nav = ({ dirn, off }) => (
-    <Pressable disabled={off} onPress={() => { haptic.tap(); setWeeksAgo(weeksAgo + (dirn === "prev" ? 1 : -1)); }} hitSlop={8}
+    <Pressable disabled={off} onPress={() => go(dirn === "prev" ? 1 : -1)} hitSlop={8}
       accessibilityRole="button" accessibilityLabel={t(dirn === "prev" ? "bilan.prev_week" : "bilan.next_week")} style={{ opacity: off ? 0.25 : 1, padding: 4 }}>
       <Glyph name="chev" size={18} color={C.muted} />
     </Pressable>
@@ -133,17 +171,24 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
         <Text style={{ color: C.fg, fontWeight: "800", fontSize: 16 }}>{n}</Text>
       </Row>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, direction: "ltr" }}>
-        <View style={{ transform: [{ scaleX: -1 }] }}><Nav dirn="prev" off={weeksAgo >= maxWeeks} /></View>
-        {days.map((d, i) => (
-          <View key={d.s} style={{ flex: 1, alignItems: "center", gap: 4 }}>
-            <Text style={{ fontSize: 11, color: C.muted, height: 14 }}>{d.n || ""}</Text>
-            <DayBar i={i} weeksAgo={weeksAgo} h={d.n ? `${Math.max(10, (d.n / max) * 100)}%` : 3}>
-              {d.n ? ORDER.filter((s) => d.c[s]).map((s) => <View key={s} style={{ flex: d.c[s], backgroundColor: col(s) }} />) : <View style={{ flex: 1, backgroundColor: C.tint2 }} />}
-            </DayBar>
-            <Text style={{ fontSize: 11, color: i === 6 && !weeksAgo ? C.fg : C.muted, fontWeight: i === 6 && !weeksAgo ? "800" : "500" }}>{wd.format(d.s).replace(/\.$/, "")}</Text>
-          </View>
-        ))}
-        <Nav dirn="next" off={weeksAgo === 0} />
+        <View style={{ transform: [{ scaleX: -1 }] }}><Nav dirn="prev" off={!canPrev} /></View>
+        <View style={{ flex: 1, overflow: "hidden" }} onLayout={(e) => { wRef.current = e.nativeEvent.layout.width; }} {...pan.panHandlers}
+          accessibilityHint={t("bilan.swipe_hint")}>
+          <Animated.View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, transform: [{ translateX: x }],
+            opacity: x.interpolate({ inputRange: [-300, 0, 300], outputRange: [0.2, 1, 0.2], extrapolate: "clamp" }) }}>
+            {days.map((d, i) => (
+              <View key={d.s} style={{ flex: 1, alignItems: "center", gap: 4, opacity: d.future ? 0.45 : 1 }}>
+                <Text style={{ fontSize: 11, color: C.muted, height: 14 }}>{d.n || ""}</Text>
+                <DayBar i={i} weeksAgo={weeksAgo} h={d.n ? `${Math.max(10, (d.n / max) * 100)}%` : 3}>
+                  {d.n ? ORDER.filter((s) => d.c[s]).map((s) => <View key={s} style={{ flex: d.c[s], backgroundColor: col(s) }} />) : <View style={{ flex: 1, backgroundColor: C.tint2 }} />}
+                </DayBar>
+                <Text style={{ fontSize: 11, color: d.today ? C.brand : C.muted, fontWeight: d.today ? "900" : "500" }}>{wd.format(d.s).replace(/\.$/, "")}</Text>
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: d.today ? C.brand : "transparent", marginTop: -2 }} />
+              </View>
+            ))}
+          </Animated.View>
+        </View>
+        <Nav dirn="next" off={!canNext} />
       </View>
     </View>
   );
@@ -280,6 +325,15 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
             ))}
           </View>
         ) : null}
+        {(() => { // produits de la période concernés par un appel au boycott (si l'option est affichée)
+          const nb = base.filter((e) => boycottFor(e.p)).length;
+          return nb ? (
+            <Row gap={10} style={{ padding: 10, borderRadius: R.md, backgroundColor: BOYCOTT_COLOR + "14" }}>
+              <Glyph paths={BOYCOTT_ICON} size={18} color={BOYCOTT_COLOR} width={2.2} />
+              <Text style={{ flex: 1, fontSize: 13.5, color: C.fg, textAlign: dir().ta }}>{tn("bilan.boycott", nb)}</Text>
+            </Row>
+          ) : null;
+        })()}
         <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
         {avg !== null ? <AvgGauge avg={avg} /> : null}
       </View>

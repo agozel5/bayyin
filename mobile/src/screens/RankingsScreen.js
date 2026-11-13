@@ -1,5 +1,6 @@
 // Classements : les produits halal les mieux notés pour la santé, rayon par rayon (selon vos réglages).
 // Les listes sont préparées chaque semaine sur le site (data/rankings/<rayon>.json).
+import { BoycottTag, boycottFor } from "../boycott";
 import { Img, prefetchImages } from "../components/Img";
 import React, { useEffect, useState } from "react";
 import SubStack from "../components/SubStack";
@@ -71,6 +72,7 @@ function Ranking({ cat, onBack, onOpen }) {
   const [raws, setRaws] = useState(null);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinRankRaws = setRaws; // captures automatiques (web)
   const [certOnly, setCertOnly] = useState(false);
+  const [noBoycott, setNoBoycott] = useState(false); // masquer les produits visés par un appel au boycott
   // Rayon gardé sur le téléphone : affiché tout de suite, puis remplacé par la version du jour
   useEffect(() => {
     let live = true;
@@ -84,13 +86,15 @@ function Ranking({ cat, onBack, onOpen }) {
     scoreOf: (p) => p.health && p.health.score,
     alertOf: (p) => profileOf(p).alert,
     certifiedOnly: certOnly,
-  }).slice(0, 50) : [];
+  }).filter((p) => !noBoycott || !boycottFor(p)).slice(0, 50) : [];
+  const showBoycott = st.boycott !== false;
   return (
     <View style={{ gap: 14 }}>
       <Header title={t(`rank.cat.${cat.id}`)} onBack={onBack} />
-      <Row gap={8}>
+      <Row gap={8} style={{ flexWrap: "wrap" }}>
         <Chip text={t("rank.f.all")} on={!certOnly} onPress={() => setCertOnly(false)} />
         <Chip text={t("rank.f.cert")} on={certOnly} onPress={() => setCertOnly(true)} />
+        {showBoycott ? <Chip text={t("rank.f.noboycott")} on={noBoycott} onPress={() => setNoBoycott(!noBoycott)} /> : null}
       </Row>
       <Muted style={{ fontSize: 13 }}>{t("rank.basis", { school: t(`school.${st.school}`) })}</Muted>
       {raws === null ? <RankSkeleton label={t("msg.loading")} /> : raws === false ? (
@@ -113,8 +117,11 @@ function Ranking({ cat, onBack, onOpen }) {
                   <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: "700", color: C.fg, lineHeight: 19, textAlign: dir().ta }}>{nameOf(p)}</Text>
                   {p.brand ? <Text numberOfLines={1} style={{ fontSize: 12.5, color: C.muted, textAlign: dir().ta }}>{p.brand}</Text> : null}
                   <View style={{ height: 4, borderRadius: 2, backgroundColor: C.tint2, overflow: "hidden" }}><View style={{ width: `${s.score}%`, height: "100%", backgroundColor: gc }} /></View>
-                  <View style={{ flexDirection: dir().row, alignItems: "center", gap: 5, alignSelf: dir().rtl ? "flex-end" : "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: sb }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: sf }} /><Text style={{ fontSize: 11.5, fontWeight: "800", color: sf }}>{S(p.verdict.status, "short")}</Text>
+                  <View style={{ flexDirection: dir().row, alignItems: "center", gap: 6 }}>
+                    <View style={{ flexDirection: dir().row, alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: sb }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: sf }} /><Text style={{ fontSize: 11.5, fontWeight: "800", color: sf }}>{S(p.verdict.status, "short")}</Text>
+                    </View>
+                    <BoycottTag p={p} />
                   </View>
                 </View>
                 <View style={{ alignItems: "center", minWidth: 54 }}>

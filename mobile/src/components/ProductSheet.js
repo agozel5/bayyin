@@ -22,6 +22,7 @@ import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
 import RecipeBox from "./RecipeBox";
 import RecallBox from "./Recall";
+import BoycottBox from "./Boycott";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
 import { mailto } from "../config";
@@ -432,7 +433,7 @@ function LinkRow({ text, url, muted = false }) {
 
 // Onglet ouvert, gardé d'un produit à l'autre (comme la version web)
 // Contenu de la fiche en blocs (fonction simple, sans état : l'onglet ouvert est gardé par la fiche)
-function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onHeroEnd, onTabChange, tab, setTab }) {
+function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onBoycott, onHeroEnd, onTabChange, tab, setTab }) {
   const v = verdictOf(p);
   const kind = kindOf(p);
   const food = kind === "food";
@@ -488,6 +489,7 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
       <RecallBox p={p} />
       {isBarcode(p.code) ? <RecipeBox code={p.code} /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
+      <BoycottBox p={p} onDetail={onBoycott} />
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
     </View>,
     <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>
@@ -564,7 +566,7 @@ function SheetSkeleton() {
   );
 }
 
-export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
+export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, onBoycott, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
@@ -726,7 +728,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
             <Btn title={t("detail.photo_ingredients")} icon="doc" kind="white" onPress={() => onOcr(code)} />
           </Message>
         ) : p ? (
-          productBlocks({ p, scanned: !!fromScan, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, tab, setTab,
+          productBlocks({ p, scanned: !!fromScan, onOpen, onGotoSettings, onGotoProfile, onOcr, onCompare, onBoycott, tab, setTab,
             onHeroEnd: (y) => { heroEnd.current = y; }, onTabChange: () => setTimeout(reveal.check, 120) })
         ) : null}
       </Animated.ScrollView>

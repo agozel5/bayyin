@@ -1,5 +1,15 @@
 // Textes des fonctions propres à l'app native : notifications de rappel, mode courses, Premium par les stores, widget.
+import de from "./i18n-extra-de";
+import es from "./i18n-extra-es";
+import ur from "./i18n-extra-ur";
+import id from "./i18n-extra-id";
+import nl from "./i18n-extra-nl";
+import it from "./i18n-extra-it";
+import ms from "./i18n-extra-ms";
+import bn from "./i18n-extra-bn";
+
 export const EXTRA = {
+  de, es, ur, id, nl, it, ms, bn,
   fr: {
     "scan.step.prep": "Préparation de la photo",
     "menu.step.read": "Lecture des plats",
@@ -128,6 +138,7 @@ export const EXTRA = {
     "bilan.p_week": "Semaine",
     "bilan.p_all": "Tout",
     "bilan.this_week": "Cette semaine",
+    "bilan.swipe_hint": "Glissez pour changer de semaine",
     "bilan.week_of": "Semaine du {range}",
     "bilan.vs_prev": "vs semaine d'avant",
     "bilan.same": "comme la semaine d'avant",
@@ -306,6 +317,7 @@ export const EXTRA = {
     "bilan.p_week": "Week",
     "bilan.p_all": "All",
     "bilan.this_week": "This week",
+    "bilan.swipe_hint": "Swipe to change week",
     "bilan.week_of": "Week of {range}",
     "bilan.vs_prev": "vs previous week",
     "bilan.same": "same as previous week",
@@ -484,6 +496,7 @@ export const EXTRA = {
     "bilan.p_week": "الأسبوع",
     "bilan.p_all": "الكل",
     "bilan.this_week": "هذا الأسبوع",
+    "bilan.swipe_hint": "اسحب لتغيير الأسبوع",
     "bilan.week_of": "أسبوع {range}",
     "bilan.vs_prev": "مقارنة بالأسبوع السابق",
     "bilan.same": "مثل الأسبوع السابق",
@@ -662,6 +675,7 @@ export const EXTRA = {
     "bilan.p_week": "Hafta",
     "bilan.p_all": "Tümü",
     "bilan.this_week": "Bu hafta",
+    "bilan.swipe_hint": "Haftayı değiştirmek için kaydırın",
     "bilan.week_of": "{range} haftası",
     "bilan.vs_prev": "önceki haftaya göre",
     "bilan.same": "önceki haftayla aynı",

@@ -13,13 +13,14 @@ OUT.mkdir(parents=True, exist_ok=True)
 PUB = Path(__file__).resolve().parents[2] / "public"
 CODES = ["3291980533795", "6111250471695", "3256224124870"]
 BEAUTY = "3567730300185"  # shampooing (Open Beauty Facts)
+CARREFOUR = "3560071190965"  # flocons d'avoine Carrefour (appel au boycott)
 NOPHOTO = "3282779069519"  # crème sans photo sur Open Beauty Facts
 PRODUCTS = {}
 for f in (PUB / "data" / "rankings").glob("*.json"):
     d = json.loads(f.read_text())
     if isinstance(d, list):
         for x in d:
-            if isinstance(x, dict) and x.get("code") in CODES + [BEAUTY, NOPHOTO]: PRODUCTS[x["code"]] = x
+            if isinstance(x, dict) and x.get("code") in CODES + [BEAUTY, NOPHOTO, CARREFOUR]: PRODUCTS[x["code"]] = x
 
 class H(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -52,6 +53,10 @@ def run(lang, scheme):
             f = PUB / "data" / "places" / r.request.url.split("/data/places/")[1].split("?")[0]
             r.fulfill(status=200 if f.exists() else 404, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"}, body=f.read_text() if f.exists() else "{}")
         ctx.route(re.compile(r".*/data/places/.*\.json.*"), places)
+        def boycott(r):
+            f = PUB / "data" / "boycott.json"
+            r.fulfill(status=200 if f.exists() else 404, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"}, body=f.read_text() if f.exists() else "{}")
+        ctx.route(re.compile(r".*/data/boycott\.json.*"), boycott)
         p = ctx.new_page()
         p.on("pageerror", lambda e: errs.append(str(e)))
         p.goto("http://127.0.0.1:8765/"); p.wait_for_function("!!window.__bayyin", timeout=30000); p.wait_for_timeout(1500)
@@ -89,6 +94,8 @@ def run(lang, scheme):
         for tab in ["search", "history", "additives", "settings"]:
             ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
         ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(600)
+        ev("window.__bayyinWeekGo && window.__bayyinWeekGo(1)"); p.wait_for_timeout(1400); shot("history-prevweek")
+        ev("window.__bayyinWeekGo && window.__bayyinWeekGo(-1)"); p.wait_for_timeout(1200)
         p.set_viewport_size({"width": 390, "height": 1700})
         ev("window.__bayyinHistFilter && window.__bayyinHistFilter('fav')"); p.wait_for_timeout(900); shot("empty-fav")
         p.set_viewport_size({"width": 390, "height": 844})
@@ -102,7 +109,23 @@ def run(lang, scheme):
             ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyinFlashHold = false")
         p.set_viewport_size({"width": 390, "height": 1700})
-        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal"]:
+        ev(f"window.__bayyin.openProduct('{CARREFOUR}')"); p.wait_for_timeout(2500); shot("sheet-boycott")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        # Nouvelles langues : l'accueil en ourdou (de droite à gauche), allemand et bengali
+        if lang == "fr" and scheme == "light":
+            for lg in ["ur", "de", "bn"]:
+                ev(f"window.__bayyin.setSettings({{ lang: '{lg}' }})"); ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1500); shot(f"lang-{lg}")
+            ev("window.__bayyin.setSettings({ lang: 'fr' })"); p.wait_for_timeout(800)
+        # Page « Appels au boycott » : vues, fiche d'une entreprise, et depuis une fiche produit
+        ev("window.__bayyin.openBoycott && window.__bayyin.openBoycott()"); p.wait_for_timeout(2500); shot("boycott-home")
+        ev("window.__bayyinBoycottView && window.__bayyinBoycottView('brands')"); p.wait_for_timeout(900); shot("boycott-brands")
+        ev("window.__bayyinBoycottView && window.__bayyinBoycottView('mine')"); p.wait_for_timeout(900); shot("boycott-mine")
+        ev("window.__bayyinBoycottPick && window.__bayyinBoycottPick('coca-cola')"); p.wait_for_timeout(2500); shot("boycott-company")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev(f"window.__bayyin.openBoycott && window.__bayyin.openBoycott('carrefour')"); p.wait_for_timeout(2500); shot("boycott-carrefour")
+        ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
+        ev("window.__bayyin.setTab('settings')"); p.wait_for_timeout(800)
+        for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal", "boycott", "about"]:
             ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
         ev("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)")
         # Carte de partage
@@ -123,6 +146,7 @@ def run(lang, scheme):
         p.set_viewport_size({"width": 390, "height": 1700})
         ev("window.__bayyinPlacesAt = { lat: 48.8566, lon: 2.3522 }; window.__bayyin.openPlaces()"); p.wait_for_timeout(1200)
         ev("window.__bayyinPlacesLocate && window.__bayyinPlacesLocate()"); p.wait_for_timeout(6000); shot("places")
+        ev("window.__bayyinPlacesPick && window.__bayyinPlacesPick(4)"); p.wait_for_timeout(1800); shot("places-pick")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyin.openCompare()"); p.wait_for_timeout(900)
         ev(f"window.__bayyinCompare && window.__bayyinCompare('{CODES[0]}', '{CODES[2]}')"); p.wait_for_timeout(1200); shot("compare")
@@ -176,7 +200,7 @@ def run(lang, scheme):
         p.set_viewport_size({"width": 390, "height": 2600})
         ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
         ev("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
-        for cat in ["spreads", "shampoos"]:
+        for cat in ["spreads", "shampoos", "breakfast_cereals"]:
             ev(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
         ev("window.__bayyinRankRaws && window.__bayyinRankRaws(null)"); p.wait_for_timeout(800); shot("rank-loading")
         ev("window.__bayyinRankCat(null)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)

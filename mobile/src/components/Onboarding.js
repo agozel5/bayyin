@@ -48,11 +48,11 @@ export default function Onboarding({ onDone }) {
   let body;
   if (step === 0) {
     body = (
-      <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
         {LANGS.map((l) => (
-          <Choice key={l} on={st.lang === l} onPress={() => setSettings({ lang: l })}>
+          <Choice key={l} on={st.lang === l} onPress={() => setSettings({ lang: l })} style={{ flexBasis: "46%", flexGrow: 1, padding: 12 }}>
             <View style={{ width: 42, height: 30, borderRadius: 8, overflow: "hidden", borderWidth: 0.5, borderColor: "rgba(0,0,0,0.18)" }}><Art xml={LANG_FLAG[l]} width={42} height={30} /></View>
-            <Text style={{ flex: 1, fontWeight: "800", fontSize: 16, color: st.lang === l ? C.brandDark : C.fg, textAlign: dir().ta }}>{LANG_NAMES[l]}</Text>
+            <Text numberOfLines={2} style={{ flex: 1, fontWeight: "800", fontSize: 15, color: st.lang === l ? C.brandDark : C.fg, textAlign: dir().ta }}>{LANG_NAMES[l]}</Text>
           </Choice>
         ))}
       </View>

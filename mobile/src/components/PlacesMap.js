@@ -22,6 +22,8 @@ const html = (center, places, dark) => `<!doctype html><html><head><meta name="v
 .pin{width:34px;height:34px;box-sizing:border-box;border-radius:50% 50% 50% 6px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;color:#fff;border:2.5px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);transition:transform .2s}
 .pin svg{width:17px;height:17px;transform:rotate(45deg);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .pin.sel{background:${dark ? "#0B5139" : "#0B5139"}!important;transform:rotate(-45deg) scale(1.15)}
+.hop .pin.sel{animation:hop .6s cubic-bezier(.3,1.4,.5,1)}
+@keyframes hop{0%{transform:rotate(-45deg) scale(1.15)}40%{transform:translateY(-12px) rotate(-45deg) scale(1.32)}100%{transform:rotate(-45deg) scale(1.15)}}
 .me{width:18px;height:18px;box-sizing:border-box;border-radius:50%;background:#2F7BF5;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,123,245,.25)}
 .leaflet-control-attribution{font-size:10px}
 ${dark ? ".leaflet-tile-pane{filter:brightness(.6) invert(1) contrast(3) hue-rotate(200deg) saturate(.3) brightness(.7)}.leaflet-bar a{background:#1B241F;color:#E8EEEA;border-color:#28332D}" : ""}</style></head><body><div id="m"></div>
@@ -40,7 +42,7 @@ let cur=null;
 P.forEach(p=>{const k=L.marker([p.lat,p.lon],{icon:pin(p,false),title:p.n||""}).addTo(m);
  k.on("click",()=>send({id:p.id}));marks[p.id]=k;pts.push([p.lat,p.lon]);});
 if(pts.length>1)m.fitBounds(pts.slice(0,40),{padding:[28,28],maxZoom:16});
-window.focusPlace=(id)=>{const p=P.find(x=>x.id===id);if(!p)return;if(cur&&marks[cur])marks[cur].setIcon(pin(P.find(x=>x.id===cur),false));cur=id;marks[id].setIcon(pin(p,true));marks[id].setZIndexOffset(1000);m.setView([p.lat,p.lon],Math.max(m.getZoom(),16),{animate:true});};
+window.focusPlace=(id)=>{const p=P.find(x=>x.id===id);if(!p)return;if(cur&&marks[cur])marks[cur].setIcon(pin(P.find(x=>x.id===cur),false));cur=id;marks[id].setIcon(pin(p,true));marks[id].setZIndexOffset(1000);m.flyTo([p.lat,p.lon],Math.max(m.getZoom(),16),{duration:0.9});m.once("moveend",()=>{const el=marks[id].getElement&&marks[id].getElement();if(el){el.classList.remove("hop");void el.offsetWidth;el.classList.add("hop");}});};
 </script></body></html>`;
 
 export default function PlacesMap({ center, places, selected, onSelect, height = 260 }) {

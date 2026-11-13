@@ -3,7 +3,7 @@ import { DEFAULT_PREFS, SCHOOLS, TOPICS, CERTIFIER_IDS } from "./rules.js";
 import { PROFILE_ALLERGENS, DIETS } from "./profile.js";
 
 const KEY = "halalscan_settings_v1";
-export const LANGS = ["fr", "en", "ar", "tr"];
+export const LANGS = ["fr", "en", "ar", "tr", "de", "es", "ur", "id", "nl", "it", "ms", "bn"];
 export const THEMES = ["auto", "light", "dark"];
 export const TEXT_SIZES = ["normal", "large", "xlarge"];
 
@@ -39,6 +39,7 @@ function normalize(saved) {
     baseSchool: SCHOOLS[saved.baseSchool] ? saved.baseSchool : SCHOOLS[school] ? school : "standard",
     topics,
     theme: THEMES.includes(saved.theme) ? saved.theme : "auto",
+    boycott: saved.boycott !== false, // afficher les appels au boycott (liste du mouvement BDS)
     textSize: TEXT_SIZES.includes(saved.textSize) ? saved.textSize : "normal",
     // Organismes de certification que l'utilisateur ne suit pas (par défaut : tous suivis)
     distrust: (Array.isArray(saved.distrust) ? saved.distrust : []).filter((id) => CERTIFIER_IDS.includes(id)),

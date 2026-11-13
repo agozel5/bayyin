@@ -19,7 +19,10 @@ const save = (key, value) => AsyncStorage.setItem(key, JSON.stringify(value)).ca
 
 function deviceLang() {
   try {
-    for (const l of getLocales()) if (LANGS.includes(l.languageCode)) return l.languageCode;
+    for (const l of getLocales()) {
+      const code = l.languageCode === "in" ? "id" : l.languageCode; // ancien code de l'indonésien sur Android
+      if (LANGS.includes(code)) return code;
+    }
   } catch {
     /* pas d'information de langue */
   }
@@ -52,6 +55,8 @@ export async function initStorage() {
     toured: !!s.toured,
     notif: s.notif !== false, // alertes de rappel (si le téléphone les autorise)
     recipeAlerts: s.recipeAlerts !== false, // alerte quand la recette d'un produit suivi change
+    boycott: s.boycott !== false, // afficher les appels au boycott (liste du mouvement BDS)
+    boycottKinds: { bds: true, organic: true, israel: true, ...(s.boycottKinds || {}) }, // catégories signalées
     notifAsked: !!s.notifAsked,
     scans: s.scans || 0, // nombre de fiches ouvertes (demande d'avis)
     reviewAsked: s.reviewAsked || 0,

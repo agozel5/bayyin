@@ -531,4 +531,16 @@ export const LANG_FLAG = {
   tr: F(`<rect width="60" height="40" fill="#E30A17"/>
     <circle cx="22" cy="20" r="10" fill="#FFFFFF"/><circle cx="24.5" cy="20" r="8" fill="#E30A17"/>
     <polygon points="30.50,20.00 33.80,18.77 33.95,15.24 36.15,18.00 39.55,17.06 37.60,20.00 39.55,22.94 36.15,22.00 33.95,24.76 33.80,21.23" fill="#FFFFFF"/>`),
+  de: F(`<rect width="60" height="13.4" fill="#000000"/><rect y="13.3" width="60" height="13.4" fill="#DD0000"/><rect y="26.6" width="60" height="13.4" fill="#FFCE00"/>`),
+  es: F(`<rect width="60" height="40" fill="#AA151B"/><rect y="10" width="60" height="20" fill="#F1BF00"/>`),
+  ur: F(`<rect width="60" height="40" fill="#01411C"/><rect width="15" height="40" fill="#FFFFFF"/>
+    <circle cx="37.5" cy="20" r="10" fill="#FFFFFF"/><circle cx="40.5" cy="17.6" r="8.8" fill="#01411C"/>
+    <polygon points="44.8,13.2 45.7,15.6 48.2,15.7 46.2,17.2 46.9,19.6 44.8,18.2 42.7,19.6 43.4,17.2 41.4,15.7 43.9,15.6" fill="#FFFFFF"/>`),
+  id: F(`<rect width="60" height="20" fill="#CE1126"/><rect y="20" width="60" height="20" fill="#FFFFFF"/>`),
+  nl: F(`<rect width="60" height="13.4" fill="#AE1C28"/><rect y="13.3" width="60" height="13.4" fill="#FFFFFF"/><rect y="26.6" width="60" height="13.4" fill="#21468B"/>`),
+  it: F(`<rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#FFFFFF"/><rect x="40" width="20" height="40" fill="#CE2B37"/>`),
+  ms: F(`<rect width="60" height="40" fill="#FFFFFF"/><rect y="0.00" width="60" height="2.86" fill="#CC0001"/><rect y="5.71" width="60" height="2.86" fill="#CC0001"/><rect y="11.43" width="60" height="2.86" fill="#CC0001"/><rect y="17.14" width="60" height="2.86" fill="#CC0001"/><rect y="22.86" width="60" height="2.86" fill="#CC0001"/><rect y="28.57" width="60" height="2.86" fill="#CC0001"/><rect y="34.29" width="60" height="2.86" fill="#CC0001"/><rect width="30" height="22.86" fill="#010066"/>
+    <circle cx="12" cy="11.4" r="7" fill="#FC0"/><circle cx="14" cy="11.4" r="5.8" fill="#010066"/>
+    <polygon points="22,6.4 23.1,9.6 26.5,9.6 23.8,11.6 24.8,14.8 22,12.9 19.2,14.8 20.2,11.6 17.5,9.6 20.9,9.6" fill="#FC0"/>`),
+  bn: F(`<rect width="60" height="40" fill="#006A4E"/><circle cx="27" cy="20" r="12" fill="#F42A41"/>`),
 };

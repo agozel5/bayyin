@@ -1,16 +1,17 @@
 // Traductions (mêmes dictionnaires que la version web).
 import { DICTS } from "./core";
 import { EXTRA } from "./i18n-extra";
+import { RTL_LANGS } from "../../public/lib/i18n.js";
 
-export const LANGS = ["fr", "en", "ar", "tr"];
-const LOCALES = { fr: "fr-FR", en: "en-GB", ar: "ar-u-nu-latn", tr: "tr-TR" };
+export const LANGS = ["fr", "en", "ar", "tr", "de", "es", "ur", "id", "nl", "it", "ms", "bn"];
+const LOCALES = { fr: "fr-FR", en: "en-GB", ar: "ar-u-nu-latn", tr: "tr-TR", de: "de-DE", es: "es-ES", ur: "ur-PK-u-nu-latn", id: "id-ID", nl: "nl-NL", it: "it-IT", ms: "ms-MY", bn: "bn-BD-u-nu-latn" };
 let lang = "fr";
 
 export function setLang(l) {
   lang = DICTS[l] ? l : "fr";
 }
 export const getLang = () => lang;
-export const isRTL = () => lang === "ar";
+export const isRTL = () => RTL_LANGS.includes(lang);
 export const locale = () => LOCALES[lang];
 
 // Textes propres à l'app native (la version web parle de navigateur et de site).
@@ -42,7 +43,8 @@ const NATIVE = {
 };
 
 export function t(key, vars) {
-  let s = NATIVE[lang][key] ?? EXTRA[lang][key] ?? DICTS[lang][key];
+  let s = (NATIVE[lang] || {})[key] ?? (EXTRA[lang] || {})[key] ?? DICTS[lang][key];
+  if (s === undefined && lang !== "fr") s = NATIVE.en[key] ?? EXTRA.en[key] ?? DICTS.en[key]; // langue incomplète : l'anglais d'abord
   if (s === undefined) s = NATIVE.fr[key] ?? EXTRA.fr[key];
   if (s === undefined) s = DICTS.fr[key];
   if (s === undefined) return key;

@@ -1965,6 +1965,7 @@ button.ch-btn .ch-sub{text-decoration:underline;text-decoration-thickness:1px;te
 .day-l{font-size:.7rem;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden}
 .day.today .day-l{color:var(--fg);font-weight:800}
 .day.today .day-fill:not(.zero){box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px color-mix(in srgb,var(--fg) 30%,transparent)}
+.day.future{opacity:.45}
 .gauge.score-gauge,[dir="rtl"] .gauge.score-gauge{margin:0 0 4px}
 .score-gauge .gauge-bar i{border-radius:0}
 .score-gauge .gauge-bar i:first-child{border-radius:999px 0 0 999px}
@@ -2685,3 +2686,21 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(env(sa
 .tour-dots i.on{background:var(--brand)!important;width:18px!important}
 .tour-spot::after{border-color:#fff!important;border-width:2px!important;box-shadow:0 0 0 6px rgb(255 255 255 / .12)}
 @media (prefers-reduced-motion:no-preference){.tour-card{transition:top .3s ease}.tour-ico{animation:hero-in .35s ease both}}
+
+/* Appel au boycott : information à part du verdict */
+.boycott{margin:12px 0;padding:14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid rgba(106,85,194,.3);display:flex;flex-direction:column;gap:10px}
+.boycott-top{display:flex;gap:12px;align-items:flex-start}
+.boycott-ico{flex:none;width:38px;height:38px;border-radius:12px;background:#6A55C2;color:#fff;display:grid;place-items:center}
+.boycott-ico svg{width:20px;height:20px}
+.boycott strong{color:#6A55C2;font-size:1rem}
+[data-theme="dark"] .boycott strong,[data-theme="dark"] .boycott a,[data-theme="dark"] .boycott summary{color:#A99AF0}
+.boycott em{font-style:normal;font-size:.72rem;font-weight:800;padding:1px 7px;border-radius:99px;background:rgba(106,85,194,.14);margin-inline-start:4px}
+.boycott p{margin:2px 0 0;font-size:.92rem;line-height:1.45}
+.boycott small{color:var(--muted);font-size:.85rem}
+.boycott summary{cursor:pointer;color:#6A55C2;font-weight:800;font-size:.9rem}
+.boycott h4{margin:10px 0 0;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.boycott .boycott-note{color:var(--muted);font-size:.84rem;margin:8px 0}
+.boycott a{color:#6A55C2;font-weight:800;font-size:.88rem}
+.boycott-row{display:flex;align-items:center;gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.boycott-row div{flex:1;display:flex;flex-direction:column;gap:3px}
+.boycott-row small{color:var(--muted);font-size:.85rem;line-height:1.4}

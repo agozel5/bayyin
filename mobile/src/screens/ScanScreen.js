@@ -1,5 +1,6 @@
 // Accueil : bandeau vert (bonjour et bilan de la semaine, ou présentation), scan en un geste,
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
+import { BOYCOTT_COLOR, BOYCOTT_ICON } from "../boycott";
 import Ramadan from "../components/Ramadan";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
@@ -67,22 +68,29 @@ function week(history) {
   return { n: list.length, c };
 }
 
+// Boutons secondaires du bandeau vert : une pastille blanche avec l'icône, puis le texte
+const HERO_ICONS = {
+  photo: '<path d="M4 8.5V6.5A2.5 2.5 0 0 1 6.5 4h2M15.5 4h2A2.5 2.5 0 0 1 20 6.5v2M20 15.5v2a2.5 2.5 0 0 1-2.5 2.5h-2M8.5 20h-2A2.5 2.5 0 0 1 4 17.5v-2"/><path d="M8 9.5h8M8 12.5h8M8 15.5h4.5"/>',
+  type: '<rect x="2.5" y="6" width="19" height="12" rx="3.5"/><path d="M6.5 12h.01M9.5 12h.01M12.5 12h.01" stroke-width="2.8"/><path d="M16.5 9v6"/>',
+};
 function HeroButton({ icon, text, onPress, on }) {
   return (
     <Pressable
       onPress={() => { haptic.light(); onPress(); }}
       accessibilityRole="button"
       accessibilityLabel={text}
-      style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 13, paddingHorizontal: 10,
-        borderRadius: R.md, backgroundColor: on ? "#fff" : pressed ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.14)" })}
+      style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 10,
+        borderRadius: R.md, backgroundColor: on ? "#fff" : pressed ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.14)", transform: [{ scale: pressed ? 0.97 : 1 }] })}
     >
-      <Glyph name={icon} size={18} color={on ? "#0F6545" : "#fff"} />
-      <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ color: on ? "#0F6545" : "#fff", fontWeight: "700", fontSize: 14, textAlign: "center", flexShrink: 1 }}>{text}</Text>
+      <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: on ? "#0F6545" : "#fff", alignItems: "center", justifyContent: "center" }}>
+        <Glyph paths={HERO_ICONS[icon]} size={22} color={on ? "#fff" : "#0F6545"} width={2} />
+      </View>
+      <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={{ color: on ? "#0F6545" : "#fff", fontWeight: "700", fontSize: 14, textAlign: dir().ta, flexShrink: 1 }}>{text}</Text>
     </Pressable>
   );
 }
 
-export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onAisle, onPlaces, onCompare, onTravel, onMenu, recipeChanges = [], onOpenChanges, onDismissChanges, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
+export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onBoycott, onAisle, onPlaces, onCompare, onTravel, onMenu, recipeChanges = [], onOpenChanges, onDismissChanges, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState(null);
   const [photoMenu, setPhotoMenu] = useState(false); // choix : liste d'ingrédients, étiquette étrangère, carte de restaurant
@@ -171,8 +179,8 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           <Glyph name="chev" size={20} color="#0F6545" />
         </Pressable>
         <View ref={tourRef("photo")} collapsable={false} style={{ flexDirection: dir().row, gap: 10 }}>
-          <HeroButton icon="doc" text={t("home.photo_ingredients")} onPress={() => setPhotoMenu(true)} />
-          <HeroButton icon="keyboard" text={t("home.type_code")} on={manualOpen} onPress={() => setManualOpen(!manualOpen)} />
+          <HeroButton icon="photo" text={t("home.photo_ingredients")} onPress={() => setPhotoMenu(true)} />
+          <HeroButton icon="type" text={t("home.type_code")} on={manualOpen} onPress={() => setManualOpen(!manualOpen)} />
         </View>
         {manualOpen ? (
           <FadeIn style={{ gap: 8 }}>
@@ -264,7 +272,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
                 </View>
               ) : null}
             </View>
-            <Text numberOfLines={2} maxFontSizeMultiplier={1.2} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontSize: 12, lineHeight: 15, fontWeight: "800", color: C.fg, textAlign: "center" }}>{label}</Text>
+            <Text numberOfLines={2} maxFontSizeMultiplier={1.2} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontSize: 12, lineHeight: 15, fontWeight: "800", color: C.fg, textAlign: "center" }}>{label}</Text>
           </Pressable>
         ))}
       </View>
@@ -279,6 +287,19 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         </View>
         <Glyph name="chev" size={17} color={C.faint} />
       </Pressable>
+
+      {/* Appels au boycott (si l'option est affichée) */}
+      {getSettings().boycott !== false && onBoycott ? (
+        <Pressable onPress={() => { haptic.tap(); onBoycott(); }} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 14, paddingVertical: 16, paddingHorizontal: 16, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.98 : 1 }] }, lift()]}>
+          <Tile color={BOYCOTT_COLOR} paths={BOYCOTT_ICON} size={48} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt style={{ fontWeight: "800", fontSize: 17 }}>{t("settings.menu.boycott")}</Txt>
+            <Muted style={{ fontSize: 14, lineHeight: 19 }}>{t("boycott.promo")}</Muted>
+          </View>
+          <Glyph name="chev" size={17} color={C.faint} />
+        </Pressable>
+      ) : null}
 
       {status ? <Message title={status.title} text={status.text} /> : null}
 
