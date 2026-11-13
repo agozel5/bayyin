@@ -3,8 +3,6 @@
 import { rateApp } from "../review";
 import { useNavBar } from "../components/NavBar";
 import { Qr } from "../components/ShareCard";
-import { BOYCOTT_COLOR, BOYCOTT_ICON, sourceLine } from "../components/Boycott";
-import { BOYCOTT, KIND_ORDER, DEFAULT_KINDS, kindOfEntry } from "../../../public/lib/boycott.js";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,7 +43,6 @@ const saved = (msg) => { haptic.success(); say && say(msg); };
 const SI = {
   lang: ['#3D84DB', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>'],
   profile: ['#E0457B', I.user],
-  boycott: [BOYCOTT_COLOR, BOYCOTT_ICON],
   religion: ['#1FA597', '<path d="M15.5 3.6A8.6 8.6 0 1 0 20.4 16a7 7 0 0 1-4.9-12.4z"/><path d="M17 7.5l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2z"/>'],
   appearance: ['#5A6472', '<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'],
   offline: ['#2F6FC0', '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>'],
@@ -65,7 +62,7 @@ const SI = {
   notif: ['#E0423A', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
   report: ['#5A6472', '<path d="M5.5 21V4M5.5 4h11l-2.2 4 2.2 4h-11"/>'],
 };
-const PAGE_TINT = { boycott: BOYCOTT_COLOR, lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
+const PAGE_TINT = { lang: "#3D84DB", profile: "#E0457B", religion: "#1FA597", appearance: "#E2A812", offline: "#2F6FC0", data: "#71809A", how: "#E2A812", sources: "#4C64D6", limits: "#F0BC33" };
 
 // ---------- briques ----------
 function Group({ title, children }) {
@@ -562,85 +559,6 @@ function HowPage({ onTour }) {
   );
 }
 
-// Appels au boycott : interrupteur général, catégories signalées, et pour chaque entreprise
-// ce que dit la source, les marques reconnues et le lien vers la liste
-function BoycottCompany({ e, first }) {
-  const [open_, setOpen] = useState(false);
-  const isr = e.id === "israel";
-  const brands = e.shown || [];
-  const kind = kindOfEntry(e);
-  return (
-    <View style={{ borderTopWidth: first ? 0 : 0.5, borderTopColor: C.line }}>
-      <Pressable onPress={() => { haptic.tap(); setOpen(!open_); }} accessibilityRole="button" accessibilityState={{ expanded: open_ }}
-        style={{ flexDirection: dir().row, alignItems: "center", gap: 12, paddingVertical: 11 }}>
-        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: BOYCOTT_COLOR + "1F", alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: BOYCOTT_COLOR, fontWeight: "900", fontSize: 14 }}>{isr ? "729" : e.company.replace(/^The /, "").slice(0, 2).toUpperCase()}</Text>
-        </View>
-        <View style={{ flex: 1, gap: 1 }}>
-          <Txt style={{ fontWeight: "800" }}>{isr ? t("boycott.israel_row") : e.company}</Txt>
-          <Muted style={{ fontSize: 12.5 }}>{t(`boycott.k.${kind}`)}</Muted>
-        </View>
-        <View style={{ transform: [{ rotate: open_ ? "-90deg" : "90deg" }] }}><Glyph name="chev" size={15} color={C.faint} /></View>
-      </Pressable>
-      {open_ ? (
-        <View style={{ gap: 8, paddingBottom: 12, paddingStart: 46 }}>
-          <Txt style={{ fontSize: 14, lineHeight: 20 }}>{t(kind === "organic" ? "boycott.why.organic" : `boycott.why.${e.why || e.id}`)}</Txt>
-          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{isr ? t("boycott.israel_how") : t("boycott.brands", { list: brands.join(", ") })}</Muted>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-function BoycottPage({ onBoycott }) {
-  const [, force] = useState(0);
-  const st = getSettings();
-  const on = st.boycott !== false;
-  const kinds = { ...DEFAULT_KINDS, ...(st.boycottKinds || {}) };
-  const setKind = (k) => { setSettings({ boycottKinds: { ...kinds, [k]: !kinds[k] } }); haptic.tap(); force((n) => n + 1); };
-  const order = KIND_ORDER.flatMap((k) => BOYCOTT.filter((e) => kindOfEntry(e) === k));
-  return (
-    <View style={{ gap: 14 }}>
-      <Block gap={12}>
-        <Row gap={12}>
-          <Tile color={BOYCOTT_COLOR} paths={BOYCOTT_ICON} size={40} />
-          <Txt style={{ flex: 1, fontWeight: "800", fontSize: 16 }}>{t("boycott.switch")}</Txt>
-          <Switch on={on} onPress={() => { setSettings({ boycott: !on }); saved(t(on ? "boycott.saved_off" : "boycott.saved_on")); force((n) => n + 1); }} label={t("boycott.switch")} />
-        </Row>
-        <Lead>{t("boycott.intro")}</Lead>
-        <Muted style={{ lineHeight: 20 }}>{t("boycott.neutral")}</Muted>
-        {on && onBoycott ? (
-          <Pressable onPress={() => { haptic.tap(); onBoycott(); }} accessibilityRole="button"
-            style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 13, borderRadius: R.md, backgroundColor: pressed ? "#55439E" : BOYCOTT_COLOR })}>
-            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("boycott.see_list")}</Text>
-          </Pressable>
-        ) : null}
-      </Block>
-      {on ? (
-        <Block title={t("boycott.kinds_t")} gap={4}>
-          {KIND_ORDER.map((k, i) => (
-            <Row key={k} gap={12} style={{ paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Txt style={{ fontWeight: "800" }}>{t(`boycott.k.${k}`)}</Txt>
-                <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t(`boycott.k.${k}.d`)}</Muted>
-              </View>
-              <Switch on={kinds[k]} onPress={() => setKind(k)} label={t(`boycott.k.${k}`)} />
-            </Row>
-          ))}
-        </Block>
-      ) : null}
-      <Block title={t("boycott.list_t")} gap={0}>
-        <Muted style={{ fontSize: 13, lineHeight: 18, marginBottom: 6 }}>{t("boycott.list_p")}</Muted>
-        {order.map((e, i) => <BoycottCompany key={e.id} e={e} first={!i} />)}
-      </Block>
-      <Block title={t("boycott.method_t")} gap={8}>
-        <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.scope")}</Muted>
-        <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.method_p")}</Muted>
-        {[{ level: "bds" }, { level: "bdsfr" }].map((e) => <Text key={e.level} onPress={() => open(sourceLine(e).url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{sourceLine(e).text} ↗</Text>)}
-      </Block>
-    </View>
-  );
-}
-
 function NotifPage() {
   const st = getSettings();
   const [granted, setGranted] = useState(null);
@@ -947,11 +865,11 @@ function RecommendBlock() {
   );
 }
 
-const PAGES = { about: AboutPage, boycott: BoycottPage, notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
+const PAGES = { about: AboutPage, notif: NotifPage, lang: LangPage, profile: ProfilePage, religion: ReligionPage, appearance: AppearancePage, offline: OfflinePage, data: DataPage, notes: NotesPage, how: HowPage, sources: SourcesPage, privacy: PrivacyPage, limits: LimitsPage, legal: LegalPage };
 
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
-export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoycott }) {
+export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   say = toast;
   const insets = useSafeAreaInsets();
   const nav = useNavBar(t("settings.title"));
@@ -1012,7 +930,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoyc
             <Art xml={PAGE_ART[page]} width="100%" height={150} />
           </View>
         ) : null}
-        <P toast={toast} onTour={onTour} onBoycott={onBoycott} />
+        <P toast={toast} onTour={onTour} />
       </ScrollView>
       </KeyboardAvoidingView>
       </Animated.View>
@@ -1048,7 +966,6 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoyc
         <MenuRow id="profile" title={t("settings.menu.profile")} value={profText} onPress={go("profile")} />
         <MenuRow id="religion" title={t("settings.menu.religion")} value={t(`school.${st.school}`)} onPress={go("religion")} />
         <MenuRow id="appearance" title={t("settings.menu.appearance")} value={t(`theme.${st.theme}`)} onPress={go("appearance")} />
-        <MenuRow id="boycott" title={t("settings.menu.boycott")} value={t(st.boycott !== false ? "boycott.on" : "boycott.off")} onPress={go("boycott")} />
       </Group>
       <Group title={t("settings.g_data")}>
         <MenuRow id="offline" first title={t("settings.menu.offline")} value={offText} onPress={go("offline")} />

@@ -26,7 +26,7 @@ export function legalDoc(id) {
     sections: [
       ["Éditeur", [`L'application Bayyin est éditée par ${editor}.`, `E-mail : ${contact}${X.phone ? ` · Téléphone : ${X.phone}` : ""}.`, `Directeur de la publication : ${v("name")}.`]],
       ["Hébergement et distribution", [
-        "Site web et fichiers de données de l'application (classements, médicaments, rappels, commerces, appels au boycott) : GitHub Inc. (service GitHub Pages), 88 Colin P Kelly Jr Street, San Francisco, CA 94107, États-Unis.",
+        "Site web et fichiers de données de l'application (classements, médicaments, rappels, commerces) : GitHub Inc. (service GitHub Pages), 88 Colin P Kelly Jr Street, San Francisco, CA 94107, États-Unis.",
         "Mises à jour de l'application : Expo (650 Industries, Inc.), Palo Alto, Californie, États-Unis.",
         "L'application est distribuée par l'App Store (Apple Distribution International, Cork, Irlande) et Google Play (Google Ireland Limited, Dublin, Irlande).",
       ]],
@@ -72,7 +72,6 @@ export function legalDoc(id) {
         "Le verdict halal est établi automatiquement à partir des informations publiées sur le produit (ingrédients, additifs, labels) et des réglages que vous choisissez. Ce n'est ni une certification ni un avis religieux : en cas de doute, adressez-vous à un organisme de certification ou à un savant de confiance.",
         "Les informations de santé sont générales et ne remplacent pas l'avis d'un médecin ou d'un diététicien. En cas d'allergie, lisez toujours l'emballage : la composition peut changer et les bases de données peuvent être incomplètes.",
       ]],
-      ["Appels au boycott", ["Bayyin peut indiquer qu'un produit appartient à une entreprise visée par un appel au boycott du mouvement BDS ou de BDS France, ou qu'il vient d'Israël. Cette information reprend les listes publiées par ces organisations, dont la source et la date de relecture sont affichées ; elle n'entre pas dans le verdict halal et n'exprime pas la position de l'éditeur. Elle peut être masquée dans les réglages, et une erreur peut être signalée depuis l'application."]],
       ["Sources et exactitude", ["Les données viennent de bases publiques et collaboratives (Open Food Facts, Open Beauty Facts, base des médicaments, RappelConso, CosIng, listes publiées par les organismes de certification). Bayyin les présente avec soin mais ne peut garantir qu'elles sont complètes ou à jour. Vous pouvez signaler une erreur depuis la fiche du produit."]],
       ["Responsabilité", ["L'éditeur met tout en œuvre pour que l'application fonctionne et que ses informations soient exactes, sans pouvoir le garantir. Sa responsabilité ne peut être engagée pour un choix d'achat ou de consommation fait à partir de l'application, sauf faute de sa part et dans les limites prévues par la loi. Rien dans ces conditions ne limite vos droits de consommateur."]],
       ["Utilisation", ["Vous vous engagez à utiliser Bayyin pour un usage personnel et à ne pas en extraire massivement les données ni en perturber le fonctionnement."]],
@@ -86,7 +85,7 @@ export function legalDoc(id) {
     title: "Conditions de l'abonnement",
     intro: `En vigueur au ${UPDATED}. Éditeur : ${editor} (${contact}).`,
     sections: [
-      ["Ce que comprend Premium", ["Bayyin Premium donne accès au mode rayon, au mode courses, à la comparaison de produits, à tous les classements, aux profils de la famille, au mode voyage, à l'alerte « la recette a changé », au téléchargement hors connexion et à un historique sur douze mois. Le scan, le verdict halal, la note santé, les alertes allergies, les rappels de produits, les appels au boycott et la lecture de carte de restaurant restent gratuits."]],
+      ["Ce que comprend Premium", ["Bayyin Premium donne accès au mode rayon, au mode courses, à la comparaison de produits, à tous les classements, aux profils de la famille, au mode voyage, à l'alerte « la recette a changé », au téléchargement hors connexion et à un historique sur douze mois. Le scan, le verdict halal, la note santé, les alertes allergies, les rappels de produits et la lecture de carte de restaurant restent gratuits."]],
       ["Prix et paiement", ["Les offres (mensuelle et annuelle) et leur prix toutes taxes comprises sont affichés dans l'application avant l'achat. Le paiement est fait par votre compte Apple (App Store) ou Google (Google Play), qui encaisse le prix et vous adresse le reçu."]],
       ["Essai gratuit de 7 jours", ["À la première souscription, un essai gratuit de 7 jours peut être proposé. Rien n'est prélevé pendant l'essai. Sans résiliation au moins 24 heures avant sa fin, l'abonnement payant commence automatiquement au prix affiché. Un seul essai par compte."]],
       ["Renouvellement et résiliation", ["L'abonnement se renouvelle automatiquement pour la même durée, sauf résiliation au moins 24 heures avant la fin de la période en cours. Vous pouvez résilier à tout moment, sans frais, dans les réglages de votre compte Apple ou Google, ou depuis l'application (Réglages › Bayyin Premium › Gérer mon abonnement). La résiliation prend effet à la fin de la période déjà payée."]],

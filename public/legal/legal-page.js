@@ -13,7 +13,7 @@ for (const [pid, href, label] of PAGES) nav.append(el("a", label, { href, ...(pi
 const art = document.querySelector("article");
 if (id === "contact") {
   art.append(el("h1", "Contact"));
-  art.append(el("p", "Une question, une erreur dans une fiche, un appel au boycott mal attribué, une demande sur vos données ? Écrivez-nous :"));
+  art.append(el("p", "Une question, une erreur dans une fiche, une demande sur vos données ? Écrivez-nous :"));
   const mail = (LEGAL_INFO.email || "").trim();
   if (mail) art.append(el("a", mail, { class: "mail", href: `mailto:${mail}` }));
   else art.append(el("p", "[à compléter : adresse e-mail de contact]"));
