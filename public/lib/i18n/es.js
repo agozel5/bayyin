@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-5", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Sin conexión",
@@ -1698,4 +1698,7 @@ export default {
   "boycott.why.dates": "Según BDS Francia, estos dátiles proceden de asentamientos israelíes del valle del Jordán, en territorio palestino ocupado.",
   "boycott.why.eden": "Según BDS Francia, el agua de Eden Springs se extrae de manantiales del Golán ocupado y se embotella en el asentamiento de Katzrin.",
   "boycott.why.ahava": "BDS Francia cita Ahava entre los productos de belleza israelíes que llama a boicotear.",
+  "support.t": "Apoyar a Bayyin",
+  "rate.t": "Valorar la app",
+  "rate.row": "Una nota o reseña en la tienda ayuda mucho",
 };

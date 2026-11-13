@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-5", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Luring",
@@ -1698,4 +1698,7 @@ export default {
   "boycott.why.dates": "Menurut BDS Prancis, kurma ini berasal dari permukiman Israel di Lembah Yordan, di wilayah Palestina yang diduduki.",
   "boycott.why.eden": "Menurut BDS Prancis, air Eden Springs diambil dari mata air di Golan yang diduduki dan dibotolkan di permukiman Katzrin.",
   "boycott.why.ahava": "BDS Prancis menyebut Ahava di antara produk kecantikan Israel yang diserukan untuk diboikot.",
+  "support.t": "Dukung Bayyin",
+  "rate.t": "Beri penilaian",
+  "rate.row": "Penilaian atau ulasan di toko sangat membantu",
 };

@@ -18,8 +18,8 @@ export function updateWidgets(history, recalled) {
     try {
       const W = require("./ios-widget").default;
       const d = widgetData(history, recalled);
-      if (W) W.updateSnapshot({ n: d.n, ok: d.ok, doubt: d.doubt, bad: d.bad, share: d.share, week: d.week, scan: d.scan, title: d.title, words: d.words, alert: d.alert ? d.alert.text : "",
-        recent: d.recent.slice(0, 5).map((r) => ({ name: r.name, brand: r.brand, g: r.g, label: r.label })) });
+      if (W) W.updateSnapshot({ n: d.n, ok: d.ok, doubt: d.doubt, bad: d.bad, other: d.other, share: d.share, week: d.week, scan: d.scan, title: d.title, words: d.words, alert: d.alert ? d.alert.text : "",
+        recent: d.recent.slice(0, 5).map((r) => ({ code: /^\d+$/.test(String(r.code)) ? r.code : "", name: r.name, brand: r.brand, g: r.g, label: r.label })) });
     } catch { /* module absent */ }
     return;
   }

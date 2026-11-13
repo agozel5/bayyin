@@ -1,6 +1,6 @@
 // Français (langue de référence : toute clé ajoutée ici doit exister dans en, ar et tr).
 export default {
-  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-5", // même numéro que sw.js et app.js (vérifié par les tests)
   // ---------- général ----------
   "app.name": "Bayyin",
   "app.demo": "Démo",
@@ -1754,4 +1754,7 @@ export default {
   "boycott.why.dates": "Selon BDS France, ces dattes viennent de colonies israéliennes de la vallée du Jourdain, en territoire palestinien occupé.",
   "boycott.why.eden": "Selon BDS France, l'eau Eden Springs est puisée dans des sources du Golan occupé et mise en bouteille dans la colonie de Katzrin.",
   "boycott.why.ahava": "BDS France cite Ahava parmi les produits de beauté israéliens à boycotter.",
+  "support.t": "Soutenir Bayyin",
+  "rate.t": "Donner mon avis",
+  "rate.row": "Une note ou un avis sur le store aide beaucoup",
 };
