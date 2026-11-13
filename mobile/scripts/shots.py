@@ -93,6 +93,15 @@ def run(lang, scheme):
         ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:
             ev(f"window.__bayyin.setTab('{tab}')"); p.wait_for_timeout(1200); shot(tab)
+        # Barre de titre en verre dépoli au défilement, et menu d'appui long
+        ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(800)
+        p.mouse.move(195, 400); p.mouse.wheel(0, 420); p.wait_for_timeout(900); shot("nav-history")
+        ev("window.__bayyinHistMenu && window.__bayyinHistMenu(0)"); p.wait_for_timeout(900); shot("hist-menu")
+        ev("window.__bayyinHistMenu && window.__bayyinHistMenu(null)"); p.wait_for_timeout(500)
+        p.mouse.wheel(0, -2000); p.wait_for_timeout(500)
+        ev("window.__bayyin.setTab('settings')"); p.wait_for_timeout(800)
+        p.mouse.move(195, 400); p.mouse.wheel(0, 380); p.wait_for_timeout(900); shot("nav-settings")
+        p.mouse.wheel(0, -2000); p.wait_for_timeout(400)
         ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(600)
         ev("window.__bayyinWeekGo && window.__bayyinWeekGo(1)"); p.wait_for_timeout(1400); shot("history-prevweek")
         ev("window.__bayyinWeekGo && window.__bayyinWeekGo(-1)"); p.wait_for_timeout(1200)

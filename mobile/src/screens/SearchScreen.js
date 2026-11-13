@@ -126,7 +126,7 @@ export default function SearchScreen({ onOpen, onScan }) {
   const total = r.local.length + r.food.length + r.beauty.length;
 
   return (
-    <Screen gap={16}>
+    <Screen gap={16} title={t("search.title")}>
       <PageHead title={t("search.title")} sub={t("search.sub")} />
       <SearchBox value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} />
       <Segmented items={["all", "food", "beauty"].map((k) => [k, t(`kindtab.${k}`)])} value={kind} onChange={changeKind} />

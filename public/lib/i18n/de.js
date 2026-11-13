@@ -1690,4 +1690,5 @@ export default {
   "share_app.qr_hide": "QR-Code ausblenden",
   "share_app.qr_p": "Scannen Sie ihn mit der Kamera eines anderen Handys.",
   "share_app.msg": "Ich empfehle Bayyin: Scannen Sie ein Produkt und sehen Sie sofort, ob es halal ist, wie gesund es ist und welche Zusatzstoffe es enthält. Kostenlos, ohne Konto, ohne Werbung. {url}",
+  "history.open": "Produkt öffnen",
 };

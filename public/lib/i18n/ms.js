@@ -1690,4 +1690,5 @@ export default {
   "share_app.qr_hide": "Sembunyikan kod QR",
   "share_app.qr_p": "Imbasnya dengan kamera telefon lain.",
   "share_app.msg": "Saya syorkan Bayyin: imbas produk dan lihat serta-merta sama ada ia halal, sejauh mana ia sihat dan bahan tambah yang dikandungnya. Percuma, tanpa akaun, tanpa iklan. {url}",
+  "history.open": "Buka produk",
 };

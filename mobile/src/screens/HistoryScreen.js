@@ -10,10 +10,11 @@ import { ListRow } from "../components/Cards";
 import { Glyph, Art, Tile } from "../components/Art";
 import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
 import { t, tn, locale } from "../i18n";
-import { getHistory, clearHistory, removeFromHistory } from "../storage";
+import { getHistory, clearHistory, removeFromHistory, toggleFav } from "../storage";
+import { ChoiceSheet } from "../components/ToolKit";
 import SwipeRow from "../components/SwipeRow";
 import EmptyState from "../components/Empty";
-import { verdictOf, relTime, S, scoreOf } from "../view";
+import { verdictOf, relTime, S, scoreOf, nameOf } from "../view";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic, ms } from "../motion";
 import { isPremium, canUse, FREE_HISTORY_DAYS } from "../premium";
@@ -220,6 +221,17 @@ function groups(entries) {
 }
 
 export default function HistoryScreen({ onOpen, onScan, toast }) {
+  const [menu, setMenu] = useState(null); // appui long sur un produit : actions rapides
+  const lastMenu = useRef(null); if (menu) lastMenu.current = menu;
+  const m = menu || lastMenu.current;
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistMenu = (i) => setMenu(i == null ? null : getHistory()[i]); // captures automatiques (web)
+  const menuSheet = (
+    <ChoiceSheet visible={!!menu} onClose={() => setMenu(null)} title={m ? nameOf(m.p) : ""} items={m ? [
+      { id: "open", color: "#14805A", paths: '<path d="M9 5l7 7-7 7"/>', title: t("history.open"), onPress: () => onOpen(m.code) },
+      { id: "fav", color: "#E9A100", paths: '<path d="M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>', title: t(m.fav ? "sheet.fav_remove" : "sheet.fav_add"), onPress: () => { toggleFav(m.code); toast && toast(t(m.fav ? "sheet.fav_removed" : "sheet.fav_added")); } },
+      { id: "del", color: "#E0423A", paths: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>', title: t("history.delete_one"), onPress: () => { removeFromHistory(m.code); toast && toast(t("history.deleted_one")); } },
+    ] : []} />
+  );
   const [filter, setFilter] = useState("all");
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistFilter = setFilter; // captures automatiques (web)
   const [confirm, setConfirm] = useState(false);
@@ -232,7 +244,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
 
   if (!all.length) {
     return (
-      <Screen>
+      <Screen title={t("history.title")}>
         <PageHead title={t("history.title")} sub={t("history.sub")} />
         <EmptyState pose="hello" title={t("history.empty.t")} text={t("history.empty.p")} action={t("home.scan")} onAction={onScan} />
       </Screen>
@@ -252,7 +264,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const shown = all.filter(FILTERS.find((f) => f.id === filter).test);
 
   return (
-    <Screen gap={16}>
+    <Screen gap={16} title={t("history.title")}>
       <PageHead title={t("history.title")} sub={t("history.sub")} />
       {hidden > 0 ? (
         <Pressable onPress={() => canUse("history")} accessibilityRole="button"
@@ -349,7 +361,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
             {list.map((e, i) => (
               <SwipeRow key={e.code} label={t("history.delete_one")} onDelete={() => { removeFromHistory(e.code); toast && toast(t("history.deleted_one")); }}>
-                <View style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} /></View>
+                <View style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} onLongPress={() => setMenu(e)} /></View>
               </SwipeRow>
             ))}
           </View>
@@ -371,6 +383,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           <Text style={{ color: C.muted, fontWeight: "700", textDecorationLine: "underline" }}>{t("history.clear")}</Text>
         </Pressable>
       )}
+      {menuSheet}
     </Screen>
   );
 }

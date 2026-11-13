@@ -1732,4 +1732,5 @@ export default {
   "share_app.qr_hide": "Hide the QR code",
   "share_app.qr_p": "Scan it with another phone's camera.",
   "share_app.msg": "I recommend Bayyin: scan a product and instantly see whether it's halal, how healthy it is and what additives it contains. Free, no account, no ads. {url}",
+  "history.open": "Open product",
 };

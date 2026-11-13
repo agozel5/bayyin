@@ -1690,4 +1690,5 @@ export default {
   "share_app.qr_hide": "Sembunyikan kode QR",
   "share_app.qr_p": "Pindai dengan kamera ponsel lain.",
   "share_app.msg": "Saya merekomendasikan Bayyin: pindai produk dan langsung lihat apakah produk itu halal, seberapa sehat, dan aditif apa yang dikandungnya. Gratis, tanpa akun, tanpa iklan. {url}",
+  "history.open": "Buka produk",
 };

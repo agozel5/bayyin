@@ -1732,4 +1732,5 @@ export default {
   "share_app.qr_hide": "QR kodunu gizle",
   "share_app.qr_p": "Başka bir telefonun kamerasıyla tarayın.",
   "share_app.msg": "Bayyin'i öneririm: bir ürünü tara, helal olup olmadığını, sağlık değerini ve katkı maddelerini hemen gör. Ücretsiz, hesap ve reklam yok. {url}",
+  "history.open": "Ürünü aç",
 };

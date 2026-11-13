@@ -1,5 +1,6 @@
 // Réglages : un menu en tuiles colorées (comme iOS), puis une page par rubrique avec son illustration.
 // Même organisation que la version web.
+import { useNavBar } from "../components/NavBar";
 import { Qr } from "../components/ShareCard";
 import { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate } from "../components/Boycott";
 import { BOYCOTT, BOYCOTT_SOURCE, kindOfEntry } from "../../../public/lib/boycott.js";
@@ -951,6 +952,7 @@ let handledFocus = 0;
 export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoycott }) {
   say = toast;
   const insets = useSafeAreaInsets();
+  const nav = useNavBar(t("settings.title"));
   const [page, setPage] = useState(null);
   const st = getSettings();
 
@@ -1022,7 +1024,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoyc
   return (
     <View style={{ flex: 1 }}>
     <Animated.View style={[{ flex: 1 }, menuStyle]} importantForAccessibility={page ? "no-hide-descendants" : "auto"} pointerEvents={page ? "none" : "auto"}>
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll}>
+    <ScrollView {...nav.scroll} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll}>
       <PageHead title={t("settings.title")} />
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 8 }, lift()]}>
         <Text style={{ fontSize: 13.5, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t("settings.summary_t")}</Text>
@@ -1063,6 +1065,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoyc
       </Group>
       <Muted style={{ fontSize: 12, lineHeight: 18, textAlign: "center" }}>{t("fine.data")} Open Food Facts ({t("fine.license")}) · Bayyin {version}</Muted>
     </ScrollView>
+    {nav.bar}
     {<Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: Animated.add(Animated.multiply(slide, 0.18), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, -0.18] : [-0.18, 0], extrapolate: "clamp" }))) }]} />}
     </Animated.View>
     {pageEl}
