@@ -19,10 +19,10 @@ import { getHistory, getSettings } from "../storage";
 import { mailto } from "../config";
 import { relTime, nameOf, verdictOf, S } from "../view";
 import { fetchAlternatives, fetchBoycottData } from "../api";
-import { BOYCOTT, BOYCOTT_SOURCE, kindOfEntry } from "../../../public/lib/boycott.js";
-import { BOYCOTT_COLOR, BOYCOTT_ICON, boycottFor, boycottText, checkedDate, whyKey } from "../boycott";
+import { BOYCOTT, KIND_ORDER, DEFAULT_KINDS, kindOfEntry } from "../../../public/lib/boycott.js";
+import { BOYCOTT_COLOR, BOYCOTT_ICON, boycottFor, boycottText, sourceLine, whyKey } from "../boycott";
 
-const KINDS = ["bds", "israel", "organic"];
+const KINDS = KIND_ORDER;
 const entryOf = (id) => BOYCOTT.find((e) => e.id === id);
 const titleOf = (e) => (e.id === "israel" ? t("boycott.israel_row") : e.company);
 
@@ -86,7 +86,7 @@ function CompanyCard({ e, data, onPress }) {
 // Liste des entreprises, avec un filtre par catégorie
 function Companies({ data, onPick }) {
   const [kind, setKind] = useState("all");
-  const kinds = { bds: true, organic: true, israel: true, ...(getSettings().boycottKinds || {}) };
+  const kinds = { ...DEFAULT_KINDS, ...(getSettings().boycottKinds || {}) };
   const list = BOYCOTT.filter((e) => kinds[kindOfEntry(e)] !== false && (kind === "all" || kindOfEntry(e) === kind));
   const order = KINDS.flatMap((k) => list.filter((e) => kindOfEntry(e) === k));
   return (
@@ -103,7 +103,7 @@ function Companies({ data, onPick }) {
 
 // Toutes les marques reconnues, de A à Z
 function Brands({ onPick }) {
-  const kinds = { bds: true, organic: true, israel: true, ...(getSettings().boycottKinds || {}) };
+  const kinds = { ...DEFAULT_KINDS, ...(getSettings().boycottKinds || {}) };
   const rows = BOYCOTT.filter((e) => e.company && kinds[kindOfEntry(e)] !== false).flatMap((e) => (e.shown || []).map((b) => ({ b, e })))
     .sort((x, y) => x.b.localeCompare(y.b));
   return (
@@ -166,9 +166,11 @@ function Home({ data, onClose, onPick, onOpen }) {
       <FadeIn key={view} distance={6}>
         {view === "companies" ? <Companies data={data} onPick={onPick} /> : view === "brands" ? <Brands onPick={onPick} /> : <Mine onOpen={onOpen} />}
       </FadeIn>
-      <Pressable onPress={() => Linking.openURL(BOYCOTT_SOURCE.url).catch(() => {})} accessibilityRole="link">
-        <Text style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
-      </Pressable>
+      {[{ level: "bds" }, { level: "bdsfr" }].map((e) => { const src = sourceLine(e); return (
+        <Pressable key={e.level} onPress={() => Linking.openURL(src.url).catch(() => {})} accessibilityRole="link">
+          <Text style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{src.text} ↗</Text>
+        </Pressable>
+      ); })}
       <Muted style={{ fontSize: 12.5, lineHeight: 17 }}>{t("boycott.photos_note")}</Muted>
     </View>
   );
@@ -220,7 +222,7 @@ function Company({ id, from, data, onBack, onOpen }) {
         </View>
         <View style={{ padding: 16, gap: 8 }}>
           <KindChip kind={kind} />
-          <Txt style={{ fontSize: 15, lineHeight: 21 }}>{e.id === "israel" ? t("boycott.israel") : t(e.level === "organic" ? "boycott.organic" : "boycott.bds", { c: e.company })}</Txt>
+          <Txt style={{ fontSize: 15, lineHeight: 21 }}>{e.id === "israel" ? t("boycott.israel") : t(e.level === "organic" ? "boycott.organic" : e.level === "bdsfr" ? "boycott.bdsfr" : "boycott.bds", { c: e.company })}</Txt>
         </View>
       </View>
 
@@ -246,9 +248,9 @@ function Company({ id, from, data, onBack, onOpen }) {
       <View style={{ gap: 8 }}>
         <SectionTitle>{t("boycott.why_t")}</SectionTitle>
         <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 10, borderStartWidth: 4, borderStartColor: BOYCOTT_COLOR }, lift()]}>
-          <Txt style={{ fontSize: 14.5, lineHeight: 21 }}>{t(whyKey({ id, kind }))}</Txt>
-          <Pressable onPress={() => Linking.openURL(BOYCOTT_SOURCE.url).catch(() => {})} accessibilityRole="link">
-            <Text style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 13.5, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
+          <Txt style={{ fontSize: 14.5, lineHeight: 21 }}>{t(whyKey({ id, kind, why: e.why }))}</Txt>
+          <Pressable onPress={() => Linking.openURL(sourceLine(e).url).catch(() => {})} accessibilityRole="link">
+            <Text style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 13.5, textAlign: dir().ta }}>{sourceLine(e).text} ↗</Text>
           </Pressable>
         </View>
       </View>

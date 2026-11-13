@@ -8,8 +8,16 @@
 export const BOYCOTT_SOURCE = {
   name: "Mouvement BDS",
   url: "https://bdsmovement.net/Act-Now-Against-These-Companies-Profiting-From-Genocide",
-  checked: "2026-11-09", // date à laquelle la liste a été relue
+  checked: "2026-11-13", // date à laquelle la liste a été relue
 };
+// Campagnes de BDS France (page « Que boycotter ? ») : marques de dattes, eau, cosmétiques
+export const BOYCOTT_SOURCE_FR = {
+  name: "BDS France",
+  url: "https://www.bdsfrance.org/que-boycotter/",
+  checked: "2026-11-13",
+};
+/** Source d'une entrée (ou d'un résultat de boycottOf) : { url, checked, key } — key = texte « Source : … » */
+export const sourceOf = (e) => (e && (e.level === "bdsfr" || e.kind === "bdsfr") ? { ...BOYCOTT_SOURCE_FR, key: "boycott.source_fr" } : { ...BOYCOTT_SOURCE, key: "boycott.source" });
 
 // level : « bds » = cible prioritaire de l'appel du mouvement BDS ;
 //         « organic » = boycott citoyen né en dehors de BDS, que BDS dit soutenir
@@ -18,12 +26,19 @@ export const BOYCOTT = [
   { id: "sodastream", company: "SodaStream", level: "bds", shown: ["SodaStream"], prefixes: ["sodastream"] },
   { id: "teva", company: "Teva", level: "bds", shown: ["Teva"], prefixes: ["teva"] },
   { id: "israel", company: null, level: "bds", origin: "israel" },
-  { id: "coca-cola", company: "The Coca-Cola Company", level: "organic", shown: ["Coca-Cola", "Fanta", "Sprite", "Minute Maid", "Powerade", "Fuze Tea", "Chaudfontaine", "Smartwater", "Glacéau Vitaminwater", "Costa Coffee", "Innocent", "Topo Chico"], prefixes: ["coca-cola", "cocacola"],
-    brands: ["coke", "fanta", "sprite", "minute-maid", "powerade", "fuze-tea", "fuzetea", "chaudfontaine", "smartwater", "glaceau", "vitaminwater", "glaceau-vitaminwater", "costa-coffee", "innocent", "topo-chico"] },
+  { id: "coca-cola", company: "The Coca-Cola Company", level: "organic", shown: ["Coca-Cola", "Fanta", "Sprite", "Tropico", "Hawai", "Minute Maid", "Powerade", "Fuze Tea", "Chaudfontaine", "Smartwater", "Glacéau Vitaminwater", "Costa Coffee", "Innocent", "Topo Chico"], prefixes: ["coca-cola", "cocacola"],
+    brands: ["coke", "fanta", "sprite", "tropico", "hawai", "minute-maid", "powerade", "fuze-tea", "fuzetea", "chaudfontaine", "smartwater", "glaceau", "vitaminwater", "glaceau-vitaminwater", "costa-coffee", "innocent", "topo-chico"] },
   { id: "mcdonalds", company: "McDonald's", level: "organic", shown: ["McDonald's"], prefixes: ["mcdonald-s", "mcdonalds", "mc-donald-s", "mc-donalds"] },
   { id: "burger-king", company: "Burger King", level: "organic", shown: ["Burger King"], prefixes: ["burger-king"] },
   { id: "pizza-hut", company: "Pizza Hut", level: "organic", shown: ["Pizza Hut"], prefixes: ["pizza-hut"] },
   { id: "dominos", company: "Domino's Pizza", level: "organic", shown: ["Domino's"], prefixes: ["domino-s", "dominos"] },
+  // level « bdsfr » : campagnes de BDS France. only = le produit doit aussi être dans une de ces catégories
+  // (pour les noms de marque trop courants : « Carmel », « Jaffa »…). why = clé du texte de la raison.
+  { id: "mehadrin", company: "Mehadrin", level: "bdsfr", why: "dates", shown: ["Mehadrin"], prefixes: ["mehadrin"] },
+  { id: "hadiklaim", company: "Hadiklaim", level: "bdsfr", why: "dates", shown: ["Hadiklaim", "Jordan River", "King Solomon"], prefixes: ["hadiklaim"], brands: ["jordan-river", "king-solomon"] },
+  { id: "dattes", company: "Jaffa, Carmel, Edom, Kedem", level: "bdsfr", why: "dates", shown: ["Jaffa (dattes)", "Carmel (dattes)", "Edom (dattes)", "Kedem (dattes)"], brands: ["jaffa", "carmel", "edom", "kedem"], only: ["en:dates", "en:medjool-dates", "en:dried-dates"] },
+  { id: "eden", company: "Eden Springs (Château d'Eau)", level: "bdsfr", shown: ["Eden Springs", "Château d'Eau"], prefixes: ["eden-springs", "eden-spring"], brands: ["chateau-d-eau"] },
+  { id: "ahava", company: "Ahava", level: "bdsfr", shown: ["Ahava"], prefixes: ["ahava"] },
   { id: "papa-johns", company: "Papa John's", level: "organic", shown: ["Papa John's"], prefixes: ["papa-john-s", "papa-johns"] },
 ];
 
@@ -40,8 +55,9 @@ function brandSlugs(raw) {
 }
 
 // Catégorie de chaque entrée, pour les réglages : cibles BDS, boycotts citoyens, produits d'Israël
-export const kindOfEntry = (e) => (e.id === "israel" ? "israel" : e.level === "organic" ? "organic" : "bds");
-export const DEFAULT_KINDS = { bds: true, organic: true, israel: true };
+export const kindOfEntry = (e) => (e.id === "israel" ? "israel" : e.level === "organic" ? "organic" : e.level === "bdsfr" ? "bdsfr" : "bds");
+export const DEFAULT_KINDS = { bds: true, bdsfr: true, organic: true, israel: true };
+export const KIND_ORDER = ["bds", "bdsfr", "israel", "organic"];
 
 /**
  * Entrée de la liste qui concerne ce produit (ou null) :
@@ -55,10 +71,11 @@ export function boycottOf(raw, kinds = DEFAULT_KINDS) {
   const tags = [...names.keys()];
   for (const e of BOYCOTT) {
     if (e.origin || kinds[kindOfEntry(e)] === false) continue;
+    if (e.only && !(raw.categories_tags || []).some((c) => e.only.includes(c))) continue;
     const byName = tags.find((tg) => (e.prefixes || []).some((p) => tg === p || tg.startsWith(p + "-")));
     const owned = byName ? null : tags.find((tg) => (e.brands || []).includes(tg));
     const hit = byName || owned;
-    if (hit) return { id: e.id, company: e.company, level: e.level, kind: kindOfEntry(e), via: "brand", brand: hit, brandName: names.get(hit) || brandLabel(hit), owned: !!owned };
+    if (hit) return { id: e.id, company: e.company, level: e.level, kind: kindOfEntry(e), why: e.why || e.id, via: "brand", brand: hit, brandName: names.get(hit) || brandLabel(hit), owned: !!owned };
   }
   if (kinds.israel === false) return null;
   // Produit d'Israël : origine déclarée sur Open Food Facts, ou code-barres attribué par GS1 Israël (préfixe 729)

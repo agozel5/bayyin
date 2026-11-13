@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-3", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -1733,4 +1733,11 @@ export default {
   "share_app.qr_p": "Scan it with another phone's camera.",
   "share_app.msg": "I recommend Bayyin: scan a product and instantly see whether it's halal, how healthy it is and what additives it contains. Free, no account, no ads. {url}",
   "history.open": "Open product",
+  "boycott.k.bdsfr": "BDS France campaign",
+  "boycott.k.bdsfr.d": "Brands targeted by BDS France campaigns: dates, water, cosmetics.",
+  "boycott.bdsfr": "{c} is among the brands BDS France calls on people to boycott.",
+  "boycott.source_fr": "Source: BDS France · list checked on {d}",
+  "boycott.why.dates": "According to BDS France, these dates come from Israeli settlements in the Jordan Valley, in occupied Palestinian territory.",
+  "boycott.why.eden": "According to BDS France, Eden Springs water is drawn from springs in the occupied Golan and bottled in the settlement of Katzrin.",
+  "boycott.why.ahava": "BDS France lists Ahava among the Israeli beauty products to boycott.",
 };

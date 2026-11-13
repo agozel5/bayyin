@@ -135,4 +135,11 @@ test("boycott : marques de l'entreprise, marques possédées, origine Israël", 
   assert.equal(boycottOf({ brands: "Danone" }), null);
   assert.equal(boycottOf({ brands: "Teval" }), null); // pas de faux positif sur un préfixe
   assert.equal(boycottOf({ brands: "Simplement bon" }), null);
+  // Campagnes de BDS France : marques de dattes (les noms courants seulement dans le rayon dattes)
+  assert.equal(boycottOf({ brands: "Jordan River" }).id, "hadiklaim");
+  assert.equal(boycottOf({ brands: "Jordan River" }).kind, "bdsfr");
+  assert.equal(boycottOf({ brands: "Carmel", categories_tags: ["en:dates"] }).id, "dattes");
+  assert.equal(boycottOf({ brands: "Carmel", categories_tags: ["en:wines"] }), null);
+  assert.equal(boycottOf({ brands: "Tropico" }).id, "coca-cola");
+  assert.equal(boycottOf({ brands: "Mehadrin" }, { bdsfr: false }), null);
 });

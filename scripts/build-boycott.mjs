@@ -42,6 +42,8 @@ const QUERIES = {
   dominos: ["brands_tags=domino-s"],
   "papa-johns": ["brands_tags=papa-john-s"],
   israel: ["origins_tags=en:israel"],
+  mehadrin: ["brands_tags=mehadrin"],
+  hadiklaim: ["brands_tags=hadiklaim", "brands_tags=jordan-river", "brands_tags=king-solomon"],
 };
 // Marques de distributeur et boissons vendues en France ; restauration rapide et produits d'Israël : tous pays
 const FRANCE_ONLY = new Set(["carrefour", "sodastream", "coca-cola"]);

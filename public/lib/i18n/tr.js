@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-3", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Çevrimdışı",
@@ -1733,4 +1733,11 @@ export default {
   "share_app.qr_p": "Başka bir telefonun kamerasıyla tarayın.",
   "share_app.msg": "Bayyin'i öneririm: bir ürünü tara, helal olup olmadığını, sağlık değerini ve katkı maddelerini hemen gör. Ücretsiz, hesap ve reklam yok. {url}",
   "history.open": "Ürünü aç",
+  "boycott.k.bdsfr": "BDS Fransa kampanyası",
+  "boycott.k.bdsfr.d": "BDS Fransa kampanyalarının hedefindeki markalar: hurma, su, kozmetik.",
+  "boycott.bdsfr": "{c}, BDS Fransa'nın boykot çağrısı yaptığı markalar arasında.",
+  "boycott.source_fr": "Kaynak: BDS Fransa · liste {d} tarihinde kontrol edildi",
+  "boycott.why.dates": "BDS Fransa'ya göre bu hurmalar, işgal altındaki Filistin topraklarında, Ürdün Vadisi'ndeki İsrail yerleşimlerinden geliyor.",
+  "boycott.why.eden": "BDS Fransa'ya göre Eden Springs suyu, işgal altındaki Golan'daki kaynaklardan çekiliyor ve Katzrin yerleşiminde şişeleniyor.",
+  "boycott.why.ahava": "BDS Fransa, Ahava'yı boykot edilecek İsrail güzellik ürünleri arasında sayıyor.",
 };
