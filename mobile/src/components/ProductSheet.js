@@ -425,7 +425,7 @@ function NovaScale({ group }) {
 
 function LinkRow({ text, url, muted = false }) {
   return (
-    <Pressable onPress={() => open(url)} style={{ paddingVertical: 8 }}>
+    <Pressable onPress={() => open(url)} accessibilityRole="link" style={{ paddingVertical: 8 }}>
       <Txt style={{ color: muted ? C.muted : C.brand, fontWeight: "700", fontSize: muted ? 14 : 16 }}>{text}</Txt>
     </Pressable>
   );

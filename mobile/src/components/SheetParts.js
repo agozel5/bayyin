@@ -390,7 +390,7 @@ export function Reader({ p, v, onGotoSettings }) {
         <Muted style={{ fontSize: 13.5 }}>{marks.length ? tn("reader.sum", marks.length) : t("reader.none")}</Muted>
       </View>
       <Txt numberOfLines={long ? 6 : undefined} style={{ fontSize: 16, lineHeight: 26 }}>{body}</Txt>
-      {p.ingredients.length > 380 && !more ? <Pressable onPress={() => setMore(true)}><Text style={{ color: C.brand, fontWeight: "700", textAlign: dir().ta }}>{t("reader.more")}</Text></Pressable> : null}
+      {p.ingredients.length > 380 && !more ? <Pressable onPress={() => setMore(true)} accessibilityRole="button" hitSlop={8}><Text style={{ color: C.brand, fontWeight: "700", textAlign: dir().ta }}>{t("reader.more")}</Text></Pressable> : null}
       {cur ? (
         <View style={{ gap: 8 }}>
           {cur.flags.map((f) => <FlagCard key={f.id} f={f} onGotoSettings={onGotoSettings} />)}

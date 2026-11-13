@@ -1029,7 +1029,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium, onBoyc
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 8 }, lift()]}>
         <Text style={{ fontSize: 13.5, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t("settings.summary_t")}</Text>
         {[["summary_school", t(`school.${st.school}`), "religion"], ["summary_profile", profText, "profile"], ["summary_offline", offText, "offline"]].map(([k, v, pg]) => (
-          <Pressable key={k} onPress={go(pg)} style={{ flexDirection: dir().row, justifyContent: "space-between", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: R.sm, backgroundColor: C.tint }}>
+          <Pressable key={k} onPress={go(pg)} accessibilityRole="button" style={{ flexDirection: dir().row, justifyContent: "space-between", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: R.sm, backgroundColor: C.tint }}>
             <Text style={{ fontSize: 13, color: C.muted }}>{t(`settings.${k}`)}</Text>
             <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 14, fontWeight: "800", color: C.brandDark }}>{v}</Text>
           </Pressable>

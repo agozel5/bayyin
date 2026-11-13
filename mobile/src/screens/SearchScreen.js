@@ -137,7 +137,7 @@ export default function SearchScreen({ onOpen, onScan }) {
             <View style={{ gap: 8 }}>
               <Row style={{ justifyContent: "space-between" }}>
                 <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted }}>{t("search.recent")}</Text>
-                <Pressable onPress={() => { setRecent([]); AsyncStorage.setItem(RECENT, "[]").catch(() => {}); }} hitSlop={8}><Text style={{ color: C.muted, fontWeight: "700", textDecorationLine: "underline" }}>{t("search.recent_clear")}</Text></Pressable>
+                <Pressable onPress={() => { setRecent([]); AsyncStorage.setItem(RECENT, "[]").catch(() => {}); }} hitSlop={8} accessibilityRole="button"><Text style={{ color: C.muted, fontWeight: "700", textDecorationLine: "underline" }}>{t("search.recent_clear")}</Text></Pressable>
               </Row>
               <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
                 {recent.map((s) => <Chip key={s} text={s} onPress={() => pick(s)} icon={<Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={15} color={C.muted} />} />)}

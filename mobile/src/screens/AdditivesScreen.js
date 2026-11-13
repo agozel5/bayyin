@@ -99,7 +99,7 @@ export default function AdditivesScreen({ onGotoSettings }) {
   const card = { backgroundColor: C.surface, paddingHorizontal: 14, ...lift() };
   const fnSheet = (
     <Modal visible={fnOpen} transparent animationType="slide" onRequestClose={() => setFnOpen(false)}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }} onPress={() => setFnOpen(false)} />
+      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }} onPress={() => setFnOpen(false)} accessibilityRole="button" accessibilityLabel={t("sheet.back")} />
       <View style={{ maxHeight: "70%", backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 10, paddingBottom: insets.bottom + 10 }}>
         <View style={{ alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: C.tint2, marginBottom: 8 }} />
         <Text style={{ fontSize: 17, fontWeight: "800", color: C.fg, paddingHorizontal: 20, paddingBottom: 6, textAlign: dir().ta }}>{t("add.fn")}</Text>
@@ -191,7 +191,7 @@ export default function AdditivesScreen({ onGotoSettings }) {
       )}
       ListEmptyComponent={<View style={{ alignItems: "center", gap: 6, paddingVertical: 30 }}><Text style={{ fontWeight: "800", fontSize: 17, color: C.fg }}>{t("add.empty.t")}</Text><Muted style={{ textAlign: "center" }}>{t("add.e_none")}</Muted></View>}
       ListFooterComponent={list.length > shown ? (
-        <Pressable onPress={() => setShown(shown + PAGE)} style={{ marginTop: 14, paddingVertical: 14, borderRadius: R.md, backgroundColor: C.tint2, alignItems: "center" }}>
+        <Pressable onPress={() => setShown(shown + PAGE)} accessibilityRole="button" style={{ marginTop: 14, paddingVertical: 14, borderRadius: R.md, backgroundColor: C.tint2, alignItems: "center" }}>
           <Text style={{ fontWeight: "700", color: C.fg }}>{t("add.more", { n: list.length - shown })}</Text>
         </Pressable>
       ) : list.length ? <Muted style={{ fontSize: 12.5, marginTop: 14, textAlign: "center" }}>{t("add.e_source")}</Muted> : null}

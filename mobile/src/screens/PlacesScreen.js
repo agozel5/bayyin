@@ -140,7 +140,7 @@ export default function PlacesScreen({ onClose }) {
         <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={18} color={C.muted} />
         <TextInput value={q} onChangeText={setQ} onSubmitEditing={city} placeholder={t("places.city_ph")} placeholderTextColor={C.faint} returnKeyType="search"
           style={{ flex: 1, paddingVertical: 13, fontSize: 15.5, color: C.fg, textAlign: dir().ta }} />
-        {q.trim() ? <Pressable onPress={city} hitSlop={8}><Text style={{ color: C.brand, fontWeight: "800" }}>{t("places.city_go")}</Text></Pressable> : null}
+        {q.trim() ? <Pressable onPress={city} hitSlop={8} accessibilityRole="button"><Text style={{ color: C.brand, fontWeight: "800" }}>{t("places.city_go")}</Text></Pressable> : null}
       </View>
       <ChipRow>
         {RADII.map((r) => <Chip key={r} text={`${r / 1000} km`} on={st.radius === r} onPress={() => (st.center ? search(st.center.lat, st.center.lon, st.label, r) : set({ radius: r }))} />)}

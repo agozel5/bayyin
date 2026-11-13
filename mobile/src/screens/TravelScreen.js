@@ -160,7 +160,7 @@ export default function TravelScreen({ onClose, onOpenProduct }) {
               <TextInput value={text} onChangeText={setText} multiline autoCorrect={false} spellCheck={false}
                 style={{ minHeight: 140, textAlignVertical: "top", borderWidth: 1, borderColor: C.line, borderRadius: R.md, padding: 12, fontSize: 15, color: C.fg, backgroundColor: C.bg }} />
             ) : (
-              <Pressable onPress={() => setFull(!full)}>
+              <Pressable onPress={() => setFull(!full)} accessibilityRole="button">
                 <Txt style={{ fontSize: 14.5, lineHeight: 21, color: C.fg }} numberOfLines={full ? undefined : 5}>{res.text}</Txt>
               </Pressable>
             )}
