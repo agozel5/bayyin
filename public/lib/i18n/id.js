@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-3", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Luring",
@@ -1691,4 +1691,11 @@ export default {
   "share_app.qr_p": "Pindai dengan kamera ponsel lain.",
   "share_app.msg": "Saya merekomendasikan Bayyin: pindai produk dan langsung lihat apakah produk itu halal, seberapa sehat, dan aditif apa yang dikandungnya. Gratis, tanpa akun, tanpa iklan. {url}",
   "history.open": "Buka produk",
+  "boycott.k.bdsfr": "Kampanye BDS Prancis",
+  "boycott.k.bdsfr.d": "Merek yang menjadi sasaran kampanye BDS Prancis: kurma, air, kosmetik.",
+  "boycott.bdsfr": "{c} termasuk merek yang diserukan untuk diboikot oleh BDS Prancis.",
+  "boycott.source_fr": "Sumber: BDS Prancis · daftar diperiksa pada {d}",
+  "boycott.why.dates": "Menurut BDS Prancis, kurma ini berasal dari permukiman Israel di Lembah Yordan, di wilayah Palestina yang diduduki.",
+  "boycott.why.eden": "Menurut BDS Prancis, air Eden Springs diambil dari mata air di Golan yang diduduki dan dibotolkan di permukiman Katzrin.",
+  "boycott.why.ahava": "BDS Prancis menyebut Ahava di antara produk kecantikan Israel yang diserukan untuk diboikot.",
 };

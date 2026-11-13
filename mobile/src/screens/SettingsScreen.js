@@ -2,8 +2,8 @@
 // Même organisation que la version web.
 import { useNavBar } from "../components/NavBar";
 import { Qr } from "../components/ShareCard";
-import { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate } from "../components/Boycott";
-import { BOYCOTT, BOYCOTT_SOURCE, kindOfEntry } from "../../../public/lib/boycott.js";
+import { BOYCOTT_COLOR, BOYCOTT_ICON, sourceLine } from "../components/Boycott";
+import { BOYCOTT, KIND_ORDER, DEFAULT_KINDS, kindOfEntry } from "../../../public/lib/boycott.js";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -582,7 +582,7 @@ function BoycottCompany({ e, first }) {
       </Pressable>
       {open_ ? (
         <View style={{ gap: 8, paddingBottom: 12, paddingStart: 46 }}>
-          <Txt style={{ fontSize: 14, lineHeight: 20 }}>{t(kind === "organic" ? "boycott.why.organic" : `boycott.why.${e.id}`)}</Txt>
+          <Txt style={{ fontSize: 14, lineHeight: 20 }}>{t(kind === "organic" ? "boycott.why.organic" : `boycott.why.${e.why || e.id}`)}</Txt>
           <Muted style={{ fontSize: 13, lineHeight: 18 }}>{isr ? t("boycott.israel_how") : t("boycott.brands", { list: brands.join(", ") })}</Muted>
         </View>
       ) : null}
@@ -593,9 +593,9 @@ function BoycottPage({ onBoycott }) {
   const [, force] = useState(0);
   const st = getSettings();
   const on = st.boycott !== false;
-  const kinds = { bds: true, organic: true, israel: true, ...(st.boycottKinds || {}) };
+  const kinds = { ...DEFAULT_KINDS, ...(st.boycottKinds || {}) };
   const setKind = (k) => { setSettings({ boycottKinds: { ...kinds, [k]: !kinds[k] } }); haptic.tap(); force((n) => n + 1); };
-  const order = [...BOYCOTT.filter((e) => kindOfEntry(e) === "bds"), ...BOYCOTT.filter((e) => kindOfEntry(e) === "israel"), ...BOYCOTT.filter((e) => kindOfEntry(e) === "organic")];
+  const order = KIND_ORDER.flatMap((k) => BOYCOTT.filter((e) => kindOfEntry(e) === k));
   return (
     <View style={{ gap: 14 }}>
       <Block gap={12}>
@@ -615,7 +615,7 @@ function BoycottPage({ onBoycott }) {
       </Block>
       {on ? (
         <Block title={t("boycott.kinds_t")} gap={4}>
-          {["bds", "israel", "organic"].map((k, i) => (
+          {KIND_ORDER.map((k, i) => (
             <Row key={k} gap={12} style={{ paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Txt style={{ fontWeight: "800" }}>{t(`boycott.k.${k}`)}</Txt>
@@ -633,7 +633,7 @@ function BoycottPage({ onBoycott }) {
       <Block title={t("boycott.method_t")} gap={8}>
         <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.scope")}</Muted>
         <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("boycott.method_p")}</Muted>
-        <Text onPress={() => open(BOYCOTT_SOURCE.url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{t("boycott.source", { d: checkedDate() })} ↗</Text>
+        {[{ level: "bds" }, { level: "bdsfr" }].map((e) => <Text key={e.level} onPress={() => open(sourceLine(e).url)} style={{ color: BOYCOTT_COLOR, fontWeight: "800", fontSize: 14, textAlign: dir().ta }}>{sourceLine(e).text} ↗</Text>)}
       </Block>
     </View>
   );

@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-3", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",
@@ -1691,4 +1691,11 @@ export default {
   "share_app.qr_p": "Scannen Sie ihn mit der Kamera eines anderen Handys.",
   "share_app.msg": "Ich empfehle Bayyin: Scannen Sie ein Produkt und sehen Sie sofort, ob es halal ist, wie gesund es ist und welche Zusatzstoffe es enthält. Kostenlos, ohne Konto, ohne Werbung. {url}",
   "history.open": "Produkt öffnen",
+  "boycott.k.bdsfr": "Kampagne von BDS France",
+  "boycott.k.bdsfr.d": "Marken, gegen die sich Kampagnen von BDS France richten: Datteln, Wasser, Kosmetik.",
+  "boycott.bdsfr": "{c} gehört zu den Marken, zu deren Boykott BDS France aufruft.",
+  "boycott.source_fr": "Quelle: BDS France · Liste geprüft am {d}",
+  "boycott.why.dates": "Laut BDS France stammen diese Datteln aus israelischen Siedlungen im Jordantal, im besetzten palästinensischen Gebiet.",
+  "boycott.why.eden": "Laut BDS France wird das Wasser von Eden Springs aus Quellen im besetzten Golan gewonnen und in der Siedlung Katzrin abgefüllt.",
+  "boycott.why.ahava": "BDS France nennt Ahava unter den israelischen Schönheitsprodukten, die boykottiert werden sollen.",
 };

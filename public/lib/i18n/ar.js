@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-13-3", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-4", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "تجريبي",
   "app.offline": "غير متصل",
@@ -1733,4 +1733,11 @@ export default {
   "share_app.qr_p": "امسحه بكاميرا هاتف آخر.",
   "share_app.msg": "أنصحك ببيّن: امسح منتجًا واعرف فورًا هل هو حلال، وما قيمته الصحية، وما فيه من إضافات. مجاني، بلا حساب ولا إعلانات. {url}",
   "history.open": "فتح صفحة المنتج",
+  "boycott.k.bdsfr": "حملة BDS فرنسا",
+  "boycott.k.bdsfr.d": "علامات تستهدفها حملات BDS فرنسا: تمور، مياه، مستحضرات تجميل.",
+  "boycott.bdsfr": "{c} من بين العلامات التي تدعو BDS فرنسا إلى مقاطعتها.",
+  "boycott.source_fr": "المصدر: BDS فرنسا · تمت مراجعة القائمة في {d}",
+  "boycott.why.dates": "بحسب BDS فرنسا، تأتي هذه التمور من مستوطنات إسرائيلية في غور الأردن، في الأرض الفلسطينية المحتلة.",
+  "boycott.why.eden": "بحسب BDS فرنسا، تُستخرج مياه Eden Springs من ينابيع في الجولان المحتل وتُعبأ في مستوطنة كتسرين.",
+  "boycott.why.ahava": "تذكر BDS فرنسا Ahava ضمن مستحضرات التجميل الإسرائيلية التي تدعو إلى مقاطعتها.",
 };

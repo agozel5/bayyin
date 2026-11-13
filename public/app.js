@@ -2,12 +2,12 @@ import { createClient, OffError, present, classifyAny, normQuantity } from "./li
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
 import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS, THEMES, TEXT_SIZES } from "./lib/settings.js";
-import { boycottOf, BOYCOTT_SOURCE } from "./lib/boycott.js";
+import { boycottOf, sourceOf } from "./lib/boycott.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-11-13-3";
+const APP_BUILD = "2026-11-13-4";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -1379,16 +1379,17 @@ function boycottCard(p) {
   const raw = p.raw || {};
   const b = boycottOf({ ...raw, code: p.code || raw.code, kind: p.kind || raw.kind, brands: raw.brands || p.brand });
   if (!b) return "";
-  const text = b.id === "israel" ? t(b.via === "barcode" ? "boycott.israel_code" : "boycott.israel") : t(b.level === "organic" ? "boycott.organic" : "boycott.bds", { c: b.company });
+  const text = b.id === "israel" ? t(b.via === "barcode" ? "boycott.israel_code" : "boycott.israel") : t(b.level === "organic" ? "boycott.organic" : b.level === "bdsfr" ? "boycott.bdsfr" : "boycott.bds", { c: b.company });
+  const src = sourceOf(b);
   const how = b.via === "brand" ? t("boycott.how_brand", { b: b.brandName }) : t(b.via === "origin" ? "boycott.how_origin" : "boycott.how_code");
-  const d = new Date(BOYCOTT_SOURCE.checked + "T12:00:00").toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" });
+  const d = new Date(src.checked + "T12:00:00").toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" });
   return `<section class="boycott">
     <div class="boycott-top"><span class="boycott-ico">${svg(BOYCOTT_ICON)}</span><div><strong>${esc(t("boycott.t"))} <em>${esc(t(`boycott.k.${b.kind}`))}</em></strong><p>${esc(text)}</p>${b.owned ? `<small>${esc(t("boycott.owned", { b: b.brandName, c: b.company }))}</small>` : ""}</div></div>
     <details><summary>${esc(t("boycott.more"))}</summary>
-      <h4>${esc(t("boycott.why_t"))}</h4><p>${esc(t(b.kind === "organic" ? "boycott.why.organic" : `boycott.why.${b.id}`))}</p>
+      <h4>${esc(t("boycott.why_t"))}</h4><p>${esc(t(b.kind === "organic" ? "boycott.why.organic" : `boycott.why.${b.why || b.id}`))}</p>
       <h4>${esc(t("boycott.how_t"))}</h4><p>${esc(how)}</p>
       <p class="boycott-note">${esc(t("boycott.neutral"))}</p>
-      <a href="${esc(BOYCOTT_SOURCE.url)}" target="_blank" rel="noopener">${esc(t("boycott.source", { d }))} ↗</a>
+      <a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(t(src.key, { d }))} ↗</a>
     </details>
   </section>`;
 }

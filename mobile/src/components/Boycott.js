@@ -8,8 +8,8 @@ import { Tile, Glyph } from "./Art";
 import { C, R, dir, lift } from "../theme";
 import { t } from "../i18n";
 import { haptic } from "../motion";
-import { BOYCOTT_COLOR, BOYCOTT_ICON, boycottFor, boycottText, checkedDate } from "../boycott";
-export { BOYCOTT_COLOR, BOYCOTT_ICON, checkedDate };
+import { BOYCOTT_COLOR, BOYCOTT_ICON, boycottFor, boycottText, sourceLine } from "../boycott";
+export { BOYCOTT_COLOR, BOYCOTT_ICON, sourceLine };
 
 export default function BoycottBox({ p, onDetail }) {
   const b = boycottFor(p);
