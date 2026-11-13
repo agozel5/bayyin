@@ -1,5 +1,5 @@
 export default {
-  "_build": "2026-11-04-6", // même numéro que sw.js et app.js (vérifié par les tests)
+  "_build": "2026-11-13-1", // même numéro que sw.js et app.js (vérifié par les tests)
   "app.name": "Bayyin",
   "app.demo": "Demo",
   "app.offline": "Offline",

@@ -2,11 +2,12 @@ import { createClient, OffError, present, classifyAny, normQuantity } from "./li
 import { createCamera, decodeImageFile, getDetector, detectorEngine } from "./lib/camera.js";
 import { store, localProducts } from "./lib/store.js";
 import { settings, LANGS, THEMES, TEXT_SIZES } from "./lib/settings.js";
+import { boycottOf, BOYCOTT_SOURCE } from "./lib/boycott.js";
 import { classify, ADDITIVES, TEXT_RULES, TOPICS, SCHOOLS, DECISIONS, TOPIC_OF, SEVERITY_OF, SCHOOL_TOPICS } from "./lib/rules.js";
 import { ADDITIVE_RISK, HEALTH_GRADES, HEALTH_VERSION, analyzeHealth } from "./lib/health.js";
 import { t, tn, has as hasT, setLang, getLang, locale, applyStatic, LANG_NAMES, dictBuilds } from "./lib/i18n.js";
 // Numéro de version : le même que dans sw.js et les fichiers de traduction (vérifié par les tests).
-const APP_BUILD = "2026-11-04-6";
+const APP_BUILD = "2026-11-13-1";
 // Réseau lent pendant une mise à jour : le téléphone a pu prendre la nouvelle app avec d'anciennes
 // traductions gardées en cache (des textes s'afficheraient sous forme de code). On recharge une fois.
 if (typeof sessionStorage !== "undefined" && dictBuilds().some((b) => b !== APP_BUILD)) {
@@ -883,7 +884,7 @@ function productDetail(p) {
       ? `<section class="sec"><a class="off-link" href="${esc(p.offUrl)}" target="_blank" rel="noopener">${t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")}</a></section>`
       : `<section class="sec"></section>`;
   const food = kind === "food";
-  const top = `${productTop(p)}${contributeCard(p)}<div id="recallBox"></div>${verdictHero(p, v)}${profileAlert(p)}`;
+  const top = `${productTop(p)}${contributeCard(p)}<div id="recallBox"></div>${verdictHero(p, v)}${boycottCard(p)}${profileAlert(p)}`;
   const foot = `${alt}${offLink.replace("</section>", reportLink(p, v) + "</section>")}`;
   if (kind === "medicine") return `${top}${halalSection(p, v)}${medicineSection(p)}${foot}`;
   // Le reste est rangé en onglets : on ne fait plus défiler toute la fiche pour trouver une information
@@ -1369,6 +1370,26 @@ function recallHtml(list) {
     <p class="recall-lot">${t("recall.lot")}</p>
     ${safeHref(f.u) ? `<a class="recall-link" href="${esc(safeHref(f.u))}" target="_blank" rel="noopener">${t("recall.link")} ↗</a>` : ""}
     ${list.length > 1 ? `<p class="recall-more">${esc(tn("recall.more", list.length - 1))}</p>` : ""}
+  </section>`;
+}
+// Appel au boycott (liste du mouvement BDS) : information à part du verdict, masquable dans Réglages › Apparence
+const BOYCOTT_ICON = '<path d="M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"/>';
+function boycottCard(p) {
+  if (prefs().boycott === false) return "";
+  const raw = p.raw || {};
+  const b = boycottOf({ ...raw, code: p.code || raw.code, kind: p.kind || raw.kind, brands: raw.brands || p.brand });
+  if (!b) return "";
+  const text = b.id === "israel" ? t(b.via === "barcode" ? "boycott.israel_code" : "boycott.israel") : t(b.level === "organic" ? "boycott.organic" : "boycott.bds", { c: b.company });
+  const how = b.via === "brand" ? t("boycott.how_brand", { b: b.brandName }) : t(b.via === "origin" ? "boycott.how_origin" : "boycott.how_code");
+  const d = new Date(BOYCOTT_SOURCE.checked + "T12:00:00").toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" });
+  return `<section class="boycott">
+    <div class="boycott-top"><span class="boycott-ico">${svg(BOYCOTT_ICON)}</span><div><strong>${esc(t("boycott.t"))} <em>${esc(t(`boycott.k.${b.kind}`))}</em></strong><p>${esc(text)}</p>${b.owned ? `<small>${esc(t("boycott.owned", { b: b.brandName, c: b.company }))}</small>` : ""}</div></div>
+    <details><summary>${esc(t("boycott.more"))}</summary>
+      <h4>${esc(t("boycott.why_t"))}</h4><p>${esc(t(b.kind === "organic" ? "boycott.why.organic" : `boycott.why.${b.id}`))}</p>
+      <h4>${esc(t("boycott.how_t"))}</h4><p>${esc(how)}</p>
+      <p class="boycott-note">${esc(t("boycott.neutral"))}</p>
+      <a href="${esc(BOYCOTT_SOURCE.url)}" target="_blank" rel="noopener">${esc(t("boycott.source", { d }))} ↗</a>
+    </details>
   </section>`;
 }
 // Certification vérifiée : le label est comparé à la liste publiée par l'organisme
@@ -3395,7 +3416,20 @@ function renderAppearance() {
   $("textSizeList").innerHTML = TEXT_SIZES.map(
     (z) => `<button type="button" role="radio" class="ts-${z}" aria-checked="${st.textSize === z}" data-text-size="${z}"><span class="ts-a" aria-hidden="true">A</span>${t(`text.${z}`)}</button>`
   ).join("");
+  // Appels au boycott : interrupteur ajouté sous la taille du texte
+  let row = $("boycottRow");
+  if (!row) { row = document.createElement("div"); row.id = "boycottRow"; row.className = "boycott-row"; $("textSizeList").after(row); }
+  row.innerHTML = `<div><strong>${esc(t("boycott.switch"))}</strong><small>${esc(t("boycott.intro"))}</small></div>
+    <button type="button" class="switch" role="switch" aria-checked="${st.boycott !== false}" data-boycott-switch aria-label="${esc(t("boycott.switch"))}"><i></i></button>`;
 }
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-boycott-switch]");
+  if (!b) return;
+  const on = prefs().boycott === false;
+  settings.set({ boycott: on });
+  b.setAttribute("aria-checked", String(on));
+  toast(t(on ? "boycott.saved_on" : "boycott.saved_off"));
+});
 $("themeList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-theme-choice]");
   if (b) settings.set({ theme: b.dataset.themeChoice });

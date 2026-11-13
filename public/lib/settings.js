@@ -39,6 +39,7 @@ function normalize(saved) {
     baseSchool: SCHOOLS[saved.baseSchool] ? saved.baseSchool : SCHOOLS[school] ? school : "standard",
     topics,
     theme: THEMES.includes(saved.theme) ? saved.theme : "auto",
+    boycott: saved.boycott !== false, // afficher les appels au boycott (liste du mouvement BDS)
     textSize: TEXT_SIZES.includes(saved.textSize) ? saved.textSize : "normal",
     // Organismes de certification que l'utilisateur ne suit pas (par défaut : tous suivis)
     distrust: (Array.isArray(saved.distrust) ? saved.distrust : []).filter((id) => CERTIFIER_IDS.includes(id)),

@@ -19,7 +19,10 @@ const save = (key, value) => AsyncStorage.setItem(key, JSON.stringify(value)).ca
 
 function deviceLang() {
   try {
-    for (const l of getLocales()) if (LANGS.includes(l.languageCode)) return l.languageCode;
+    for (const l of getLocales()) {
+      const code = l.languageCode === "in" ? "id" : l.languageCode; // ancien code de l'indonésien sur Android
+      if (LANGS.includes(code)) return code;
+    }
   } catch {
     /* pas d'information de langue */
   }
