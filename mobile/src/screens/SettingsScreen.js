@@ -869,11 +869,18 @@ const PAGES = { about: AboutPage, notif: NotifPage, lang: LangPage, profile: Pro
 
 // Dernière demande d'ouverture d'une page déjà traitée (sinon l'onglet rouvrirait la page à chaque visite)
 let handledFocus = 0;
+// Changer de langue ou de thème reconstruit tout l'écran : on retient la page ouverte pour y rester
+// (sans rejouer son animation d'arrivée) au lieu de retomber sur le menu.
+let left = { page: null, at: 0 };
 export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   say = toast;
   const insets = useSafeAreaInsets();
   const nav = useNavBar(t("settings.title"));
-  const [page, setPage] = useState(null);
+  const resumed = useRef(Date.now() - left.at < 800 ? left.page : null).current;
+  const [page, setPage] = useState(resumed);
+  const skipSlide = useRef(!!resumed);
+  const pageRef = useRef(page); pageRef.current = page;
+  useEffect(() => () => { left = { page: pageRef.current, at: Date.now() }; }, []);
   const st = getSettings();
 
   // « Mon réglage » de l'accueil, ou alerte d'une fiche : on ouvre directement la bonne page
@@ -889,11 +896,12 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   // Page qui arrive en glissant depuis le bord ; retour par glissement du doigt depuis le bord
   // La page s'ouvre par-dessus le menu (qui reste dessous) ; le glissement depuis le bord la fait suivre
   // le doigt pendant que le menu revient en place, comme sur iPhone.
-  const slide = useRef(new Animated.Value(0)).current; // 0 : page fermée (hors de l'écran), 1 : ouverte
+  const slide = useRef(new Animated.Value(resumed ? 1 : 0)).current; // 0 : page fermée (hors de l'écran), 1 : ouverte
   // Fin du geste : la page est sortie de l'écran ; tout revient à zéro d'un coup (menu en place)
   const swipe = useEdgeSwipe(() => { slide.setValue(0); setPage(null); return true; }, !!page);
   useEffect(() => {
     if (!page) return;
+    if (skipSlide.current) { skipSlide.current = false; return; } // page retrouvée après un changement de langue ou de thème
     slide.setValue(ms(1) ? 0 : 1);
     Animated.timing(slide, { toValue: 1, duration: ms(280), easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [page]);

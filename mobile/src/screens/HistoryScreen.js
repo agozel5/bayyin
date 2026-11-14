@@ -1,10 +1,11 @@
-// Historique : « Mon bilan » (anneau des verdicts, 7 jours, note moyenne), filtres, produits par jour.
+// Historique, en deux vues : « Produits » (recherche, filtres, produits par jour, affichés par pages)
+// et « Bilan » (anneau des verdicts, semaine, note moyenne).
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
-import { PageHead, Chip, ChipRow } from "../components/Controls";
+import { PageHead, Chip, ChipRow, Segmented, SearchBox } from "../components/Controls";
 import { ListRow } from "../components/Cards";
 import { Glyph, Art, Tile } from "../components/Art";
 import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
@@ -18,6 +19,8 @@ import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic, ms } from "../motion";
 import { isPremium, canUse, FREE_HISTORY_DAYS } from "../premium";
 
+const PAGE = 40; // produits affichés d'un coup (le reste arrive avec « Afficher plus »)
+const fold = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const ORDER = ["haram", "mashbouh", "halal_certifie", "halal_probable", "inconnu"];
 const FILTERS = [
   { id: "all", test: () => true },
@@ -234,6 +237,10 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistFilter = setFilter; // captures automatiques (web)
   const [confirm, setConfirm] = useState(false);
+  const [view, setView] = useState("list"); // « list » : les produits d'abord ; « bilan » : les chiffres
+  const [q, setQ] = useState("");
+  const [limit, setLimit] = useState(PAGE);
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistView = setView; // captures automatiques (web)
   const [weeksAgo, setWeeksAgo] = useState(0);
   const [period, setPeriod] = useState("week");
   // Sans Premium (quand il est en vente) : les 30 derniers jours, favoris compris
@@ -260,12 +267,16 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const scores = base.map((e) => scoreOf(e.p)).filter(Boolean).map((x) => x.score);
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
   const okShare = base.length ? Math.round((((counts.halal_certifie || 0) + (counts.halal_probable || 0)) / base.length) * 100) : 0;
-  const shown = all.filter(FILTERS.find((f) => f.id === filter).test);
+  const needle = fold(q.trim());
+  const matches = all.filter(FILTERS.find((f) => f.id === filter).test)
+    .filter((e) => !needle || fold(`${nameOf(e.p)} ${e.p.brand || ""} ${e.code}`).includes(needle));
+  const shown = matches.slice(0, limit);
 
   return (
     <Screen gap={16} title={t("history.title")}>
       <PageHead title={t("history.title")} sub={t("history.sub")} />
-      {hidden > 0 ? (
+      <Segmented items={[["list", `${t("history.v.list")} · ${all.length}`], ["bilan", t("bilan.title")]]} value={view} onChange={setView} />
+      {view === "list" && hidden > 0 ? (
         <Pressable onPress={() => canUse("history")} accessibilityRole="button"
           style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
           <Tile color="#D9A21B" paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={38} />
@@ -277,6 +288,8 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         </Pressable>
       ) : null}
 
+      {view === "bilan" ? (
+      <FadeIn distance={6}>
       <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
         <Row style={{ justifyContent: "space-between" }}>
           <Txt style={{ fontWeight: "800", fontSize: 18, flex: 1 }}>{t("bilan.title")}</Txt>
@@ -339,12 +352,13 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
         {avg !== null ? <AvgGauge avg={avg} /> : null}
       </View>
-
+      </FadeIn>
+      ) : (
+      <>
+      <SearchBox value={q} onChangeText={(x) => { setQ(x); setLimit(PAGE); }} placeholder={t("history.search_ph")} />
       <ChipRow>
-        {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => setFilter(f.id)} />)}
+        {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => { setFilter(f.id); setLimit(PAGE); }} />)}
       </ChipRow>
-
-      {shown.length ? <Muted style={{ fontSize: 12.5, marginTop: -6 }}>{t("history.swipe_hint")}</Muted> : null}
       {shown.length ? groups(shown).map(({ g, list }) => (
         <View key={g} style={{ gap: 8 }}>
           <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t(`history.g.${g}`)}</Text>
@@ -356,9 +370,18 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
             ))}
           </View>
         </View>
-      )) : (filter === "fav"
+      )) : needle ? <EmptyState compact pose="search" size={92} title={t("history.no_match")} second={t("history.show_all")} onSecond={() => { setQ(""); setFilter("all"); }} />
+      : (filter === "fav"
         ? <EmptyState compact pose="star" size={92} title={t("history.empty_fav_t")} text={t("history.empty_fav_p")} second={t("history.show_all")} onSecond={() => setFilter("all")} />
         : <EmptyState compact pose="search" size={92} title={t("history.empty_cat")} second={t("history.show_all")} onSecond={() => setFilter("all")} />)}
+
+      {matches.length > shown.length ? (
+        <Pressable onPress={() => { haptic.tap(); setLimit(limit + PAGE); }} accessibilityRole="button"
+          style={({ pressed }) => ({ paddingVertical: 14, borderRadius: R.md, backgroundColor: pressed ? C.tint2 : C.tint, alignItems: "center" })}>
+          <Text style={{ color: C.fg, fontWeight: "800", fontSize: 15 }}>{t("history.more", { n: matches.length - shown.length })}</Text>
+        </Pressable>
+      ) : null}
+      {shown.length && !needle ? <Muted style={{ fontSize: 12.5, textAlign: "center" }}>{t("history.swipe_hint")}</Muted> : null}
 
       {confirm ? (
         <Row gap={16} style={{ justifyContent: "center", flexWrap: "wrap" }}>
@@ -372,6 +395,8 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         <Pressable onPress={() => setConfirm(true)} accessibilityRole="button" style={{ alignSelf: "center", padding: 8 }}>
           <Text style={{ color: C.muted, fontWeight: "700", textDecorationLine: "underline" }}>{t("history.clear")}</Text>
         </Pressable>
+      )}
+      </>
       )}
       {menuSheet}
     </Screen>

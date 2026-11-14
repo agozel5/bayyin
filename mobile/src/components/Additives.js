@@ -93,14 +93,15 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
   const bad = r.halal.level === "haram" || r.halal.level === "mashbouh";
   const halalPill = bad ? <Pill2 text={t(`sev.${r.halal.level}`)} colors={SEV_COLORS[r.halal.level]} /> : null;
   const healthPill = r.health.level ? <Pill2 text={t(`risk.short.${r.health.level}`)} colors={RISK_COLORS[r.health.level]} /> : null;
-  const art = originArt(r.origin, r.code);
+  const art = null; // les dessins d'origine sont remplacés par du texte
+  const tone = bad ? SEV_COLORS[r.halal.level] : r.health.level ? RISK_COLORS[r.health.level] : [C.cert, C.brandSoft];
   return (
     <View style={{ borderTopWidth: first || openR ? 0 : 0.5, borderTopColor: C.line, borderRadius: openR ? R.md : 0, backgroundColor: openR ? C.tint : "transparent", marginHorizontal: openR ? -8 : 0, paddingHorizontal: openR ? 8 : 0, marginVertical: openR ? 4 : 0 }}>
       <Pressable onPress={() => { haptic.tap(); setOpen(!openR); }} accessibilityRole="button" accessibilityState={{ expanded: openR }}
         accessibilityLabel={`${r.label} ${r.name}`} style={{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 12 }}>
-        <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>{art ? <Art xml={art} size={28} /> : null}</View>
-        <View style={{ minWidth: 54, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 9, backgroundColor: C.tint }}>
-          <Text style={{ fontWeight: "700", fontSize: 13.5, color: C.fg, textAlign: "center", fontVariant: ["tabular-nums"] }}>{r.label}</Text>
+        {/* Le code, dans une pastille à la couleur du point le plus sérieux (halal, puis santé) */}
+        <View style={{ width: 62, height: 40, borderRadius: 12, backgroundColor: tone[1], alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: tone[0] + "33" }}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontWeight: "800", fontSize: 14.5, color: tone[0], letterSpacing: 0.2, fontVariant: ["tabular-nums"] }}>{r.label}</Text>
         </View>
         <View style={{ flex: 1, gap: 1 }}>
           <Txt numberOfLines={2} style={{ fontWeight: "700", fontSize: 15, lineHeight: 19 }}>{r.name || r.label}</Txt>
@@ -108,7 +109,6 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
         </View>
         <View style={{ alignItems: "flex-end", gap: 4 }}>
           {halalPill}{healthPill}
-          {!halalPill && !healthPill ? <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.brandSoft, alignItems: "center", justifyContent: "center" }}><Glyph name="check" size={15} color={C.cert} width={2.6} /></View> : null}
         </View>
         <Chevron open={openR} />
       </Pressable>

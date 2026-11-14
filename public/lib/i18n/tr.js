@@ -1660,4 +1660,10 @@ export default {
   "support.t": "Bayyin'i destekle",
   "rate.t": "Uygulamayı değerlendir",
   "rate.row": "Mağazada bir puan veya yorum çok yardımcı olur",
+  "history.v.list": "Ürünler",
+  "history.search_ph": "Geçmişte ara",
+  "history.more": "Daha fazla göster ({n} kaldı)",
+  "history.no_match": "Eşleşen ürün yok",
+  "search.aisles": "Reyona göre göz at",
+  "search.brands": "Popüler markalar",
 };

@@ -1619,4 +1619,10 @@ export default {
   "support.t": "Dukung Bayyin",
   "rate.t": "Beri penilaian",
   "rate.row": "Penilaian atau ulasan di toko sangat membantu",
+  "history.v.list": "Produk",
+  "history.search_ph": "Cari di riwayat",
+  "history.more": "Tampilkan lagi ({n} tersisa)",
+  "history.no_match": "Tidak ada produk yang cocok",
+  "search.aisles": "Jelajahi per lorong",
+  "search.brands": "Merek populer",
 };

@@ -1674,4 +1674,10 @@ export default {
   "support.t": "Soutenir Bayyin",
   "rate.t": "Donner mon avis",
   "rate.row": "Une note ou un avis sur le store aide beaucoup",
+  "history.v.list": "Produits",
+  "history.search_ph": "Chercher dans l'historique",
+  "history.more": "Afficher plus ({n} restants)",
+  "history.no_match": "Aucun produit ne correspond",
+  "search.aisles": "Parcourir par rayon",
+  "search.brands": "Marques populaires",
 };

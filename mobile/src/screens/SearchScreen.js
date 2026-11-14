@@ -31,9 +31,20 @@ function fit(list, q) {
     return sum + hit + known;
   }, 0) / Math.max(1, Math.min(8, list.length)) * Math.min(8, list.length) ** 0.5;
 }
-const IDEAS = (kind) => kind === "beauty"
-  ? [[t("sidea.mascara"), "r:mascaras"], [t("sidea.lipstick"), "r:lipsticks"], [t("sidea.foundation"), "r:complexion"], ["Nivea", "r:body_creams"], ["Garnier", "r:shampoos"], [t("sidea.nail"), "r:nail_polishes"], ["Maybelline", "r:makeup_other"]]
-  : [["Nutella", "r:spreads"], ["Haribo", "r:candies"], ["Isla Délice", "r:sausages"], [t("search.idea_milk"), "f:dairy"], [t("search.idea_chicken"), "f:poultry"], ["Kinder", "r:chocolates"], ["Danone", "r:yogurts"]];
+// Écran d'accueil de la recherche : des rayons illustrés et quelques marques connues
+const AISLES = {
+  food: ["spreads", "chocolates", "candies", "biscuits", "yogurts", "cheeses", "crisps", "sodas", "sausages"],
+  beauty: ["shampoos", "shower_gels", "deodorants", "toothpastes", "face_creams", "body_creams", "lipsticks", "mascaras", "nail_polishes"],
+};
+const aislesOf = (kind) => (kind === "all" ? [...AISLES.food.slice(0, 6), ...AISLES.beauty.slice(0, 3)] : AISLES[kind]);
+const BRANDS = { food: ["Nutella", "Haribo", "Isla Délice", "Kinder", "Danone"], beauty: ["Nivea", "Garnier", "Maybelline"] };
+const brandsOf = (kind) => (kind === "all" ? [...BRANDS.food, ...BRANDS.beauty.slice(0, 2)] : BRANDS[kind]);
+const SectionTitle = ({ children, right }) => (
+  <Row style={{ justifyContent: "space-between" }}>
+    <Text accessibilityRole="header" style={{ fontSize: 12.5, fontWeight: "800", color: C.muted, letterSpacing: 0.6, textTransform: "uppercase", textAlign: dir().ta }}>{children}</Text>
+    {right || null}
+  </Row>
+);
 const FILTERS = {
   all: () => true,
   halal: (p) => ["halal_certifie", "halal_probable"].includes(verdictOf(p).status),
@@ -132,31 +143,49 @@ export default function SearchScreen({ onOpen, onScan }) {
       <Segmented items={["all", "food", "beauty"].map((k) => [k, t(`kindtab.${k}`)])} value={kind} onChange={changeKind} />
 
       {!q.trim() ? (
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: 20 }}>
           {recent.length ? (
-            <View style={{ gap: 8 }}>
-              <Row style={{ justifyContent: "space-between" }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted }}>{t("search.recent")}</Text>
-                <Pressable onPress={() => { setRecent([]); AsyncStorage.setItem(RECENT, "[]").catch(() => {}); }} hitSlop={8} accessibilityRole="button"><Text style={{ color: C.muted, fontWeight: "700", textDecorationLine: "underline" }}>{t("search.recent_clear")}</Text></Pressable>
-              </Row>
-              <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-                {recent.map((s) => <Chip key={s} text={s} onPress={() => pick(s)} icon={<Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={15} color={C.muted} />} />)}
+            <View style={{ gap: 10 }}>
+              <SectionTitle right={<Pressable onPress={() => { setRecent([]); AsyncStorage.setItem(RECENT, "[]").catch(() => {}); }} hitSlop={8} accessibilityRole="button"><Text style={{ color: C.brand, fontWeight: "700", fontSize: 13.5 }}>{t("search.recent_clear")}</Text></Pressable>}>{t("search.recent")}</SectionTitle>
+              <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
+                {recent.slice(0, 5).map((x, i) => (
+                  <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button"
+                    style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: pressed ? C.tint : "transparent", borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line })}>
+                    <Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={18} color={C.faint} />
+                    <Text numberOfLines={1} style={{ flex: 1, fontSize: 15.5, color: C.fg, textAlign: dir().ta }}>{x}</Text>
+                    <View style={{ transform: [{ rotate: dir().rtl ? "45deg" : "-45deg" }] }}><Glyph paths='<path d="M5 12h14M13 6l6 6-6 6"/>' size={16} color={C.faint} /></View>
+                  </Pressable>
+                ))}
               </View>
             </View>
           ) : null}
-          <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t("search.ideas")}</Text>
-          <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-            {IDEAS(kind).map(([s, k]) => (
-              <Chip key={s} text={s} onPress={() => pick(s)}
-                icon={<View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center", marginStart: -6 }}><Art xml={artByKey(k)} size={19} /></View>} />
-            ))}
-          </View>
-          <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => [{ flexDirection: dir().row, marginTop: 8, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, alignItems: "flex-start", gap: 12 }, lift()]}>
-            <Tile color="#1A9C68" paths='<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M16 8v8"/>' size={42} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <Txt style={{ fontWeight: "800" }}>{t("search.tip_t")}</Txt>
-              <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("search.tip_p")}</Muted>
+          <View style={{ gap: 10 }}>
+            <SectionTitle>{t("search.aisles")}</SectionTitle>
+            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
+              {aislesOf(kind).map((id) => (
+                <Pressable key={id} onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
+                  style={({ pressed }) => [{ flexBasis: "30%", flexGrow: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
+                  <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={artByKey(`r:${id}`)} size={38} /></View>
+                  <Text numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16, fontWeight: "700", color: C.fg, textAlign: "center" }}>{t(`rank.cat.${id}`)}</Text>
+                </Pressable>
+              ))}
             </View>
+          </View>
+          <View style={{ gap: 10 }}>
+            <SectionTitle>{t("search.brands")}</SectionTitle>
+            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
+              {brandsOf(kind).map((x) => <Chip key={x} text={x} onPress={() => pick(x)} />)}
+            </View>
+          </View>
+          <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: dir().row, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.brandDark : C.brand, alignItems: "center", gap: 12 })}>
+            <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" }}>
+              <Glyph paths='<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M16 8v8"/>' size={23} color="#fff" />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15.5, textAlign: dir().ta }}>{t("search.tip_t")}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, lineHeight: 19, textAlign: dir().ta }}>{t("search.tip_p")}</Text>
+            </View>
+            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color="#fff" /></View>
           </Pressable>
         </View>
       ) : null}

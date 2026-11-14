@@ -1619,4 +1619,10 @@ export default {
   "support.t": "Apoyar a Bayyin",
   "rate.t": "Valorar la app",
   "rate.row": "Una nota o reseña en la tienda ayuda mucho",
+  "history.v.list": "Productos",
+  "history.search_ph": "Buscar en el historial",
+  "history.more": "Mostrar más (quedan {n})",
+  "history.no_match": "Ningún producto coincide",
+  "search.aisles": "Explorar por pasillo",
+  "search.brands": "Marcas populares",
 };

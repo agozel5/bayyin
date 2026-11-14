@@ -1660,4 +1660,10 @@ export default {
   "support.t": "ادعم بيّن",
   "rate.t": "قيّم التطبيق",
   "rate.row": "تقييم أو مراجعة في المتجر يساعد كثيرًا",
+  "history.v.list": "المنتجات",
+  "history.search_ph": "ابحث في السجل",
+  "history.more": "عرض المزيد (بقي {n})",
+  "history.no_match": "لا يوجد منتج مطابق",
+  "search.aisles": "تصفح حسب القسم",
+  "search.brands": "علامات شائعة",
 };
