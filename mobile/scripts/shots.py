@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """Captures de contrôle de l'app React Native, rendue en version web (expo export -p web).
 
@@ -27,11 +28,16 @@ class H(http.server.SimpleHTTPRequestHandler):
 srv = socketserver.TCPServer(("127.0.0.1", 8765), functools.partial(H, directory=str(DIST)))
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 
+# Taille des captures : 390×844 à l'échelle 2 par défaut ; pour les stores (STORE=1), la taille d'un
+# iPhone 6,9 pouces : 430×932 à l'échelle 3, soit 1290×2796 pixels, en français et en anglais.
+STORE = os.environ.get("STORE") == "1"
+W, H, DPR = (430, 932, 3) if STORE else (390, 844, 2)
+
 def run(lang, scheme):
     errs = []
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"])
-        ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, color_scheme=scheme, permissions=["camera"])
+        ctx = b.new_context(viewport={"width": W, "height": H}, device_scale_factor=DPR, color_scheme=scheme, permissions=["camera"])
         ctx.add_init_script("try{localStorage.setItem('bayyin:settings', %s)}catch(e){}" % json.dumps(json.dumps({"lang": lang, "theme": scheme, "onboarded": True, "toured": True})))
         def prod(r):
             if "ecoscore" in r.request.url: return r.continue_()  # onglet Planète : vraies données d'Open Food Facts
@@ -76,7 +82,7 @@ def run(lang, scheme):
             shot(f"sheet-{c}")
             ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Fiche complète, onglet par onglet (fenêtre haute : la fiche défile dans son propre cadre)
-        p.set_viewport_size({"width": 390, "height": 2600})
+        p.set_viewport_size({"width": W, "height": 2600})
         for c, tabs in [(CODES[2], ["halal", "health", "compo", "planet"]), (CODES[0], ["halal", "planet"]), (BEAUTY, ["health", "compo"])]:
             ev(f"window.__bayyin.openProduct('{c}')"); p.wait_for_timeout(2200)
             for tb in tabs:
@@ -84,7 +90,7 @@ def run(lang, scheme):
                 shot(f"full-{c}-{tb}")
             ev("window.__bayyin.sheetTab && window.__bayyin.sheetTab('halal')")
             ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
-        p.set_viewport_size({"width": 390, "height": 844})
+        p.set_viewport_size({"width": W, "height": H})
         ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(500)
         ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home")
         for tab in ["search", "history", "additives", "settings"]:
@@ -110,9 +116,9 @@ def run(lang, scheme):
         ev(f"window.__bayyin.setSettings({{ lang: '{lang}' }})"); p.wait_for_timeout(1200)
         ev("window.__bayyin.settingsPage && window.__bayyin.settingsPage(null)"); p.wait_for_timeout(600)
         ev("window.__bayyin.setTab('history')"); p.wait_for_timeout(600)
-        p.set_viewport_size({"width": 390, "height": 1700})
+        p.set_viewport_size({"width": W, "height": 1700})
         ev("window.__bayyinHistFilter && window.__bayyinHistFilter('fav')"); p.wait_for_timeout(900); shot("empty-fav")
-        p.set_viewport_size({"width": 390, "height": 844})
+        p.set_viewport_size({"width": W, "height": H})
         ev("window.__bayyinHistFilter && window.__bayyinHistFilter('all')")
         # Fiche sans photo, et l'instant du verdict après un scan
         ev(f"window.__bayyin.openProduct('{NOPHOTO}')"); p.wait_for_timeout(2500); shot("sheet-nophoto")
@@ -122,7 +128,7 @@ def run(lang, scheme):
             ev(f"window.__bayyin.openProduct('{c}', {{ fromScan: true }})"); p.wait_for_timeout(1800); shot(f"flash-{c}")
             ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         ev("window.__bayyinFlashHold = false")
-        p.set_viewport_size({"width": 390, "height": 1700})
+        p.set_viewport_size({"width": W, "height": 1700})
         ev("window.__bayyin.setTab('settings')"); p.wait_for_timeout(800)
         for pg in ["lang", "profile", "religion", "appearance", "offline", "data", "notes", "how", "sources", "privacy", "limits", "legal", "about"]:
             ev(f"window.__bayyin.settingsPage && window.__bayyin.settingsPage('{pg}')"); p.wait_for_timeout(900); shot(f"set-{pg}")
@@ -142,7 +148,7 @@ def run(lang, scheme):
         p.wait_for_timeout(2500); ev("window.__bayyin.openBasket()"); p.wait_for_timeout(1500); shot("basket")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
         # Commerces halal (centre de Paris) et comparaison de deux produits de l'historique
-        p.set_viewport_size({"width": 390, "height": 1700})
+        p.set_viewport_size({"width": W, "height": 1700})
         ev("window.__bayyinPlacesAt = { lat: 48.8566, lon: 2.3522 }; window.__bayyin.openPlaces()"); p.wait_for_timeout(1200)
         ev("window.__bayyinPlacesLocate && window.__bayyinPlacesLocate()"); p.wait_for_timeout(6000); shot("places")
         ev("window.__bayyinPlacesPick && window.__bayyinPlacesPick(4)"); p.wait_for_timeout(1800); shot("places-pick")
@@ -169,7 +175,7 @@ def run(lang, scheme):
         ev(f"window.__bayyinMenuReading && window.__bayyinMenuReading({_json.dumps(uri)}, 1200, 1500, 42)"); p.wait_for_timeout(1400); shot("menu-reading")
         ev(f"window.__bayyinMenuReading && window.__bayyinMenuReading({_json.dumps(uri)}, 1200, 1500, 100)"); p.wait_for_timeout(1000); shot("menu-reading-end")
         ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
-        p.set_viewport_size({"width": 390, "height": 844})
+        p.set_viewport_size({"width": W, "height": H})
         ev(f"window.__bayyin.recipeDemo({{ code: '{CODES[0]}', name: 'Produit suivi', before: 'halal_probable', after: 'mashbouh', added: ['gélatine', 'arôme naturel'], removed: ['agar-agar'], addedE: ['E471'], removedE: [] }})"); p.wait_for_timeout(500)
         ev("window.__bayyin.setTab('history')"); ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(1200); shot("home-recipe")
         ev(f"window.__bayyin.openProduct('{CODES[0]}')"); p.wait_for_timeout(2500); shot("recipe")
@@ -196,14 +202,14 @@ def run(lang, scheme):
             ev(f"window.__bayyinOb && window.__bayyinOb({n})"); p.wait_for_timeout(700); shot(f"ob-{n}")
         ev("window.__bayyin.onboard(false)"); p.wait_for_timeout(500)
         # Classements : liste des rayons, puis deux rayons
-        p.set_viewport_size({"width": 390, "height": 2600})
+        p.set_viewport_size({"width": W, "height": 2600})
         ev("window.__bayyin.setTab('scan')"); p.wait_for_timeout(600)
         ev("window.__bayyin.openRankings()"); p.wait_for_timeout(2000); shot("rank")
         for cat in ["spreads", "shampoos", "breakfast_cereals"]:
             ev(f"window.__bayyinRankCat('{cat}')"); p.wait_for_timeout(2200); shot(f"rank-{cat}")
         ev("window.__bayyinRankRaws && window.__bayyinRankRaws(null)"); p.wait_for_timeout(800); shot("rank-loading")
         ev("window.__bayyinRankCat(null)"); ev("window.__bayyin.pop()"); p.wait_for_timeout(700)
-        p.set_viewport_size({"width": 390, "height": 844})
+        p.set_viewport_size({"width": W, "height": H})
         e2 = ev("window.__bayyinErrors || []")
         if e2: errs.extend(["RENDER " + x for x in e2])
         b.close()
@@ -211,7 +217,7 @@ def run(lang, scheme):
 
 if __name__ == "__main__":
     report = {}
-    for lang, scheme in [("fr", "light"), ("fr", "dark"), ("ar", "light")]:
+    for lang, scheme in ([("fr", "light"), ("en", "light")] if STORE else [("fr", "light"), ("fr", "dark"), ("ar", "light")]):
         try: report[f"{lang}-{scheme}"] = run(lang, scheme)
         except Exception: report[f"{lang}-{scheme}"] = ["CRASH " + traceback.format_exc()[-1500:]]
     (OUT / "errors.json").write_text(json.dumps(report, ensure_ascii=False, indent=1))

@@ -4,6 +4,11 @@ name: App mobile — captures
 # déposées sur la branche mobile-shots (sert au suivi du portage, pas à la publication).
 on:
   workflow_dispatch:
+    inputs:
+      store:
+        description: "Captures à la taille des stores (1290×2796, français et anglais)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -35,6 +40,8 @@ jobs:
       - name: Version web
         run: scripts/ci-run.sh "expo export web" npx expo export --platform web --output-dir dist-web
       - name: Captures
+        env:
+          STORE: ${{ inputs.store && '1' || '0' }}
         run: python scripts/shots.py dist-web /tmp/shots
       - name: Déposer sur la branche mobile-shots
         if: always()
