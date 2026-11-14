@@ -1660,4 +1660,10 @@ export default {
   "support.t": "Support Bayyin",
   "rate.t": "Rate the app",
   "rate.row": "A rating or review on the store helps a lot",
+  "history.v.list": "Products",
+  "history.search_ph": "Search your history",
+  "history.more": "Show more ({n} left)",
+  "history.no_match": "No matching product",
+  "search.aisles": "Browse by aisle",
+  "search.brands": "Popular brands",
 };

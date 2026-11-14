@@ -1619,4 +1619,10 @@ export default {
   "support.t": "Sokong Bayyin",
   "rate.t": "Nilaikan aplikasi",
   "rate.row": "Penilaian atau ulasan di gedung aplikasi amat membantu",
+  "history.v.list": "Produk",
+  "history.search_ph": "Cari dalam sejarah",
+  "history.more": "Tunjukkan lagi ({n} lagi)",
+  "history.no_match": "Tiada produk yang sepadan",
+  "search.aisles": "Semak mengikut lorong",
+  "search.brands": "Jenama popular",
 };

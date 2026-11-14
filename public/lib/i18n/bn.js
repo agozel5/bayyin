@@ -1619,4 +1619,10 @@ export default {
   "support.t": "Bayyin-কে সমর্থন করুন",
   "rate.t": "অ্যাপটি রেট করুন",
   "rate.row": "স্টোরে একটি রেটিং বা রিভিউ অনেক সাহায্য করে",
+  "history.v.list": "পণ্য",
+  "history.search_ph": "ইতিহাসে খুঁজুন",
+  "history.more": "আরও দেখুন ({n}টি বাকি)",
+  "history.no_match": "কোনো মিল পাওয়া যায়নি",
+  "search.aisles": "বিভাগ অনুযায়ী দেখুন",
+  "search.brands": "জনপ্রিয় ব্র্যান্ড",
 };

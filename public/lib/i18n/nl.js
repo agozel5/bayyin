@@ -1619,4 +1619,10 @@ export default {
   "support.t": "Bayyin steunen",
   "rate.t": "App beoordelen",
   "rate.row": "Een beoordeling in de store helpt enorm",
+  "history.v.list": "Producten",
+  "history.search_ph": "Zoeken in geschiedenis",
+  "history.more": "Meer tonen (nog {n})",
+  "history.no_match": "Geen overeenkomend product",
+  "search.aisles": "Bladeren per schap",
+  "search.brands": "Populaire merken",
 };

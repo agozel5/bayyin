@@ -1619,4 +1619,10 @@ export default {
   "support.t": "Bayyin کی مدد کریں",
   "rate.t": "ایپ کو ریٹ کریں",
   "rate.row": "اسٹور پر ریٹنگ یا ریویو بہت مدد کرتا ہے",
+  "history.v.list": "پروڈکٹس",
+  "history.search_ph": "ہسٹری میں تلاش کریں",
+  "history.more": "مزید دکھائیں ({n} باقی)",
+  "history.no_match": "کوئی مماثل پروڈکٹ نہیں",
+  "search.aisles": "شعبے کے لحاظ سے دیکھیں",
+  "search.brands": "مقبول برانڈز",
 };
