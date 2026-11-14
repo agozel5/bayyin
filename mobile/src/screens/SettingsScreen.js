@@ -3,7 +3,7 @@
 import { rateApp } from "../review";
 import { useNavBar } from "../components/NavBar";
 import { Qr } from "../components/ShareCard";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
@@ -876,11 +876,10 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   say = toast;
   const insets = useSafeAreaInsets();
   const nav = useNavBar(t("settings.title"));
-  const resumed = useRef(Date.now() - left.at < 800 ? left.page : null).current;
-  const [page, setPage] = useState(resumed);
-  const skipSlide = useRef(!!resumed);
+  const [page, setPage] = useState(null);
+  const skipSlide = useRef(false);
   const pageRef = useRef(page); pageRef.current = page;
-  useEffect(() => () => { left = { page: pageRef.current, at: Date.now() }; }, []);
+  useLayoutEffect(() => () => { left = { page: pageRef.current, at: Date.now() }; }, []);
   const st = getSettings();
 
   // « Mon réglage » de l'accueil, ou alerte d'une fiche : on ouvre directement la bonne page
@@ -896,7 +895,11 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   // Page qui arrive en glissant depuis le bord ; retour par glissement du doigt depuis le bord
   // La page s'ouvre par-dessus le menu (qui reste dessous) ; le glissement depuis le bord la fait suivre
   // le doigt pendant que le menu revient en place, comme sur iPhone.
-  const slide = useRef(new Animated.Value(resumed ? 1 : 0)).current; // 0 : page fermée (hors de l'écran), 1 : ouverte
+  const slide = useRef(new Animated.Value(0)).current; // 0 : page fermée (hors de l'écran), 1 : ouverte
+  // L'ancien écran vient d'être détruit (langue ou thème changés) : on rouvre sa page, déjà en place
+  useLayoutEffect(() => {
+    if (left.page && Date.now() - left.at < 800) { skipSlide.current = true; slide.setValue(1); setPage(left.page); }
+  }, []);
   // Fin du geste : la page est sortie de l'écran ; tout revient à zéro d'un coup (menu en place)
   const swipe = useEdgeSwipe(() => { slide.setValue(0); setPage(null); return true; }, !!page);
   useEffect(() => {
