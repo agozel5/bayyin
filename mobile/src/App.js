@@ -152,6 +152,24 @@ function TabBar({ tab, onTab }) {
   );
 }
 
+// Changement de thème ou de langue : un voile de l'ancienne couleur de fond s'efface en douceur
+function ThemeVeil({ k }) {
+  const v = useRef(new Animated.Value(0)).current;
+  const prev = useRef({ k, bg: C.bg });
+  const [veil, setVeil] = useState(null);
+  useEffect(() => {
+    if (prev.current.k !== k) {
+      const old = prev.current.bg;
+      prev.current = { k, bg: C.bg };
+      if (!ms(1)) return;
+      setVeil(old); v.setValue(1);
+      Animated.timing(v, { toValue: 0, duration: 380, useNativeDriver: true }).start(() => setVeil(null));
+    } else prev.current.bg = C.bg;
+  }, [k]);
+  if (!veil) return null;
+  return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: veil, opacity: v }]} />;
+}
+
 function Toast({ text }) {
   const insets = useSafeAreaInsets();
   useEffect(() => announce(text), [text]);
@@ -533,6 +551,7 @@ function Main() {
         <TabBar tab={tab} onTab={(id) => { if (id === "scan" && tab === "scan") openCamera(); else changeTab(id); }} />
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }, underShade(swipeShared.dx, tabActive)]} />
       </Animated.View>
+      <ThemeVeil k={getLang() + (isDark() ? "d" : "l")} />
       {visible.map((item) => {
         const isTop = item === top;
         return (

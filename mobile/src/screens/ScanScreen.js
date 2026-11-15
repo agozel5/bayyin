@@ -1,14 +1,14 @@
 // Accueil : bandeau vert (bonjour et bilan de la semaine, ou présentation), scan en un geste,
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
 import Ramadan from "../components/Ramadan";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Logo } from "../components/Icon";
 import { Tile, Glyph } from "../components/Art";
 import { ProductCard, Khatam } from "../components/Cards";
 import { Txt, Muted, Row, Message, FadeIn, FONT_MAX } from "../components/ui";
-import Screen from "../components/Screen";
+import Screen, { ScrollY } from "../components/Screen";
 import { C, R, dir, lift, isDark, STATUS_COLORS } from "../theme";
 import { t, tn, tPlain } from "../i18n";
 import { getHistory, getSettings, getEntry } from "../storage";
@@ -91,6 +91,9 @@ function HeroButton({ icon, text, onPress, on }) {
 
 export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onAisle, onPlaces, onCompare, onTravel, onMenu, recipeChanges = [], onOpenChanges, onDismissChanges, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
+  // Tirage vers le bas : le bandeau vert s'agrandit légèrement (effet élastique)
+  const sy = useContext(ScrollY);
+  const hero = sy && ms(1) ? [{ scale: sy.interpolate({ inputRange: [-120, 0], outputRange: [1.05, 1], extrapolate: "clamp" }) }] : [];
   const [error, setError] = useState(null);
   const [photoMenu, setPhotoMenu] = useState(false); // choix : liste d'ingrédients, étiquette étrangère, carte de restaurant
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinPhotoMenu = setPhotoMenu; // captures automatiques (web)
@@ -137,7 +140,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
       </Row>
 
       {/* Bandeau vert */}
-      <View style={{ borderRadius: R.xl, padding: 18, gap: 14, backgroundColor: isDark() ? "#0F4A35" : "#0F6545", overflow: "hidden",
+      <Animated.View style={{ borderRadius: R.xl, padding: 18, gap: 14, backgroundColor: isDark() ? "#0F4A35" : "#0F6545", overflow: "hidden", transform: hero,
         shadowColor: "#0F6545", shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 6 }}>
         <Khatam />
         <FadeIn delay={0} style={{ gap: 8 }}>
@@ -200,7 +203,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
             {error ? <Txt style={{ color: "#FFD3CE", fontSize: 14 }}>{t("msg.code_short.p")}</Txt> : null}
           </FadeIn>
         ) : null}
-      </View>
+      </Animated.View>
 
       {/* Pendant le Ramadan : horaires du jour */}
       <Ramadan force={typeof window !== "undefined" && !!window.__bayyinRamadan} />

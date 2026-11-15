@@ -1,5 +1,6 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
 import { Img, prefetchImages } from "./Img";
+import { Burst } from "./Fx";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, Share, Animated, Easing, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -564,6 +565,28 @@ function SheetSkeleton() {
   );
 }
 
+// Étoile des favoris : petit « pop » élastique et gerbe dorée quand on l'ajoute
+function FavStar({ fav }) {
+  const v = useRef(new Animated.Value(1)).current;
+  const first = useRef(true);
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    if (!fav || !ms(1)) return;
+    setN((x) => x + 1);
+    v.setValue(0.6);
+    Animated.spring(v, { toValue: 1, friction: 3, tension: 200, useNativeDriver: true }).start();
+  }, [fav]);
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <Burst play={n} count={10} radius={26} size={5} colors={["#E9A100", "#F4C542", "#FFD87A"]} />
+      <Animated.View style={{ transform: [{ scale: v }] }}>
+        <Icon name="star" size={23} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(() =>
@@ -702,7 +725,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
         ) : null}
         {p ? (
           <Pressable onPress={onFav} style={press} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
-            <Icon name="star" size={23} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
+            <FavStar fav={fav} />
           </Pressable>
         ) : null}
         <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 0.5, backgroundColor: C.line, opacity: lineOp }} />

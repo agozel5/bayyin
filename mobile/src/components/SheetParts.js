@@ -10,6 +10,7 @@ import Svg, { Circle, Rect, Defs, LinearGradient, RadialGradient, Stop } from "r
 import { Glyph } from "./Art";
 import { Khatam, Thumb, STATUS_GLYPH } from "./Cards";
 import { Txt, Muted, Row, FadeIn } from "./ui";
+import { useProgress, Burst } from "./Fx";
 import { C, R, VERDICT, GRADE_COLORS, SEV_COLORS, RISK_COLORS, mix, dir, lift, isDark } from "../theme";
 import { t, tn } from "../i18n";
 import { getSettings } from "../storage";
@@ -65,13 +66,14 @@ export function Top({ p }) {
 // ---------- anneau de la note sur 100 ----------
 function Ring({ score, color, size = 50 }) {
   const r = (size - 7) / 2, c = 2 * Math.PI * r;
+  const k = useProgress(`${score}`, { duration: 1000, delay: 250 });
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={mix(color, isDark() ? "#141B17" : "#FFFFFF", 0.22)} strokeWidth={5} fill="none" />
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={5} fill="none" strokeLinecap="round" strokeDasharray={`${(c * (score || 0)) / 100} ${c}`} />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={5} fill="none" strokeLinecap="round" strokeDasharray={`${(c * (score || 0) * k) / 100} ${c}`} />
       </Svg>
-      <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg, fontVariant: ["tabular-nums"] }}>{score ?? "?"}</Text>
+      <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg, fontVariant: ["tabular-nums"] }}>{score == null ? "?" : Math.round(score * k)}</Text>
       <Text style={{ fontSize: 9, color: C.muted, marginTop: -2 }}>/100</Text>
     </View>
   );
@@ -166,6 +168,7 @@ export function VerdictHero({ p, v, scanned }) {
         <View style={{ width: 68, height: 68, alignItems: "center", justifyContent: "center" }}>
           <Animated.View pointerEvents="none" style={{ position: "absolute", width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: "#fff",
             opacity: halo.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.7, 0] }), transform: [{ scale: halo.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }] }} />
+          <Burst play={scanned && v.status === "halal_certifie" ? p.code : 0} radius={62} />
           <Animated.View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: "rgba(255,255,255,0.95)", alignItems: "center", justifyContent: "center",
             transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }, { rotate: pop.interpolate({ inputRange: [0, 1], outputRange: ["-25deg", "0deg"] }) }] }}>
             <Glyph paths={STATUS_GLYPH[v.status]} size={34} color={vc} width={2.8} />

@@ -1,6 +1,7 @@
 // Historique, en deux vues : « Bilan » (anneau des verdicts, semaine, note moyenne, ouvert en premier)
 // et « Produits » (recherche, filtres, produits par jour, affichés par pages).
 import React, { useEffect, useRef, useState } from "react";
+import { CountUp } from "../components/Fx";
 import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
@@ -204,7 +205,7 @@ function AvgGauge({ avg }) {
     <View style={{ gap: 8, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
       <Row style={{ justifyContent: "space-between" }}>
         <Text style={{ color: C.muted, fontSize: 13.5, flex: 1, textAlign: dir().ta }}>{t("bilan.avg")}</Text>
-        <Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 18 }}>{avg}<Text style={{ fontSize: 12, color: C.muted }}>/100</Text></Text>
+        <Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 18 }}>{Math.round(avg * k)}<Text style={{ fontSize: 12, color: C.muted }}>/100</Text></Text>
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GRADE_COLORS[g] + "33" }}><Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 12 }}>{t(`grade.${g}`)}</Text></View>
       </Row>
       <View style={{ direction: "ltr" }}>
@@ -342,7 +343,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
             {[["ok", okShare + " %", t("bilan.k_halal"), C.cert], ["n", String(base.length), t(base.length === 1 ? "history.count_one" : "history.count_other"), C.fg], ["bad", String((counts.haram || 0) + (counts.mashbouh || 0)), t("bilan.k_avoid"), (counts.haram || 0) + (counts.mashbouh || 0) ? C.doubt : C.muted]].map(([k, v, l, c], i) => (
               <FadeIn key={k + period + weeksAgo} delay={200 + i * 80} style={{ flex: 1 }}>
                 <View style={{ flex: 1, minHeight: 78, padding: 10, borderRadius: R.md, backgroundColor: C.tint, alignItems: "center", justifyContent: "center", gap: 2 }}>
-                  <Text style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }}>{v}</Text>
+                  <CountUp to={parseInt(v, 10)} suffix={k === "ok" ? " %" : ""} delay={300 + i * 80} style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }} />
                   <Text numberOfLines={2} style={{ fontSize: 11.5, color: C.muted, textAlign: "center" }}>{l}</Text>
                 </View>
               </FadeIn>
@@ -365,7 +366,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
             {list.map((e, i) => (
               <SwipeRow key={e.code} label={t("history.delete_one")} onDelete={() => { removeFromHistory(e.code); toast && toast(t("history.deleted_one")); }}>
-                <View style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} onLongPress={() => setMenu(e)} /></View>
+                <FadeIn delay={Math.min(i, 8) * 45} distance={10} style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} onLongPress={() => setMenu(e)} /></FadeIn>
               </SwipeRow>
             ))}
           </View>
