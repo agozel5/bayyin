@@ -140,7 +140,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
       <View style={{ borderRadius: R.xl, padding: 18, gap: 14, backgroundColor: isDark() ? "#0F4A35" : "#0F6545", overflow: "hidden",
         shadowColor: "#0F6545", shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 6 }}>
         <Khatam />
-        <FadeIn style={{ gap: 8 }}>
+        <FadeIn delay={0} style={{ gap: 8 }}>
           <Txt accessibilityRole="header" style={{ color: "#fff", fontSize: returning ? 30 : 27, lineHeight: returning ? 34 : 31, fontWeight: "800", letterSpacing: -0.5 }}>
             {returning ? t("home.greet") : tPlain("home.h1_html")}
           </Txt>
@@ -182,7 +182,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           <HeroButton icon="type" text={t("home.type_code")} on={manualOpen} onPress={() => setManualOpen(!manualOpen)} />
         </View>
         {manualOpen ? (
-          <FadeIn style={{ gap: 8 }}>
+          <FadeIn delay={120} style={{ gap: 8 }}>
             <Txt style={{ color: "rgba(255,255,255,0.9)", fontSize: 14 }}>{t("home.manual_label")}</Txt>
             <Row>
               <TextInput value={code} onChangeText={(x) => setCode(x.replace(/[^\d]/g, "").slice(0, 14))} keyboardType="number-pad" contextMenuHidden={false} selectTextOnFocus={false} placeholder="3017620422003" placeholderTextColor="#97A39C" autoFocus returnKeyType="go"
@@ -211,7 +211,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         const e = getEntry(h.code);
         const [fg, bg] = STATUS_COLORS.haram;
         return (
-          <FadeIn>
+          <FadeIn delay={200}>
             <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bg, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
               <Pressable onPress={() => onOpen(h.code)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, opacity: pressed ? 0.7 : 1 })}>
                 <Tile color={fg} paths='<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>' size={40} />
@@ -235,7 +235,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         const bad = worse(c.before, c.after);
         const [fg, bg] = bad ? STATUS_COLORS.mashbouh : STATUS_COLORS.inconnu;
         return (
-          <FadeIn>
+          <FadeIn delay={260}>
             <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bad ? bg : C.surface, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
               <Pressable onPress={() => onOpen(c.code)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, opacity: pressed ? 0.7 : 1 })}>
                 <Tile color={bad ? fg : "#4C64D6"} paths={TOOL_ICONS.recipe} size={40} />
