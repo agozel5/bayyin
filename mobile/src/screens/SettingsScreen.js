@@ -132,9 +132,11 @@ function LangPage() {
           const on = st.lang === l;
           return (
             <Pressable key={l} onPress={() => { haptic.tap(); setSettings({ lang: l }); }} accessibilityRole="radio" accessibilityState={{ checked: on }}
-              style={{ flexBasis: "46%", flexGrow: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.md, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : "transparent" }}>
+              style={{ flexBasis: "46%", flexGrow: 1, flexShrink: 1, minWidth: 0, flexDirection: dir().row, alignItems: "center", gap: 10, padding: 12, borderRadius: R.md, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : "transparent" }}>
               <View style={{ width: 42, height: 30, borderRadius: 8, overflow: "hidden", borderWidth: 0.5, borderColor: "rgba(0,0,0,0.18)" }}><Art xml={LANG_FLAG[l]} width={42} height={30} /></View>
-              <Text style={{ fontWeight: "800", fontSize: 16, color: on ? C.brandDark : C.fg }}>{LANG_NAMES[l]}</Text>
+              {/* flex: 1 + minWidth: 0 : le nom reste dans sa case (retour à la ligne, puis réduction légère) */}
+              <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={1.2}
+                style={{ flex: 1, minWidth: 0, fontWeight: "800", fontSize: 15.5, lineHeight: 19, color: on ? C.brandDark : C.fg, textAlign: dir().ta }}>{LANG_NAMES[l]}</Text>
             </Pressable>
           );
         })}
@@ -877,6 +879,9 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   const insets = useSafeAreaInsets();
   const nav = useNavBar(t("settings.title"));
   const [page, setPage] = useState(null);
+  // Barre en verre dépoli de la sous-page : le titre passe en haut au défilement au lieu de glisser sous l'heure
+  const pageNav = useNavBar(page ? t(`settings.menu.${page}`) : "");
+  useEffect(() => { pageNav.y.setValue(0); }, [page]); // la sous-page repart du haut : la barre aussi
   const skipSlide = useRef(false);
   const pageRef = useRef(page); pageRef.current = page;
   useLayoutEffect(() => () => { left = { page: pageRef.current, at: Date.now() }; }, []);
@@ -929,7 +934,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
     pageEl = (
       <Animated.View {...swipe.panHandlers} style={[StyleSheet.absoluteFill, pageStyle, { backgroundColor: C.bg, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 18, shadowOffset: { width: -side * 4, height: 0 } }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView key={page} ref={pageScroll} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      <ScrollView key={page} ref={pageScroll} {...pageNav.scroll} style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <Row gap={6}>
           <Pressable onPress={closePage} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
             <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
@@ -944,6 +949,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         <P toast={toast} onTour={onTour} />
       </ScrollView>
       </KeyboardAvoidingView>
+      {pageNav.bar}
       </Animated.View>
     );
   }

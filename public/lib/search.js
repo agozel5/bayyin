@@ -224,7 +224,8 @@ export function translateQuery(q, uiLang = "fr", target = "fr") {
       let hit = null;
       for (let n = Math.min(3, toks.length - i); n >= 1 && !hit; n--) {
         const key = toks.slice(i, i + n).join(" ");
-        const e = INDEX[lang].get(key);
+        // Turc : le pluriel « -lar / -ler » se retire (« yoğurtlar » → « yoğurt », « çikolatalar » → « çikolata »)
+        const e = INDEX[lang].get(key) || (lang === "tr" && /[a-z]{3,}(lar|ler)$/.test(key) ? INDEX.tr.get(key.replace(/(lar|ler)$/, "")) : undefined);
         if (e && !(lang === "tr" && weakTr && (key.length < 3 || key === "bal" || key === "pasta"))) hit = { e, n };
       }
       if (hit) {

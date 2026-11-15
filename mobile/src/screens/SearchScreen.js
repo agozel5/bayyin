@@ -10,11 +10,11 @@ import { PageHead, SearchBox, Chip, Segmented } from "../components/Controls";
 import { ListRow } from "../components/Cards";
 import { Art, Tile, Glyph } from "../components/Art";
 import { C, R, dir, lift } from "../theme";
-import { t, tn } from "../i18n";
+import { t, tn, getLang } from "../i18n";
 import { fetchProduct, searchAll } from "../api";
 import { getHistory, getSettings } from "../storage";
 import { errorText, verdictOf, profileOf, kindOf } from "../view";
-import { hasProfile } from "../core";
+import { hasProfile, DICTS } from "../core";
 import { rankByRelevance } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
 
@@ -30,6 +30,23 @@ function fit(list, q) {
     const known = p.verdict && p.verdict.status !== "inconnu" ? 1 : 0;
     return sum + hit + known;
   }, 0) / Math.max(1, Math.min(8, list.length)) * Math.min(8, list.length) ** 0.5;
+}
+// La base de produits est en français : un rayon touché dans une autre langue (« Yoğurtlar », « اللبن »…)
+// est cherché sous son nom français (« Yaourts »). Le texte affiché reste celui de la langue choisie.
+const aliasCache = {};
+function frTerm(query) {
+  const lang = getLang();
+  if (lang === "fr") return query;
+  if (!aliasCache[lang]) {
+    const m = new Map();
+    for (const k of Object.keys(DICTS.fr)) {
+      if (!k.startsWith("rank.cat.")) continue;
+      const loc = t(k);
+      if (loc && loc !== k) m.set(String(loc).trim().toLowerCase(), DICTS.fr[k]);
+    }
+    aliasCache[lang] = m;
+  }
+  return aliasCache[lang].get(String(query).trim().toLowerCase()) || query;
 }
 // Écran d'accueil de la recherche : des rayons illustrés et quelques marques connues
 const AISLES = {
@@ -98,11 +115,12 @@ export default function SearchScreen({ onOpen, onScan }) {
         return setState(p ? { q: query, single: [p] } : { notFound: digits });
       }
       if (query.length < 2) return setState({ short: true });
-      const local = localHits(query, k, 3);
+      const term = frTerm(query); // nom français si c'est un rayon, sinon la recherche telle quelle
+      const local = localHits(term, k, 3);
       setState({ loading: true, local });
-      const ck = `${getSettings().lang}|${k}|${query.toLowerCase()}`;
+      const ck = `${getSettings().lang}|${k}|${term.toLowerCase()}`;
       const hit = !force && cache.get(ck);
-      const res = hit && Date.now() - hit.at < 600000 ? hit.res : await searchAll(query, k);
+      const res = hit && Date.now() - hit.at < 600000 ? hit.res : await searchAll(term, k);
       if (n !== ticket.current) return;
       if (!res.foodFailed && !res.beautyFailed) cache.set(ck, { res, at: Date.now() });
       const known = new Set(local.map((p) => p.code));

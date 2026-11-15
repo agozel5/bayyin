@@ -44,3 +44,13 @@ test("recherche dans une autre langue : traduite en français", () => {
   // Les résultats français d'une recherche arabe restent pertinents
   assert.ok(rankByRelevance([{ product_name: "Lait demi-écrémé" }], ["حليب", "lait"]).length === 1);
 });
+
+test("turc : le pluriel en -lar / -ler est reconnu (rayons de la recherche)", () => {
+  assert.equal(translateQuery("Yoğurtlar", "tr"), "yaourt");
+  assert.equal(translateQuery("Peynirler", "tr"), "fromage");
+  assert.equal(translateQuery("Şampuanlar", "tr"), "shampooing");
+  assert.equal(translateQuery("Tablet çikolatalar", "tr"), "tablet chocolat");
+  assert.equal(translateQuery("yoğurt", "tr"), "yaourt", "le singulier marche toujours");
+  assert.equal(translateQuery("aller", "fr"), null, "un mot français en -ler n'est pas traduit");
+  assert.equal(translateQuery("collier", "fr"), null);
+});
