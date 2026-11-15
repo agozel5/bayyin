@@ -1,5 +1,5 @@
-// Historique, en deux vues : « Produits » (recherche, filtres, produits par jour, affichés par pages)
-// et « Bilan » (anneau des verdicts, semaine, note moyenne).
+// Historique, en deux vues : « Bilan » (anneau des verdicts, semaine, note moyenne, ouvert en premier)
+// et « Produits » (recherche, filtres, produits par jour, affichés par pages).
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
 import Svg, { Circle } from "react-native-svg";

@@ -163,7 +163,7 @@ export function ScanReading({ photo, progress = 0, steps = [], tips = [], color 
     loop.start();
     return () => loop.stop();
   }, []);
-  useEffect(() => { Animated.timing(pct, { toValue: progress, duration: 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(); }, [progress]);
+  useEffect(() => { Animated.timing(pct, { toValue: progress, duration: ms(450), easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(); }, [progress]);
   useEffect(() => {
     if (tips.length < 2) return undefined;
     const id = setInterval(() => setTip((n) => (n + 1) % tips.length), 3600);

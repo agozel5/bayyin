@@ -213,7 +213,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         return (
           <FadeIn>
             <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bg, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
-              <Pressable onPress={() => onOpen(h.code)} accessibilityRole="button" style={{ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14 }}>
+              <Pressable onPress={() => onOpen(h.code)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, opacity: pressed ? 0.7 : 1 })}>
                 <Tile color={fg} paths='<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>' size={40} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt style={{ color: fg, fontWeight: "800", fontSize: 15.5 }}>{tn("recall.home", recalls.length)}</Txt>
@@ -237,7 +237,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         return (
           <FadeIn>
             <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bad ? bg : C.surface, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
-              <Pressable onPress={() => onOpen(c.code)} accessibilityRole="button" style={{ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14 }}>
+              <Pressable onPress={() => onOpen(c.code)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, opacity: pressed ? 0.7 : 1 })}>
                 <Tile color={bad ? fg : "#4C64D6"} paths={TOOL_ICONS.recipe} size={40} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt style={{ color: bad ? fg : C.fg, fontWeight: "800", fontSize: 15.5 }}>{tn("recipe.home", recipeChanges.length)}</Txt>

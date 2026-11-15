@@ -66,8 +66,8 @@ export function lookOf(p) {
 function Morph({ width, height, look }) {
   const read = useRef(new Animated.Value(0)).current;
   const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => { Animated.timing(read, { toValue: 1, duration: 320, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(); }, []);
-  useEffect(() => { if (look) Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: false }).start(); }, [!!look]);
+  useEffect(() => { Animated.timing(read, { toValue: 1, duration: ms(320), easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(); }, []);
+  useEffect(() => { if (look) (ms(1) ? Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: false }) : Animated.timing(v, { toValue: 1, duration: 0, useNativeDriver: false })).start(); }, [!!look]);
   const gap = 4.4, total = WIDTHS.reduce((a, w) => a + w, 0) + gap * (WIDTHS.length - 1);
   let x = 150 - total / 2;
   const bars = WIDTHS.map((w, i) => { const cx = x + w / 2; const r = { x, w, dx: 150 - cx }; x += w + gap; return r; });
