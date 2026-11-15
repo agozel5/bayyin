@@ -3,7 +3,7 @@
 // la batterie, pour que le contenu ne passe plus dessous à nu.
 //   const nav = useNavBar(titre);  <ScrollView {...nav.scroll} />  {nav.bar}
 import React, { useRef } from "react";
-import { View, Text, Animated, Platform, StyleSheet } from "react-native";
+import { View, Text, Animated, Platform, StyleSheet, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C, isDark } from "../theme";
@@ -27,4 +27,18 @@ export function useNavBar(title, { from = 26, to = 58 } = {}) {
   );
   const scroll = { onScroll: Animated.event([{ nativeEvent: { contentOffset: { y } } }], { useNativeDriver: false }), scrollEventThrottle: 16 };
   return { scroll, bar, y };
+}
+
+// Page qui défile avec la barre en verre dépoli : pour les écrans ouverts par-dessus les onglets
+// (panier, comparateur, classements, outils…), dont le titre ne doit pas glisser sous l'heure.
+export function NavScroll({ title, scrollRef, children, style, ...rest }) {
+  const nav = useNavBar(title);
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <ScrollView ref={scrollRef} {...nav.scroll} {...rest} style={[{ flex: 1, backgroundColor: C.bg }, style]}>
+        {children}
+      </ScrollView>
+      {nav.bar}
+    </View>
+  );
 }

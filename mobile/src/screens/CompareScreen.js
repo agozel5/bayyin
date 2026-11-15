@@ -6,6 +6,7 @@ import SubStack from "../components/SubStack";
 import { FadeIn } from "../components/ui";
 import { ms } from "../motion";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { NavScroll } from "../components/NavBar";
 import { Txt, Muted, Row, Btn } from "../components/ui";
 import { Art, Glyph } from "../components/Art";
 import { ListRow, Thumb, STATUS_GLYPH } from "../components/Cards";
@@ -147,7 +148,7 @@ export default function CompareScreen({ base: baseCode, baseP, onClose, onOpen, 
   );
   // Le tableau s'ouvre par-dessus le choix des produits : retour en glissant depuis le bord
   const picker = (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}>
+    <NavScroll title={t("cmp.title")} contentContainerStyle={pad}>
       {head(back)}
       {all.length < 2 ? (
         <View style={[{ alignItems: "center", gap: 10, padding: 24, borderRadius: R.xl, backgroundColor: C.surface }, lift()]}>
@@ -166,15 +167,15 @@ export default function CompareScreen({ base: baseCode, baseP, onClose, onOpen, 
           )}
         </View>
       )}
-    </ScrollView>
+    </NavScroll>
   );
   return (
     <SubStack topKey={a && b ? `${a.code}:${b.code}` : null} onBack={() => setB(null)} base={picker}
       top={a && b ? (close) => (
-        <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}>
+        <NavScroll title={t("cmp.title")} contentContainerStyle={pad}>
           {head(close)}
           <Table a={a} b={b} onOpen={(code) => onOpen(code)} />
-        </ScrollView>
+        </NavScroll>
       ) : null} />
   );
 }

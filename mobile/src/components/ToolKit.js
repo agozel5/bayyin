@@ -10,12 +10,13 @@ import { C, R, dir, lift } from "../theme";
 import { t } from "../i18n";
 import { haptic, ms } from "../motion";
 import { nativeText, ocrHtml } from "./OcrFlow";
+import { NavScroll } from "./NavBar";
 
 /** Page d'outil : titre, retour, contenu qui défile */
 export function ToolPage({ title, onClose, children, scrollRef, right }) {
   const insets = useSafeAreaInsets();
   return (
-    <ScrollView ref={scrollRef} style={{ flex: 1, backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
+    <NavScroll title={title} scrollRef={scrollRef} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
       <View style={{ flexDirection: dir().row, alignItems: "center", gap: 6 }}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
@@ -25,7 +26,7 @@ export function ToolPage({ title, onClose, children, scrollRef, right }) {
         {right || null}
       </View>
       {children}
-    </ScrollView>
+    </NavScroll>
   );
 }
 

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import SubStack from "../components/SubStack";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { NavScroll } from "../components/NavBar";
 import { Txt, Muted, Row, Skeleton } from "../components/ui";
 import { Segmented, Chip } from "../components/Controls";
 import { Art, ArtTile, Glyph } from "../components/Art";
@@ -149,8 +150,8 @@ export default function RankingsScreen({ onClose, onOpen }) {
     <SubStack
       topKey={cat ? cat.id : null}
       onBack={() => setCat(null)}
-      base={<ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}><CategoryList onPick={setCat} onBack={onClose} /></ScrollView>}
-      top={cat ? (close) => <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={pad}><Ranking cat={cat} onBack={close} onOpen={onOpen} /></ScrollView> : null}
+      base={<NavScroll title={t("rank.title")} contentContainerStyle={pad}><CategoryList onPick={setCat} onBack={onClose} /></NavScroll>}
+      top={cat ? (close) => <NavScroll title={t(`rank.cat.${cat.id}`)} contentContainerStyle={pad}><Ranking cat={cat} onBack={close} onOpen={onOpen} /></NavScroll> : null}
     />
   );
 }

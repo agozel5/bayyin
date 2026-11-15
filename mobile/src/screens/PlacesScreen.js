@@ -2,6 +2,7 @@
 import React, { useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, Linking, Platform, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { NavScroll } from "../components/NavBar";
 import { Txt, Muted, Row, Skeleton } from "../components/ui";
 import { Art, Glyph } from "../components/Art";
 import { Chip, ChipRow } from "../components/Controls";
@@ -123,7 +124,7 @@ export default function PlacesScreen({ onClose }) {
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c, st.list.filter((p) => p.cat === c).length]));
   const vis = st.list.filter((p) => st.cat === "all" || p.cat === st.cat);
   return (
-    <ScrollView ref={scroller} style={{ flex: 1, backgroundColor: C.bg }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 14 }}>
+    <NavScroll title={t("places.title")} scrollRef={scroller} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 14 }}>
       <Row gap={6}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
           <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
@@ -179,6 +180,6 @@ export default function PlacesScreen({ onClose }) {
       {vis.slice(0, 80).map((p) => <PlaceCard key={p.id} p={p} selected={st.selected === p.id} onSelect={pickFromList} />)}
       <Muted style={{ fontSize: 12.5, lineHeight: 18 }}>{t("places.note")}</Muted>
       <Pressable onPress={() => open("https://www.openstreetmap.org/edit")} accessibilityRole="link"><Text style={{ color: C.brand, fontWeight: "800", textAlign: dir().ta }}>{t("places.add")} ↗</Text></Pressable>
-    </ScrollView>
+    </NavScroll>
   );
 }

@@ -237,7 +237,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [filter, setFilter] = useState("all");
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistFilter = setFilter; // captures automatiques (web)
   const [confirm, setConfirm] = useState(false);
-  const [view, setView] = useState("list"); // « list » : les produits d'abord ; « bilan » : les chiffres
+  const [view, setView] = useState("bilan"); // ouverture sur le bilan (les chiffres) ; « list » : les produits, un toucher plus loin
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistView = setView; // captures automatiques (web)
@@ -275,7 +275,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   return (
     <Screen gap={16} title={t("history.title")}>
       <PageHead title={t("history.title")} sub={t("history.sub")} />
-      <Segmented items={[["list", `${t("history.v.list")} · ${all.length}`], ["bilan", t("bilan.title")]]} value={view} onChange={setView} />
+      <Segmented items={[["bilan", t("bilan.title")], ["list", `${t("history.v.list")} · ${all.length}`]]} value={view} onChange={setView} />
       {view === "list" && hidden > 0 ? (
         <Pressable onPress={() => canUse("history")} accessibilityRole="button"
           style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
