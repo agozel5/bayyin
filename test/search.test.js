@@ -54,3 +54,20 @@ test("turc : le pluriel en -lar / -ler est reconnu (rayons de la recherche)", ()
   assert.equal(translateQuery("aller", "fr"), null, "un mot français en -ler n'est pas traduit");
   assert.equal(translateQuery("collier", "fr"), null);
 });
+
+test("les 12 langues de l'app : un mot courant est ramené au français", async () => {
+  const { translateQuery, suggestTerms } = await import("../public/lib/search.js");
+  const cas = [["Milch", "de"], ["leche", "es"], ["latte", "it"], ["melk", "nl"], ["susu", "id"], ["susu", "ms"], ["دودھ", "ur"], ["দুধ", "bn"],
+    ["حليب", "ar"], ["süt", "tr"], ["milk", "en"]];
+  for (const [q, lang] of cas) assert.equal(translateQuery(q, lang), "lait", `${lang} : ${q}`);
+  assert.equal(translateQuery("aceite de oliva", "es"), "huile d'olive");
+  assert.equal(translateQuery("tandpasta", "nl"), "dentifrice");
+  assert.equal(translateQuery("শ্যাম্পু", "bn"), "shampooing");
+  assert.equal(translateQuery("ٹوتھ پیسٹ", "ur"), "dentifrice");
+  assert.equal(translateQuery("Schokolade Milch", "de"), "chocolat lait");
+  assert.equal(translateQuery("Käse", "fr"), "fromage"); // une autre langue latine est reconnue en repli
+  assert.equal(translateQuery("Nutella", "de"), null); // une marque reste telle quelle
+  assert.deepEqual(suggestTerms("yao", "fr"), ["Yaourt"]);
+  assert.deepEqual(suggestTerms("jog", "de"), ["Joghurt"]);
+  assert.deepEqual(suggestTerms("a", "fr"), []);
+});

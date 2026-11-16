@@ -1,3 +1,4 @@
+import { EXTRA } from "./search-lex.js";
 // Recherche par nom : tri par pertinence et recherche multilingue.
 //
 // Open Food Facts renvoie parfois des produits qui ne correspondent qu'à un mot des ingrédients
@@ -15,7 +16,8 @@ export function normalize(s) {
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[ً-ٰٟـ]/g, "") // voyelles et tatwil arabes
     .replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/[یېے]/g, "ي").replace(/ک/g, "ك").replace(/[ہھۃ]/g, "ه") // lettres ourdoues : même forme que l'arabe
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ")
     .trim();
 }
 
@@ -194,14 +196,22 @@ export const LEXICON = [
   { fr: ["baume à lèvres"], en: ["lip balm"], ar: ["مرطب شفاه"], tr: ["dudak kremi", "lip balm"] },
 ];
 
+// Les huit autres langues de l'app s'ajoutent aux entrées par leur forme française
+for (const e of LEXICON) Object.assign(e, EXTRA[e.fr[0]] || {});
+
 // Index : forme normalisée (une ou plusieurs mots) -> entrée du lexique, par langue
-const INDEX = { fr: new Map(), en: new Map(), ar: new Map(), tr: new Map() };
+const LANGS = ["fr", "en", "ar", "tr", "de", "es", "it", "nl", "id", "ms", "ur", "bn"];
+const INDEX = Object.fromEntries(LANGS.map((l) => [l, new Map()]));
 for (const e of LEXICON) for (const lang of Object.keys(INDEX)) for (const w of e[lang] || []) INDEX[lang].set(tokens(w).join(" "), e);
 
 // Langue probable d'une recherche : l'écriture arabe et les lettres turques se reconnaissent seules
 export function guessLang(q, uiLang = "fr") {
-  if (/[؀-ۿ]/.test(q)) return "ar";
+  if (/[ঀ-৿]/.test(q)) return "bn";
+  if (/[ٹڈڑںےھہۃ]/.test(q)) return "ur";
+  if (/[؀-ۿ]/.test(q)) return uiLang === "ur" ? "ur" : "ar";
   if (/[ğışİĞŞ]/.test(q)) return "tr";
+  if (/[ßä]/i.test(q) && uiLang !== "tr") return "de";
+  if (/[ñ¿¡]/.test(q)) return "es";
   return uiLang;
 }
 
@@ -215,7 +225,9 @@ export function translateQuery(q, uiLang = "fr", target = "fr") {
   if (!toks.length) return null;
   // Langues essayées : celle de la recherche, celle de l'app, puis l'anglais (l'arabe et le turc
   // seulement si la recherche ou l'app est dans cette langue : « su » ou « bal » sont aussi des mots français)
-  const langs = [...new Set([guessLang(q, uiLang), uiLang, "en", "tr"])].filter((l) => l !== target && INDEX[l]);
+  const main = [...new Set([guessLang(q, uiLang), uiLang, "en", "tr"])];
+  // Autres langues latines essayées en dernier (voyageur, étudiant…) : seulement les mots assez longs, pour ne pas confondre avec des marques
+  const langs = [...main, ...["de", "es", "it", "nl", "id", "ms"].filter((l) => !main.includes(l))].filter((l) => l !== target && INDEX[l]);
   const weakTr = guessLang(q, uiLang) !== "tr" && uiLang !== "tr"; // turc essayé en dernier : mots courts écartés
   for (const lang of langs) {
     const out = [];
@@ -226,7 +238,8 @@ export function translateQuery(q, uiLang = "fr", target = "fr") {
         const key = toks.slice(i, i + n).join(" ");
         // Turc : le pluriel « -lar / -ler » se retire (« yoğurtlar » → « yoğurt », « çikolatalar » → « çikolata »)
         const e = INDEX[lang].get(key) || (lang === "tr" && /[a-z]{3,}(lar|ler)$/.test(key) ? INDEX.tr.get(key.replace(/(lar|ler)$/, "")) : undefined);
-        if (e && !(lang === "tr" && weakTr && (key.length < 3 || key === "bal" || key === "pasta"))) hit = { e, n };
+        const side = !main.includes(lang) && key.length < 5; // langue de repli : mots courts écartés
+        if (e && !side && !(lang === "tr" && weakTr && (key.length < 3 || key === "bal" || key === "pasta"))) hit = { e, n };
       }
       if (hit) {
         out.push(hit.e[target][0]);
@@ -240,4 +253,22 @@ export function translateQuery(q, uiLang = "fr", target = "fr") {
     if (changed && normalize(out.join(" ")) !== normalize(q)) return out.join(" ");
   }
   return null;
+}
+
+/**
+ * Suggestions pendant la frappe, dans la langue de l'app : les produits courants dont le nom commence
+ * par ce qui est tapé (« yao » → « Yaourt », « süt » → « Süt »). Au plus `max` formes.
+ */
+export function suggestTerms(q, lang = "fr", max = 5) {
+  const n = normalize(q);
+  if (n.length < 2 || !INDEX[lang]) return [];
+  const out = [];
+  for (const e of LEXICON) {
+    const form = (e[lang] || [])[0];
+    if (!form) continue;
+    const f = normalize(form);
+    if (f !== n && f.startsWith(n)) out.push(form.charAt(0).toLocaleUpperCase(lang) + form.slice(1));
+    if (out.length >= max) break;
+  }
+  return out;
 }

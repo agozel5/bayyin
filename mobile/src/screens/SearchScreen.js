@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Muted, Message, Row, Txt, Btn, Skeleton } from "../components/ui";
+import { Muted, Message, Row, Txt, Btn, Skeleton, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
 import EmptyState from "../components/Empty";
 import { PageHead, SearchBox, Chip, Segmented } from "../components/Controls";
@@ -15,7 +15,7 @@ import { fetchProduct, searchAll } from "../api";
 import { getHistory, getSettings } from "../storage";
 import { errorText, verdictOf, profileOf, kindOf } from "../view";
 import { hasProfile, DICTS } from "../core";
-import { rankByRelevance } from "../../../public/lib/search.js";
+import { rankByRelevance, suggestTerms } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
 
 const RECENT = "bayyin:recent_q";
@@ -76,7 +76,7 @@ function Group({ title, list, onOpen, count }) {
     <View style={{ gap: 8 }}>
       {title ? <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.muted, textAlign: dir().ta }}>{title}{count ? ` · ${list.length}` : ""}</Text> : null}
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
-        {list.map((p, i) => <ListRow key={p.code} p={p} first={i === 0} onPress={() => onOpen(p.code)} />)}
+        {list.map((p, i) => <FadeIn key={p.code} delay={Math.min(i, 8) * 40} distance={10}><ListRow p={p} first={i === 0} onPress={() => onOpen(p.code)} /></FadeIn>)}
       </View>
     </View>
   );
@@ -140,12 +140,14 @@ export default function SearchScreen({ onOpen, onScan }) {
     if (!query) { ticket.current++; return setState({}); }
     const digits = query.replace(/\s+/g, "");
     if (/^\d+$/.test(digits)) { if (/^\d{8,14}$/.test(digits)) timer.current = setTimeout(() => run(query, { keep: false }), 450); return; }
-    if (query.length < 2) return;
+    if (query.length < 2) { ticket.current++; return setState({}); } // plus de résultats périmés
     ticket.current++;
     setState({ loading: query.length >= 3, local: localHits(query, kind, 5) });
     if (query.length >= 3) timer.current = setTimeout(() => run(query, { keep: false }), 700);
   };
   const pick = (s) => { setQ(s); run(s); };
+  const open = (code, opts) => { if (state.q) remember(state.q); onOpen(code, opts); }; // une recherche suivie d'un produit ouvert est gardée dans les récentes
+  const tips = q.trim().length >= 2 ? suggestTerms(q, getLang()) : [];
   const changeKind = (k) => { setKind(k); if (q.trim()) run(q, { force: true, k }); };
 
   const withProfile = hasProfile(getSettings().profile);
@@ -157,7 +159,26 @@ export default function SearchScreen({ onOpen, onScan }) {
   return (
     <Screen gap={16} title={t("search.title")}>
       <PageHead title={t("search.title")} sub={t("search.sub")} />
-      <SearchBox value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} />
+      <SearchBox value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} onScan={onScan} scanLabel={t("home.scan")} />
+      {tips.length ? (
+        <FadeIn key={tips.join("|")} distance={4}>
+          <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden", marginTop: -4 }, lift()]}>
+            {tips.map((x, i) => {
+              const n = q.trim().length;
+              return (
+                <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button"
+                  style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: pressed ? C.tint : "transparent", borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line })}>
+                  <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={16} color={C.faint} />
+                  <Text numberOfLines={1} style={{ flex: 1, fontSize: 15.5, color: C.muted, textAlign: dir().ta }}>
+                    <Text style={{ color: C.fg, fontWeight: "800" }}>{x.slice(0, n)}</Text>{x.slice(n)}
+                  </Text>
+                  <View style={{ transform: [{ rotate: dir().rtl ? "45deg" : "-45deg" }] }}><Glyph paths='<path d="M5 12h14M13 6l6 6-6 6"/>' size={15} color={C.faint} /></View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </FadeIn>
+      ) : null}
       <Segmented items={["all", "food", "beauty"].map((k) => [k, t(`kindtab.${k}`)])} value={kind} onChange={changeKind} />
 
       {!q.trim() ? (
@@ -180,12 +201,14 @@ export default function SearchScreen({ onOpen, onScan }) {
           <View style={{ gap: 10 }}>
             <SectionTitle>{t("search.aisles")}</SectionTitle>
             <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
-              {aislesOf(kind).map((id) => (
-                <Pressable key={id} onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
-                  style={({ pressed }) => [{ flexBasis: "30%", flexGrow: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
+              {aislesOf(kind).map((id, i) => (
+                <FadeIn key={id + kind} delay={i * 35} distance={12} style={{ flexBasis: "30%", flexGrow: 1, flexDirection: "row" }}>
+                <Pressable onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
+                  style={({ pressed }) => [{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
                   <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={artByKey(`r:${id}`)} size={38} /></View>
                   <Text numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16, fontWeight: "700", color: C.fg, textAlign: "center" }}>{t(`rank.cat.${id}`)}</Text>
                 </Pressable>
+                </FadeIn>
               ))}
             </View>
           </View>
@@ -211,11 +234,11 @@ export default function SearchScreen({ onOpen, onScan }) {
       {state.short ? <Message title={t("search.short.t")} text={t("search.short.p")} /> : null}
       {state.notFound ? <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code: state.notFound })} action={t("home.scan")} onAction={onScan} /> : null}
       {state.error ? <Message title={t("msg.error.t")} text={errorText(state.error)}><Btn title={t("msg.retry")} onPress={() => run(q, { force: true })} /></Message> : null}
-      {state.single ? <Group list={state.single} onOpen={onOpen} /> : null}
+      {state.single ? <Group list={state.single} onOpen={open} /> : null}
 
       {state.loading ? (
         <View style={{ gap: 14 }}>
-          {state.local && state.local.length ? <Group title={t("search.in_history")} list={state.local} onOpen={onOpen} /> : null}
+          {state.local && state.local.length ? <Group title={t("search.in_history")} list={state.local} onOpen={open} /> : null}
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 16 }, lift()]} accessibilityLabel={t("search.searching")}>
             {[0, 1, 2].map((i) => <Row key={i} gap={12}><Skeleton width={54} height={54} radius={14} /><View style={{ flex: 1, gap: 8 }}><Skeleton height={14} width="80%" /><Skeleton height={11} width="45%" /></View></Row>)}
           </View>
@@ -233,11 +256,11 @@ export default function SearchScreen({ onOpen, onScan }) {
           {total ? (
             <>
               <Muted style={{ fontSize: 13.5 }}>{tn("search.results", total)}{state.alt ? ` · ${t("search.alt", { q: state.alt })}` : ""}</Muted>
-              {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={onOpen} /> : null}
+              {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={open} /> : null}
               {(() => {
                 // Le groupe qui correspond le mieux à la recherche passe en premier (« nivea » : cosmétiques d'abord)
-                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={onOpen} /> : null;
-                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={onOpen} /> : null;
+                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={open} /> : null;
+                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={open} /> : null;
                 return fit(r.beauty, state.q) > fit(r.food, state.q) ? [beautyG, foodG] : [foodG, beautyG];
               })()}
             </>

@@ -18,6 +18,7 @@ export default function Screen({ children, gap = 20, title = "Bayyin" }) {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, gap }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         {...nav.scroll}
       >
         {children}
