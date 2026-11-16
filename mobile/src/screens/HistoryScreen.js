@@ -2,14 +2,15 @@
 // et « Produits » (recherche, filtres, produits par jour, affichés par pages).
 import React, { useEffect, useRef, useState } from "react";
 import { CountUp } from "../components/Fx";
-import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
+import { View, Pressable, Animated, Easing, PanResponder } from "react-native";
+import { Text } from "../components/Text";
 import Svg, { Circle } from "react-native-svg";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
 import { PageHead, Chip, ChipRow, Segmented, SearchBox } from "../components/Controls";
-import { ListRow } from "../components/Cards";
+import { ListRow, Khatam } from "../components/Cards";
 import { Glyph, Art, Tile } from "../components/Art";
-import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
+import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift, isDark } from "../theme";
 import { t, tn, locale } from "../i18n";
 import { getHistory, clearHistory, removeFromHistory, toggleFav } from "../storage";
 import { ChoiceSheet } from "../components/ToolKit";
@@ -44,6 +45,77 @@ function useIntro(key, { duration = 900, delay = 100 } = {}) {
     return () => { v.removeListener(id); v.stopAnimation(); };
   }, [key]);
   return k;
+}
+
+// Carte du tableau de bord et son en-tête (pastille d'icône, titre, valeur à droite)
+const cardStyle = () => [{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16 }, lift()];
+function CardHead({ color, paths, title, right }) {
+  return (
+    <Row gap={10}>
+      <Tile color={color} paths={paths} size={30} />
+      <Text numberOfLines={2} style={{ flex: 1, color: C.fg, fontWeight: "800", fontSize: 15.5, lineHeight: 20, textAlign: dir().ta }}>{title}</Text>
+      {right || null}
+    </Row>
+  );
+}
+
+// En-tête du bilan : la part halal en grand sur le vert de la marque, la barre des verdicts et le détail
+const HERO = { halal_certifie: "#8FE3B8", halal_probable: "#BFEBD0", mashbouh: "#FFC163", haram: "#FF8C80", inconnu: "#B9C4BE" };
+function BilanHero({ counts, total, okShare, label, delta, period, setPeriod }) {
+  const k = useIntro(`${total}:${okShare}:${period}`, { duration: 900, delay: 150 });
+  const segs = ["halal_certifie", "halal_probable", "mashbouh", "haram", "inconnu"].filter((x) => counts[x]); // le halal d'abord
+  return (
+    <View style={{ borderRadius: R.xl, padding: 18, gap: 14, backgroundColor: isDark() ? "#0F4A35" : "#0F6545", overflow: "hidden",
+      shadowColor: "#0B2A1C", shadowOpacity: isDark() ? 0 : 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 }}>
+      <Khatam />
+      <Row gap={8} style={{ justifyContent: "space-between" }}>
+        <View style={{ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Text style={{ fontSize: 13.5, fontWeight: "700", color: "rgba(255,255,255,0.86)" }}>{label}</Text>
+          {delta ? <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.16)" }}><Text style={{ fontSize: 11.5, fontWeight: "800", color: "#fff" }}>{delta}</Text></View> : null}
+        </View>
+        {/* Semaine / depuis le début */}
+        <View style={{ flexDirection: dir().row, padding: 3, borderRadius: 99, backgroundColor: "rgba(0,0,0,0.22)" }} accessibilityRole="tablist">
+          {["week", "all"].map((id) => (
+            <Pressable key={id} onPress={() => { haptic.tap(); setPeriod(id); }} accessibilityRole="tab" accessibilityState={{ selected: period === id }} hitSlop={4}
+              style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: period === id ? "#fff" : "transparent" }}>
+              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12.5, fontWeight: "800", color: period === id ? "#0F6545" : "rgba(255,255,255,0.85)" }}>{t(`bilan.p_${id}`)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Row>
+      {total ? (
+        <>
+          <View style={{ flexDirection: dir().row, alignItems: "flex-end", gap: 12 }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 58, lineHeight: 60, fontWeight: "900", letterSpacing: -2, color: "#fff", fontVariant: ["tabular-nums"] }}>
+              {Math.round(okShare * k)}<Text style={{ fontSize: 26, fontWeight: "800", letterSpacing: 0 }}> %</Text>
+            </Text>
+            <View style={{ flex: 1, paddingBottom: 7, gap: 1 }}>
+              <Text numberOfLines={1} style={{ fontSize: 19, fontWeight: "800", color: "#BFEBD6", textAlign: dir().ta }}>{t("bilan.k_halal")}</Text>
+              <Text numberOfLines={2} style={{ fontSize: 13.5, color: "rgba(255,255,255,0.86)", textAlign: dir().ta }}>{total} {t(total === 1 ? "history.count_one" : "history.count_other")}</Text>
+            </View>
+          </View>
+          <View style={{ height: 10, borderRadius: 5, backgroundColor: "rgba(255,255,255,0.16)", overflow: "hidden", direction: "ltr" }}>
+            <View style={{ flexDirection: "row", gap: 3, height: 10, width: `${Math.max(2, (1 - Math.pow(1 - k, 3)) * 100)}%` }}>
+              {segs.map((x) => <View key={x} style={{ flex: counts[x], backgroundColor: HERO[x], borderRadius: 5 }} />)}
+            </View>
+          </View>
+          <View style={{ flexDirection: dir().row, flexWrap: "wrap", columnGap: 14, rowGap: 6 }}>
+            {segs.map((x) => (
+              <Row key={x} gap={6}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: HERO[x] }} />
+                <Text style={{ fontSize: 13, fontWeight: "700", color: "#fff" }}>{counts[x]} <Text style={{ fontWeight: "500", color: "rgba(255,255,255,0.86)" }}>{S(x, "short")}</Text></Text>
+              </Row>
+            ))}
+          </View>
+        </>
+      ) : (
+        <View style={{ gap: 4, paddingVertical: 6 }}>
+          <Text style={{ fontSize: 18, fontWeight: "800", color: "#fff", textAlign: dir().ta }}>{t("bilan.week_empty")}</Text>
+          <Text style={{ fontSize: 14, lineHeight: 20, color: "rgba(255,255,255,0.86)", textAlign: dir().ta }}>{t("bilan.week_empty_p")}</Text>
+        </View>
+      )}
+    </View>
+  );
 }
 
 function Donut({ counts, total, size = 118 }) {
@@ -169,11 +241,8 @@ function Week({ all, weeksAgo, setWeeksAgo }) {
     </Pressable>
   );
   return (
-    <View style={{ gap: 10, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
-      <Row style={{ justifyContent: "space-between" }}>
-        <Text style={{ color: C.muted, fontSize: 13.5, flex: 1, textAlign: dir().ta }}>{title}</Text>
-        <Text style={{ color: C.fg, fontWeight: "800", fontSize: 16 }}>{n}</Text>
-      </Row>
+    <View style={[cardStyle(), { gap: 12 }]}>
+      <CardHead color="#3F79B5" paths='<path d="M5 20V10M12 20V4M19 20v-7"/>' title={title} right={<Text style={{ color: C.fg, fontWeight: "800", fontSize: 18, fontVariant: ["tabular-nums"] }}>{n}</Text>} />
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, direction: "ltr" }}>
         <View style={{ transform: [{ scaleX: -1 }] }}><Nav dirn="prev" off={!canPrev} /></View>
         <View style={{ flex: 1, overflow: "hidden" }} onLayout={(e) => { wRef.current = e.nativeEvent.layout.width; }} {...pan.panHandlers}
@@ -202,9 +271,10 @@ function AvgGauge({ avg }) {
   const k = useIntro(avg, { duration: 1000, delay: 250 });
   const g = avg >= 75 ? "excellent" : avg >= 50 ? "bon" : avg >= 25 ? "mediocre" : "mauvais";
   return (
-    <View style={{ gap: 8, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
-      <Row style={{ justifyContent: "space-between" }}>
-        <Text style={{ color: C.muted, fontSize: 13.5, flex: 1, textAlign: dir().ta }}>{t("bilan.avg")}</Text>
+    <View style={[cardStyle(), { gap: 10 }]}>
+      <Row gap={10} style={{ justifyContent: "space-between" }}>
+        <Tile color="#D0486B" paths='<path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z"/>' size={30} />
+        <Text numberOfLines={2} style={{ color: C.fg, fontWeight: "800", fontSize: 15.5, flex: 1, textAlign: dir().ta }}>{t("bilan.avg")}</Text>
         <Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 18 }}>{Math.round(avg * k)}<Text style={{ fontSize: 12, color: C.muted }}>/100</Text></Text>
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GRADE_COLORS[g] + "33" }}><Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 12 }}>{t(`grade.${g}`)}</Text></View>
       </Row>
@@ -290,69 +360,32 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
       ) : null}
 
       {view === "bilan" ? (
-      <FadeIn distance={6}>
-      <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
-        <Row style={{ justifyContent: "space-between" }}>
-          <Txt style={{ fontWeight: "800", fontSize: 18, flex: 1 }}>{t("bilan.title")}</Txt>
-          {/* Semaine / depuis le début */}
-          <View style={{ flexDirection: dir().row, padding: 3, borderRadius: 99, backgroundColor: C.tint }} accessibilityRole="tablist">
-            {["week", "all"].map((k) => (
-              <Pressable key={k} onPress={() => { haptic.tap(); setPeriod(k); }} accessibilityRole="tab" accessibilityState={{ selected: period === k }}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, backgroundColor: period === k ? C.surface : "transparent" }}>
-                <Text style={{ fontSize: 13, fontWeight: period === k ? "800" : "600", color: period === k ? C.fg : C.muted }}>{t(`bilan.p_${k}`)}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Row>
-        {period === "week" ? (
-          <FadeIn key={`wk${weeksAgo}`} distance={4}>
-            <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <Text style={{ fontSize: 13.5, color: C.muted, textAlign: dir().ta }}>{weeksAgo ? t("bilan.week_of", { range: weekRange(wb) }) : t("bilan.this_week")}</Text>
-              {base.length || prevN ? (
-                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: base.length >= prevN ? C.brandSoft : C.tint }}>
-                  <Text style={{ fontSize: 12, fontWeight: "800", color: base.length >= prevN ? C.brandDark : C.muted }}>
-                    {base.length === prevN ? t("bilan.same") : `${base.length > prevN ? "+" : "−"}${Math.abs(base.length - prevN)} ${t("bilan.vs_prev")}`}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </FadeIn>
-        ) : null}
+      <FadeIn distance={6} style={{ gap: 14 }}>
+        <BilanHero counts={counts} total={base.length} okShare={okShare} period={period} setPeriod={setPeriod}
+          label={period === "all" ? t("history.title") : weeksAgo ? t("bilan.week_of", { range: weekRange(wb) }) : t("bilan.this_week")}
+          delta={period === "week" && (base.length || prevN) ? (base.length === prevN ? t("bilan.same") : `${base.length > prevN ? "+" : "−"}${Math.abs(base.length - prevN)} ${t("bilan.vs_prev")}`) : ""} />
         {base.length ? (
-        <Row gap={18}>
-          <Donut counts={counts} total={base.length} />
-          <View style={{ flex: 1, gap: 8 }}>
-            {ORDER.filter((s) => counts[s]).map((s, i) => (
-              <FadeIn key={s} delay={150 + i * 90}><Row gap={8}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col(s) }} />
-                <Text numberOfLines={1} style={{ flex: 1, fontSize: 13.5, color: C.fg, textAlign: dir().ta }}>{S(s, "label")}</Text>
-                <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.fg }}>{counts[s]}</Text>
-                <Text style={{ fontSize: 12, color: C.muted, width: 38, textAlign: "right" }}>{Math.round((counts[s] / all.length) * 100)} %</Text>
-              </Row></FadeIn>
-            ))}
-          </View>
-        </Row>
-        ) : (
-          <View style={{ alignItems: "center", paddingVertical: 18, gap: 4 }}>
-            <Text style={{ fontSize: 15, fontWeight: "800", color: C.fg }}>{t("bilan.week_empty")}</Text>
-            <Muted style={{ fontSize: 13.5, textAlign: "center" }}>{t("bilan.week_empty_p")}</Muted>
-          </View>
-        )}
-        {base.length ? (
-          <View style={{ flexDirection: dir().row, gap: 10 }}>
-            {[["ok", okShare + " %", t("bilan.k_halal"), C.cert], ["n", String(base.length), t(base.length === 1 ? "history.count_one" : "history.count_other"), C.fg], ["bad", String((counts.haram || 0) + (counts.mashbouh || 0)), t("bilan.k_avoid"), (counts.haram || 0) + (counts.mashbouh || 0) ? C.doubt : C.muted]].map(([k, v, l, c], i) => (
-              <FadeIn key={k + period + weeksAgo} delay={200 + i * 80} style={{ flex: 1 }}>
-                <View style={{ flex: 1, minHeight: 78, padding: 10, borderRadius: R.md, backgroundColor: C.tint, alignItems: "center", justifyContent: "center", gap: 2 }}>
-                  <CountUp to={parseInt(v, 10)} suffix={k === "ok" ? " %" : ""} delay={300 + i * 80} style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }} />
-                  <Text numberOfLines={2} style={{ fontSize: 11.5, color: C.muted, textAlign: "center" }}>{l}</Text>
-                </View>
-              </FadeIn>
-            ))}
+          <View style={[cardStyle(), { gap: 14 }]}>
+            <CardHead color="#14805A" paths='<path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12z"/><path d="M15 3.9A8.5 8.5 0 0 1 20.1 9H15z"/>' title={t("bilan.title")} />
+            <Row gap={18}>
+              <Donut counts={counts} total={base.length} />
+              <View style={{ flex: 1 }}>
+                {ORDER.filter((x) => counts[x]).map((x, i) => (
+                  <FadeIn key={x} delay={150 + i * 90}>
+                    <Row gap={8} style={{ paddingVertical: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line }}>
+                      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col(x) }} />
+                      <Text numberOfLines={1} style={{ flex: 1, fontSize: 14, color: C.fg, textAlign: dir().ta }}>{S(x, "label")}</Text>
+                      <Text style={{ fontSize: 14.5, fontWeight: "800", color: C.fg, fontVariant: ["tabular-nums"] }}>{counts[x]}</Text>
+                      <Text style={{ fontSize: 12.5, color: C.muted, width: 40, textAlign: "right", fontVariant: ["tabular-nums"] }}>{Math.round((counts[x] / base.length) * 100)} %</Text>
+                    </Row>
+                  </FadeIn>
+                ))}
+              </View>
+            </Row>
           </View>
         ) : null}
         <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
         {avg !== null ? <AvgGauge avg={avg} /> : null}
-      </View>
       </FadeIn>
       ) : (
       <>
@@ -362,7 +395,10 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
       </ChipRow>
       {shown.length ? groups(shown).map(({ g, list }) => (
         <View key={g} style={{ gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t(`history.g.${g}`)}</Text>
+          <Row gap={8} style={{ paddingHorizontal: 4 }}>
+            <Text style={{ fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>{t(`history.g.${g}`)}</Text>
+            <View style={{ minWidth: 22, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 99, backgroundColor: C.tint2, alignItems: "center" }}><Text style={{ fontSize: 11.5, fontWeight: "800", color: C.muted }}>{list.length}</Text></View>
+          </Row>
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
             {list.map((e, i) => (
               <SwipeRow key={e.code} label={t("history.delete_one")} onDelete={() => { removeFromHistory(e.code); toast && toast(t("history.deleted_one")); }}>

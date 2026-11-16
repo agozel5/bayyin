@@ -2,7 +2,8 @@
 // Même mise en scène que la version web : fond assombri autour d'un cadre large, coins qui respirent,
 // trait de lecture qui balaie, cadre vert quand le code est lu.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Linking, StyleSheet, Animated, Easing, useWindowDimensions } from "react-native";
+import { View, Pressable, Linking, StyleSheet, Animated, Easing, useWindowDimensions } from "react-native";
+import { Text } from "./Text";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Svg, { Path, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

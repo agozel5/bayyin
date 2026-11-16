@@ -2,7 +2,8 @@
 // le téléphone, sa langue reconnue, les mots importants traduits (porc, gélatine, alcool, présure,
 // allergènes…), puis analysé avec les mêmes règles qu'en France.
 import React, { useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, TextInput, Pressable } from "react-native";
+import { Text } from "../components/Text";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { Glyph } from "../components/Art";
 import { ToolPage, ToolIntro, ToolBtn, ScanReading, pickImage, useTextReader, ChoiceSheet, SettingLine, TOOL_ICONS, TOOL_COLORS } from "../components/ToolKit";

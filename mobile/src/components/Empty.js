@@ -1,6 +1,7 @@
 // État vide illustré : la mascotte dans un halo qui respire doucement, une phrase, une action.
 import React, { useEffect, useRef } from "react";
-import { View, Text, Animated, Easing } from "react-native";
+import { View, Animated, Easing } from "react-native";
+import { Text } from "./Text";
 import { Art } from "./Art";
 import { Btn, FadeIn } from "./ui";
 import { C } from "../theme";

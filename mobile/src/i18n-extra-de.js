@@ -144,7 +144,7 @@ export default {
   "contrib.share_hint": "Die Website verlangt ein kostenloses Konto bei Open Food Facts: Teilen Sie die von Bayyin gelesene Liste, um sie in die Produktseite einzufügen.",
   "privacy.7app": "Premium wird über Ihr Apple- oder Google-Konto gekauft: Bayyin sieht Ihre Zahlungsdaten nie.",
   "appearance.text_t": "Textgröße",
-  "appearance.text_p": "Bayyin folgt der in den Einstellungen Ihres Handys festgelegten Textgröße (Bedienungshilfen oder Anzeige). Vergrößern Sie sie dort, und Urteile, Bewertungen und Erklärungen passen sich an.",
+  "appearance.text_p": "Wählen Sie die Textgröße von Bayyin: Urteile, Bewertungen und Erklärungen passen sich sofort an. Sie kommt zur Textgröße Ihres Handys hinzu.",
   "appearance.text_btn": "Handy-Einstellungen öffnen",
   "settings.menu.notif": "Benachrichtigungen",
   "notif.on": "Produktrückrufe: an",

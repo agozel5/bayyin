@@ -1,7 +1,8 @@
 // Fiche d'un produit dont la recette a changé depuis la dernière fois : ce qui a été ajouté, retiré,
 // et le verdict d'avant et d'aujourd'hui.
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
+import { Text } from "./Text";
 import { Txt, Muted, Row } from "./ui";
 import { Tile } from "./Art";
 import { C, R, STATUS_COLORS, dir, lift } from "../theme";

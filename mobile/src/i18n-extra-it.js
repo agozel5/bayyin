@@ -144,7 +144,7 @@ export default {
   "contrib.share_hint": "Il sito richiede un account gratuito Open Food Facts: condivida l'elenco letto da Bayyin per incollarlo nella pagina del prodotto.",
   "privacy.7app": "Premium si acquista con il Suo account Apple o Google: Bayyin non vede mai i Suoi dati di pagamento.",
   "appearance.text_t": "Dimensione del testo",
-  "appearance.text_p": "Bayyin segue la dimensione del testo impostata nelle impostazioni del telefono (Accessibilità o Schermo). La aumenti lì e verdetti, punteggi e spiegazioni si adattano.",
+  "appearance.text_p": "Scegliete la dimensione del testo di Bayyin: verdetti, punteggi e spiegazioni si adattano subito. Si aggiunge alla dimensione del testo del telefono.",
   "appearance.text_btn": "Apri le impostazioni del telefono",
   "settings.menu.notif": "Notifiche",
   "notif.on": "Richiami di prodotti: attivi",

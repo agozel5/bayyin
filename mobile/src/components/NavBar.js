@@ -3,12 +3,13 @@
 // la batterie, pour que le contenu ne passe plus dessous à nu.
 //   const nav = useNavBar(titre);  <ScrollView {...nav.scroll} />  {nav.bar}
 import React, { useRef } from "react";
-import { View, Text, Animated, Platform, StyleSheet, ScrollView } from "react-native";
+import { View, Animated, Platform, StyleSheet, ScrollView } from "react-native";
+import { Text } from "./Text";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C, isDark } from "../theme";
 
-export function useNavBar(title, { from = 26, to = 58 } = {}) {
+export function useNavBar(title, { from = 30, to = 50 } = {}) {
   const insets = useSafeAreaInsets();
   const y = useRef(new Animated.Value(0)).current;
   const opacity = y.interpolate({ inputRange: [from, to], outputRange: [0, 1], extrapolate: "clamp" });
@@ -17,7 +18,7 @@ export function useNavBar(title, { from = 26, to = 58 } = {}) {
   const bar = (
     <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
       style={{ position: "absolute", top: 0, left: 0, right: 0, height: insets.top + 44, opacity,
-        backgroundColor: ios ? (isDark() ? "rgba(15,21,18,0.72)" : "rgba(241,245,240,0.72)") : C.bg,
+        backgroundColor: ios ? (isDark() ? "rgba(11,16,13,0.9)" : "rgba(241,245,240,0.9)") : C.bg, // presque opaque : le contenu ne se lit plus à travers le titre
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark() ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.12)" }}>
       {ios ? <BlurView intensity={50} tint={isDark() ? "dark" : "light"} style={StyleSheet.absoluteFill} /> : null}
       <View style={{ position: "absolute", left: 56, right: 56, bottom: 0, height: 44, alignItems: "center", justifyContent: "center" }}>

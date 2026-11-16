@@ -144,7 +144,7 @@ export default {
   "contrib.share_hint": "De site vraagt om een gratis account bij Open Food Facts: deel de lijst die Bayyin heeft gelezen om die in de productpagina te plakken.",
   "privacy.7app": "Premium wordt gekocht met uw Apple- of Google-account: Bayyin ziet uw betaalgegevens nooit.",
   "appearance.text_t": "Tekstgrootte",
-  "appearance.text_p": "Bayyin volgt de tekstgrootte die in de instellingen van uw telefoon is ingesteld (Toegankelijkheid of Weergave). Maak die daar groter en oordelen, scores en uitleg passen zich aan.",
+  "appearance.text_p": "Kies de tekstgrootte van Bayyin: oordelen, scores en uitleg passen zich meteen aan. Ze komt bovenop de tekstgrootte van uw telefoon.",
   "appearance.text_btn": "Telefooninstellingen openen",
   "settings.menu.notif": "Meldingen",
   "notif.on": "Terugroepingen van producten: aan",

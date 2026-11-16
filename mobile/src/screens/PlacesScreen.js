@@ -1,6 +1,7 @@
 // Commerces halal autour de moi (OpenStreetMap) : position ou ville, rayon, catégories, carte et fiches.
 import React, { useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Linking, Platform, ActivityIndicator } from "react-native";
+import { View, ScrollView, Pressable, TextInput, Linking, Platform, ActivityIndicator } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NavScroll } from "../components/NavBar";
 import { Txt, Muted, Row, Skeleton } from "../components/ui";

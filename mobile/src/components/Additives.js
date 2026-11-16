@@ -2,11 +2,12 @@
 // avec le détail qui s'ouvre au toucher. Même présentation que la version web (onglet Additifs et Composition).
 import { safeUrl } from "./SafeWebView";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Linking, Animated, Easing } from "react-native";
+import { View, Pressable, Linking, Animated, Easing } from "react-native";
+import { Text } from "./Text";
 import { Art, Glyph } from "./Art";
 import { Txt, Muted, Row } from "./ui";
 import { Pill2 } from "./SheetParts";
-import { C, R, SEV_COLORS, RISK_COLORS, dir } from "../theme";
+import { C, R, SEV_COLORS, RISK_COLORS, dir, lift } from "../theme";
 import { t, tn, getLang } from "../i18n";
 import { getSettings } from "../storage";
 import { ADDITIVES, ADDITIVE_RISK, SEVERITY_OF, TOPIC_OF } from "../core";
@@ -87,37 +88,49 @@ function RiskScale({ level }) {
   );
 }
 
-export function AdditiveRow({ r, first, onGotoSettings }) {
+export function AdditiveRow({ r, first, onGotoSettings, card }) {
   const [openR, setOpen] = useState(false);
   const fn = r.fns.map((k) => t(`fn.${k}`)).join(", ");
   const bad = r.halal.level === "haram" || r.halal.level === "mashbouh";
   const halalPill = bad ? <Pill2 text={t(`sev.${r.halal.level}`)} colors={SEV_COLORS[r.halal.level]} /> : null;
   const healthPill = r.health.level ? <Pill2 text={t(`risk.short.${r.health.level}`)} colors={RISK_COLORS[r.health.level]} /> : null;
-  const art = null; // les dessins d'origine sont remplacés par du texte
   const tone = bad ? SEV_COLORS[r.halal.level] : r.health.level ? RISK_COLORS[r.health.level] : [C.cert, C.brandSoft];
+  // Guide des additifs : chaque additif est une carte ; fiche produit : des lignes dans la carte de la fiche
+  const wrap = card
+    ? [{ backgroundColor: C.surface, borderRadius: R.lg, paddingHorizontal: 12, marginBottom: 8, borderWidth: openR ? 1.5 : 0, borderColor: tone[0] + "55" }, openR ? null : lift()]
+    : { borderTopWidth: first || openR ? 0 : 0.5, borderTopColor: C.line, borderRadius: openR ? R.md : 0, backgroundColor: openR ? C.tint : "transparent", marginHorizontal: openR ? -8 : 0, paddingHorizontal: openR ? 8 : 0, marginVertical: openR ? 4 : 0 };
+  const box = card ? { padding: 12, borderRadius: R.md, backgroundColor: C.tint } : null;
   return (
-    <View style={{ borderTopWidth: first || openR ? 0 : 0.5, borderTopColor: C.line, borderRadius: openR ? R.md : 0, backgroundColor: openR ? C.tint : "transparent", marginHorizontal: openR ? -8 : 0, paddingHorizontal: openR ? 8 : 0, marginVertical: openR ? 4 : 0 }}>
+    <View style={wrap}>
       <Pressable onPress={() => { haptic.tap(); setOpen(!openR); }} accessibilityRole="button" accessibilityState={{ expanded: openR }}
-        accessibilityLabel={`${r.label} ${r.name}`} style={{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingVertical: 12 }}>
+        accessibilityLabel={`${r.label} ${r.name}`} style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: card ? 12 : 10, paddingVertical: 12, opacity: pressed ? 0.7 : 1 })}>
         {/* Le code, dans une pastille à la couleur du point le plus sérieux (halal, puis santé) */}
-        <View style={{ width: 62, height: 40, borderRadius: 12, backgroundColor: tone[1], alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: tone[0] + "33" }}>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontWeight: "800", fontSize: 14.5, color: tone[0], letterSpacing: 0.2, fontVariant: ["tabular-nums"] }}>{r.label}</Text>
+        <View style={{ width: card ? 60 : 62, height: card ? 48 : 40, borderRadius: card ? 14 : 12, backgroundColor: tone[1], alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: tone[0] + "33" }}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={1.2} style={{ fontWeight: "800", fontSize: card ? 15 : 14.5, color: tone[0], letterSpacing: 0.2, fontVariant: ["tabular-nums"] }}>{r.label}</Text>
         </View>
-        <View style={{ flex: 1, gap: 1 }}>
+        <View style={{ flex: 1, gap: 2 }}>
           <Txt numberOfLines={2} style={{ fontWeight: "700", fontSize: 15, lineHeight: 19 }}>{r.name || r.label}</Txt>
           {fn || r.origin !== "plant" ? <Muted numberOfLines={1} style={{ fontSize: 12.5, lineHeight: 16 }}>{[fn, r.origin !== "plant" ? t(`add.origin.${r.origin}`) : ""].filter(Boolean).join(" · ")}</Muted> : null}
+          {card && r.mine ? (
+            <Row gap={5}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.brand }} />
+              <Text numberOfLines={1} style={{ flex: 1, fontSize: 12, fontWeight: "700", color: C.brand, textAlign: dir().ta }}>{tn("add.in_mine", r.mine)}</Text>
+            </Row>
+          ) : null}
         </View>
         <View style={{ alignItems: "flex-end", gap: 4 }}>
           {halalPill}{healthPill}
+          {card && !halalPill && !healthPill ? <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: C.brandSoft, alignItems: "center", justifyContent: "center" }}><Glyph name="check" size={14} color={C.cert} width={2.8} /></View> : null}
         </View>
         <Chevron open={openR} />
       </Pressable>
       {openR ? (
-        <FadeIn distance={-6} style={{ gap: 12, paddingBottom: 14, paddingHorizontal: 4 }}>
-          {fn ? <Field title={t("add.e_fn")}><Txt style={{ fontSize: 15 }}>{fn}</Txt></Field> : null}
-          <Field title={t("add.e_origin")}>
-            <Row gap={10}>{art ? <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={art} size={26} /></View> : null}<Txt style={{ flex: 1, fontSize: 15 }}>{t(`add.origin.${r.origin}`)}</Txt></Row>
-          </Field>
+        <FadeIn distance={-6} style={{ gap: card ? 8 : 12, paddingBottom: 14, paddingHorizontal: card ? 0 : 4 }}>
+          <View style={card ? { flexDirection: dir().row, gap: 8 } : { gap: 12 }}>
+            {fn ? <View style={[box, card ? { flex: 1 } : null]}><Field title={t("add.e_fn")}><Txt style={{ fontSize: 15, fontWeight: card ? "700" : "400" }}>{fn}</Txt></Field></View> : null}
+            <View style={[box, card ? { flex: 1 } : null]}><Field title={t("add.e_origin")}><Txt style={{ fontSize: 15, fontWeight: card ? "700" : "400" }}>{t(`add.origin.${r.origin}`)}</Txt></Field></View>
+          </View>
+          <View style={box}>
           <Field title={t("add.e_halal")}>
             {r.halal.reason ? <View style={{ gap: 6 }}>{halalPill || <Pill2 text={t("sev.info")} colors={SEV_COLORS.info} />}<Txt style={{ fontSize: 15, lineHeight: 21 }}>{r.halal.reason}</Txt></View> : <Txt style={{ fontSize: 15 }}>{t("add.halal_ok")}</Txt>}
             {r.halal.topic ? (
@@ -126,12 +139,15 @@ export function AdditiveRow({ r, first, onGotoSettings }) {
               </Text>
             ) : null}
           </Field>
+          </View>
+          <View style={box}>
           <Field title={t("add.e_health")}>
             <RiskScale level={r.health.level} />
             <Txt style={{ fontSize: 15, lineHeight: 21 }}>{r.health.level ? r.health.reason : t("add.health_ok")}</Txt>
             {r.it.a ? <Muted style={{ fontSize: 13 }}>{t("add.anses")}</Muted> : null}
             {safeUrl(r.it.u) ? <Text onPress={() => Linking.openURL(safeUrl(r.it.u)).catch(() => {})} style={{ color: C.brand, fontWeight: "700", fontSize: 13.5, marginTop: 2, textAlign: dir().ta }}>{t("add.efsa_link", { d: (r.it.d || "").slice(0, 4) })} ↗</Text> : null}
           </Field>
+          </View>
         </FadeIn>
       ) : null}
     </View>

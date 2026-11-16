@@ -1,7 +1,8 @@
 // Échelle de lettres (Nutri-Score, Green-Score) avec le repère ▼ au-dessus de la note du produit,
 // qui glisse jusqu'à sa place quand l'échelle arrive à l'écran (comme sur le web).
 import React, { useRef, useState } from "react";
-import { View, Text, Animated } from "react-native";
+import { View, Animated } from "react-native";
+import { Text } from "./Text";
 import { C } from "../theme";
 import { useGrow } from "./Reveal";
 

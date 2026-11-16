@@ -144,7 +144,7 @@ export default {
   "contrib.share_hint": "Laman ini memerlukan akaun Open Food Facts percuma: kongsi senarai yang dibaca oleh Bayyin untuk menampalnya ke halaman produk.",
   "privacy.7app": "Premium dibeli dengan akaun Apple atau Google Anda: Bayyin tidak pernah melihat butiran pembayaran Anda.",
   "appearance.text_t": "Saiz teks",
-  "appearance.text_p": "Bayyin mengikut saiz teks yang ditetapkan dalam tetapan telefon Anda (Kebolehcapaian atau Paparan). Besarkannya di sana dan keputusan, skor serta penjelasan akan menyesuaikan diri.",
+  "appearance.text_p": "Pilih saiz teks Bayyin: keputusan, skor dan penjelasan terus menyesuaikan. Saiz ini ditambah pada saiz teks telefon anda.",
   "appearance.text_btn": "Buka tetapan telefon",
   "settings.menu.notif": "Pemberitahuan",
   "notif.on": "Penarikan balik produk: aktif",

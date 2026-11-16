@@ -1,7 +1,8 @@
 // Filet de sécurité : si un écran plante, on affiche un message (avec retour et nouvel essai)
 // au lieu d'un écran blanc pour toute l'app. L'erreur est aussi gardée pour les captures de contrôle.
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
+import { Text } from "./Text";
 import { C, R } from "../theme";
 import { t } from "../i18n";
 

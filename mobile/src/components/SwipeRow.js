@@ -1,7 +1,8 @@
 // Ligne qu'on fait glisser pour la supprimer (comme dans les apps d'Apple) : un petit glissement
 // découvre le bouton « Supprimer », un grand glissement supprime directement.
 import React, { useRef } from "react";
-import { View, Text, Pressable, Animated, PanResponder, Dimensions } from "react-native";
+import { View, Pressable, Animated, PanResponder, Dimensions } from "react-native";
+import { Text } from "./Text";
 import { Glyph } from "./Art";
 import { dir } from "../theme";
 import { haptic } from "../motion";

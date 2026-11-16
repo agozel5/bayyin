@@ -1,7 +1,8 @@
 // Mode rayon : la caméra lit les codes-barres d'un rayon au fil de l'eau et pose sur chacun
 // une pastille verte, orange ou rouge, à l'endroit où il se trouve à l'écran.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, Linking } from "react-native";
+import { View, Pressable, ScrollView, StyleSheet, Linking } from "react-native";
+import { Text } from "../components/Text";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Btn, Loading } from "../components/ui";

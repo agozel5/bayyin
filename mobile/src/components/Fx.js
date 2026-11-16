@@ -1,7 +1,8 @@
 // Effets d'animation réutilisables : compteur qui monte, progression 0→1, gerbe d'étincelles.
 // Tous respectent « réduire les animations » (affichage direct de la valeur finale).
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Animated, Easing } from "react-native";
+import { View, Animated, Easing } from "react-native";
+import { Text } from "./Text";
 import { ms } from "../motion";
 
 /** Valeur 0→1 (état React) relancée quand `key` change. */

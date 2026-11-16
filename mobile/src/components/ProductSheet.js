@@ -2,7 +2,8 @@
 import { Img, prefetchImages } from "./Img";
 import { Burst } from "./Fx";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, Share, Animated, Easing, Platform } from "react-native";
+import { View, ScrollView, Pressable, Linking, Share, Animated, Easing, Platform } from "react-native";
+import { Text } from "./Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
 import { Txt, H2, Muted, Label, Row, Btn, Pill, Message, Skeleton, FadeIn } from "./ui";
@@ -27,7 +28,7 @@ import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } fro
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
 import { mailto } from "../config";
 import LetterScale from "./LetterScale";
-import ShareCard, { shareUrl } from "./ShareCard";
+import ShareCard, { shareUrl, shareCardImage } from "./ShareCard";
 import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
 import { NUT_ART, ALLERGEN_ART } from "../../../public/lib/rank-art.js";
@@ -648,6 +649,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
   // Partage : une image du verdict (carte), ou le texte quand l'image n'est pas possible
   const cardRef = useRef(null);
   const [card, setCard] = useState(false);
+  const cardReady = useRef(null);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.shareCard = setCard; // captures automatiques (web)
   const onShare = async () => {
     if (!p) return;
@@ -656,23 +658,14 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
     const text = t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
     const link = isBarcode(p.code) && shareUrl(p.code) ? `\n${shareUrl(p.code)}` : "";
     if (Platform.OS !== "web") {
-      try {
-        setCard(true);
-        await new Promise((r) => setTimeout(r, 900)); // le temps d'afficher la photo du produit
-        const { captureRef } = require("react-native-view-shot");
-        const Sharing = require("expo-sharing");
-        // Capture limitée à 5 s : sinon, partage du texte
-        const uri = await Promise.race([
-          captureRef(cardRef, { format: "png", quality: 1, width: 1080, height: 1920, result: "tmpfile" }),
-          new Promise((_, ko) => setTimeout(() => ko(new Error("capture")), 5000)),
-        ]);
-        const file = String(uri).startsWith("file://") ? uri : `file://${uri}`;
-        // iPhone : la feuille de partage du système (WhatsApp, Messages…) avec l'image et le texte.
-        // (avec expo-sharing, WhatsApp s'ouvrait puis se refermait aussitôt.)
-        if (Platform.OS === "ios") { await Share.share({ url: file, message: text + link }); setCard(false); return; }
-        if (await Sharing.isAvailableAsync()) { await Sharing.shareAsync(file, { mimeType: "image/png", dialogTitle: nameOf(p) }); setCard(false); return; }
-        setCard(false);
-      } catch { setCard(false); }
+      // La carte est dessinée hors de l'écran ; on attend que la photo du produit soit affichée (3,5 s au plus)
+      const shown = new Promise((r) => { cardReady.current = r; });
+      setCard(true);
+      await Promise.race([shown, new Promise((r) => setTimeout(r, 3500))]);
+      await new Promise((r) => setTimeout(r, 180)); // le temps de dessiner l'image
+      const ok = await shareCardImage(cardRef, { name: nameOf(p), message: text + link });
+      setCard(false);
+      if (ok) return;
     }
     Share.share({ message: text + link }).catch(() => {});
   };
@@ -759,7 +752,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
       {card && p ? (
         // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)
         <View pointerEvents="none" style={Platform.OS === "web" ? { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center" } : { position: "absolute", top: 0, left: 0, zIndex: -1, elevation: 0 }}>
-          <ShareCard ref={cardRef} p={p} />
+          <ShareCard ref={cardRef} p={p} onReady={() => { if (cardReady.current) cardReady.current(); }} />
         </View>
       ) : null}
       {fromScan ? (

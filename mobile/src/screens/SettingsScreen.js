@@ -2,9 +2,10 @@
 // Même organisation que la version web.
 import { rateApp } from "../review";
 import { useNavBar } from "../components/NavBar";
-import { Qr } from "../components/ShareCard";
+import { Qr, PromoCard, shareCardImage } from "../components/ShareCard";
 import React, { useLayoutEffect, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
+import { View, Text as RNText, ScrollView, Pressable, Linking, BackHandler, Platform, Animated, Easing, TextInput, KeyboardAvoidingView, StyleSheet, Dimensions, Share } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
@@ -340,7 +341,7 @@ function AppearancePage() {
                 {previewBg ? <View style={{ flex: 1, backgroundColor: previewBg, padding: 5, gap: 3 }}><View style={{ height: 6, borderRadius: 3, backgroundColor: m === "dark" ? "#26302B" : "#EEF1F4" }} /><View style={{ height: 8, borderRadius: 3, backgroundColor: "#1A9C68" }} /></View>
                   : <><View style={{ flex: 1, backgroundColor: "#fff", padding: 5 }}><View style={{ height: 8, borderRadius: 3, backgroundColor: "#1A9C68", marginTop: 9 }} /></View><View style={{ flex: 1, backgroundColor: "#141B17", padding: 5 }}><View style={{ height: 8, borderRadius: 3, backgroundColor: "#1A9C68", marginTop: 9 }} /></View></>}
               </View>
-              <Text style={{ fontWeight: "800", fontSize: 14, color: on ? C.brandDark : C.fg }}>{t(`theme.${m}`)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontWeight: "800", fontSize: 14, color: on ? C.brandDark : C.fg }}>{t(`theme.${m}`)}</Text>
               {m === "auto" ? <Text style={{ fontSize: 11, color: C.muted, textAlign: "center" }}>{t("theme.auto_d")}</Text> : null}
             </Pressable>
           );
@@ -349,15 +350,21 @@ function AppearancePage() {
     </Block>
     <Block title={t("appearance.text_t")} gap={10}>
       <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("appearance.text_p")}</Muted>
-      <View style={{ flexDirection: dir().row, alignItems: "flex-end", gap: 14, padding: 14, borderRadius: R.md, backgroundColor: C.tint }}>
-        {[14, 18, 23].map((n) => <Text key={n} style={{ fontSize: n, fontWeight: "800", color: C.fg }}>A</Text>)}
-        <Muted style={{ flex: 1, fontSize: 13, lineHeight: 18 }}>{t("settings.text_preview")}</Muted>
+      {/* Quatre tailles, choisies ici même : petit, normal, grand, très grand */}
+      <View style={{ flexDirection: dir().row, gap: 8 }} accessibilityRole="radiogroup">
+        {[["s", 13], ["m", 16], ["l", 20], ["xl", 24]].map(([id, n]) => {
+          const on = (st.textSize || "m") === id;
+          return (
+            <Pressable key={id} onPress={() => { haptic.tap(); setSettings({ textSize: id }); }} accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={`${t("appearance.text_t")} ${n}`}
+              style={({ pressed }) => ({ flex: 1, height: 58, alignItems: "center", justifyContent: "center", borderRadius: R.md, borderWidth: 1.5, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandSoft : pressed ? C.tint : "transparent" })}>
+              <RNText allowFontScaling={false} style={{ fontSize: n, fontWeight: "800", color: on ? C.brandDark : C.fg }}>A</RNText>
+            </Pressable>
+          );
+        })}
       </View>
-      {Platform.OS !== "web" ? (
-        <Pressable onPress={() => Linking.openSettings().catch(() => {})} accessibilityRole="button" style={{ paddingVertical: 12, borderRadius: 14, alignItems: "center", backgroundColor: C.brandSoft }}>
-          <Text style={{ color: C.brandDark, fontWeight: "800" }}>{t("appearance.text_btn")}</Text>
-        </Pressable>
-      ) : null}
+      <View style={{ padding: 14, borderRadius: R.md, backgroundColor: C.tint }}>
+        <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("settings.text_preview")}</Muted>
+      </View>
     </Block>
     </View>
   );
@@ -843,11 +850,38 @@ function AboutPage() {
 }
 
 // Recommander l'app : partage (message + lien) et QR code à faire scanner par un proche
+// Partage de l'app : une image soignée (carte « Bayyin ») accompagne le message et le lien.
+// host : la carte, dessinée hors de l'écran le temps de la photographier.
+function usePromoShare() {
+  const ref = useRef(null);
+  const [on, setOn] = useState(false);
+  const busy = useRef(false);
+  const share = async () => {
+    if (busy.current) return;
+    busy.current = true;
+    haptic.tap();
+    const message = t("share_app.msg", { url: WEB });
+    let ok = false;
+    if (Platform.OS !== "web") {
+      setOn(true);
+      await new Promise((r) => setTimeout(r, 350)); // le temps de dessiner la carte
+      ok = await shareCardImage(ref, { name: "app", message });
+      setOn(false);
+    }
+    if (!ok) await Share.share({ message }).catch(() => {});
+    busy.current = false;
+  };
+  if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.promoCard = setOn; // captures automatiques (web)
+  const host = on ? <View pointerEvents="none" style={Platform.OS === "web" ? { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center", zIndex: 5 } : { position: "absolute", top: 0, left: 0, zIndex: -1, elevation: 0 }}><PromoCard ref={ref} /></View> : null;
+  return { share, host };
+}
+
 function RecommendBlock() {
   const [qr, setQr] = useState(false);
-  const share = () => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); };
+  const { share, host } = usePromoShare();
   return (
     <Block title={t("share_app.t")} gap={12}>
+      {host}
       <Muted style={{ lineHeight: 20 }}>{t("share_app.p")}</Muted>
       <Pressable onPress={share} accessibilityRole="button"
         style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: R.md, backgroundColor: pressed ? C.brandDark : C.brand })}>
@@ -878,6 +912,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
   say = toast;
   const insets = useSafeAreaInsets();
   const nav = useNavBar(t("settings.title"));
+  const promo = usePromoShare();
   const [page, setPage] = useState(null);
   // Barre en verre dépoli de la sous-page : le titre passe en haut au défilement au lieu de glisser sous l'heure
   const pageNav = useNavBar(page ? t(`settings.menu.${page}`) : "");
@@ -994,7 +1029,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
         {["notes", "how", "sources", "privacy", "limits"].map((id) => <MenuRow key={id} id={id} title={t(`settings.menu.${id}`)} onPress={go(id)} />)}
       </Group>
       <Group title={t("support.t")}>
-        <MenuRow id="share" first title={t("share_app.t")} value={t("share_app.row")} onPress={() => { haptic.tap(); Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {}); }} />
+        <MenuRow id="share" first title={t("share_app.t")} value={t("share_app.row")} onPress={promo.share} />
         {Platform.OS !== "web" ? <MenuRow id="rate" title={t("rate.t")} value={t("rate.row")} onPress={() => { haptic.tap(); rateApp(); }} /> : null}
       </Group>
       <Group title={t("settings.g_links")}>
@@ -1008,6 +1043,7 @@ export default function SettingsScreen({ focus, toast, onTour, onPremium }) {
     {<Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: Animated.add(Animated.multiply(slide, 0.18), Animated.multiply(swipe.active, swipe.dx.interpolate({ inputRange: side > 0 ? [0, Wd] : [-Wd, 0], outputRange: side > 0 ? [0, -0.18] : [-0.18, 0], extrapolate: "clamp" }))) }]} />}
     </Animated.View>
     {pageEl}
+    {promo.host}
     </View>
   );
 }

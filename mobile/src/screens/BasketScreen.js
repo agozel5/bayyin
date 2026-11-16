@@ -1,6 +1,7 @@
 // Panier du mode courses : verdict de chaque produit, note santé moyenne, alertes du profil.
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, ScrollView, Pressable } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NavScroll } from "../components/NavBar";
 import { Txt, Muted, Row, Btn, Skeleton } from "../components/ui";

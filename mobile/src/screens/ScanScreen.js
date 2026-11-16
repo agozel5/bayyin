@@ -2,7 +2,8 @@
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
 import Ramadan from "../components/Ramadan";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
+import { View, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
+import { Text } from "../components/Text";
 import { SvgXml } from "react-native-svg";
 import { Logo } from "../components/Icon";
 import { Tile, Glyph } from "../components/Art";
@@ -130,8 +131,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
       <Row style={{ justifyContent: "space-between" }}>
         <Row gap={10}>
           <View accessible={false} importantForAccessibility="no-hide-descendants"><Logo size={36} /></View>
-          <Text style={{ fontSize: 21, fontWeight: "800", color: C.fg }}>{t("app.name")}</Text>
-          <Text style={{ fontSize: 19, fontWeight: "700", color: C.brand }}>بيّن</Text>
+          <Text style={{ fontSize: 22, fontWeight: "800", letterSpacing: -0.3, color: C.fg }}>{t("app.name")}</Text>
         </Row>
         <Pressable onPress={onGotoProfile} accessibilityRole="button" accessibilityLabel={t("settings.profile")} hitSlop={8}
           style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.surface, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>

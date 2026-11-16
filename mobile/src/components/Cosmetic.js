@@ -1,7 +1,8 @@
 // Cosmétiques : note des ingrédients (liste INCI), adaptée au type de produit (rincé ou laissé, spray, lèvres…).
 // Même méthode et mêmes textes que la version web.
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Pressable, Linking } from "react-native";
+import { Text } from "./Text";
 import { Txt, Muted, Row } from "./ui";
 import { Glyph, Art } from "./Art";
 import { C, R, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, STATUS_COLORS, dir } from "../theme";

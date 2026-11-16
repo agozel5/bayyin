@@ -1,6 +1,7 @@
 // Contrôles communs au style de la version web : titre de page, recherche, pastilles, sélecteur segmenté.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Animated } from "react-native";
+import { View, TextInput, Pressable, ScrollView, Animated } from "react-native";
+import { Text } from "./Text";
 import { Glyph } from "./Art";
 import { C, R, dir, lift, isDark } from "../theme";
 import { haptic, ms } from "../motion";
@@ -24,11 +25,11 @@ export function SearchBox({ value, onChangeText, placeholder, onSubmit, autoFocu
     <Animated.View style={[{ flexDirection: dir().row, alignItems: "center", gap: 10, paddingHorizontal: 16, borderRadius: R.xl, backgroundColor: C.surface, borderWidth: 1.5,
       borderColor: f.interpolate({ inputRange: [0, 1], outputRange: ["transparent", C.brand] }), transform: [{ scale: f.interpolate({ inputRange: [0, 1], outputRange: [1, 1.012] }) }] }, lift(),
       on ? { shadowColor: C.brand, shadowOpacity: isDark() ? 0.35 : 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } } : null]}>
-      <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={20} color={on ? C.brand : C.muted} width={on ? 2.3 : 2} />
+      <View style={{ flexShrink: 0 }}><Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={20} color={on ? C.brand : C.muted} width={on ? 2.3 : 2} /></View>
       <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={C.faint} onSubmitEditing={onSubmit} autoFocus={autoFocus}
         onFocus={() => setOn(true)} onBlur={() => setOn(false)} selectionColor={C.brand}
         returnKeyType="search" autoCorrect={false} maxFontSizeMultiplier={FONT_MAX} accessibilityLabel={placeholder}
-        style={{ flex: 1, paddingVertical: 16, fontSize: 16.5, color: C.fg, textAlign: dir().ta }} />
+        style={{ flex: 1, minWidth: 0, paddingVertical: 16, fontSize: 16.5, color: C.fg, textAlign: dir().ta }} />
       {value ? (
         <Pressable onPress={() => { haptic.tap(); onChangeText(""); }} hitSlop={12} accessibilityRole="button"
           style={({ pressed }) => ({ width: 24, height: 24, borderRadius: 12, backgroundColor: pressed ? C.tint2 : C.tint, alignItems: "center", justifyContent: "center" })}>
@@ -57,8 +58,12 @@ export function Chip({ text, n, on, onPress, icon }) {
   );
 }
 export function ChipRow({ children }) {
+  // De droite à gauche (arabe, ourdou) : la rangée s'ouvre sur son début, à droite
+  const ref = useRef(null);
+  const rtl = dir().rtl;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }}
+    <ScrollView ref={ref} horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} keyboardShouldPersistTaps="handled"
+      onContentSizeChange={() => { if (rtl && ref.current) ref.current.scrollToEnd({ animated: false }); }}
       contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 4, gap: 8, flexDirection: dir().row }}>{children}</ScrollView>
   );
 }

@@ -1,7 +1,8 @@
 // Briques des outils photo (mode voyage, carte de restaurant) et des pages d'outils :
 // en-tête avec retour, carte d'accueil illustrée, choix de la photo, lecture du texte.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Platform, Modal, Animated, Easing, Image } from "react-native";
+import { View, ScrollView, Pressable, Platform, Modal, Animated, Easing, Image } from "react-native";
+import { Text } from "./Text";
 import SafeWebView, { PAGE_BASE } from "./SafeWebView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tile, Glyph } from "./Art";

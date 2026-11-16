@@ -1,7 +1,8 @@
 // Pièces de la fiche produit, au design de la version web : en-tête, bandeau du verdict,
 // fiabilité, chaîne de vérification, étiquette surlignée, points relevés, onglets.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Linking, Animated, Easing, ActivityIndicator } from "react-native";
+import { View, Pressable, Linking, Animated, Easing, ActivityIndicator } from "react-native";
+import { Text } from "./Text";
 import { loadCertified, verifyCertification } from "../../../public/lib/certcheck.js";
 import { longDate } from "../recalls";
 import { ms } from "../motion";

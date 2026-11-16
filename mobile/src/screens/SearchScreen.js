@@ -1,7 +1,8 @@
 // Recherche par nom de produit, marque ou code-barres : même fonctionnement que la version web
 // (aliments et cosmétiques, recherche pendant la frappe, historique d'abord, filtres, recherches récentes).
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
+import { Text } from "../components/Text";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Muted, Message, Row, Txt, Btn, Skeleton, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";

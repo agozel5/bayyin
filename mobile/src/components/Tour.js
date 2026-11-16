@@ -1,7 +1,8 @@
 // Visite guidée : l'écran s'assombrit, l'élément présenté reste éclairé et une carte l'explique.
 // Même parcours que la version web (scan, photo, classements, onglets), mascotte à la fin.
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, useWindowDimensions } from "react-native";
+import { View, Pressable, useWindowDimensions } from "react-native";
+import { Text } from "./Text";
 import Svg, { Path, Rect } from "react-native-svg";
 import { Txt, Muted, FadeIn } from "./ui";
 import { Art, Tile } from "./Art";

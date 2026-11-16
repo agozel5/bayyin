@@ -1,7 +1,8 @@
 // Comparer deux produits côte à côte : halal, note santé, nutriments, additifs, NOVA, profil.
 // La case en vert indique le meilleur des deux.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Animated, Easing } from "react-native";
+import { View, ScrollView, Pressable, Animated, Easing } from "react-native";
+import { Text } from "../components/Text";
 import SubStack from "../components/SubStack";
 import { FadeIn } from "../components/ui";
 import { ms } from "../motion";

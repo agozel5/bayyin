@@ -1,7 +1,8 @@
 // Briques d'interface réutilisées par tous les écrans.
 import { Img } from "./Img";
 import React, { useEffect, useRef } from "react";
-import { View, Text, Pressable, ActivityIndicator, StyleSheet, Animated } from "react-native";
+import { View, Pressable, ActivityIndicator, StyleSheet, Animated } from "react-native";
+import { Text } from "./Text";
 import Icon from "./Icon";
 import { C, R, STATUS_COLORS, GRADE_COLORS, ALERT_COLORS, dir } from "../theme";
 import { t } from "../i18n";
