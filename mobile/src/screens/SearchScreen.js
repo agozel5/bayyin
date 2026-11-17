@@ -1,22 +1,22 @@
 // Recherche par nom de produit, marque ou code-barres : même fonctionnement que la version web
 // (aliments et cosmétiques, recherche pendant la frappe, historique d'abord, filtres, recherches récentes).
 import React, { useEffect, useRef, useState } from "react";
-import { View, Pressable } from "react-native";
+import { View, Pressable, ScrollView } from "react-native";
 import { Text } from "../components/Text";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Muted, Message, Row, Txt, Btn, Skeleton, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
 import EmptyState from "../components/Empty";
 import { PageHead, SearchBox, Chip, Segmented } from "../components/Controls";
-import { ListRow } from "../components/Cards";
+import { ListRow, ProductCard } from "../components/Cards";
 import { Art, Tile, Glyph } from "../components/Art";
-import { C, R, dir, lift } from "../theme";
+import { C, R, dir, lift, isDark } from "../theme";
 import { t, tn, getLang } from "../i18n";
 import { fetchProduct, searchAll } from "../api";
 import { getHistory, getSettings } from "../storage";
 import { errorText, verdictOf, profileOf, kindOf } from "../view";
 import { hasProfile, DICTS } from "../core";
-import { rankByRelevance, suggestTerms } from "../../../public/lib/search.js";
+import { rankByRelevance, suggestTerms, termIn } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
 
 const RECENT = "bayyin:recent_q";
@@ -55,8 +55,18 @@ const AISLES = {
   beauty: ["shampoos", "shower_gels", "deodorants", "toothpastes", "face_creams", "body_creams", "lipsticks", "mascaras", "nail_polishes"],
 };
 const aislesOf = (kind) => (kind === "all" ? [...AISLES.food.slice(0, 6), ...AISLES.beauty.slice(0, 3)] : AISLES[kind]);
-const BRANDS = { food: ["Nutella", "Haribo", "Isla Délice", "Kinder", "Danone"], beauty: ["Nivea", "Garnier", "Maybelline"] };
-const brandsOf = (kind) => (kind === "all" ? [...BRANDS.food, ...BRANDS.beauty.slice(0, 2)] : BRANDS[kind]);
+// Idées de recherche : des produits courants, dans la langue de l'app (cherchés ensuite en français)
+const IDEAS = {
+  food: ["poulet", "boeuf", "agneau", "fromage", "bonbons", "chocolat", "biscuits", "dattes"],
+  beauty: ["shampooing", "déodorant", "dentifrice", "crème solaire", "rouge à lèvres", "parfum"],
+};
+const ideasOf = (kind) => (kind === "all" ? [...IDEAS.food.slice(0, 5), ...IDEAS.beauty.slice(0, 3)] : IDEAS[kind]);
+// Couleur douce derrière l'illustration de chaque rayon
+const AISLE_TINT = {
+  spreads: "#C9873A", chocolates: "#8A5A3C", candies: "#D0486B", biscuits: "#D9A21B", yogurts: "#3F79B5", cheeses: "#E0B12E",
+  crisps: "#E07B2E", sodas: "#C2453B", sausages: "#B5523F", shampoos: "#8A5BD6", shower_gels: "#3FA0C8", deodorants: "#2F9C8A",
+  toothpastes: "#3F79B5", face_creams: "#D88AA5", body_creams: "#C99A6B", lipsticks: "#C23B5A", mascaras: "#4B4F6B", nail_polishes: "#D0486B",
+};
 const SectionTitle = ({ children, right }) => (
   <Row style={{ justifyContent: "space-between" }}>
     <Text accessibilityRole="header" style={{ fontSize: 12.5, fontWeight: "800", color: C.muted, letterSpacing: 0.6, textTransform: "uppercase", textAlign: dir().ta }}>{children}</Text>
@@ -149,6 +159,8 @@ export default function SearchScreen({ onOpen, onScan }) {
   const pick = (s) => { setQ(s); run(s); };
   const open = (code, opts) => { if (state.q) remember(state.q); onOpen(code, opts); }; // une recherche suivie d'un produit ouvert est gardée dans les récentes
   const tips = q.trim().length >= 2 ? suggestTerms(q, getLang()) : [];
+  const seen = getHistory().filter((e) => kind === "all" || kindOf(e.p) === kind).slice(0, 8);
+  const ideas = ideasOf(kind).map((w) => (getLang() === "fr" ? w.charAt(0).toUpperCase() + w.slice(1) : termIn(w, getLang()))).filter(Boolean);
   const changeKind = (k) => { setKind(k); if (q.trim()) run(q, { force: true, k }); };
 
   const withProfile = hasProfile(getSettings().profile);
@@ -183,51 +195,81 @@ export default function SearchScreen({ onOpen, onScan }) {
       <Segmented items={["all", "food", "beauty"].map((k) => [k, t(`kindtab.${k}`)])} value={kind} onChange={changeKind} />
 
       {!q.trim() ? (
-        <View style={{ gap: 20 }}>
+        <View style={{ gap: 22 }}>
+          {/* Recherches récentes : des pastilles à faire défiler, effaçables d'un toucher */}
           {recent.length ? (
             <View style={{ gap: 10 }}>
               <SectionTitle right={<Pressable onPress={() => { setRecent([]); AsyncStorage.setItem(RECENT, "[]").catch(() => {}); }} hitSlop={8} accessibilityRole="button"><Text style={{ color: C.brand, fontWeight: "700", fontSize: 13.5 }}>{t("search.recent_clear")}</Text></Pressable>}>{t("search.recent")}</SectionTitle>
-              <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
-                {recent.slice(0, 5).map((x, i) => (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 8, flexDirection: dir().row }}>
+                {recent.slice(0, 8).map((x) => (
+                  <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button" accessibilityLabel={x}
+                    style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 7, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, backgroundColor: pressed ? C.tint2 : C.surface }, lift()]}>
+                    <Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={15} color={C.faint} />
+                    <Text numberOfLines={1} style={{ maxWidth: 180, fontSize: 14.5, fontWeight: "600", color: C.fg }}>{x}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Vos derniers produits : les rouvrir sans les rechercher */}
+          {seen.length ? (
+            <View style={{ gap: 10 }}>
+              <SectionTitle>{t("home.recent")}</SectionTitle>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 6, gap: 12, flexDirection: dir().row }}>
+                {seen.map((e) => <ProductCard key={e.code} p={e.p} fav={e.fav} onPress={() => onOpen(e.code)} />)}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Rayons : illustration sur un rond coloré, en grille de trois */}
+          <View style={{ gap: 10 }}>
+            <SectionTitle>{t("search.aisles")}</SectionTitle>
+            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
+              {aislesOf(kind).map((id, i) => {
+                const tint = AISLE_TINT[id] || C.brand;
+                return (
+                  <FadeIn key={id + kind} delay={i * 35} distance={12} style={{ flexBasis: "30%", flexGrow: 1, flexDirection: "row" }}>
+                    <Pressable onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
+                      style={({ pressed }) => [{ flex: 1, alignItems: "center", gap: 9, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, overflow: "hidden", transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
+                      <View style={{ position: "absolute", top: -26, width: 120, height: 70, borderRadius: 60, backgroundColor: tint, opacity: isDark() ? 0.16 : 0.1 }} />
+                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: tint + (isDark() ? "33" : "1F"), alignItems: "center", justifyContent: "center" }}><Art xml={artByKey(`r:${id}`)} size={38} /></View>
+                      <Text numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16, fontWeight: "700", color: C.fg, textAlign: "center" }}>{t(`rank.cat.${id}`)}</Text>
+                    </Pressable>
+                  </FadeIn>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Idées de recherche : produits courants, sans marque */}
+          {ideas.length ? (
+            <View style={{ gap: 10 }}>
+              <SectionTitle>{t("search.ideas")}</SectionTitle>
+              <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
+                {ideas.map((x) => (
                   <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button"
-                    style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: pressed ? C.tint : "transparent", borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line })}>
-                    <Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={18} color={C.faint} />
-                    <Text numberOfLines={1} style={{ flex: 1, fontSize: 15.5, color: C.fg, textAlign: dir().ta }}>{x}</Text>
-                    <View style={{ transform: [{ rotate: dir().rtl ? "45deg" : "-45deg" }] }}><Glyph paths='<path d="M5 12h14M13 6l6 6-6 6"/>' size={16} color={C.faint} /></View>
+                    style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 6, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, borderWidth: 1, borderColor: C.line, backgroundColor: pressed ? C.tint : "transparent" })}>
+                    <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={14} color={C.brand} />
+                    <Text style={{ fontSize: 14.5, fontWeight: "600", color: C.fg }}>{x}</Text>
                   </Pressable>
                 ))}
               </View>
             </View>
           ) : null}
-          <View style={{ gap: 10 }}>
-            <SectionTitle>{t("search.aisles")}</SectionTitle>
-            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
-              {aislesOf(kind).map((id, i) => (
-                <FadeIn key={id + kind} delay={i * 35} distance={12} style={{ flexBasis: "30%", flexGrow: 1, flexDirection: "row" }}>
-                <Pressable onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
-                  style={({ pressed }) => [{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
-                  <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={artByKey(`r:${id}`)} size={38} /></View>
-                  <Text numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16, fontWeight: "700", color: C.fg, textAlign: "center" }}>{t(`rank.cat.${id}`)}</Text>
-                </Pressable>
-                </FadeIn>
-              ))}
-            </View>
-          </View>
-          <View style={{ gap: 10 }}>
-            <SectionTitle>{t("search.brands")}</SectionTitle>
-            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-              {brandsOf(kind).map((x) => <Chip key={x} text={x} onPress={() => pick(x)} />)}
-            </View>
-          </View>
-          <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: dir().row, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.brandDark : C.brand, alignItems: "center", gap: 12 })}>
-            <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" }}>
+
+          {/* Rappel discret : le code-barres donne la bonne fiche */}
+          <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => [{ flexDirection: dir().row, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.brand + "40" }, lift()]}>
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.brand, alignItems: "center", justifyContent: "center" }}>
               <Glyph paths='<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M16 8v8"/>' size={23} color="#fff" />
             </View>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15.5, textAlign: dir().ta }}>{t("search.tip_t")}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, lineHeight: 19, textAlign: dir().ta }}>{t("search.tip_p")}</Text>
+              <Text style={{ color: C.fg, fontWeight: "800", fontSize: 15, textAlign: dir().ta }}>{t("search.tip_t")}</Text>
+              <Text style={{ color: C.muted, fontSize: 13, lineHeight: 18, textAlign: dir().ta }}>{t("search.tip_p")}</Text>
             </View>
-            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color="#fff" /></View>
+            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color={C.faint} /></View>
           </Pressable>
         </View>
       ) : null}
@@ -256,7 +298,10 @@ export default function SearchScreen({ onOpen, onScan }) {
           {state.foodFailed ? <Message title={t("search.food_failed.t")} text={t("search.food_failed.p")}><Btn title={t("msg.retry")} onPress={() => run(q, { force: true })} /></Message> : null}
           {total ? (
             <>
-              <Muted style={{ fontSize: 13.5 }}>{tn("search.results", total)}{state.alt ? ` · ${t("search.alt", { q: state.alt })}` : ""}</Muted>
+              <View style={{ gap: 2 }}>
+                <Text style={{ fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase", textAlign: dir().ta }}>{tn("search.results", total)}</Text>
+                {state.alt ? <Muted style={{ fontSize: 12.5 }}>{t("search.alt", { q: state.alt })}</Muted> : null}
+              </View>
               {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={open} /> : null}
               {(() => {
                 // Le groupe qui correspond le mieux à la recherche passe en premier (« nivea » : cosmétiques d'abord)

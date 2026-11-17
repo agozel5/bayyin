@@ -272,3 +272,10 @@ export function suggestTerms(q, lang = "fr", max = 5) {
   }
   return out;
 }
+
+/** Forme d'un mot courant dans une langue (« poulet » → « Hähnchen » en allemand), ou null s'il n'y est pas. */
+export function termIn(frWord, lang = "fr") {
+  const e = LEXICON.find((x) => x.fr[0] === frWord);
+  const form = e && (e[lang] || [])[0];
+  return form ? form.charAt(0).toLocaleUpperCase(lang) + form.slice(1) : null;
+}

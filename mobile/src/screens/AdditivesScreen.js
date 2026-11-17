@@ -1,7 +1,7 @@
 // Guide des additifs : codes E (origine, halal selon vos réglages, risque santé) et ingrédients surveillés.
 // Même présentation que la version web.
 import React, { useMemo, useState } from "react";
-import { View, FlatList, Pressable, ScrollView } from "react-native";
+import { View, FlatList, Pressable, ScrollView, Modal } from "react-native";
 import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted } from "../components/ui";
@@ -9,11 +9,10 @@ import { useNavBar } from "../components/NavBar";
 import { PageHead, SearchBox, Chip, ChipRow, Segmented } from "../components/Controls";
 import { AdditiveRow, additiveRow } from "../components/Additives";
 import { Pill2 } from "../components/SheetParts";
-import { Glyph, Tile } from "../components/Art";
-import { CountUp } from "../components/Fx";
+import { Glyph } from "../components/Art";
 import { Collapse, Chevron } from "../components/Reveal";
 import { haptic } from "../motion";
-import { C, R, SEV_COLORS, dir, lift, isDark } from "../theme";
+import { C, R, SEV_COLORS, dir, lift } from "../theme";
 import { t, tn, getLang } from "../i18n";
 import { TEXT_RULES, TOPIC_OF, SEVERITY_OF, BEAUTY_RULES } from "../core";
 import { getSettings, getHistory } from "../storage";
@@ -21,14 +20,6 @@ import DB from "../../../public/data/additives.json";
 
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const PAGE = 60;
-// Compteurs de la vue d'ensemble : [filtre, couleur, icône]
-const TILES = [
-  ["halal", "#D9820F", '<path d="M12 3l7 3v5.5c0 4.3-2.9 7.3-7 9.5-4.1-2.2-7-5.2-7-9.5V6z"/><path d="M12 8.500v4M12 15.500v.1"/>'],
-  ["health", "#D0486B", '<path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z"/>'],
-  ["animal", "#8A5BD6", '<circle cx="7" cy="10" r="1.8"/><circle cx="11" cy="6.5" r="1.8"/><circle cx="16" cy="7.5" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/><path d="M8.5 17.500c0-2.5 2-4.5 4.2-4.500s4.3 2 4.3 4.500c0 1.4-1.1 2-2.3 2-.9 0-1.4-.4-2-.4s-1.2.4-2 .4c-1.2 0-2.2-.6-2.2-2z"/>'],
-  ["mine", "#14805A", '<path d="M5 8h14l-1.5 11a1 1 0 0 1-1 .9H7.500a1 1 0 0 1-1-.9z"/><path d="M9 8l3-4 3 4"/>'],
-];
-const ALL_TILE = ["all", "#3F79B5", '<path d="M8 6h12M8 12h12M8 18h12M4 6h.1M4 12h.1M4 18h.1"/>'];
 
 // Ingrédients surveillés pour le halal (porc, alcool, gélatine…), selon vos réglages
 function ingredientItems() {
@@ -56,7 +47,8 @@ export default function AdditivesScreen({ onGotoSettings }) {
   const [fn, setFn] = useState("");
   const [q, setQ] = useState("");
   const [shown, setShown] = useState(PAGE);
-    const [ingrF, setIngrF] = useState("all");
+  const [fnOpen, setFnOpen] = useState(false);
+  const [ingrF, setIngrF] = useState("all");
   const lang = getLang();
   const rows = useMemo(() => {
     const mine = myCounts();
@@ -86,42 +78,44 @@ export default function AdditivesScreen({ onGotoSettings }) {
       <Segmented items={[["codes", t("add.mode_e")], ["ingr", t("add.mode_ingr")]]} value={mode} onChange={(m) => { setMode(m); setShown(PAGE); }} />
       <SearchBox value={q} onChangeText={(v) => { setQ(v); setShown(PAGE); }} placeholder={t("add.placeholder")} />
       {mode === "codes" ? (
-        <View style={{ gap: 12 }}>
-          {/* Vue d'ensemble : quatre compteurs, chacun filtre la liste (un second toucher revient à « Tous ») */}
-          <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
-            {TILES.filter(([id]) => id !== "mine" || rows.some((r) => r.mine)).concat(rows.some((r) => r.mine) ? [] : [ALL_TILE]).map(([id, color, paths]) => {
-              const on = filter === id && id !== "all";
-              return (
-                <Pressable key={id} onPress={() => { haptic.tap(); setFilter(on ? "all" : id); setShown(PAGE); }} accessibilityRole="button" accessibilityState={{ selected: on }}
-                  accessibilityLabel={`${t(`add.ef.${id}`)}, ${rows.filter(FILTERS[id]).length}`}
-                  style={({ pressed }) => [{ flexBasis: "46%", flexGrow: 1, padding: 12, gap: 8, borderRadius: R.lg, borderWidth: 1.5, borderColor: on ? color : "transparent", backgroundColor: on ? color + (isDark() ? "26" : "14") : C.surface, transform: [{ scale: pressed ? 0.97 : 1 }] }, on ? null : lift()]}>
-                  <View style={{ flexDirection: dir().row, alignItems: "center", justifyContent: "space-between" }}>
-                    <Tile color={color} paths={paths} size={34} />
-                    <CountUp to={rows.filter(FILTERS[id]).length} duration={700} maxFontSizeMultiplier={1.2} style={{ fontSize: 26, fontWeight: "900", letterSpacing: -0.6, color: C.fg, fontVariant: ["tabular-nums"] }} />
-                  </View>
-                  <Text numberOfLines={2} style={{ fontSize: 13, lineHeight: 17, fontWeight: "700", color: on ? C.fg : C.muted, textAlign: dir().ta }}>{t(`add.ef.${id}`)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          {/* Fonctions : une rangée de pastilles à faire défiler */}
+        <View style={{ gap: 6 }}>
           <ChipRow>
-            <Chip text={t("add.fn_all")} on={!fn} onPress={() => { setFn(""); setShown(PAGE); }} />
-            {fns.map((k) => <Chip key={k} text={t(`fn.${k}`)} n={fnCount.get(k)} on={fn === k} onPress={() => { setFn(fn === k ? "" : k); setShown(PAGE); }} />)}
+            {Object.keys(FILTERS).filter((id) => id !== "mine" || rows.some((r) => r.mine)).map((id) => (
+              <Chip key={id} text={t(`add.ef.${id}`)} n={rows.filter(FILTERS[id]).length} on={filter === id} onPress={() => { setFilter(id); setShown(PAGE); }} />
+            ))}
           </ChipRow>
-          <View style={{ flexDirection: dir().row, alignItems: "center", gap: 8, paddingHorizontal: 4 }}>
-            <Text style={{ fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>{tn("add.count", list.length)}</Text>
-            {filter !== "all" || fn ? (
-              <Pressable onPress={() => { haptic.tap(); setFilter("all"); setFn(""); setShown(PAGE); }} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("add.ef.all")}
-                style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 99, backgroundColor: C.tint2 }}>
-                <Text style={{ fontSize: 12, fontWeight: "800", color: C.fg }}>{t("add.ef.all")}</Text>
-                <Glyph name="cross" size={11} color={C.muted} />
-              </Pressable>
-            ) : null}
-          </View>
+          {/* La fonction se choisit dans un menu, comme sur le site */}
+          <Pressable onPress={() => setFnOpen(true)} accessibilityRole="button" accessibilityLabel={`${t("add.fn")} ${fn ? t(`fn.${fn}`) : t("add.fn_all")}`}
+            style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 8, height: 44, paddingHorizontal: 14, borderRadius: R.md, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+            <Text style={{ color: C.muted, fontSize: 14 }}>{t("add.fn")}</Text>
+            <Text numberOfLines={1} style={{ flex: 1, color: C.fg, fontWeight: "700", fontSize: 14.5, textAlign: dir().ta }}>{fn ? t(`fn.${fn}`) : t("add.fn_all")}</Text>
+            <View style={{ transform: [{ rotate: "90deg" }] }}><Glyph name="chev" size={16} color={C.muted} /></View>
+          </Pressable>
+          <Muted style={{ fontSize: 13.5, marginTop: 4 }}>{tn("add.count", list.length)}</Muted>
         </View>
       ) : null}
     </View>
+  );
+
+  const card = { backgroundColor: C.surface, paddingHorizontal: 14, ...lift() };
+  const fnSheet = (
+    <Modal visible={fnOpen} transparent animationType="slide" onRequestClose={() => setFnOpen(false)}>
+      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }} onPress={() => setFnOpen(false)} accessibilityRole="button" accessibilityLabel={t("sheet.back")} />
+      <View style={{ maxHeight: "70%", backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 10, paddingBottom: insets.bottom + 10 }}>
+        <View style={{ alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: C.tint2, marginBottom: 8 }} />
+        <Text style={{ fontSize: 17, fontWeight: "800", color: C.fg, paddingHorizontal: 20, paddingBottom: 6, textAlign: dir().ta }}>{t("add.fn")}</Text>
+        <ScrollView>
+          {["", ...fns].map((k) => (
+            <Pressable key={k || "all"} onPress={() => { haptic.tap(); setFn(k); setShown(PAGE); setFnOpen(false); }} accessibilityRole="radio" accessibilityState={{ checked: fn === k }}
+              style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 10, paddingHorizontal: 20, paddingVertical: 13, backgroundColor: pressed ? C.tint : "transparent" })}>
+              <Text style={{ flex: 1, fontSize: 15.5, fontWeight: fn === k ? "800" : "500", color: C.fg, textAlign: dir().ta }}>{k ? t(`fn.${k}`) : t("add.fn_all")}</Text>
+              {k ? <Text style={{ color: C.muted, fontSize: 13 }}>{fnCount.get(k)}</Text> : null}
+              {fn === k ? <Glyph name="check" size={18} color={C.brand} width={2.6} /> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
   );
 
   if (mode === "ingr") {
@@ -186,11 +180,16 @@ export default function AdditivesScreen({ onGotoSettings }) {
   const data = list.slice(0, shown);
   return (
     <>
+    {fnSheet}
     <View style={{ flex: 1, backgroundColor: C.bg }}>
     <FlatList {...nav.scroll} data={data} keyExtractor={(r) => r.code} ListHeaderComponent={header} initialNumToRender={20} windowSize={9}
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120 }}
       style={{ backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
-      renderItem={({ item: r }) => <AdditiveRow card r={r} onGotoSettings={onGotoSettings} />}
+      renderItem={({ item: r, index }) => (
+        <View style={[card, index === 0 ? { borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg, paddingTop: 2 } : null, index === data.length - 1 ? { borderBottomLeftRadius: R.lg, borderBottomRightRadius: R.lg, paddingBottom: 2 } : null]}>
+          <AdditiveRow r={r} first={index === 0} onGotoSettings={onGotoSettings} />
+        </View>
+      )}
       ListEmptyComponent={<View style={{ alignItems: "center", gap: 6, paddingVertical: 30 }}><Text style={{ fontWeight: "800", fontSize: 17, color: C.fg }}>{t("add.empty.t")}</Text><Muted style={{ textAlign: "center" }}>{t("add.e_none")}</Muted></View>}
       ListFooterComponent={list.length > shown ? (
         <Pressable onPress={() => setShown(shown + PAGE)} accessibilityRole="button" style={{ marginTop: 14, paddingVertical: 14, borderRadius: R.md, backgroundColor: C.tint2, alignItems: "center" }}>

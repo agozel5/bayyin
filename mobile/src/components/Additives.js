@@ -88,7 +88,8 @@ function RiskScale({ level }) {
   );
 }
 
-export function AdditiveRow({ r, first, onGotoSettings, card }) {
+export function AdditiveRow({ r, first, onGotoSettings }) {
+  const card = false; // liste classique (une carte par additif abandonnée à la demande)
   const [openR, setOpen] = useState(false);
   const fn = r.fns.map((k) => t(`fn.${k}`)).join(", ");
   const bad = r.halal.level === "haram" || r.halal.level === "mashbouh";
@@ -99,7 +100,8 @@ export function AdditiveRow({ r, first, onGotoSettings, card }) {
   const wrap = card
     ? [{ backgroundColor: C.surface, borderRadius: R.lg, paddingHorizontal: 12, marginBottom: 8, borderWidth: openR ? 1.5 : 0, borderColor: tone[0] + "55" }, openR ? null : lift()]
     : { borderTopWidth: first || openR ? 0 : 0.5, borderTopColor: C.line, borderRadius: openR ? R.md : 0, backgroundColor: openR ? C.tint : "transparent", marginHorizontal: openR ? -8 : 0, paddingHorizontal: openR ? 8 : 0, marginVertical: openR ? 4 : 0 };
-  const box = card ? { padding: 12, borderRadius: R.md, backgroundColor: C.tint } : null;
+  // Détail en quatre blocs séparés : Fonction et Origine côte à côte, puis Halal, puis Santé
+  const box = { padding: 12, borderRadius: R.md, backgroundColor: C.surface, borderWidth: 0.5, borderColor: C.line };
   return (
     <View style={wrap}>
       <Pressable onPress={() => { haptic.tap(); setOpen(!openR); }} accessibilityRole="button" accessibilityState={{ expanded: openR }}
@@ -125,10 +127,10 @@ export function AdditiveRow({ r, first, onGotoSettings, card }) {
         <Chevron open={openR} />
       </Pressable>
       {openR ? (
-        <FadeIn distance={-6} style={{ gap: card ? 8 : 12, paddingBottom: 14, paddingHorizontal: card ? 0 : 4 }}>
-          <View style={card ? { flexDirection: dir().row, gap: 8 } : { gap: 12 }}>
-            {fn ? <View style={[box, card ? { flex: 1 } : null]}><Field title={t("add.e_fn")}><Txt style={{ fontSize: 15, fontWeight: card ? "700" : "400" }}>{fn}</Txt></Field></View> : null}
-            <View style={[box, card ? { flex: 1 } : null]}><Field title={t("add.e_origin")}><Txt style={{ fontSize: 15, fontWeight: card ? "700" : "400" }}>{t(`add.origin.${r.origin}`)}</Txt></Field></View>
+        <FadeIn distance={-6} style={{ gap: 8, paddingBottom: 12, paddingHorizontal: 0 }}>
+          <View style={{ flexDirection: dir().row, gap: 8 }}>
+            {fn ? <View style={[box, { flex: 1 }]}><Field title={t("add.e_fn")}><Txt style={{ fontSize: 15, fontWeight: "700" }}>{fn}</Txt></Field></View> : null}
+            <View style={[box, { flex: 1 }]}><Field title={t("add.e_origin")}><Txt style={{ fontSize: 15, fontWeight: "700" }}>{t(`add.origin.${r.origin}`)}</Txt></Field></View>
           </View>
           <View style={box}>
           <Field title={t("add.e_halal")}>
