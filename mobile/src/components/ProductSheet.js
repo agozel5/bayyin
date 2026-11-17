@@ -14,7 +14,7 @@ import { isDark, C, R, ALERT_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NO
 import { t, tn } from "../i18n";
 import { SOURCE_BY_ID, RISK_SOURCES, isMedicineCode } from "../core";
 import { fetchProduct, fetchAlternatives } from "../api";
-import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../storage";
+import { getSettings, getEntry, addToHistory, toggleFav, subscribe, getHistory } from "../storage";
 import { verdictOf, nameOf, scoreOf, S, isBarcode, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
 import { Glyph, Art, Tile } from "./Art";
@@ -424,6 +424,22 @@ function NovaScale({ group }) {
   );
 }
 
+// Signaler une erreur : une carte visible, pas un lien perdu en bas de fiche
+function ReportCard({ url }) {
+  return (
+    <Panel>
+      <Row gap={12} style={{ alignItems: "center" }}>
+        <Tile color="#E0423A" paths='<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>' size={38} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Txt style={{ fontWeight: "800", fontSize: 15.5 }}>{t("detail.report_t")}</Txt>
+          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("detail.report_p")}</Muted>
+        </View>
+      </Row>
+      <Btn title={t("detail.report_btn")} kind="soft" onPress={() => open(url)} />
+    </Panel>
+  );
+}
+
 function LinkRow({ text, url, muted = false }) {
   return (
     <Pressable onPress={() => open(url)} accessibilityRole="link" style={{ paddingVertical: 8 }}>
@@ -443,6 +459,7 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
   // Signaler une erreur : par e-mail (masqué tant qu'aucune adresse de contact n'est réglée)
   const rv = { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" };
   const report = isBarcode(p.code) ? mailto(t("report.title", rv), t("report.body", rv)) : null;
+  const altFirst = v.status === "haram" || v.status === "mashbouh";
   const notes = [...(p.local ? [t(p.raw && p.raw.ocr_from === "off" ? "offocr.note" : "detail.local")] : []), ...v.notes.map(noteText)];
   const halal = (
     <Panel>
@@ -488,23 +505,26 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
       <FadeIn><Top2 p={p} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
       <RecallBox p={p} />
-      {isBarcode(p.code) ? <RecipeBox code={p.code} /> : null}
+      {isBarcode(p.code) ? <RecipeBox code={p.code} where="top" /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
       {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
+      {isBarcode(p.code) ? <RecipeBox code={p.code} where="below" /> : null}
     </View>,
     <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>
       <SheetTabs tabs={tabs} cur={cur} onTab={(x) => { setTab(x); onTabChange && onTabChange(); }} />
     </View>,
     <View key="body" style={{ gap: 14 }}>
+      {/* Douteux ou haram : les alternatives halal passent avant tout le reste */}
+      {!p.local && food && altFirst ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
-      {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {!p.local && food && !altFirst ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {report ? <ReportCard url={report} /> : null}
       <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
         ) : p.offUrl ? (
           <LinkRow text={t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")} url={p.offUrl} />
         ) : null}
-        {report ? <LinkRow text={t("detail.report")} url={report} muted /> : null}
       </Panel>
     </View>,
   ];
@@ -590,6 +610,7 @@ function FavStar({ fav }) {
 
 export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
   const insets = useSafeAreaInsets();
+  const todayN = (() => { const d0 = new Date().setHours(0, 0, 0, 0); return getHistory().filter((e) => e.at >= d0).length; })(); // compteur du jour, après un scan
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
   );
@@ -734,7 +755,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
           isMedicineCode(code) ? (
             <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.med_notfound", { code })} />
           ) : (
-            <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })} action={t("detail.photo_ingredients")} onAction={() => onOcr(code)} />
+            <EmptyState pose="search" title={t("msg.notfound.t")} text={`${t("notfound.lead")}\n${code}`} action={t("detail.photo_ingredients")} onAction={() => onOcr(code)} />
           )
         ) : state.error ? (
           <Message title={t("msg.load_error.t")} text={errorText(state.error)}>
@@ -756,7 +777,8 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
         </View>
       ) : null}
       {fromScan ? (
-        <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.bg }}>
+        <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.bg, gap: 8 }}>
+          {todayN > 1 ? <Muted style={{ fontSize: 13, textAlign: "center" }}>{tn("sheet.today", todayN)}</Muted> : null}
           <Btn title={t("sheet.scan_again")} icon="scan" onPress={onScanAgain} />
         </View>
       ) : null}

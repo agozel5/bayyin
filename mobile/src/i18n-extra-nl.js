@@ -1,5 +1,17 @@
 // Textes propres à l'app native : voir i18n-extra.js
 export default {
+  "notfound.lead": "Nog niet in de database. Fotografeer de ingrediëntenlijst: Bayyin leest ze en geeft meteen een oordeel.",
+  "add.sub": "E-nummers (E330, E471…): functie, herkomst, halal en gezondheid.",
+  "sheet.today_other": "Vandaag {n} producten gecontroleerd",
+  "sheet.today_one": "Vandaag 1 product gecontroleerd",
+  "detail.report_btn": "Fout melden",
+  "detail.report_p": "Laat het ons weten: elke melding wordt nagekeken en de productpagina verbeterd.",
+  "detail.report_t": "Lijkt een oordeel niet te kloppen?",
+  "conf.school_p": "Uw rechtsschool ({s}) beslist waar geleerden van mening verschillen (gelatine, aroma's, derivaten…). U kunt die wijzigen in Instellingen.",
+  "bilan.cert_other": "waarvan {n} gecertificeerd",
+  "bilan.cert_one": "waarvan 1 gecertificeerd",
+  "bilan.k_halal2": "halal of waarschijnlijk",
+  "search.placeholder": "Melk, kip, shampoo of streepjescode…",
   "scan.step.prep": "Foto voorbereiden",
   "menu.step.read": "Gerechten lezen",
   "menu.step.dishes": "Zoeken naar varkensvlees, alcohol en gelatine",

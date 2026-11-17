@@ -1,5 +1,17 @@
 // Textes propres à l'app native : voir i18n-extra.js
 export default {
+  "notfound.lead": "Non ancora nel database. Fotografate la lista degli ingredienti: Bayyin la legge e vi dà subito un verdetto.",
+  "add.sub": "I codici E (E330, E471…): funzione, origine, halal e salute.",
+  "sheet.today_other": "{n} prodotti verificati oggi",
+  "sheet.today_one": "1 prodotto verificato oggi",
+  "detail.report_btn": "Segnala un errore",
+  "detail.report_p": "Ditecelo: ogni segnalazione viene verificata e la scheda corretta.",
+  "detail.report_t": "Un verdetto vi sembra sbagliato?",
+  "conf.school_p": "La vostra scuola ({s}) decide i casi in cui i dotti non sono d'accordo (gelatina, aromi, derivati…). Potete cambiarla nelle Impostazioni.",
+  "bilan.cert_other": "di cui {n} certificati",
+  "bilan.cert_one": "di cui 1 certificato",
+  "bilan.k_halal2": "halal o probabile",
+  "search.placeholder": "Latte, pollo, shampoo o codice a barre…",
   "scan.step.prep": "Preparazione della foto",
   "menu.step.read": "Lettura dei piatti",
   "menu.step.dishes": "Ricerca di maiale, alcol e gelatina",

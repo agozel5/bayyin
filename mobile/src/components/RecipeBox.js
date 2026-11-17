@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { View, Pressable } from "react-native";
 import { Text } from "./Text";
 import { Txt, Muted, Row } from "./ui";
-import { Tile } from "./Art";
+import { Tile, Glyph } from "./Art";
 import { C, R, STATUS_COLORS, dir, lift } from "../theme";
 import { t, locale } from "../i18n";
 import { haptic } from "../motion";
@@ -13,16 +13,19 @@ import { changeFor, markSeen, onChanges, loadChanges } from "../recipewatch";
 import { worse } from "../../../public/lib/recipe.js";
 import { TOOL_ICONS } from "./ToolKit";
 
-export default function RecipeBox({ code }) {
+export default function RecipeBox({ code, where = "top" }) {
   const [c, setC] = useState(() => changeFor(code));
   useEffect(() => {
     loadChanges().then(() => setC(changeFor(code)));
     return onChanges(() => setC(changeFor(code)));
   }, [code]);
   useEffect(() => { if (c && !c.seen) { haptic.warn(); markSeen([code]); } }, [c && c.at]);
-  const [open, setOpen] = useState(true);
+  const [openS, setOpen] = useState(null);
   if (!c) return null;
   const bad = worse(c.before, c.after);
+  // Pire qu'avant : en haut de la fiche, ouvert. Sinon : sous le verdict, replié (un toucher pour voir le détail)
+  if ((where === "top") !== bad) return null;
+  const open = openS == null ? bad : openS;
   const [fg, bg] = bad ? STATUS_COLORS.mashbouh : STATUS_COLORS.inconnu;
   const date = new Date(c.at).toLocaleDateString(locale(), { day: "numeric", month: "long" });
   const list = (k, items, color) => (items.length ? (
@@ -42,6 +45,7 @@ export default function RecipeBox({ code }) {
             <Txt style={{ color: bad ? fg : C.fg, fontWeight: "800", fontSize: 17 }}>{t("recipe.t")}</Txt>
             <Muted style={{ fontSize: 13 }}>{t("recipe.date", { d: date })}</Muted>
           </View>
+          <View style={{ transform: [{ rotate: open ? (dir().rtl ? "-90deg" : "90deg") : "0deg" }] }}><Glyph name="chev" size={18} color={C.faint} /></View>
         </Row>
       </Pressable>
       {open ? (
@@ -55,6 +59,7 @@ export default function RecipeBox({ code }) {
             </Row>
           ) : <Muted style={{ fontSize: 14 }}>{t("recipe.same_verdict", { s: S(c.after, "short") })}</Muted>}
           {list("recipe.added", [...c.added, ...c.addedE], STATUS_COLORS.mashbouh[0])}
+          {![...c.added, ...c.addedE, ...c.removed, ...c.removedE].length ? <Muted style={{ fontSize: 14 }}>{t("recipe.note")}</Muted> : null}
           {list("recipe.removed", [...c.removed, ...c.removedE], C.muted)}
           <Muted style={{ fontSize: 12.5, lineHeight: 18 }}>{t("recipe.note")}</Muted>
         </View>

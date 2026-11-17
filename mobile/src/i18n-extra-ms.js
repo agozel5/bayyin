@@ -1,5 +1,17 @@
 // Textes propres à l'app native : voir i18n-extra.js
 export default {
+  "notfound.lead": "Belum ada dalam pangkalan data. Ambil gambar senarai ramuan: Bayyin membacanya dan terus memberi keputusan.",
+  "add.sub": "Kod E (E330, E471…): fungsi, asal, halal dan kesihatan.",
+  "sheet.today_other": "{n} produk disemak hari ini",
+  "sheet.today_one": "1 produk disemak hari ini",
+  "detail.report_btn": "Laporkan kesilapan",
+  "detail.report_p": "Beritahu kami: setiap laporan disemak dan halaman produk dibetulkan.",
+  "detail.report_t": "Keputusan nampak salah?",
+  "conf.school_p": "Mazhab anda ({s}) menentukan perkara yang diperselisihkan ulama (gelatin, perisa, terbitan…). Anda boleh menukarnya dalam Tetapan.",
+  "bilan.cert_other": "{n} daripadanya disahkan",
+  "bilan.cert_one": "1 daripadanya disahkan",
+  "bilan.k_halal2": "halal atau mungkin halal",
+  "search.placeholder": "Susu, ayam, syampu atau kod bar…",
   "scan.step.prep": "Menyediakan foto",
   "menu.step.read": "Membaca hidangan",
   "menu.step.dishes": "Mencari babi, alkohol dan gelatin",

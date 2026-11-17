@@ -202,7 +202,8 @@ export function VerdictHero({ p, v, scanned }) {
 
 // ---------- fiabilité du verdict ----------
 export function Confidence({ p, v }) {
-  const [openC, setOpen] = useState(false);
+  // Ouvert d'emblée quand le verdict n'est pas certifié : on voit tout de suite ce qui a été vérifié
+  const [openC, setOpen] = useState(v.status !== "halal_certifie");
   const c = verdictConfidence(p, v);
   const bars = { high: 3, medium: 2, low: 1 }[c.level];
   const col = { high: C.cert, medium: C.doubt, low: C.haram }[c.level];
@@ -225,6 +226,7 @@ export function Confidence({ p, v }) {
             </Row>
           ))}
           <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t(`conf.${c.level}.p`)}</Muted>
+          {kindOf(p) === "food" ? <Muted style={{ fontSize: 12.5, lineHeight: 18 }}>{t("conf.school_p", { s: t(`school.${getSettings().school}`) })}</Muted> : null}
         </View>
       ) : null}
     </View>

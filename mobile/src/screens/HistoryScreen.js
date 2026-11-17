@@ -90,8 +90,8 @@ function BilanHero({ counts, total, okShare, label, delta, period, setPeriod }) 
               {Math.round(okShare * k)}<Text style={{ fontSize: 26, fontWeight: "800", letterSpacing: 0 }}> %</Text>
             </Text>
             <View style={{ flex: 1, paddingBottom: 7, gap: 1 }}>
-              <Text numberOfLines={1} style={{ fontSize: 19, fontWeight: "800", color: "#BFEBD6", textAlign: dir().ta }}>{t("bilan.k_halal")}</Text>
-              <Text numberOfLines={2} style={{ fontSize: 13.5, color: "rgba(255,255,255,0.86)", textAlign: dir().ta }}>{total} {t(total === 1 ? "history.count_one" : "history.count_other")}</Text>
+              <Text numberOfLines={2} style={{ fontSize: 17, lineHeight: 21, fontWeight: "800", color: "#BFEBD6", textAlign: dir().ta }}>{t("bilan.k_halal2")}</Text>
+              <Text numberOfLines={2} style={{ fontSize: 13, color: "rgba(255,255,255,0.86)", textAlign: dir().ta }}>{total} {t(total === 1 ? "history.count_one" : "history.count_other")}{counts.halal_certifie ? ` · ${tn("bilan.cert", counts.halal_certifie)}` : ""}</Text>
             </View>
           </View>
           <View style={{ height: 10, borderRadius: 5, backgroundColor: "rgba(255,255,255,0.16)", overflow: "hidden", direction: "ltr" }}>

@@ -1,5 +1,17 @@
 // Textes propres à l'app native : voir i18n-extra.js
 export default {
+  "notfound.lead": "Noch nicht in der Datenbank. Fotografieren Sie die Zutatenliste: Bayyin liest sie und gibt sofort ein Urteil.",
+  "add.sub": "E-Nummern (E330, E471…): Funktion, Herkunft, Halal und Gesundheit.",
+  "sheet.today_other": "Heute {n} Produkte geprüft",
+  "sheet.today_one": "Heute 1 Produkt geprüft",
+  "detail.report_btn": "Fehler melden",
+  "detail.report_p": "Sagen Sie es uns: Jede Meldung wird geprüft und die Produktseite korrigiert.",
+  "detail.report_t": "Wirkt ein Urteil falsch?",
+  "conf.school_p": "Ihre Rechtsschule ({s}) entscheidet die Fälle, in denen Gelehrte uneins sind (Gelatine, Aromen, Derivate…). Sie können sie in den Einstellungen ändern.",
+  "bilan.cert_other": "davon {n} zertifiziert",
+  "bilan.cert_one": "davon 1 zertifiziert",
+  "bilan.k_halal2": "halal oder wahrscheinlich",
+  "search.placeholder": "Milch, Hähnchen, Shampoo oder Barcode…",
   "scan.step.prep": "Foto wird vorbereitet",
   "menu.step.read": "Gerichte werden gelesen",
   "menu.step.dishes": "Suche nach Schwein, Alkohol und Gelatine",

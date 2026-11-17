@@ -46,9 +46,11 @@ export function Thumb({ p, size = 56, radius = 14 }) {
     const th = p.raw && p.raw.th;
     const waiting = !th && art && !loaded.has(p.image); // le dessin du rayon le temps que la photo arrive
     return (
-      <View style={{ width: size, height: size }}>
+      <View style={{ width: size, height: size, borderRadius: radius, overflow: "hidden", backgroundColor: "#fff" }}>
+        {/* Grande vignette : la photo floutée remplit le fond, plus de bandes blanches autour d'une photo étroite */}
+        {size >= 80 ? <Img uri={p.image} fit="cover" blur={22} transition={0} style={{ position: "absolute", top: -12, left: -12, width: size + 24, height: size + 24, opacity: 0.55 }} /> : null}
         <Img uri={p.image} thumb={th} onLoad={() => { if (!loaded.has(p.image)) { loaded.add(p.image); setTick((n) => n + 1); } }} onError={() => { broken.add(p.image); setTick((n) => n + 1); }}
-          style={{ width: size, height: size, borderRadius: radius, backgroundColor: "#fff" }} />
+          style={{ width: size, height: size, borderRadius: radius, backgroundColor: size >= 80 ? "transparent" : "#fff" }} />
         {waiting ? (
           <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, width: size, height: size, borderRadius: radius, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}>
             <Art xml={art} size={Math.round(size * 0.62)} />
