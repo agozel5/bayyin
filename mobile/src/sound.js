@@ -8,6 +8,9 @@ function init() {
   if (ready) return player;
   ready = true;
   try {
+    // Le module natif n'existe que dans les builds récents : sans lui, on ne charge rien (pas de plantage).
+    const { requireOptionalNativeModule } = require("expo-modules-core");
+    if (!requireOptionalNativeModule("ExpoAudio")) { player = null; return null; }
     const A = require("expo-audio");
     if (A.setAudioModeAsync) A.setAudioModeAsync({ playsInSilentMode: false, interruptionMode: "mixWithOthers" }).catch(() => {});
     player = A.createAudioPlayer(require("../assets/scan.wav"));
