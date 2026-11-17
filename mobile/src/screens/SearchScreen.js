@@ -14,7 +14,10 @@ import { C, R, dir, lift, isDark } from "../theme";
 import { t, tn, getLang } from "../i18n";
 import { fetchProduct, searchAll } from "../api";
 import { getHistory, getSettings } from "../storage";
-import { errorText, verdictOf, profileOf, kindOf } from "../view";
+import { errorText, verdictOf, profileOf, kindOf, nameOf } from "../view";
+import { ChoiceSheet } from "../components/ToolKit";
+import { rememberPreview } from "../preview";
+import { inShopList, toggleShopList } from "../shoplist";
 import { hasProfile, DICTS } from "../core";
 import { rankByRelevance, suggestTerms } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
@@ -76,18 +79,30 @@ const cache = new Map(); // réponses gardées 10 minutes : retaper une recherch
 // Compatibilité avec les anciens écrans qui importaient ces composants d'ici
 export { Chip, SearchBox as SearchField };
 
-function Group({ title, list, onOpen, count }) {
+function Group({ title, list, onOpen, count, onMenu }) {
   return (
     <View style={{ gap: 8 }}>
       {title ? <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.muted, textAlign: dir().ta }}>{title}{count ? ` · ${list.length}` : ""}</Text> : null}
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
-        {list.map((p, i) => <FadeIn key={p.code} delay={Math.min(i, 8) * 40} distance={10}><ListRow p={p} first={i === 0} onPress={() => onOpen(p.code)} /></FadeIn>)}
+        {list.map((p, i) => <FadeIn key={p.code} delay={Math.min(i, 8) * 40} distance={10}><ListRow p={p} first={i === 0} onPress={() => onOpen(p.code)} onLongPress={onMenu ? () => onMenu(p) : undefined} /></FadeIn>)}
       </View>
     </View>
   );
 }
 
-export default function SearchScreen({ onOpen, onScan }) {
+export default function SearchScreen({ onOpen, onScan, onCompare, toast }) {
+  // Appui long sur un résultat : ouvrir, comparer, ajouter à la liste de courses
+  const [menu, setMenu] = useState(null);
+  const lastMenu = useRef(null); if (menu) lastMenu.current = menu;
+  const m = menu || lastMenu.current;
+  const menuSheet = (
+    <ChoiceSheet visible={!!menu} onClose={() => setMenu(null)} title={m ? nameOf(m) : ""} items={m ? [
+      { id: "open", color: "#14805A", paths: '<path d="M9 5l7 7-7 7"/>', title: t("history.open"), onPress: () => open(m.code) },
+      ...(onCompare && kindOf(m) !== "medicine" ? [{ id: "cmp", color: "#4C64D6", paths: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>', title: t("cmp.title"), onPress: () => onCompare(m.code, m) }] : []),
+      { id: "shop", color: "#E07B2E", paths: '<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>', title: t(inShopList(m.code) ? "shop.in" : "shop.add"),
+        onPress: () => { const on = toggleShopList(m); toast && toast(t(on ? "shop.added" : "shop.removed")); } },
+    ] : []} />
+  );
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("all");
   const [state, setState] = useState({});
@@ -131,6 +146,7 @@ export default function SearchScreen({ onOpen, onScan }) {
       const known = new Set(local.map((p) => p.code));
       const fresh = (l) => l.filter((p) => !known.has(p.code));
       setFilter("all");
+      rememberPreview([...res.food, ...res.beauty]);
       setState({ q: query, local, food: fresh(res.food), beauty: fresh(res.beauty), alt: res.alt, foodFailed: res.foodFailed });
       if (keep) remember(query);
     } catch (err) {
@@ -254,11 +270,11 @@ export default function SearchScreen({ onOpen, onScan }) {
       {state.short ? <Message title={t("search.short.t")} text={t("search.short.p")} /> : null}
       {state.notFound ? <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code: state.notFound })} action={t("home.scan")} onAction={onScan} /> : null}
       {state.error ? <Message title={t("msg.error.t")} text={errorText(state.error)}><Btn title={t("msg.retry")} onPress={() => run(q, { force: true })} /></Message> : null}
-      {state.single ? <Group list={state.single} onOpen={open} /> : null}
+      {state.single ? <Group list={state.single} onOpen={open} onMenu={setMenu} /> : null}
 
       {state.loading ? (
         <View style={{ gap: 14 }}>
-          {state.local && state.local.length ? <Group title={t("search.in_history")} list={state.local} onOpen={open} /> : null}
+          {state.local && state.local.length ? <Group title={t("search.in_history")} list={state.local} onOpen={open} onMenu={setMenu} /> : null}
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 16 }, lift()]} accessibilityLabel={t("search.searching")}>
             {[0, 1, 2].map((i) => <Row key={i} gap={12}><Skeleton width={54} height={54} radius={14} /><View style={{ flex: 1, gap: 8 }}><Skeleton height={14} width="80%" /><Skeleton height={11} width="45%" /></View></Row>)}
           </View>
@@ -279,11 +295,11 @@ export default function SearchScreen({ onOpen, onScan }) {
                 <Text style={{ fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase", textAlign: dir().ta }}>{tn("search.results", total)}</Text>
                 {state.alt ? <Muted style={{ fontSize: 12.5 }}>{t("search.alt", { q: state.alt })}</Muted> : null}
               </View>
-              {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={open} /> : null}
+              {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={open} onMenu={setMenu} /> : null}
               {(() => {
                 // Le groupe qui correspond le mieux à la recherche passe en premier (« nivea » : cosmétiques d'abord)
-                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={open} /> : null;
-                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={open} /> : null;
+                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={open} onMenu={setMenu} /> : null;
+                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={open} onMenu={setMenu} /> : null;
                 return fit(r.beauty, state.q) > fit(r.food, state.q) ? [beautyG, foodG] : [foodG, beautyG];
               })()}
             </>
@@ -292,6 +308,7 @@ export default function SearchScreen({ onOpen, onScan }) {
           ) : null}
         </View>
       ) : null}
+      {menuSheet}
     </Screen>
   );
 }

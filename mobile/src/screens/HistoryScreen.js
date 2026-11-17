@@ -2,7 +2,7 @@
 // et « Produits » (recherche, filtres, produits par jour, affichés par pages).
 import React, { useEffect, useRef, useState } from "react";
 import { CountUp } from "../components/Fx";
-import { View, Pressable, Animated, Easing, PanResponder } from "react-native";
+import { View, Pressable, Animated, Easing, PanResponder, Platform, Share } from "react-native";
 import { Text } from "../components/Text";
 import Svg, { Circle } from "react-native-svg";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
@@ -17,7 +17,10 @@ import { ChoiceSheet } from "../components/ToolKit";
 import { FavStrip, streaks } from "../components/HistoryInsights";
 import SwipeRow from "../components/SwipeRow";
 import EmptyState from "../components/Empty";
-import { verdictOf, relTime, S, scoreOf, nameOf } from "../view";
+import { verdictOf, relTime, S, scoreOf, nameOf, kindOf } from "../view";
+import { shareCardImage } from "../components/ShareCard";
+import { WEB } from "../config";
+import { getShopList, onShopList as onShopList2, inShopList, toggleShopList } from "../shoplist";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic, ms } from "../motion";
 import { isPremium, canUse, FREE_HISTORY_DAYS } from "../premium";
@@ -31,6 +34,10 @@ const FILTERS = [
   { id: "halal", test: (e) => verdictOf(e.p).status.startsWith("halal") },
   { id: "doubt", test: (e) => verdictOf(e.p).status === "mashbouh" },
   { id: "haram", test: (e) => verdictOf(e.p).status === "haram" },
+  // Par type de produit (affichés seulement s'il y en a)
+  { id: "food", label: "kindtab.food", test: (e) => kindOf(e.p) === "food", opt: true },
+  { id: "beauty", label: "kindtab.beauty", test: (e) => kindOf(e.p) === "beauty", opt: true },
+  { id: "medicine", label: "kind.medicine", test: (e) => kindOf(e.p) === "medicine", opt: true },
 ];
 const col = (st) => STATUS_COLORS[st][0];
 
@@ -225,7 +232,9 @@ function groups(entries) {
   return ["today", "yesterday", "week", "older"].map((g) => ({ g, list: entries.filter((e) => bucket(e.at) === g) })).filter((x) => x.list.length);
 }
 
-export default function HistoryScreen({ onOpen, onScan, toast }) {
+export default function HistoryScreen({ onOpen, onScan, toast, onShopList, onCompare }) {
+  const [shopN, setShopN] = useState(getShopList().length);
+  useEffect(() => onShopList2((l) => setShopN(l.length)), []);
   const [menu, setMenu] = useState(null); // appui long sur un produit : actions rapides
   const lastMenu = useRef(null); if (menu) lastMenu.current = menu;
   const m = menu || lastMenu.current;
@@ -234,6 +243,9 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
     <ChoiceSheet visible={!!menu} onClose={() => setMenu(null)} title={m ? nameOf(m.p) : ""} items={m ? [
       { id: "open", color: "#14805A", paths: '<path d="M9 5l7 7-7 7"/>', title: t("history.open"), onPress: () => onOpen(m.code) },
       { id: "fav", color: "#E9A100", paths: '<path d="M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>', title: t(m.fav ? "sheet.fav_remove" : "sheet.fav_add"), onPress: () => { toggleFav(m.code); toast && toast(t(m.fav ? "sheet.fav_removed" : "sheet.fav_added")); } },
+      ...(onCompare && kindOf(m.p) !== "medicine" ? [{ id: "cmp", color: "#4C64D6", paths: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>', title: t("cmp.title"), onPress: () => onCompare(m.code, m.p) }] : []),
+      { id: "shop", color: "#E07B2E", paths: '<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>', title: t(inShopList(m.code) ? "shop.in" : "shop.add"),
+        onPress: () => { const on = toggleShopList(m.p); toast && toast(t(on ? "shop.added" : "shop.removed")); } },
       { id: "del", color: "#E0423A", paths: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>', title: t("history.delete_one"), onPress: () => { removeFromHistory(m.code); toast && toast(t("history.deleted_one")); } },
     ] : []} />
   );
@@ -245,6 +257,12 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   const [limit, setLimit] = useState(PAGE);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistView = setView; // captures automatiques (web)
   const [weeksAgo, setWeeksAgo] = useState(0);
+  const bilanRef = useRef(null);
+  const shareBilan = async () => {
+    haptic.tap();
+    const ok = await shareCardImage(bilanRef, { name: t("bilan.title"), message: t("share_app.msg", { url: WEB }) });
+    if (!ok) Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {});
+  };
   const [period, setPeriod] = useState("week");
   // Sans Premium (quand il est en vente) : les 30 derniers jours, favoris compris
   const full = getHistory();
@@ -294,9 +312,16 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
 
       {view === "bilan" ? (
       <FadeIn distance={6}>
-      <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
+      <View ref={bilanRef} collapsable={false} style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
         <Row style={{ justifyContent: "space-between" }}>
           <Txt style={{ fontWeight: "800", fontSize: 18, flex: 1 }}>{t("bilan.title")}</Txt>
+          {/* Partager le bilan en image */}
+          {base.length && Platform.OS !== "web" ? (
+            <Pressable onPress={shareBilan} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("bilan.share")}
+              style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? C.tint2 : C.tint, marginEnd: 8 })}>
+              <Glyph paths='<path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>' size={17} color={C.fg} width={2.1} />
+            </Pressable>
+          ) : null}
           {/* Semaine / depuis le début */}
           <View style={{ flexDirection: dir().row, padding: 3, borderRadius: 99, backgroundColor: C.tint }} accessibilityRole="tablist">
             {["week", "all"].map((k) => (
@@ -365,10 +390,19 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
       </FadeIn>
       ) : (
       <>
+      {onShopList ? (
+        <Pressable onPress={() => { haptic.tap(); onShopList(); }} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+          <Tile color="#E07B2E" paths='<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>' size={38} />
+          <Txt style={{ flex: 1, fontWeight: "800", fontSize: 15.5 }}>{t("shop.title")}</Txt>
+          {shopN ? <View style={{ minWidth: 24, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: "#E07B2E", alignItems: "center" }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: 12.5 }}>{shopN}</Text></View> : null}
+          <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color={C.faint} /></View>
+        </Pressable>
+      ) : null}
       {!needle && filter === "all" ? <FavStrip all={all} onOpen={onOpen} /> : null}
       <SearchBox value={q} onChangeText={(x) => { setQ(x); setLimit(PAGE); }} placeholder={t("history.search_ph")} />
       <ChipRow>
-        {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => { setFilter(f.id); setLimit(PAGE); }} />)}
+        {FILTERS.filter((f) => !f.opt || (all.some(f.test) && !all.every(f.test))).map((f) => <Chip key={f.id} text={t(f.label || `history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => { setFilter(f.id); setLimit(PAGE); }} />)}
       </ChipRow>
       {shown.length ? groups(shown).map(({ g, list }) => (
         <View key={g} style={{ gap: 8 }}>

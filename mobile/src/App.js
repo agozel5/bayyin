@@ -20,6 +20,8 @@ import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
 import { useEdgeSwipe, InnerBackContext, underStyle, underShade } from "./components/EdgeSwipe";
 import BasketScreen from "./screens/BasketScreen";
+import ShopListScreen from "./screens/ShopListScreen";
+import { loadShopList } from "./shoplist";
 import PremiumScreen from "./screens/PremiumScreen";
 import PlacesScreen from "./screens/PlacesScreen";
 import CompareScreen from "./screens/CompareScreen";
@@ -194,7 +196,7 @@ function Toast({ text }) {
 
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
-const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare", "travel", "menu"];
+const SLIDE = ["sheet", "rankings", "basket", "shoplist", "premium", "places", "compare", "travel", "menu"];
 function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, shared, under, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
@@ -279,7 +281,7 @@ function Main() {
   // Mode courses : panier gardé sur le téléphone
   const [basketMode, setBasketMode] = useState(false);
   const [basketCount, setBasketCount] = useState(0);
-  useEffect(() => { loadBasket(); return onBasket((l) => setBasketCount(l.length)); }, []);
+  useEffect(() => { loadBasket(); loadShopList(); return onBasket((l) => setBasketCount(l.length)); }, []);
   const basketAdd = (code) => {
     const added = addToBasket(code);
     const product = fetchProduct(code).then((p) => { if (p) { setBasketProduct(code, p); addToHistory(p); } return p; }).catch(() => null);
@@ -472,8 +474,10 @@ function Main() {
         status={homeStatus}
       />
     );
-  if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} />;
-  if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
+  if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast}
+    onCompare={(code, p) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: p }); }} />;
+  if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} onShopList={() => push({ type: "shoplist" })}
+    onCompare={(code, p) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: p }); }} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
   if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} onPremium={() => push({ type: "premium" })} />;
 
@@ -520,6 +524,8 @@ function Main() {
     if (item.type === "compare") return <CompareScreen base={item.base} baseP={item.baseP} onClose={pop} onScan={() => openCamera({ replace: true })} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
     if (item.type === "aisle") return <AisleScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;
+    if (item.type === "shoplist")
+      return <ShopListScreen onClose={pop} toast={toast} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
     if (item.type === "basket")
       return <BasketScreen onClose={pop} toast={toast} onScan={() => { setBasketMode(true); openCamera({ replace: true }); }} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "rankings")
@@ -542,7 +548,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), openShopList: () => push({ type: "shoplist" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.

@@ -18,11 +18,13 @@ import { getSettings, getEntry, addToHistory, toggleFav, subscribe, getHistory }
 import { verdictOf, nameOf, scoreOf, S, isBarcode, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
 import { Glyph, Art, Tile } from "./Art";
-import { ProductCard } from "./Cards";
+import { ProductCard, Thumb } from "./Cards";
 import { I } from "../../../public/lib/icons.js";
 import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
 import RecipeBox from "./RecipeBox";
+import { previewOf } from "../preview";
+import { getShopList } from "../shoplist";
 import RecallBox from "./Recall";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
@@ -559,16 +561,31 @@ function VerdictFlash({ status }) {
 // ---------------------------------------------------------------------------
 // Fiche complète (chargement, en-tête, favoris, partage)
 // ---------------------------------------------------------------------------
-function SheetSkeleton() {
+function SheetSkeleton({ preview }) {
+  const meta = preview ? [preview.brand, preview.quantity].filter(Boolean).join(" · ") : "";
   return (
     <View style={{ gap: 18 }} accessible accessibilityLabel={t("msg.loading")}>
-      <Row gap={14}>
-        <Skeleton width={84} height={84} radius={16} />
-        <View style={{ flex: 1, gap: 10 }}>
-          <Skeleton height={22} width="85%" />
-          <Skeleton height={16} width="50%" />
-        </View>
-      </Row>
+      {preview ? (
+        // Déjà connu : la vraie photo et le vrai nom, le reste arrive
+        <FadeIn distance={4}>
+          <Row gap={14}>
+            <View style={[{ borderRadius: 20, backgroundColor: C.surface, padding: 6 }, lift()]}><Thumb p={preview} size={96} radius={16} /></View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Txt numberOfLines={3} style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }}>{nameOf(preview)}</Txt>
+              {meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
+              {/^\d+$/.test(preview.code) ? <Text style={{ color: C.faint, fontSize: 13, fontVariant: ["tabular-nums"], letterSpacing: 0.5, textAlign: dir().ta }}>{preview.code}</Text> : null}
+            </View>
+          </Row>
+        </FadeIn>
+      ) : (
+        <Row gap={14}>
+          <Skeleton width={84} height={84} radius={16} />
+          <View style={{ flex: 1, gap: 10 }}>
+            <Skeleton height={22} width="85%" />
+            <Skeleton height={16} width="50%" />
+          </View>
+        </Row>
+      )}
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Skeleton height={128} radius={R.lg} style={{ flex: 1 }} width={null} />
         <Skeleton height={128} radius={R.lg} style={{ flex: 1 }} width={null} />
@@ -626,7 +643,9 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
       // Fiche déjà vue : affichée tout de suite, puis rafraîchie
       setState({ p: saved.p, loading: false });
     } else {
-      setState({ p: null, loading: true });
+      // Pendant le chargement : nom, marque et photo déjà connus s'affichent tout de suite
+      const sl = getShopList().find((x) => x.code === code);
+      setState({ p: null, loading: true, preview: (saved && saved.p) || (sl && sl.p) || previewOf(code) });
     }
     fetchProduct(code)
       .then((p) => {
@@ -746,7 +765,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
         stickyHeaderIndices={p && !state.loading && !state.notFound && !state.error ? [1] : undefined}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
-          <SheetSkeleton />
+          <SheetSkeleton preview={state.preview} />
         ) : state.notFound ? (
           isMedicineCode(code) ? (
             <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.med_notfound", { code })} />

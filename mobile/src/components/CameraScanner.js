@@ -12,10 +12,11 @@ import { Art, Glyph } from "./Art";
 import { C } from "../theme";
 import { t } from "../i18n";
 import { normalizeScan } from "../core";
-import { STATUS_COLORS } from "../theme";
+import { STATUS_COLORS, dir } from "../theme";
 import { nameOf, verdictOf, profileOf, S } from "../view";
 import { fetchProduct } from "../api";
 import { haptic, ms } from "../motion";
+import { playScan } from "../sound";
 import { mascot } from "../../../public/lib/mascot.js";
 
 const TYPES = ["ean13", "ean8", "upc_a", "upc_e"];
@@ -146,9 +147,15 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAi
       done.current = true;
       setFound(true);
       haptic.success();
+      playScan();
       const res = onBasketAdd(code); // { added, product: Promise }
       setFlash({ code, again: !res.added });
-      res.product && res.product.then((p) => p && setFlash((f) => (f && f.code === code ? { ...f, p } : f))).catch(() => {});
+      res.product && res.product.then((p) => {
+        if (!p) return;
+        setFlash((f) => (f && f.code === code ? { ...f, p } : f));
+        const st = verdictOf(p).status; // vibration différente si le produit est douteux ou haram
+        if (st === "haram") haptic.error && haptic.error(); else if (st === "mashbouh") haptic.warn && haptic.warn();
+      }).catch(() => {});
       setTimeout(() => { done.current = false; setFound(false); }, 1100);
       return;
     }
@@ -156,6 +163,7 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAi
     setFound(true);
     setBurst((n) => n + 1);
     haptic.tap(); // code lu ; le verdict a sa propre vibration
+    playScan();
     if (!ms(1)) return onCode(code);
     reveal(code);
   };
@@ -235,14 +243,15 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAi
         const st = flash.p ? verdictOf(flash.p).status : null;
         const [fg, bg] = st ? STATUS_COLORS[st] : ["#fff", "rgba(255,255,255,0.2)"];
         return (
-          <View key={flash.code + (flash.p ? "p" : "")} style={{ position: "absolute", top: insets.top + 70, left: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 16, backgroundColor: "rgba(12,20,16,0.82)" }} accessibilityLiveRegion="polite">
+          <Pressable onPress={() => { haptic.tap(); onCode(flash.code); }} key={flash.code + (flash.p ? "p" : "")} style={{ position: "absolute", top: insets.top + 70, left: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 16, backgroundColor: "rgba(12,20,16,0.82)" }} accessibilityLiveRegion="polite">
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: st ? fg : "#9AA59F" }} />
             <View style={{ flex: 1 }}>
               <Text numberOfLines={1} style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{flash.p ? nameOf(flash.p) : flash.code}</Text>
               <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12.5 }}>{t(flash.again ? "basket.again" : "basket.scanned")}</Text>
             </View>
             {st ? <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99, backgroundColor: bg }}><Text style={{ color: fg, fontWeight: "800", fontSize: 12 }}>{S(st, "short")}</Text></View> : null}
-          </View>
+            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={16} color="rgba(255,255,255,0.7)" /></View>
+          </Pressable>
         );
       })() : null}
 

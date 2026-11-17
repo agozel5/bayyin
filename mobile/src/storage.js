@@ -54,6 +54,7 @@ export async function initStorage() {
     onboarded: !!s.onboarded,
     toured: !!s.toured,
     notif: s.notif !== false, // alertes de rappel (si le téléphone les autorise)
+    scanSound: s.scanSound === true, // son à la lecture d'un code (coupé par défaut)
     recipeAlerts: s.recipeAlerts !== false, // alerte quand la recette d'un produit suivi change
     notifAsked: !!s.notifAsked,
     scans: s.scans || 0, // nombre de fiches ouvertes (demande d'avis)

@@ -119,6 +119,30 @@ export default function CosmeticSection({ p }) {
           </View>
         ))}
       </View>
+      {/* Vue d'ensemble des ingrédients analysés : risque élevé, modéré, limité, sans réserve */}
+      {h.analyzed ? (() => {
+        const parts = [["eleve", s.parts.eleve || 0], ["modere", s.parts.modere || 0], ["limite", s.parts.limite || 0]];
+        const ok = Math.max(0, h.analyzed - parts.reduce((a, [, n]) => a + n, 0));
+        return (
+          <View style={{ gap: 8, padding: 12, borderRadius: R.md, backgroundColor: C.tint }}>
+            <View style={{ flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", gap: 2, direction: "ltr" }}>
+              {parts.filter(([, n]) => n).map(([k, n]) => <View key={k} style={{ flex: n, backgroundColor: RISK_COLORS[k][0] }} />)}
+              {ok ? <View style={{ flex: ok, backgroundColor: LEVEL_COLORS.bon }} /> : null}
+            </View>
+            <View style={{ flexDirection: dir().row, gap: 8 }}>
+              {[...parts, ["ok", ok]].map(([k, n]) => {
+                const col = k === "ok" ? LEVEL_COLORS.bon : RISK_COLORS[k][0];
+                return (
+                  <View key={k} style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 10, backgroundColor: C.surface, opacity: n ? 1 : 0.5 }}>
+                    <Text style={{ fontSize: 18, fontWeight: "900", color: n ? col : C.faint, fontVariant: ["tabular-nums"] }}>{n}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontSize: 11, fontWeight: "700", color: C.muted, paddingHorizontal: 3 }}>{t(`risk.short.${k === "ok" ? "none" : k}`)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })() : null}
       {risks.length ? (
         <View>
           <Text style={{ fontSize: 13, fontWeight: "800", color: C.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2, textAlign: dir().ta }}>{t("detail.cosmetic_watch")}</Text>

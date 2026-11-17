@@ -366,6 +366,14 @@ function AppearancePage() {
         <Muted style={{ fontSize: 14, lineHeight: 20 }}>{t("settings.text_preview")}</Muted>
       </View>
     </Block>
+    {/* Son à la lecture d'un code-barres */}
+    <Block title={t("sound.t")}>
+      <Row gap={12} style={{ paddingVertical: 4 }}>
+        <Txt style={{ flex: 1, fontWeight: "700" }}>{t("sound.switch")}</Txt>
+        <Switch on={!!st.scanSound} onPress={() => { haptic.tap(); setSettings({ scanSound: !st.scanSound }); if (!st.scanSound) setTimeout(() => { try { require("../sound").playScan(); } catch {} }, 120); }} label={t("sound.switch")} />
+      </Row>
+      <Muted style={{ fontSize: 13.5, lineHeight: 19 }}>{t("sound.p")}</Muted>
+    </Block>
     </View>
   );
 }

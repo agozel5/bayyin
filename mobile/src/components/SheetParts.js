@@ -15,6 +15,7 @@ import { useProgress, Burst } from "./Fx";
 import { C, R, VERDICT, GRADE_COLORS, SEV_COLORS, RISK_COLORS, mix, dir, lift, isDark } from "../theme";
 import { t, tn } from "../i18n";
 import { getSettings } from "../storage";
+import { inShopList, onShopList, toggleShopList } from "../shoplist";
 import { S, nameOf, scoreOf, kindOf, flagLabel, flagReason, isBarcode } from "../view";
 import { verdictConfidence } from "../../../public/lib/confidence.js";
 import { readLabel } from "../../../public/lib/highlight.js";
@@ -24,6 +25,27 @@ import { haptic } from "../motion";
 const open = (url) => Linking.openURL(url).catch(() => {});
 
 // ---------- en-tête : photo, nom, marque · quantité, code ----------
+// « Ajouter à ma liste » de courses : un toucher ajoute ou retire, la pastille change d'aspect
+function ShopPill({ p }) {
+  const [on, setOn] = useState(inShopList(p.code));
+  useEffect(() => onShopList(() => setOn(inShopList(p.code))), [p.code]);
+  const v = useRef(new Animated.Value(1)).current;
+  const press = () => {
+    const now = toggleShopList(p);
+    if (now) haptic.success(); else haptic.tap();
+    if (ms(1)) { v.setValue(0.85); Animated.spring(v, { toValue: 1, friction: 4, tension: 180, useNativeDriver: true }).start(); }
+  };
+  return (
+    <Animated.View style={{ alignSelf: "flex-start", marginTop: 4, transform: [{ scale: v }] }}>
+      <Pressable onPress={press} accessibilityRole="button" accessibilityState={{ selected: on }} hitSlop={6}
+        style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 6, paddingHorizontal: 11, height: 30, borderRadius: 15, backgroundColor: on ? C.brand : pressed ? C.tint2 : C.tint })}>
+        <Glyph paths={on ? '<path d="M5 12.5l4.5 4.5L19 7.5"/>' : '<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>'} size={16} color={on ? "#fff" : C.brand} width={2.2} />
+        <Text style={{ color: on ? "#fff" : C.brand, fontWeight: "800", fontSize: 13.5 }}>{t(on ? "shop.in" : "shop.add")}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export function Top({ p }) {
   const meta = [p.brand, normQuantity(p.quantity)].filter(Boolean).join(" · ");
   const [zoom, setZoom] = useState(false);
@@ -51,6 +73,7 @@ export function Top({ p }) {
         <Txt style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }} numberOfLines={3}>{nameOf(p)}</Txt>
         {meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
         {/^\d+$/.test(p.code) ? <Text style={{ color: C.faint, fontSize: 13, fontVariant: ["tabular-nums"], letterSpacing: 0.5, textAlign: dir().ta }}>{p.code}</Text> : null}
+        {isBarcode(p.code) && kindOf(p) !== "medicine" ? <ShopPill p={p} /> : null}
         {!hasPhotos && isBarcode(p.code) && !p.local && (kindOf(p) === "food" || kindOf(p) === "beauty") ? (
           <Pressable onPress={() => { haptic.tap(); open(`https://world.${kindOf(p) === "beauty" ? "openbeautyfacts" : "openfoodfacts"}.org/cgi/product.pl?type=edit&code=${p.code}`); }}
             accessibilityRole="link" accessibilityHint={t("sheet.add_photo_p")} hitSlop={6}
