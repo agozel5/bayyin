@@ -10,6 +10,7 @@
     "tunnel": "expo start --tunnel",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ota": "node scripts/with-ca.js npx --yes eas-cli@latest update --channel production --auto",
     "build:ios": "node scripts/with-ca.js npx --yes eas-cli@latest build -p ios --profile production --auto-submit"
   },
   "dependencies": {
