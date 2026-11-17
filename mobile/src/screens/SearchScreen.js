@@ -16,7 +16,7 @@ import { fetchProduct, searchAll } from "../api";
 import { getHistory, getSettings } from "../storage";
 import { errorText, verdictOf, profileOf, kindOf } from "../view";
 import { hasProfile, DICTS } from "../core";
-import { rankByRelevance, suggestTerms, termIn } from "../../../public/lib/search.js";
+import { rankByRelevance, suggestTerms } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
 
 const RECENT = "bayyin:recent_q";
@@ -55,12 +55,6 @@ const AISLES = {
   beauty: ["shampoos", "shower_gels", "deodorants", "toothpastes", "face_creams", "body_creams", "lipsticks", "mascaras", "nail_polishes"],
 };
 const aislesOf = (kind) => (kind === "all" ? [...AISLES.food.slice(0, 6), ...AISLES.beauty.slice(0, 3)] : AISLES[kind]);
-// Idées de recherche : des produits courants, dans la langue de l'app (cherchés ensuite en français)
-const IDEAS = {
-  food: ["poulet", "boeuf", "agneau", "fromage", "bonbons", "chocolat", "biscuits", "dattes"],
-  beauty: ["shampooing", "déodorant", "dentifrice", "crème solaire", "rouge à lèvres", "parfum"],
-};
-const ideasOf = (kind) => (kind === "all" ? [...IDEAS.food.slice(0, 5), ...IDEAS.beauty.slice(0, 3)] : IDEAS[kind]);
 // Couleur douce derrière l'illustration de chaque rayon
 const AISLE_TINT = {
   spreads: "#C9873A", chocolates: "#8A5A3C", candies: "#D0486B", biscuits: "#D9A21B", yogurts: "#3F79B5", cheeses: "#E0B12E",
@@ -160,7 +154,6 @@ export default function SearchScreen({ onOpen, onScan }) {
   const open = (code, opts) => { if (state.q) remember(state.q); onOpen(code, opts); }; // une recherche suivie d'un produit ouvert est gardée dans les récentes
   const tips = q.trim().length >= 2 ? suggestTerms(q, getLang()) : [];
   const seen = getHistory().filter((e) => kind === "all" || kindOf(e.p) === kind).slice(0, 8);
-  const ideas = ideasOf(kind).map((w) => (getLang() === "fr" ? w.charAt(0).toUpperCase() + w.slice(1) : termIn(w, getLang()))).filter(Boolean);
   const changeKind = (k) => { setKind(k); if (q.trim()) run(q, { force: true, k }); };
 
   const withProfile = hasProfile(getSettings().profile);
@@ -243,22 +236,6 @@ export default function SearchScreen({ onOpen, onScan }) {
               })}
             </View>
           </View>
-
-          {/* Idées de recherche : produits courants, sans marque */}
-          {ideas.length ? (
-            <View style={{ gap: 10 }}>
-              <SectionTitle>{t("search.ideas")}</SectionTitle>
-              <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-                {ideas.map((x) => (
-                  <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button"
-                    style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 6, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, borderWidth: 1, borderColor: C.line, backgroundColor: pressed ? C.tint : "transparent" })}>
-                    <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={14} color={C.brand} />
-                    <Text style={{ fontSize: 14.5, fontWeight: "600", color: C.fg }}>{x}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ) : null}
 
           {/* Rappel discret : le code-barres donne la bonne fiche */}
           <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => [{ flexDirection: dir().row, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.brand + "40" }, lift()]}>

@@ -459,7 +459,6 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
   // Signaler une erreur : par e-mail (masqué tant qu'aucune adresse de contact n'est réglée)
   const rv = { name: nameOf(p), code: p.code, status: S(v.status, "label"), school: t(`school.${st.school}`), url: p.offUrl || "" };
   const report = isBarcode(p.code) ? mailto(t("report.title", rv), t("report.body", rv)) : null;
-  const altFirst = v.status === "haram" || v.status === "mashbouh";
   const notes = [...(p.local ? [t(p.raw && p.raw.ocr_from === "off" ? "offocr.note" : "detail.local")] : []), ...v.notes.map(noteText)];
   const halal = (
     <Panel>
@@ -507,17 +506,14 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
       <RecallBox p={p} />
       {isBarcode(p.code) ? <RecipeBox code={p.code} where="top" /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
-      {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
       {isBarcode(p.code) ? <RecipeBox code={p.code} where="below" /> : null}
     </View>,
     <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>
       <SheetTabs tabs={tabs} cur={cur} onTab={(x) => { setTab(x); onTabChange && onTabChange(); }} />
     </View>,
     <View key="body" style={{ gap: 14 }}>
-      {/* Douteux ou haram : les alternatives halal passent avant tout le reste */}
-      {!p.local && food && altFirst ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
-      {!p.local && food && !altFirst ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
       {report ? <ReportCard url={report} /> : null}
       <Panel gap={6}>
         {p.local ? (

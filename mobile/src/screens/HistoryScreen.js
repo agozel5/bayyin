@@ -14,6 +14,7 @@ import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift, isDark } from "../theme";
 import { t, tn, locale } from "../i18n";
 import { getHistory, clearHistory, removeFromHistory, toggleFav } from "../storage";
 import { ChoiceSheet } from "../components/ToolKit";
+import { Activity, TopCard, Badges, FavStrip } from "../components/HistoryInsights";
 import SwipeRow from "../components/SwipeRow";
 import EmptyState from "../components/Empty";
 import { verdictOf, relTime, S, scoreOf, nameOf } from "../view";
@@ -346,7 +347,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   return (
     <Screen gap={16} title={t("history.title")}>
       <PageHead title={t("history.title")} sub={t("history.sub")} />
-      <Segmented items={[["bilan", t("bilan.title")], ["list", `${t("history.v.list")} · ${all.length}`]]} value={view} onChange={setView} />
+      <Segmented items={[["bilan", t("hist.v.overview")], ["list", `${t("history.v.list")} · ${all.length}`]]} value={view} onChange={setView} />
       {view === "list" && hidden > 0 ? (
         <Pressable onPress={() => canUse("history")} accessibilityRole="button"
           style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
@@ -364,6 +365,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         <BilanHero counts={counts} total={base.length} okShare={okShare} period={period} setPeriod={setPeriod}
           label={period === "all" ? t("history.title") : weeksAgo ? t("bilan.week_of", { range: weekRange(wb) }) : t("bilan.this_week")}
           delta={period === "week" && (base.length || prevN) ? (base.length === prevN ? t("bilan.same") : `${base.length > prevN ? "+" : "−"}${Math.abs(base.length - prevN)} ${t("bilan.vs_prev")}`) : ""} />
+        <FadeIn delay={80}><Activity all={all} /></FadeIn>
         {base.length ? (
           <View style={[cardStyle(), { gap: 14 }]}>
             <CardHead color="#14805A" paths='<path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12z"/><path d="M15 3.9A8.5 8.5 0 0 1 20.1 9H15z"/>' title={t("bilan.title")} />
@@ -385,10 +387,13 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
           </View>
         ) : null}
         <Week all={all} weeksAgo={weeksAgo} setWeeksAgo={setWeeksAgo} />
+        <TopCard all={base.length ? base : all} />
         {avg !== null ? <AvgGauge avg={avg} /> : null}
+        <Badges all={full} />
       </FadeIn>
       ) : (
       <>
+      {!needle && filter === "all" ? <FavStrip all={all} onOpen={onOpen} /> : null}
       <SearchBox value={q} onChangeText={(x) => { setQ(x); setLimit(PAGE); }} placeholder={t("history.search_ph")} />
       <ChipRow>
         {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => { setFilter(f.id); setLimit(PAGE); }} />)}
