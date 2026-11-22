@@ -1,11 +1,13 @@
-FR : 2902 commerces (1794 s)
-BE : 249 commerces (194 s)
-LU : 3 commerces (14 s)
-CH : 59 commerces (128 s)
-NL : 252 commerces (496 s)
-DE : 1583 commerces (182 s)
-GB : 1048 commerces (540 s)
-ES : 235 commerces (696 s)
-IT : 243 commerces (700 s)
-AT : 153 commerces (254 s)
-{"updated":"2026-11-15","count":6722,"tiles":246,"countries":{"FR":2902,"BE":249,"LU":3,"CH":59,"NL":252,"DE":1583,"GB":1048,"ES":235,"IT":243,"AT":153}}
+curl: (22) The requested URL returned error: 404
+FR indisponible : Command failed: curl -sSfL --retry 3 -A "Bayyin/1.0 (github.com/agozel5/bayyin)" -o /tmp/bayyin-places/FR-src.pbf "https://download.geofabrik.de/europe/france-latest.osm.pbf" && osmium tags-filter /tmp/bayyin-places/FR-src.pbf nwr/diet:halal nwr/cuisine -o /tmp/bayyin-places/FR.pbf --overwrite; status=$?; rm -f /tmp/bayyin-places/FR-src.pbf; exit $status
+BE : 251 commerces (96 s)
+LU : 3 commerces (6 s)
+CH : 59 commerces (69 s)
+NL : 253 commerces (146 s)
+DE : 1600 commerces (155 s)
+GB : 1052 commerces (185 s)
+ES : 237 commerces (130 s)
+IT : 245 commerces (188 s)
+AT : 155 commerces (81 s)
+gardés de la semaine précédente : FR
+{"updated":"2026-11-22","count":6753,"tiles":246,"countries":{"BE":251,"LU":3,"CH":59,"NL":253,"DE":1600,"GB":1052,"ES":237,"IT":245,"AT":155,"FR":2902}}
