@@ -23,7 +23,8 @@ export const onPremium = (fn) => { listeners.add(fn); return () => listeners.del
 
 const P = () => { try { return require("react-native-purchases").default; } catch { return null; } };
 export const premiumEnabled = () => preview || (!!API_KEY && Platform.OS !== "web");
-export const isPremium = () => !premiumEnabled() || active;
+// Tant que le store n'a pas répondu (une seconde au démarrage), un abonné n'est pas bloqué par erreur
+export const isPremium = () => !premiumEnabled() || active || (!ready && !preview);
 export const premiumState = () => ({ enabled: premiumEnabled(), active, expires, ready });
 export function setPreview(on) { preview = !!on; emit(); }
 
@@ -38,7 +39,8 @@ function apply(info) {
 export async function initPremium() {
   if (!premiumEnabled() || preview) return;
   const Purchases = P();
-  if (!Purchases) return;
+  if (!Purchases) { ready = true; emit(); return; }
+  setTimeout(() => { if (!ready) { ready = true; emit(); } }, 8000); // pas de réponse du store : état réel (non abonné)
   try {
     Purchases.configure({ apiKey: API_KEY });
     Purchases.addCustomerInfoUpdateListener(apply);

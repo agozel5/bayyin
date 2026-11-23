@@ -2,9 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildQuery, parsePlaces, categoryOf, distance, directionsUrl } from "../public/lib/places.js";
 
-test("commerces : requête Overpass, position arrondie à ~100 m", () => {
+test("commerces : requête Overpass, position arrondie à ~1 km (rayon élargi)", () => {
   const q = buildQuery(48.856613, 2.352222, 3000);
-  assert.ok(q.includes("(around:3000,48.857,2.352)"));
+  assert.ok(q.includes("(around:3800,48.86,2.35)"));
   assert.ok(q.includes('["diet:halal"~"^(yes|only)$"]'));
   assert.ok(q.includes("out tags center"));
 });

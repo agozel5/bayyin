@@ -10,10 +10,13 @@ export const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 export const RADII = [1000, 3000, 10000];
 export const CATEGORIES = ["butcher", "restaurant", "grocery", "bakery", "other"];
 
-const round = (x) => Math.round(x * 1000) / 1000; // ≈ 100 m
+// Position envoyée à Overpass arrondie à 2 décimales (≈ 1 km) : « position approximative » au sens d'Apple.
+// Le rayon est élargi d'autant ; livePlaces retire ensuite ce qui dépasse le rayon demandé.
+const round = (x) => Math.round(x * 100) / 100;
+const PAD = 800;
 
 export function buildQuery(lat, lon, radius) {
-  const a = `(around:${Math.round(radius)},${round(lat)},${round(lon)})`;
+  const a = `(around:${Math.round(radius) + PAD},${round(lat)},${round(lon)})`;
   return `[out:json][timeout:25];(nwr${a}["diet:halal"~"^(yes|only)$"];nwr${a}["cuisine"~"halal",i];);out tags center qt 200;`;
 }
 
@@ -133,7 +136,8 @@ export async function localPlaces(lat, lon, radius, base = PLACES_BASE) {
 const live = new Map();
 export async function livePlaces(lat, lon, radius) {
   const q = buildQuery(lat, lon, radius);
-  if (live.has(q)) return live.get(q);
+  const ck = `${q}|${lat.toFixed(4)},${lon.toFixed(4)}`; // le tri dépend de la position exacte
+  if (live.has(ck)) return live.get(ck);
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 25000);
   try {
@@ -142,8 +146,8 @@ export async function livePlaces(lat, lon, radius) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     }));
-    const out = { list: parsePlaces(json, lat, lon), source: "live" };
-    live.set(q, out);
+    const out = { list: parsePlaces(json, lat, lon).filter((p) => p.distance <= radius), source: "live" };
+    live.set(ck, out);
     return out;
   } catch {
     throw new Error("overpass");
