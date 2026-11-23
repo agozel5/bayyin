@@ -22,4 +22,4 @@ Les écrans de démarrage de la version web installée sur iPhone sont dans `pub
 
 ## Textes des fiches
 
-Les textes à coller (nom, sous-titre, texte promotionnel, mots-clés, description courte, nouveautés, description) sont dans , pour les 12 langues de l'app, avec les titres des captures. Ils respectent les limites de caractères d'Apple et de Google.
+Les textes à coller (nom, sous-titre, texte promotionnel, mots-clés, description courte, nouveautés, description) sont dans `textes-stores.json`, pour les 12 langues de l'app, avec les titres des captures. Ils respectent les limites de caractères d'Apple et de Google.
