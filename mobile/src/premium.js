@@ -7,7 +7,7 @@ import Constants from "expo-constants";
 const RC = (Constants.expoConfig && Constants.expoConfig.extra && Constants.expoConfig.extra.revenuecat) || {};
 const API_KEY = Platform.OS === "ios" ? RC.ios : Platform.OS === "android" ? RC.android : "";
 const ENTITLEMENT = RC.entitlement || "premium";
-export const FEATURES = ["recipe", "family", "aisle", "basket", "compare", "menu", "places", "travel", "rankings", "history", "offline"];
+export const FEATURES = ["recipe", "family", "aisle", "basket", "compare", "menu", "travel", "rankings", "history", "offline"];
 export const FREE_HISTORY_DAYS = 30;
 export const PREMIUM_HISTORY_DAYS = 365;
 // Prix affichés seulement dans l'aperçu (captures de contrôle) : en vrai, ils viennent du store

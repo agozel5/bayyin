@@ -20,7 +20,6 @@ const FEATS = [
   ["basket", "#E0457B", '<path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>'],
   ["compare", "#4C64D6", '<path d="M4 8h13l-3-3M20 16H7l3 3"/>'],
   ["menu", "#E46A3C", '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1.5-3 4-3 7h3v11M16 3v7"/>'],
-  ["places", "#2F6FC0", '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'],
   ["travel", "#2F8FCF", '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>'],
   ["rankings", "#E2A812", '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>'],
   ["history", "#8A63DA", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
