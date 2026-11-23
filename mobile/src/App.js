@@ -380,7 +380,7 @@ function Main() {
     // Widgets : mode courses, photo des ingrédients, commerces halal
     if (l.type === "basket") { clearStack(); setTab("scan"); if (!canUse("basket")) return; setBasketMode(true); return openCamera(); }
     if (l.type === "photo") { clearStack(); setTab("scan"); return push({ type: "ocr", code: null, photo: null }); }
-    if (l.type === "places") { clearStack(); setTab("scan"); return push({ type: "places" }); }
+    if (l.type === "places") { clearStack(); setTab("scan"); if (!canUse("places")) return; return push({ type: "places" }); }
     clearStack();
     setTab(l.type);
   };
@@ -458,9 +458,9 @@ function Main() {
         onGotoProfile={gotoProfile}
         onRankings={() => push({ type: "rankings" })}
         onAisle={() => { if (canUse("aisle")) push({ type: "aisle" }); }}
-        onPlaces={() => push({ type: "places" })}
+        onPlaces={() => { if (canUse("places")) push({ type: "places" }); }}
         onTravel={() => { if (canUse("travel")) push({ type: "travel" }); }}
-        onMenu={() => push({ type: "menu" })}
+        onMenu={() => { if (canUse("menu")) push({ type: "menu" }); }}
         onCompare={() => { if (canUse("compare")) push({ type: "compare" }); }}
         onBasketMode={() => { if (!canUse("basket")) return; setBasketMode(true); openCamera(); }}
         onOpenBasket={() => push({ type: "basket" })}
