@@ -1,7 +1,8 @@
 // Blocs de la fiche repris de la version web : écrire à la marque, lire la photo des ingrédients
 // déjà publiée, fiches plus complètes du même produit, ajouter le produit à Open Food Facts.
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Image, Linking, Share, ScrollView } from "react-native";
+import { View, Pressable, Image, Linking, Share, ScrollView } from "react-native";
+import { Text } from "./Text";
 import { Txt, Muted, Row, Btn, Skeleton, FadeIn } from "./ui";
 import { Glyph } from "./Art";
 import { ProductCard } from "./Cards";

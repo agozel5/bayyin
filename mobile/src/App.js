@@ -1,7 +1,8 @@
 // Bayyin — application native (iOS et Android).
 // Cinq onglets en bas, et une pile d'écrans par-dessus : caméra, fiche produit, lecture d'étiquette.
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { View, Text, Pressable, BackHandler, Animated, Easing, Dimensions, StyleSheet, Platform, Appearance, AppState } from "react-native";
+import { View, Pressable, BackHandler, Animated, Easing, Dimensions, StyleSheet, Platform, Appearance, AppState } from "react-native";
+import { Text, setTextSize, textScale } from "./components/Text";
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +20,8 @@ import Onboarding from "./components/Onboarding";
 import Tour, { tourRef } from "./components/Tour";
 import { useEdgeSwipe, InnerBackContext, underStyle, underShade } from "./components/EdgeSwipe";
 import BasketScreen from "./screens/BasketScreen";
+import ShopListScreen from "./screens/ShopListScreen";
+import { loadShopList } from "./shoplist";
 import PremiumScreen from "./screens/PremiumScreen";
 import PlacesScreen from "./screens/PlacesScreen";
 import CompareScreen from "./screens/CompareScreen";
@@ -115,11 +118,11 @@ function TabBar({ tab, onTab }) {
   const insets = useSafeAreaInsets();
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingBottom: Math.max(insets.bottom, 10) }}>
-      <View style={{ flexDirection: dir().row, alignItems: "flex-end", backgroundColor: Platform.OS === "ios" ? (isDark() ? "rgba(28,34,30,0.72)" : "rgba(255,255,255,0.72)") : C.tabbar, borderRadius: 30, paddingTop: 8, paddingBottom: 8,
+      <View style={{ flexDirection: dir().row, alignItems: "flex-end", backgroundColor: Platform.OS === "ios" ? (isDark() ? "rgba(22,29,25,0.92)" : "rgba(255,255,255,0.9)") : C.tabbar, borderRadius: 30, paddingTop: 8, paddingBottom: 8,
         borderWidth: 0.5, borderColor: isDark() ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
         shadowColor: "#000", shadowOpacity: isDark() ? 0.5 : 0.12, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
         {/* iPhone : verre dépoli derrière la barre (le contenu défile dessous) */}
-        {Platform.OS === "ios" ? <BlurView intensity={40} tint={isDark() ? "dark" : "light"} style={[StyleSheet.absoluteFill, { borderRadius: 30, overflow: "hidden" }]} /> : null}
+        {Platform.OS === "ios" ? <BlurView intensity={60} tint={isDark() ? "dark" : "light"} style={[StyleSheet.absoluteFill, { borderRadius: 30, overflow: "hidden" }]} /> : null}
         {TABS.map((it) => {
           const on = tab === it.id;
           const scan = it.id === "scan";
@@ -140,7 +143,7 @@ function TabBar({ tab, onTab }) {
               {scan ? <ScanOrb home={on} pressed={pressed} /> : (
                 <TabIcon id={it.id} on={on} pressed={pressed} />
               )}
-              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: on || scan ? "700" : "600", color: on || scan ? C.brand : C.muted }}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={1.2} style={{ alignSelf: "stretch", textAlign: "center", paddingHorizontal: 1, fontSize: 11, fontWeight: on || scan ? "700" : "600", color: on || scan ? C.brand : C.muted }}>
                 {t(`tab.${it.id}`)}
               </Text>
               </>)}
@@ -150,6 +153,30 @@ function TabBar({ tab, onTab }) {
       </View>
     </View>
   );
+}
+
+// Changement de thème, de langue ou de taille du texte : l'ancien fond reste une fraction de seconde
+// par-dessus le nouvel écran puis s'efface. Le voile est posé dans le même rendu que le nouvel écran
+// (pas d'éclair), et son fondu ne démarre qu'une fois le voile affiché : auparavant il pouvait rester
+// figé en aplat par-dessus l'écran avant de disparaître d'un coup.
+function ThemeVeil({ k }) {
+  const v = useRef(new Animated.Value(0)).current;
+  const seen = useRef({ k, bg: C.bg });
+  const [veil, setVeil] = useState(null);
+  if (seen.current.k !== k) {
+    const old = seen.current.bg;
+    seen.current = { k, bg: C.bg };
+    if (ms(1) && old !== C.bg) { v.setValue(1); setVeil({ color: old, k }); }
+    else if (veil) setVeil(null);
+  }
+  useLayoutEffect(() => {
+    if (!veil) return undefined;
+    const anim = Animated.timing(v, { toValue: 0, duration: 240, easing: Easing.out(Easing.quad), useNativeDriver: true });
+    anim.start(({ finished }) => { if (finished) setVeil((x) => (x && x.k === veil.k ? null : x)); });
+    return () => anim.stop();
+  }, [veil && veil.k]);
+  if (!veil) return null;
+  return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: veil.color, opacity: v }]} />;
 }
 
 function Toast({ text }) {
@@ -169,7 +196,7 @@ function Toast({ text }) {
 
 // Un écran posé par-dessus les onglets, qui entre et sort en glissant.
 // fiche produit : glisse depuis le bord (sens de lecture) ; lecture d'étiquette : monte ; caméra : fondu.
-const SLIDE = ["sheet", "rankings", "basket", "premium", "places", "compare", "travel", "menu"];
+const SLIDE = ["sheet", "rankings", "basket", "shoplist", "premium", "places", "compare", "travel", "menu"];
 function Layer({ kind, instant, leaving, onGone, hidden, onBack, onSwipeGone, shared, under, children }) {
   const v = useRef(new Animated.Value(instant || !ms(1) ? 1 : 0)).current;
   const inner = useRef(null); // retour intérieur de l'écran (voir useInnerBack)
@@ -235,7 +262,7 @@ function Main() {
   useEffect(
     () =>
       subscribe((what) => {
-        if (what === "settings") { setLang(getSettings().lang); applyTheme(getSettings().theme); setQuickActions(); }
+        if (what === "settings") { setLang(getSettings().lang); applyTheme(getSettings().theme); setTextSize(getSettings().textSize); setQuickActions(); }
         // Alertes de rappel : autorisation demandée une fois, quand l'historique a quelques produits
         if (what === "history" || what === "settings") updateWidgets(getHistory());
         if (what === "history" && getHistory().length >= 2 && !getSettings().notifAsked && Platform.OS !== "web") setTimeout(() => askNotifications(), 1200);
@@ -254,7 +281,7 @@ function Main() {
   // Mode courses : panier gardé sur le téléphone
   const [basketMode, setBasketMode] = useState(false);
   const [basketCount, setBasketCount] = useState(0);
-  useEffect(() => { loadBasket(); return onBasket((l) => setBasketCount(l.length)); }, []);
+  useEffect(() => { loadBasket(); loadShopList(); return onBasket((l) => setBasketCount(l.length)); }, []);
   const basketAdd = (code) => {
     const added = addToBasket(code);
     const product = fetchProduct(code).then((p) => { if (p) { setBasketProduct(code, p); addToHistory(p); } return p; }).catch(() => null);
@@ -447,8 +474,10 @@ function Main() {
         status={homeStatus}
       />
     );
-  if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} />;
-  if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} />;
+  if (tab === "search") page = <SearchScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast}
+    onCompare={(code, p) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: p }); }} />;
+  if (tab === "history") page = <HistoryScreen onOpen={(code) => openProduct(code)} onScan={() => openCamera()} toast={toast} onShopList={() => push({ type: "shoplist" })}
+    onCompare={(code, p) => { if (canUse("compare")) push({ type: "compare", base: code, baseP: p }); }} />;
   if (tab === "additives") page = <AdditivesScreen onGotoSettings={() => gotoSettings()} />;
   if (tab === "settings") page = <SettingsScreen focus={focus} toast={toast} onTour={() => startTour(0)} onPremium={() => push({ type: "premium" })} />;
 
@@ -495,6 +524,8 @@ function Main() {
     if (item.type === "compare") return <CompareScreen base={item.base} baseP={item.baseP} onClose={pop} onScan={() => openCamera({ replace: true })} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
     if (item.type === "aisle") return <AisleScreen onClose={pop} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "premium") return <PremiumScreen onClose={pop} feature={item.feature} toast={toast} />;
+    if (item.type === "shoplist")
+      return <ShopListScreen onClose={pop} toast={toast} onOpen={(code) => push({ type: "sheet", code, fromScan: false })} />;
     if (item.type === "basket")
       return <BasketScreen onClose={pop} toast={toast} onScan={() => { setBasketMode(true); openCamera({ replace: true }); }} onOpen={(code, o) => push({ type: "sheet", code, fromScan: false, ...(o || {}) })} />;
     if (item.type === "rankings")
@@ -517,7 +548,7 @@ function Main() {
 
   // Captures automatiques (version web de contrôle seulement) : on pilote l'app depuis le navigateur
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
+    window.__bayyin = { openProduct, setTab: changeTab, openCamera, gotoSettings, pop, openRankings: () => push({ type: "rankings" }), openBasket: () => push({ type: "basket" }), openShopList: () => push({ type: "shoplist" }), basketAdd, openPlaces: () => push({ type: "places" }), openCompare: (base) => push({ type: "compare", base }), openTool: (type, extra) => push({ type, ...(extra || {}) }), recipeDemo: (c) => injectChange(c), premium: (on) => { setPreview(on); if (on) push({ type: "premium" }); }, setSettings, tour: (n) => (n === null ? setTour(null) : startTour(n)), onboard: setOnboard };
   }
 
   // L'écran précédent reste monté sous celui du dessus : le retour est immédiat et garde la position.
@@ -526,13 +557,14 @@ function Main() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar style={(top && (top.type === "camera" || top.type === "aisle") && leaving !== top.key) || isDark() ? "light" : "dark"} />
-      <Animated.View key={getLang() + (isDark() ? "d" : "l")} style={[{ flex: 1 }, underStyle(swipeShared.dx, tabActive)]} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
+      <Animated.View key={getLang() + (isDark() ? "d" : "l") + textScale()} style={[{ flex: 1 }, underStyle(swipeShared.dx, tabActive)]} importantForAccessibility={stack.length ? "no-hide-descendants" : "auto"} accessibilityElementsHidden={stack.length > 0}>
         <FadeIn key={tab} distance={0} style={{ flex: 1 }}>
           <Guard key={tab}>{page}</Guard>
         </FadeIn>
         <TabBar tab={tab} onTab={(id) => { if (id === "scan" && tab === "scan") openCamera(); else changeTab(id); }} />
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }, underShade(swipeShared.dx, tabActive)]} />
       </Animated.View>
+      <ThemeVeil k={getLang() + (isDark() ? "d" : "l") + textScale()} />
       {visible.map((item) => {
         const isTop = item === top;
         return (
@@ -618,6 +650,7 @@ export default function App() {
         const s = getSettings();
         setLang(s ? s.lang : "fr");
         applyTheme(s ? s.theme : "auto");
+        setTextSize(s ? s.textSize : "m");
         setReady(true);
       });
   }, []);

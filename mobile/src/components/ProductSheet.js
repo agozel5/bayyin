@@ -1,7 +1,9 @@
 // Fiche produit : verdict halal, note santé, additifs, alternatives… (même contenu que la version web)
 import { Img, prefetchImages } from "./Img";
+import { Burst } from "./Fx";
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, Share, Animated, Easing, Platform } from "react-native";
+import { View, ScrollView, Pressable, Linking, Share, Animated, Easing, Platform } from "react-native";
+import { Text } from "./Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "./Icon";
 import { Txt, H2, Muted, Label, Row, Btn, Pill, Message, Skeleton, FadeIn } from "./ui";
@@ -12,21 +14,23 @@ import { isDark, C, R, ALERT_COLORS, RISK_COLORS, GRADE_COLORS, LEVEL_COLORS, NO
 import { t, tn } from "../i18n";
 import { SOURCE_BY_ID, RISK_SOURCES, isMedicineCode } from "../core";
 import { fetchProduct, fetchAlternatives } from "../api";
-import { getSettings, getEntry, addToHistory, toggleFav, subscribe } from "../storage";
+import { getSettings, getEntry, addToHistory, toggleFav, subscribe, getHistory } from "../storage";
 import { verdictOf, nameOf, scoreOf, S, isBarcode, noteText, fmt, errorText, kindOf, profileOf } from "../view";
 import { Top as Top2, VerdictHero, Confidence, SheetTabs, Chain, Reader, CertCard, Disclaimer, Panel, FlagCard as FlagCard2 } from "./SheetParts";
 import { Glyph, Art, Tile } from "./Art";
-import { ProductCard } from "./Cards";
+import { ProductCard, Thumb } from "./Cards";
 import { I } from "../../../public/lib/icons.js";
 import { CompositionAdditives } from "./Additives";
 import PlanetSection from "./Planet";
 import RecipeBox from "./RecipeBox";
+import { previewOf } from "../preview";
+import { getShopList } from "../shoplist";
 import RecallBox from "./Recall";
 import { RevealProvider, useRevealRoot, Reveal, useGrow, Chevron, Collapse } from "./Reveal";
 import { AskBrand, OffPhoto, Twins, Contribute, ingredientsPhoto } from "./SheetExtras";
 import { mailto } from "../config";
 import LetterScale from "./LetterScale";
-import ShareCard, { shareUrl } from "./ShareCard";
+import ShareCard, { shareUrl, shareCardImage } from "./ShareCard";
 import { countScan } from "../review";
 import CosmeticSection, { CosmeticIngredients } from "./Cosmetic";
 import { NUT_ART, ALLERGEN_ART } from "../../../public/lib/rank-art.js";
@@ -422,6 +426,22 @@ function NovaScale({ group }) {
   );
 }
 
+// Signaler une erreur : une carte visible, pas un lien perdu en bas de fiche
+function ReportCard({ url }) {
+  return (
+    <Panel>
+      <Row gap={12} style={{ alignItems: "center" }}>
+        <Tile color="#E0423A" paths='<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>' size={38} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Txt style={{ fontWeight: "800", fontSize: 15.5 }}>{t("detail.report_t")}</Txt>
+          <Muted style={{ fontSize: 13, lineHeight: 18 }}>{t("detail.report_p")}</Muted>
+        </View>
+      </Row>
+      <Btn title={t("detail.report_btn")} kind="soft" onPress={() => open(url)} />
+    </Panel>
+  );
+}
+
 function LinkRow({ text, url, muted = false }) {
   return (
     <Pressable onPress={() => open(url)} accessibilityRole="link" style={{ paddingVertical: 8 }}>
@@ -486,9 +506,9 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
       <FadeIn><Top2 p={p} /></FadeIn>
       <FadeIn delay={40}><ProfileAlert p={p} onGotoProfile={onGotoProfile} /></FadeIn>
       <RecallBox p={p} />
-      {isBarcode(p.code) ? <RecipeBox code={p.code} /> : null}
+      {isBarcode(p.code) ? <RecipeBox code={p.code} where="top" /> : null}
       <FadeIn delay={60}><VerdictHero p={p} v={v} scanned={scanned} /></FadeIn>
-      {kind !== "medicine" ? <FadeIn delay={90}><Confidence p={p} v={v} /></FadeIn> : null}
+      {isBarcode(p.code) ? <RecipeBox code={p.code} where="below" /> : null}
     </View>,
     <View key="tabs" style={{ backgroundColor: C.bg, paddingBottom: 12, paddingTop: 2 }}>
       <SheetTabs tabs={tabs} cur={cur} onTab={(x) => { setTab(x); onTabChange && onTabChange(); }} />
@@ -496,13 +516,13 @@ function productBlocks({ p, scanned, onOpen, onGotoSettings, onGotoProfile, onOc
     <View key="body" style={{ gap: 14 }}>
       <FadeIn key={cur} distance={6}>{tabs.find((x) => x.id === cur).el}</FadeIn>
       {!p.local && food ? <AlternativesSection p={p} onOpen={onOpen} /> : null}
+      {report ? <ReportCard url={report} /> : null}
       <Panel gap={6}>
         {p.local ? (
           isBarcode(p.code) ? <LinkRow text={t("msg.add_off")} url={`https://world.openfoodfacts.org/cgi/product.pl?type=add&code=${p.code}`} /> : null
         ) : p.offUrl ? (
           <LinkRow text={t(kind === "medicine" ? "detail.med_link" : kind === "beauty" ? "detail.obf_link" : "detail.off_link")} url={p.offUrl} />
         ) : null}
-        {report ? <LinkRow text={t("detail.report")} url={report} muted /> : null}
       </Panel>
     </View>,
   ];
@@ -541,16 +561,31 @@ function VerdictFlash({ status }) {
 // ---------------------------------------------------------------------------
 // Fiche complète (chargement, en-tête, favoris, partage)
 // ---------------------------------------------------------------------------
-function SheetSkeleton() {
+function SheetSkeleton({ preview }) {
+  const meta = preview ? [preview.brand, preview.quantity].filter(Boolean).join(" · ") : "";
   return (
     <View style={{ gap: 18 }} accessible accessibilityLabel={t("msg.loading")}>
-      <Row gap={14}>
-        <Skeleton width={84} height={84} radius={16} />
-        <View style={{ flex: 1, gap: 10 }}>
-          <Skeleton height={22} width="85%" />
-          <Skeleton height={16} width="50%" />
-        </View>
-      </Row>
+      {preview ? (
+        // Déjà connu : la vraie photo et le vrai nom, le reste arrive
+        <FadeIn distance={4}>
+          <Row gap={14}>
+            <View style={[{ borderRadius: 20, backgroundColor: C.surface, padding: 6 }, lift()]}><Thumb p={preview} size={96} radius={16} /></View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Txt numberOfLines={3} style={{ fontSize: 22, lineHeight: 27, fontWeight: "800", letterSpacing: -0.3 }}>{nameOf(preview)}</Txt>
+              {meta ? <Muted numberOfLines={1}>{meta}</Muted> : null}
+              {/^\d+$/.test(preview.code) ? <Text style={{ color: C.faint, fontSize: 13, fontVariant: ["tabular-nums"], letterSpacing: 0.5, textAlign: dir().ta }}>{preview.code}</Text> : null}
+            </View>
+          </Row>
+        </FadeIn>
+      ) : (
+        <Row gap={14}>
+          <Skeleton width={84} height={84} radius={16} />
+          <View style={{ flex: 1, gap: 10 }}>
+            <Skeleton height={22} width="85%" />
+            <Skeleton height={16} width="50%" />
+          </View>
+        </Row>
+      )}
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Skeleton height={128} radius={R.lg} style={{ flex: 1 }} width={null} />
         <Skeleton height={128} radius={R.lg} style={{ flex: 1 }} width={null} />
@@ -564,8 +599,31 @@ function SheetSkeleton() {
   );
 }
 
+// Étoile des favoris : petit « pop » élastique et gerbe dorée quand on l'ajoute
+function FavStar({ fav }) {
+  const v = useRef(new Animated.Value(1)).current;
+  const first = useRef(true);
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    if (!fav || !ms(1)) return;
+    setN((x) => x + 1);
+    v.setValue(0.6);
+    Animated.spring(v, { toValue: 1, friction: 3, tension: 200, useNativeDriver: true }).start();
+  }, [fav]);
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <Burst play={n} count={10} radius={26} size={5} colors={["#E9A100", "#F4C542", "#FFD87A"]} />
+      <Animated.View style={{ transform: [{ scale: v }] }}>
+        <Icon name="star" size={23} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function ProductSheet({ code, product, fromScan, revealed, onClose, onOpen, onScanAgain, onOcr, onGotoSettings, onGotoProfile, onCompare, toast }) {
   const insets = useSafeAreaInsets();
+  const todayN = (() => { const d0 = new Date().setHours(0, 0, 0, 0); return getHistory().filter((e) => e.at >= d0).length; })(); // compteur du jour, après un scan
   const [state, setState] = useState(() =>
     product ? { p: product, loading: false } : { p: null, loading: true }
   );
@@ -585,7 +643,9 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
       // Fiche déjà vue : affichée tout de suite, puis rafraîchie
       setState({ p: saved.p, loading: false });
     } else {
-      setState({ p: null, loading: true });
+      // Pendant le chargement : nom, marque et photo déjà connus s'affichent tout de suite
+      const sl = getShopList().find((x) => x.code === code);
+      setState({ p: null, loading: true, preview: (saved && saved.p) || (sl && sl.p) || previewOf(code) });
     }
     fetchProduct(code)
       .then((p) => {
@@ -625,6 +685,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
   // Partage : une image du verdict (carte), ou le texte quand l'image n'est pas possible
   const cardRef = useRef(null);
   const [card, setCard] = useState(false);
+  const cardReady = useRef(null);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyin.shareCard = setCard; // captures automatiques (web)
   const onShare = async () => {
     if (!p) return;
@@ -633,23 +694,14 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
     const text = t("sheet.share_text", { name: nameOf(p), status: S(verdictOf(p).status, "label"), health: s ? t(kindOf(p) === "beauty" ? "sheet.share_cosmetic" : "sheet.share_health", { n: s.score }) : "" });
     const link = isBarcode(p.code) && shareUrl(p.code) ? `\n${shareUrl(p.code)}` : "";
     if (Platform.OS !== "web") {
-      try {
-        setCard(true);
-        await new Promise((r) => setTimeout(r, 900)); // le temps d'afficher la photo du produit
-        const { captureRef } = require("react-native-view-shot");
-        const Sharing = require("expo-sharing");
-        // Capture limitée à 5 s : sinon, partage du texte
-        const uri = await Promise.race([
-          captureRef(cardRef, { format: "png", quality: 1, width: 1080, height: 1920, result: "tmpfile" }),
-          new Promise((_, ko) => setTimeout(() => ko(new Error("capture")), 5000)),
-        ]);
-        const file = String(uri).startsWith("file://") ? uri : `file://${uri}`;
-        // iPhone : la feuille de partage du système (WhatsApp, Messages…) avec l'image et le texte.
-        // (avec expo-sharing, WhatsApp s'ouvrait puis se refermait aussitôt.)
-        if (Platform.OS === "ios") { await Share.share({ url: file, message: text + link }); setCard(false); return; }
-        if (await Sharing.isAvailableAsync()) { await Sharing.shareAsync(file, { mimeType: "image/png", dialogTitle: nameOf(p) }); setCard(false); return; }
-        setCard(false);
-      } catch { setCard(false); }
+      // La carte est dessinée hors de l'écran ; on attend que la photo du produit soit affichée (3,5 s au plus)
+      const shown = new Promise((r) => { cardReady.current = r; });
+      setCard(true);
+      await Promise.race([shown, new Promise((r) => setTimeout(r, 3500))]);
+      await new Promise((r) => setTimeout(r, 180)); // le temps de dessiner l'image
+      const ok = await shareCardImage(cardRef, { name: nameOf(p), message: text + link });
+      setCard(false);
+      if (ok) return;
     }
     Share.share({ message: text + link }).catch(() => {});
   };
@@ -702,7 +754,7 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
         ) : null}
         {p ? (
           <Pressable onPress={onFav} style={press} accessibilityRole="button" accessibilityState={{ selected: fav }} accessibilityLabel={t(fav ? "sheet.fav_remove" : "sheet.fav_add")} hitSlop={6}>
-            <Icon name="star" size={23} color={fav ? "#E9A100" : C.fg} fill={fav ? "#E9A100" : "none"} />
+            <FavStar fav={fav} />
           </Pressable>
         ) : null}
         <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 0.5, backgroundColor: C.line, opacity: lineOp }} />
@@ -713,12 +765,12 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
         stickyHeaderIndices={p && !state.loading && !state.notFound && !state.error ? [1] : undefined}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 30 + insets.bottom }}>
         {state.loading ? (
-          <SheetSkeleton />
+          <SheetSkeleton preview={state.preview} />
         ) : state.notFound ? (
           isMedicineCode(code) ? (
             <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.med_notfound", { code })} />
           ) : (
-            <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code })} action={t("detail.photo_ingredients")} onAction={() => onOcr(code)} />
+            <EmptyState pose="search" title={t("msg.notfound.t")} text={`${t("notfound.lead")}\n${code}`} action={t("detail.photo_ingredients")} onAction={() => onOcr(code)} />
           )
         ) : state.error ? (
           <Message title={t("msg.load_error.t")} text={errorText(state.error)}>
@@ -736,11 +788,12 @@ export default function ProductSheet({ code, product, fromScan, revealed, onClos
       {card && p ? (
         // hors de l'écran pour le partage ; au centre pour les captures de contrôle (web)
         <View pointerEvents="none" style={Platform.OS === "web" ? { position: "absolute", top: 70, left: 0, right: 0, alignItems: "center" } : { position: "absolute", top: 0, left: 0, zIndex: -1, elevation: 0 }}>
-          <ShareCard ref={cardRef} p={p} />
+          <ShareCard ref={cardRef} p={p} onReady={() => { if (cardReady.current) cardReady.current(); }} />
         </View>
       ) : null}
       {fromScan ? (
-        <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.bg }}>
+        <View style={{ padding: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.bg, gap: 8 }}>
+          {todayN > 1 ? <Muted style={{ fontSize: 13, textAlign: "center" }}>{tn("sheet.today", todayN)}</Muted> : null}
           <Btn title={t("sheet.scan_again")} icon="scan" onPress={onScanAgain} />
         </View>
       ) : null}

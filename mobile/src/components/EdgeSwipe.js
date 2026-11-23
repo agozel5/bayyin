@@ -5,6 +5,9 @@ import { Animated, PanResponder, Dimensions, BackHandler, Easing } from "react-n
 import { dir } from "../theme";
 import { haptic } from "../motion";
 
+// Verrou : tant qu'une visionneuse plein écran est ouverte (photos du produit), le geste de retour est
+// suspendu. Sans lui, balayer vers la photo précédente depuis le bord fermait la fiche entière.
+export const swipeLock = { n: 0 };
 const EDGE = 22; // largeur du bord qui déclenche le retour (les listes horizontales commencent après)
 /**
  * opts.dx / opts.active : valeurs partagées (l'écran du dessous les lit pour glisser avec, comme sur iPhone).
@@ -25,6 +28,7 @@ export function useEdgeSwipe(onBack, enabled = true, opts = {}) {
   const reset = () => { vals.current.dx.setValue(0); vals.current.active.setValue(0); };
   const pan = useRef(PanResponder.create({
     onMoveShouldSetPanResponderCapture: (e, g) => {
+      if (swipeLock.n > 0) return false;
       if (!(typeof on.current === "function" ? on.current() : on.current)) return false;
       const W = Dimensions.get("window").width;
       const rtl = dir().rtl;

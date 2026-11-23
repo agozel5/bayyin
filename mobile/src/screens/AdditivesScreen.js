@@ -1,7 +1,8 @@
 // Guide des additifs : codes E (origine, halal selon vos réglages, risque santé) et ingrédients surveillés.
 // Même présentation que la version web.
 import React, { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, ScrollView, Modal } from "react-native";
+import { View, FlatList, Pressable, ScrollView, Modal } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted } from "../components/ui";
 import { useNavBar } from "../components/NavBar";

@@ -1,7 +1,8 @@
 // Briques des outils photo (mode voyage, carte de restaurant) et des pages d'outils :
 // en-tête avec retour, carte d'accueil illustrée, choix de la photo, lecture du texte.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, Platform, Modal, Animated, Easing, Image } from "react-native";
+import { View, ScrollView, Pressable, Platform, Modal, Animated, Easing, Image } from "react-native";
+import { Text } from "./Text";
 import SafeWebView, { PAGE_BASE } from "./SafeWebView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tile, Glyph } from "./Art";
@@ -10,12 +11,13 @@ import { C, R, dir, lift } from "../theme";
 import { t } from "../i18n";
 import { haptic, ms } from "../motion";
 import { nativeText, ocrHtml } from "./OcrFlow";
+import { NavScroll } from "./NavBar";
 
 /** Page d'outil : titre, retour, contenu qui défile */
 export function ToolPage({ title, onClose, children, scrollRef, right }) {
   const insets = useSafeAreaInsets();
   return (
-    <ScrollView ref={scrollRef} style={{ flex: 1, backgroundColor: C.bg }} keyboardShouldPersistTaps="handled"
+    <NavScroll title={title} scrollRef={scrollRef} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
       <View style={{ flexDirection: dir().row, alignItems: "center", gap: 6 }}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
@@ -25,7 +27,7 @@ export function ToolPage({ title, onClose, children, scrollRef, right }) {
         {right || null}
       </View>
       {children}
-    </ScrollView>
+    </NavScroll>
   );
 }
 
@@ -162,7 +164,7 @@ export function ScanReading({ photo, progress = 0, steps = [], tips = [], color 
     loop.start();
     return () => loop.stop();
   }, []);
-  useEffect(() => { Animated.timing(pct, { toValue: progress, duration: 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(); }, [progress]);
+  useEffect(() => { Animated.timing(pct, { toValue: progress, duration: ms(450), easing: Easing.out(Easing.cubic), useNativeDriver: false }).start(); }, [progress]);
   useEffect(() => {
     if (tips.length < 2) return undefined;
     const id = setInterval(() => setTip((n) => (n + 1) % tips.length), 3600);

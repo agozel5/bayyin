@@ -1,7 +1,8 @@
 // Onglet Planète : Green-Score d'Open Food Facts (analyse de cycle de vie Agribalyse), bio, huile de palme,
 // origine des ingrédients (carte et drapeaux) et emballage. Même contenu que la version web.
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Animated } from "react-native";
+import { View, Pressable, Animated } from "react-native";
+import { Text } from "./Text";
 import { SvgXml } from "react-native-svg";
 import { Txt, Muted, Row, Skeleton } from "./ui";
 import { Art, Glyph } from "./Art";

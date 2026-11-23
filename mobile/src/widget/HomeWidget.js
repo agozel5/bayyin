@@ -60,7 +60,7 @@ function Head({ d, light = true }) {
       <SvgWidget svg={LOGO} style={{ width: 24, height: 24 }} />
       <TextWidget text="  Bayyin" style={{ fontSize: 15, fontWeight: "700", color: light ? "#FFFFFF" : GREEN }} />
       <FlexWidget style={{ flex: 1 }} />
-      <TextWidget text={d.week} style={{ fontSize: 12, color: light ? "#D6F2E4" : "#5D6A63" }} />
+      <TextWidget text={d.week} maxLines={1} truncate="END" style={{ fontSize: 12, color: light ? "#D6F2E4" : "#5D6A63" }} />
     </FlexWidget>
   );
 }
@@ -82,7 +82,7 @@ function Counts({ d }) {
       {["ok", "doubt", "bad"].filter((k) => d[k]).map((k) => (
         <FlexWidget key={k} style={{ flexDirection: "row", alignItems: "center", marginRight: 12 }}>
           <FlexWidget style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: DOT[k] }} />
-          <TextWidget text={" " + (d.labels[k] || d[k])} style={{ fontSize: 12, color: "#FFFFFF", fontWeight: "700" }} />
+          <TextWidget text={" " + (d.labels[k] || d[k])} maxLines={1} style={{ fontSize: 12, color: "#FFFFFF", fontWeight: "700" }} />
         </FlexWidget>
       ))}
     </FlexWidget>
@@ -94,7 +94,7 @@ function ScanButton({ d }) {
     <FlexWidget {...link("bayyin://scan")}
       style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF", borderRadius: 16, paddingVertical: 10, width: "match_parent" }}>
       <SvgWidget svg={ico(P.scan)} style={{ width: 20, height: 20 }} />
-      <TextWidget text={"  " + d.title} style={{ fontSize: 15, fontWeight: "700", color: GREEN }} />
+      <TextWidget text={"  " + d.title} maxLines={1} truncate="END" style={{ fontSize: 15, fontWeight: "700", color: GREEN }} />
     </FlexWidget>
   );
 }
@@ -105,7 +105,7 @@ function Shortcut({ uri, paths, text, light = false }) {
       <FlexWidget style={{ width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: light ? "#FFFFFF" : "#E7F3EC" }}>
         <SvgWidget svg={ico(paths)} style={{ width: 22, height: 22 }} />
       </FlexWidget>
-      <TextWidget text={text} maxLines={1} style={{ fontSize: 11, marginTop: 4, color: light ? "#FFFFFF" : "#16241C", fontWeight: "600" }} />
+      <TextWidget text={text} maxLines={1} truncate="END" style={{ fontSize: 11, marginTop: 4, color: light ? "#FFFFFF" : "#16241C", fontWeight: "600" }} />
     </FlexWidget>
   );
 }
@@ -124,7 +124,7 @@ export function HomeWidget({ data }) {
           <FlexWidget style={{ flex: 1, flexDirection: "column" }}>
             <FlexWidget style={{ flexDirection: "row", alignItems: "center" }}>
               <TextWidget text={String(d.n)} style={{ fontSize: 28, fontWeight: "700", color: "#FFFFFF" }} />
-              <TextWidget text={"  " + (w.ofWeek || "")} style={{ fontSize: 12, color: "#D6F2E4" }} />
+              <TextWidget text={"  " + (w.ofWeek || "")} maxLines={1} truncate="END" style={{ fontSize: 12, color: "#D6F2E4" }} />
             </FlexWidget>
             <WeekBar d={d} />
             <FlexWidget style={{ height: 5 }} />
@@ -157,8 +157,8 @@ export function ScanWidget({ data }) {
           </FlexWidget>
         ) : null}
       </OverlapWidget>
-      <TextWidget text={d.scan} style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF", marginTop: 6 }} />
-      {d.n ? <TextWidget text={`${d.n} · ${d.share} % ${d.words.halal || "halal"}`} style={{ fontSize: 11.5, color: "#D6F2E4", marginTop: 1 }} /> : null}
+      <TextWidget text={d.scan} maxLines={1} truncate="END" style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF", marginTop: 6 }} />
+      {d.n ? <TextWidget text={`${d.n} · ${d.share} % ${d.words.halal || "halal"}`} maxLines={1} truncate="END" style={{ fontSize: 11.5, color: "#D6F2E4", marginTop: 1 }} /> : null}
     </FlexWidget>
   );
 }
@@ -190,7 +190,7 @@ export function LastWidget({ data }) {
       ) : <TextWidget text={w.none || ""} maxLines={3} style={{ fontSize: 12.5, color: "#5D6A63" }} />}
       <FlexWidget {...link("bayyin://scan")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", width: "match_parent", backgroundColor: GREEN, borderRadius: 12, paddingVertical: 7 }}>
         <SvgWidget svg={ico(P.scan, "#FFFFFF")} style={{ width: 16, height: 16 }} />
-        <TextWidget text={"  " + d.scan} style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF" }} />
+        <TextWidget text={"  " + d.scan} maxLines={1} truncate="END" style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF" }} />
       </FlexWidget>
     </FlexWidget>
   );
@@ -227,7 +227,7 @@ export function RecentWidget({ data }) {
       </FlexWidget>
       {d.alert ? <FlexWidget style={{ paddingHorizontal: 6, paddingTop: 6, width: "match_parent" }}><RecallBar d={d} /></FlexWidget> : null}
       <FlexWidget style={{ flex: 1, flexDirection: "column", paddingHorizontal: 14, paddingTop: 10, width: "match_parent" }}>
-        <TextWidget text={w.recent || "Derniers produits"} style={{ fontSize: 12, fontWeight: "700", color: "#5D6A63" }} />
+        <TextWidget text={w.recent || "Derniers produits"} maxLines={1} truncate="END" style={{ fontSize: 12, fontWeight: "700", color: "#5D6A63" }} />
         {d.recent.length ? d.recent.slice(0, 4).map((r) => (
           <FlexWidget key={r.code} {...link(`bayyin://p/${r.code}`)} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 6, width: "match_parent" }}>
             <FlexWidget style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: REC[r.g] }} />
@@ -236,7 +236,7 @@ export function RecentWidget({ data }) {
               {r.brand ? <TextWidget text={r.brand} maxLines={1} truncate="END" style={{ fontSize: 11.5, color: "#5D6A63" }} /> : null}
             </FlexWidget>
             <FlexWidget style={{ backgroundColor: PILL[r.g][0], borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <TextWidget text={r.label} style={{ fontSize: 11, fontWeight: "700", color: PILL[r.g][1] }} />
+              <TextWidget text={r.label} maxLines={1} style={{ fontSize: 11, fontWeight: "700", color: PILL[r.g][1] }} />
             </FlexWidget>
           </FlexWidget>
         )) : <TextWidget text={w.none || ""} style={{ fontSize: 13, color: "#5D6A63", marginTop: 8 }} />}

@@ -54,11 +54,13 @@ export async function initStorage() {
     onboarded: !!s.onboarded,
     toured: !!s.toured,
     notif: s.notif !== false, // alertes de rappel (si le téléphone les autorise)
+    scanSound: s.scanSound === true, // son à la lecture d'un code (coupé par défaut)
     recipeAlerts: s.recipeAlerts !== false, // alerte quand la recette d'un produit suivi change
     notifAsked: !!s.notifAsked,
     scans: s.scans || 0, // nombre de fiches ouvertes (demande d'avis)
     reviewAsked: s.reviewAsked || 0,
     theme: ["auto", "light", "dark"].includes(s.theme) ? s.theme : "auto",
+    textSize: ["s", "m", "l", "xl"].includes(s.textSize) ? s.textSize : "m", // taille du texte choisie dans Apparence
     distrust: Array.isArray(s.distrust) ? s.distrust : [],
     // Profils de la famille (Premium) : prénom, allergies et régime de chacun
     members: (Array.isArray(s.members) ? s.members : []).slice(0, 8).filter((m) => m && m.id && m.name).map((m) => ({

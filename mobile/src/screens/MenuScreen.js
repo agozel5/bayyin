@@ -1,7 +1,8 @@
 // Carte de restaurant : photo de la carte, lecture sur le téléphone, puis chaque plat est classé
 // (à éviter, à vérifier, rien de signalé), avec les ingrédients que son nom laisse deviner.
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, Image, Modal, ScrollView, Animated, Easing } from "react-native";
+import { View, TextInput, Pressable, Image, Modal, ScrollView, Animated, Easing } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import { Glyph } from "../components/Art";

@@ -1,7 +1,8 @@
 // Accueil guidé du premier lancement (comme la version web) : langue, avis religieux, allergies et régime.
 // Trois étapes, la mascotte change à chaque étape ; tout reste modifiable ensuite dans Réglages.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, Animated, Easing, StyleSheet } from "react-native";
+import { View, Pressable, ScrollView, Animated, Easing, StyleSheet } from "react-native";
+import { Text } from "./Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Art } from "./Art";
 import { Btn, Muted } from "./ui";

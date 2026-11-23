@@ -1,21 +1,25 @@
 // Recherche par nom de produit, marque ou code-barres : même fonctionnement que la version web
 // (aliments et cosmétiques, recherche pendant la frappe, historique d'abord, filtres, recherches récentes).
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable, ScrollView } from "react-native";
+import { Text } from "../components/Text";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Muted, Message, Row, Txt, Btn, Skeleton } from "../components/ui";
+import { Muted, Message, Row, Txt, Btn, Skeleton, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
 import EmptyState from "../components/Empty";
 import { PageHead, SearchBox, Chip, Segmented } from "../components/Controls";
-import { ListRow } from "../components/Cards";
+import { ListRow, ProductCard } from "../components/Cards";
 import { Art, Tile, Glyph } from "../components/Art";
-import { C, R, dir, lift } from "../theme";
-import { t, tn } from "../i18n";
+import { C, R, dir, lift, isDark } from "../theme";
+import { t, tn, getLang } from "../i18n";
 import { fetchProduct, searchAll } from "../api";
 import { getHistory, getSettings } from "../storage";
-import { errorText, verdictOf, profileOf, kindOf } from "../view";
-import { hasProfile } from "../core";
-import { rankByRelevance } from "../../../public/lib/search.js";
+import { errorText, verdictOf, profileOf, kindOf, nameOf } from "../view";
+import { ChoiceSheet } from "../components/ToolKit";
+import { rememberPreview } from "../preview";
+import { inShopList, toggleShopList } from "../shoplist";
+import { hasProfile, DICTS } from "../core";
+import { rankByRelevance, suggestTerms } from "../../../public/lib/search.js";
 import { artByKey } from "../../../public/lib/product-art.js";
 
 const RECENT = "bayyin:recent_q";
@@ -31,14 +35,35 @@ function fit(list, q) {
     return sum + hit + known;
   }, 0) / Math.max(1, Math.min(8, list.length)) * Math.min(8, list.length) ** 0.5;
 }
+// La base de produits est en français : un rayon touché dans une autre langue (« Yoğurtlar », « اللبن »…)
+// est cherché sous son nom français (« Yaourts »). Le texte affiché reste celui de la langue choisie.
+const aliasCache = {};
+function frTerm(query) {
+  const lang = getLang();
+  if (lang === "fr") return query;
+  if (!aliasCache[lang]) {
+    const m = new Map();
+    for (const k of Object.keys(DICTS.fr)) {
+      if (!k.startsWith("rank.cat.")) continue;
+      const loc = t(k);
+      if (loc && loc !== k) m.set(String(loc).trim().toLowerCase(), DICTS.fr[k]);
+    }
+    aliasCache[lang] = m;
+  }
+  return aliasCache[lang].get(String(query).trim().toLowerCase()) || query;
+}
 // Écran d'accueil de la recherche : des rayons illustrés et quelques marques connues
 const AISLES = {
   food: ["spreads", "chocolates", "candies", "biscuits", "yogurts", "cheeses", "crisps", "sodas", "sausages"],
   beauty: ["shampoos", "shower_gels", "deodorants", "toothpastes", "face_creams", "body_creams", "lipsticks", "mascaras", "nail_polishes"],
 };
 const aislesOf = (kind) => (kind === "all" ? [...AISLES.food.slice(0, 6), ...AISLES.beauty.slice(0, 3)] : AISLES[kind]);
-const BRANDS = { food: ["Nutella", "Haribo", "Isla Délice", "Kinder", "Danone"], beauty: ["Nivea", "Garnier", "Maybelline"] };
-const brandsOf = (kind) => (kind === "all" ? [...BRANDS.food, ...BRANDS.beauty.slice(0, 2)] : BRANDS[kind]);
+// Couleur douce derrière l'illustration de chaque rayon
+const AISLE_TINT = {
+  spreads: "#C9873A", chocolates: "#8A5A3C", candies: "#D0486B", biscuits: "#D9A21B", yogurts: "#3F79B5", cheeses: "#E0B12E",
+  crisps: "#E07B2E", sodas: "#C2453B", sausages: "#B5523F", shampoos: "#8A5BD6", shower_gels: "#3FA0C8", deodorants: "#2F9C8A",
+  toothpastes: "#3F79B5", face_creams: "#D88AA5", body_creams: "#C99A6B", lipsticks: "#C23B5A", mascaras: "#4B4F6B", nail_polishes: "#D0486B",
+};
 const SectionTitle = ({ children, right }) => (
   <Row style={{ justifyContent: "space-between" }}>
     <Text accessibilityRole="header" style={{ fontSize: 12.5, fontWeight: "800", color: C.muted, letterSpacing: 0.6, textTransform: "uppercase", textAlign: dir().ta }}>{children}</Text>
@@ -54,18 +79,30 @@ const cache = new Map(); // réponses gardées 10 minutes : retaper une recherch
 // Compatibilité avec les anciens écrans qui importaient ces composants d'ici
 export { Chip, SearchBox as SearchField };
 
-function Group({ title, list, onOpen, count }) {
+function Group({ title, list, onOpen, count, onMenu }) {
   return (
     <View style={{ gap: 8 }}>
       {title ? <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.muted, textAlign: dir().ta }}>{title}{count ? ` · ${list.length}` : ""}</Text> : null}
       <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
-        {list.map((p, i) => <ListRow key={p.code} p={p} first={i === 0} onPress={() => onOpen(p.code)} />)}
+        {list.map((p, i) => <FadeIn key={p.code} delay={Math.min(i, 8) * 40} distance={10}><ListRow p={p} first={i === 0} onPress={() => onOpen(p.code)} onLongPress={onMenu ? () => onMenu(p) : undefined} /></FadeIn>)}
       </View>
     </View>
   );
 }
 
-export default function SearchScreen({ onOpen, onScan }) {
+export default function SearchScreen({ onOpen, onScan, onCompare, toast }) {
+  // Appui long sur un résultat : ouvrir, comparer, ajouter à la liste de courses
+  const [menu, setMenu] = useState(null);
+  const lastMenu = useRef(null); if (menu) lastMenu.current = menu;
+  const m = menu || lastMenu.current;
+  const menuSheet = (
+    <ChoiceSheet visible={!!menu} onClose={() => setMenu(null)} title={m ? nameOf(m) : ""} items={m ? [
+      { id: "open", color: "#14805A", paths: '<path d="M9 5l7 7-7 7"/>', title: t("history.open"), onPress: () => open(m.code) },
+      ...(onCompare && kindOf(m) !== "medicine" ? [{ id: "cmp", color: "#4C64D6", paths: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>', title: t("cmp.title"), onPress: () => onCompare(m.code, m) }] : []),
+      { id: "shop", color: "#E07B2E", paths: '<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>', title: t(inShopList(m.code) ? "shop.in" : "shop.add"),
+        onPress: () => { const on = toggleShopList(m); toast && toast(t(on ? "shop.added" : "shop.removed")); } },
+    ] : []} />
+  );
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("all");
   const [state, setState] = useState({});
@@ -98,16 +135,18 @@ export default function SearchScreen({ onOpen, onScan }) {
         return setState(p ? { q: query, single: [p] } : { notFound: digits });
       }
       if (query.length < 2) return setState({ short: true });
-      const local = localHits(query, k, 3);
+      const term = frTerm(query); // nom français si c'est un rayon, sinon la recherche telle quelle
+      const local = localHits(term, k, 3);
       setState({ loading: true, local });
-      const ck = `${getSettings().lang}|${k}|${query.toLowerCase()}`;
+      const ck = `${getSettings().lang}|${k}|${term.toLowerCase()}`;
       const hit = !force && cache.get(ck);
-      const res = hit && Date.now() - hit.at < 600000 ? hit.res : await searchAll(query, k);
+      const res = hit && Date.now() - hit.at < 600000 ? hit.res : await searchAll(term, k);
       if (n !== ticket.current) return;
       if (!res.foodFailed && !res.beautyFailed) cache.set(ck, { res, at: Date.now() });
       const known = new Set(local.map((p) => p.code));
       const fresh = (l) => l.filter((p) => !known.has(p.code));
       setFilter("all");
+      rememberPreview([...res.food, ...res.beauty]);
       setState({ q: query, local, food: fresh(res.food), beauty: fresh(res.beauty), alt: res.alt, foodFailed: res.foodFailed });
       if (keep) remember(query);
     } catch (err) {
@@ -122,12 +161,15 @@ export default function SearchScreen({ onOpen, onScan }) {
     if (!query) { ticket.current++; return setState({}); }
     const digits = query.replace(/\s+/g, "");
     if (/^\d+$/.test(digits)) { if (/^\d{8,14}$/.test(digits)) timer.current = setTimeout(() => run(query, { keep: false }), 450); return; }
-    if (query.length < 2) return;
+    if (query.length < 2) { ticket.current++; return setState({}); } // plus de résultats périmés
     ticket.current++;
     setState({ loading: query.length >= 3, local: localHits(query, kind, 5) });
     if (query.length >= 3) timer.current = setTimeout(() => run(query, { keep: false }), 700);
   };
   const pick = (s) => { setQ(s); run(s); };
+  const open = (code, opts) => { if (state.q) remember(state.q); onOpen(code, opts); }; // une recherche suivie d'un produit ouvert est gardée dans les récentes
+  const tips = q.trim().length >= 2 ? suggestTerms(q, getLang()) : [];
+  const seen = getHistory().filter((e) => kind === "all" || kindOf(e.p) === kind).slice(0, 8);
   const changeKind = (k) => { setKind(k); if (q.trim()) run(q, { force: true, k }); };
 
   const withProfile = hasProfile(getSettings().profile);
@@ -139,53 +181,88 @@ export default function SearchScreen({ onOpen, onScan }) {
   return (
     <Screen gap={16} title={t("search.title")}>
       <PageHead title={t("search.title")} sub={t("search.sub")} />
-      <SearchBox value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} />
+      <SearchBox value={q} onChangeText={change} onSubmit={() => run(q)} placeholder={t("search.placeholder")} onScan={onScan} scanLabel={t("home.scan")} />
+      {tips.length ? (
+        <FadeIn key={tips.join("|")} distance={4}>
+          <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden", marginTop: -4 }, lift()]}>
+            {tips.map((x, i) => {
+              const n = q.trim().length;
+              return (
+                <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button"
+                  style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 11, backgroundColor: pressed ? C.tint : "transparent", borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line })}>
+                  <Glyph paths='<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>' size={16} color={C.faint} />
+                  <Text numberOfLines={1} style={{ flex: 1, fontSize: 15.5, color: C.muted, textAlign: dir().ta }}>
+                    <Text style={{ color: C.fg, fontWeight: "800" }}>{x.slice(0, n)}</Text>{x.slice(n)}
+                  </Text>
+                  <View style={{ transform: [{ rotate: dir().rtl ? "45deg" : "-45deg" }] }}><Glyph paths='<path d="M5 12h14M13 6l6 6-6 6"/>' size={15} color={C.faint} /></View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </FadeIn>
+      ) : null}
       <Segmented items={["all", "food", "beauty"].map((k) => [k, t(`kindtab.${k}`)])} value={kind} onChange={changeKind} />
 
       {!q.trim() ? (
-        <View style={{ gap: 20 }}>
+        <View style={{ gap: 22 }}>
+          {/* Recherches récentes : des pastilles à faire défiler, effaçables d'un toucher */}
           {recent.length ? (
             <View style={{ gap: 10 }}>
               <SectionTitle right={<Pressable onPress={() => { setRecent([]); AsyncStorage.setItem(RECENT, "[]").catch(() => {}); }} hitSlop={8} accessibilityRole="button"><Text style={{ color: C.brand, fontWeight: "700", fontSize: 13.5 }}>{t("search.recent_clear")}</Text></Pressable>}>{t("search.recent")}</SectionTitle>
-              <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
-                {recent.slice(0, 5).map((x, i) => (
-                  <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button"
-                    style={({ pressed }) => ({ flexDirection: dir().row, alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: pressed ? C.tint : "transparent", borderTopWidth: i ? 0.5 : 0, borderTopColor: C.line })}>
-                    <Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={18} color={C.faint} />
-                    <Text numberOfLines={1} style={{ flex: 1, fontSize: 15.5, color: C.fg, textAlign: dir().ta }}>{x}</Text>
-                    <View style={{ transform: [{ rotate: dir().rtl ? "45deg" : "-45deg" }] }}><Glyph paths='<path d="M5 12h14M13 6l6 6-6 6"/>' size={16} color={C.faint} /></View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 8, flexDirection: dir().row }}>
+                {recent.slice(0, 8).map((x) => (
+                  <Pressable key={x} onPress={() => pick(x)} accessibilityRole="button" accessibilityLabel={x}
+                    style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 7, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, backgroundColor: pressed ? C.tint2 : C.surface }, lift()]}>
+                    <Glyph paths='<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' size={15} color={C.faint} />
+                    <Text numberOfLines={1} style={{ maxWidth: 180, fontSize: 14.5, fontWeight: "600", color: C.fg }}>{x}</Text>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           ) : null}
+
+          {/* Vos derniers produits : les rouvrir sans les rechercher */}
+          {seen.length ? (
+            <View style={{ gap: 10 }}>
+              <SectionTitle>{t("home.recent")}</SectionTitle>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 6, gap: 12, flexDirection: dir().row }}>
+                {seen.map((e) => <ProductCard key={e.code} p={e.p} fav={e.fav} onPress={() => onOpen(e.code)} />)}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Rayons : illustration sur un rond coloré, en grille de trois */}
           <View style={{ gap: 10 }}>
             <SectionTitle>{t("search.aisles")}</SectionTitle>
             <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 10 }}>
-              {aislesOf(kind).map((id) => (
-                <Pressable key={id} onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
-                  style={({ pressed }) => [{ flexBasis: "30%", flexGrow: 1, alignItems: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
-                  <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: C.artBg, alignItems: "center", justifyContent: "center" }}><Art xml={artByKey(`r:${id}`)} size={38} /></View>
-                  <Text numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16, fontWeight: "700", color: C.fg, textAlign: "center" }}>{t(`rank.cat.${id}`)}</Text>
-                </Pressable>
-              ))}
+              {aislesOf(kind).map((id, i) => {
+                const tint = AISLE_TINT[id] || C.brand;
+                return (
+                  <FadeIn key={id + kind} delay={i * 35} distance={12} style={{ flexBasis: "30%", flexGrow: 1, flexDirection: "row" }}>
+                    <Pressable onPress={() => pick(t(`rank.cat.${id}`))} accessibilityRole="button" accessibilityLabel={t(`rank.cat.${id}`)}
+                      style={({ pressed }) => [{ flex: 1, alignItems: "center", gap: 9, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 6, borderRadius: R.lg, backgroundColor: C.surface, overflow: "hidden", transform: [{ scale: pressed ? 0.96 : 1 }] }, lift()]}>
+                      <View style={{ position: "absolute", top: -26, width: 120, height: 70, borderRadius: 60, backgroundColor: tint, opacity: isDark() ? 0.16 : 0.1 }} />
+                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: tint + (isDark() ? "33" : "1F"), alignItems: "center", justifyContent: "center" }}><Art xml={artByKey(`r:${id}`)} size={38} /></View>
+                      <Text numberOfLines={2} style={{ fontSize: 12.5, lineHeight: 16, fontWeight: "700", color: C.fg, textAlign: "center" }}>{t(`rank.cat.${id}`)}</Text>
+                    </Pressable>
+                  </FadeIn>
+                );
+              })}
             </View>
           </View>
-          <View style={{ gap: 10 }}>
-            <SectionTitle>{t("search.brands")}</SectionTitle>
-            <View style={{ flexDirection: dir().row, flexWrap: "wrap", gap: 8 }}>
-              {brandsOf(kind).map((x) => <Chip key={x} text={x} onPress={() => pick(x)} />)}
-            </View>
-          </View>
-          <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: dir().row, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.brandDark : C.brand, alignItems: "center", gap: 12 })}>
-            <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" }}>
+
+          {/* Rappel discret : le code-barres donne la bonne fiche */}
+          <Pressable onPress={onScan} accessibilityRole="button" style={({ pressed }) => [{ flexDirection: dir().row, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface, alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.brand + "40" }, lift()]}>
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.brand, alignItems: "center", justifyContent: "center" }}>
               <Glyph paths='<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M16 8v8"/>' size={23} color="#fff" />
             </View>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15.5, textAlign: dir().ta }}>{t("search.tip_t")}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, lineHeight: 19, textAlign: dir().ta }}>{t("search.tip_p")}</Text>
+              <Text style={{ color: C.fg, fontWeight: "800", fontSize: 15, textAlign: dir().ta }}>{t("search.tip_t")}</Text>
+              <Text style={{ color: C.muted, fontSize: 13, lineHeight: 18, textAlign: dir().ta }}>{t("search.tip_p")}</Text>
             </View>
-            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color="#fff" /></View>
+            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color={C.faint} /></View>
           </Pressable>
         </View>
       ) : null}
@@ -193,11 +270,11 @@ export default function SearchScreen({ onOpen, onScan }) {
       {state.short ? <Message title={t("search.short.t")} text={t("search.short.p")} /> : null}
       {state.notFound ? <EmptyState pose="search" title={t("msg.notfound.t")} text={t("msg.notfound.p", { code: state.notFound })} action={t("home.scan")} onAction={onScan} /> : null}
       {state.error ? <Message title={t("msg.error.t")} text={errorText(state.error)}><Btn title={t("msg.retry")} onPress={() => run(q, { force: true })} /></Message> : null}
-      {state.single ? <Group list={state.single} onOpen={onOpen} /> : null}
+      {state.single ? <Group list={state.single} onOpen={open} onMenu={setMenu} /> : null}
 
       {state.loading ? (
         <View style={{ gap: 14 }}>
-          {state.local && state.local.length ? <Group title={t("search.in_history")} list={state.local} onOpen={onOpen} /> : null}
+          {state.local && state.local.length ? <Group title={t("search.in_history")} list={state.local} onOpen={open} onMenu={setMenu} /> : null}
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, padding: 14, gap: 16 }, lift()]} accessibilityLabel={t("search.searching")}>
             {[0, 1, 2].map((i) => <Row key={i} gap={12}><Skeleton width={54} height={54} radius={14} /><View style={{ flex: 1, gap: 8 }}><Skeleton height={14} width="80%" /><Skeleton height={11} width="45%" /></View></Row>)}
           </View>
@@ -214,12 +291,15 @@ export default function SearchScreen({ onOpen, onScan }) {
           {state.foodFailed ? <Message title={t("search.food_failed.t")} text={t("search.food_failed.p")}><Btn title={t("msg.retry")} onPress={() => run(q, { force: true })} /></Message> : null}
           {total ? (
             <>
-              <Muted style={{ fontSize: 13.5 }}>{tn("search.results", total)}{state.alt ? ` · ${t("search.alt", { q: state.alt })}` : ""}</Muted>
-              {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={onOpen} /> : null}
+              <View style={{ gap: 2 }}>
+                <Text style={{ fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase", textAlign: dir().ta }}>{tn("search.results", total)}</Text>
+                {state.alt ? <Muted style={{ fontSize: 12.5 }}>{t("search.alt", { q: state.alt })}</Muted> : null}
+              </View>
+              {r.local.length ? <Group title={t("search.in_history")} list={r.local} onOpen={open} onMenu={setMenu} /> : null}
               {(() => {
                 // Le groupe qui correspond le mieux à la recherche passe en premier (« nivea » : cosmétiques d'abord)
-                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={onOpen} /> : null;
-                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={onOpen} /> : null;
+                const foodG = r.food.length ? <Group key="f" title={r.beauty.length || r.local.length ? t("search.g_food") : null} count={!!(r.beauty.length || r.local.length)} list={r.food} onOpen={open} onMenu={setMenu} /> : null;
+                const beautyG = r.beauty.length ? <Group key="b" title={t("search.g_beauty")} count list={r.beauty} onOpen={open} onMenu={setMenu} /> : null;
                 return fit(r.beauty, state.q) > fit(r.food, state.q) ? [beautyG, foodG] : [foodG, beautyG];
               })()}
             </>
@@ -228,6 +308,7 @@ export default function SearchScreen({ onOpen, onScan }) {
           ) : null}
         </View>
       ) : null}
+      {menuSheet}
     </Screen>
   );
 }

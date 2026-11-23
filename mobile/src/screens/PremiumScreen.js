@@ -1,6 +1,7 @@
 // Page Bayyin Premium : ce qu'apporte l'abonnement, les offres du store, l'achat et la restauration.
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Linking, Platform, ActivityIndicator } from "react-native";
+import { View, ScrollView, Pressable, Linking, Platform, ActivityIndicator } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt, Muted, Row } from "../components/ui";
 import { Art, Tile, Glyph } from "../components/Art";

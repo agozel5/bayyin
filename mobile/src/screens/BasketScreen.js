@@ -1,7 +1,9 @@
 // Panier du mode courses : verdict de chaque produit, note santé moyenne, alertes du profil.
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, ScrollView, Pressable } from "react-native";
+import { Text } from "../components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { NavScroll } from "../components/NavBar";
 import { Txt, Muted, Row, Btn, Skeleton } from "../components/ui";
 import { Art, Glyph, Tile } from "../components/Art";
 import { ListRow } from "../components/Cards";
@@ -38,7 +40,7 @@ export default function BasketScreen({ onClose, onOpen, onScan, toast }) {
   ready.forEach((x) => { const st = verdictOf(x.p).status; if (st === "haram") counts.bad++; else if (st === "mashbouh" || st === "inconnu") counts.doubt++; else counts.ok++; });
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
+    <NavScroll title={t("basket.title")} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40, gap: 16 }}>
       <Row gap={6}>
         <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("sheet.back")} style={{ padding: 4, transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}>
           <Glyph paths='<path d="M15 5l-7 7 7 7"/>' size={24} color={C.fg} width={2.2} />
@@ -89,6 +91,6 @@ export default function BasketScreen({ onClose, onOpen, onScan, toast }) {
           </Pressable>
         </>
       )}
-    </ScrollView>
+    </NavScroll>
   );
 }

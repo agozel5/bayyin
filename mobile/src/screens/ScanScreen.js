@@ -1,14 +1,15 @@
 // Accueil : bandeau vert (bonjour et bilan de la semaine, ou présentation), scan en un geste,
 // derniers produits, réglage suivi, astuce du jour et ce que l'app vérifie.
 import Ramadan from "../components/Ramadan";
-import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { View, TextInput, Pressable, ScrollView, Animated, Easing } from "react-native";
+import { Text } from "../components/Text";
 import { SvgXml } from "react-native-svg";
 import { Logo } from "../components/Icon";
 import { Tile, Glyph } from "../components/Art";
 import { ProductCard, Khatam } from "../components/Cards";
 import { Txt, Muted, Row, Message, FadeIn, FONT_MAX } from "../components/ui";
-import Screen from "../components/Screen";
+import Screen, { ScrollY } from "../components/Screen";
 import { C, R, dir, lift, isDark, STATUS_COLORS } from "../theme";
 import { t, tn, tPlain } from "../i18n";
 import { getHistory, getSettings, getEntry } from "../storage";
@@ -91,6 +92,9 @@ function HeroButton({ icon, text, onPress, on }) {
 
 export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfile, onRankings, onAisle, onPlaces, onCompare, onTravel, onMenu, recipeChanges = [], onOpenChanges, onDismissChanges, onBasketMode, onOpenBasket, basketCount = 0, recalls = [], onDismissRecalls, manualOpen, setManualOpen, status }) {
   const [code, setCode] = useState("");
+  // Tirage vers le bas : le bandeau vert s'agrandit légèrement (effet élastique)
+  const sy = useContext(ScrollY);
+  const hero = sy && ms(1) ? [{ scale: sy.interpolate({ inputRange: [-120, 0], outputRange: [1.05, 1], extrapolate: "clamp" }) }] : [];
   const [error, setError] = useState(null);
   const [photoMenu, setPhotoMenu] = useState(false); // choix : liste d'ingrédients, étiquette étrangère, carte de restaurant
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinPhotoMenu = setPhotoMenu; // captures automatiques (web)
@@ -127,8 +131,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
       <Row style={{ justifyContent: "space-between" }}>
         <Row gap={10}>
           <View accessible={false} importantForAccessibility="no-hide-descendants"><Logo size={36} /></View>
-          <Text style={{ fontSize: 21, fontWeight: "800", color: C.fg }}>{t("app.name")}</Text>
-          <Text style={{ fontSize: 19, fontWeight: "700", color: C.brand }}>بيّن</Text>
+          <Text style={{ fontSize: 22, fontWeight: "800", letterSpacing: -0.3, color: C.fg }}>{t("app.name")}</Text>
         </Row>
         <Pressable onPress={onGotoProfile} accessibilityRole="button" accessibilityLabel={t("settings.profile")} hitSlop={8}
           style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: C.surface, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
@@ -137,10 +140,10 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
       </Row>
 
       {/* Bandeau vert */}
-      <View style={{ borderRadius: R.xl, padding: 18, gap: 14, backgroundColor: isDark() ? "#0F4A35" : "#0F6545", overflow: "hidden",
+      <Animated.View style={{ borderRadius: R.xl, padding: 18, gap: 14, backgroundColor: isDark() ? "#0F4A35" : "#0F6545", overflow: "hidden", transform: hero,
         shadowColor: "#0F6545", shadowOpacity: isDark() ? 0 : 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 6 }}>
         <Khatam />
-        <FadeIn style={{ gap: 8 }}>
+        <FadeIn delay={0} style={{ gap: 8 }}>
           <Txt accessibilityRole="header" style={{ color: "#fff", fontSize: returning ? 30 : 27, lineHeight: returning ? 34 : 31, fontWeight: "800", letterSpacing: -0.5 }}>
             {returning ? t("home.greet") : tPlain("home.h1_html")}
           </Txt>
@@ -182,7 +185,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
           <HeroButton icon="type" text={t("home.type_code")} on={manualOpen} onPress={() => setManualOpen(!manualOpen)} />
         </View>
         {manualOpen ? (
-          <FadeIn style={{ gap: 8 }}>
+          <FadeIn delay={120} style={{ gap: 8 }}>
             <Txt style={{ color: "rgba(255,255,255,0.9)", fontSize: 14 }}>{t("home.manual_label")}</Txt>
             <Row>
               <TextInput value={code} onChangeText={(x) => setCode(x.replace(/[^\d]/g, "").slice(0, 14))} keyboardType="number-pad" contextMenuHidden={false} selectTextOnFocus={false} placeholder="3017620422003" placeholderTextColor="#97A39C" autoFocus returnKeyType="go"
@@ -200,7 +203,7 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
             {error ? <Txt style={{ color: "#FFD3CE", fontSize: 14 }}>{t("msg.code_short.p")}</Txt> : null}
           </FadeIn>
         ) : null}
-      </View>
+      </Animated.View>
 
       {/* Pendant le Ramadan : horaires du jour */}
       <Ramadan force={typeof window !== "undefined" && !!window.__bayyinRamadan} />
@@ -211,9 +214,9 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         const e = getEntry(h.code);
         const [fg, bg] = STATUS_COLORS.haram;
         return (
-          <FadeIn>
+          <FadeIn delay={200}>
             <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bg, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
-              <Pressable onPress={() => onOpen(h.code)} accessibilityRole="button" style={{ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14 }}>
+              <Pressable onPress={() => onOpen(h.code)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, opacity: pressed ? 0.7 : 1 })}>
                 <Tile color={fg} paths='<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.1"/>' size={40} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt style={{ color: fg, fontWeight: "800", fontSize: 15.5 }}>{tn("recall.home", recalls.length)}</Txt>
@@ -235,9 +238,9 @@ export default function ScanScreen({ onScan, onOpen, onOcr, onGoto, onGotoProfil
         const bad = worse(c.before, c.after);
         const [fg, bg] = bad ? STATUS_COLORS.mashbouh : STATUS_COLORS.inconnu;
         return (
-          <FadeIn>
+          <FadeIn delay={260}>
             <View accessibilityRole="alert" style={[{ flexDirection: dir().row, alignItems: "center", borderRadius: R.lg, backgroundColor: bad ? bg : C.surface, borderWidth: 1, borderColor: fg + "55", overflow: "hidden" }, lift()]}>
-              <Pressable onPress={() => onOpen(c.code)} accessibilityRole="button" style={{ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14 }}>
+              <Pressable onPress={() => onOpen(c.code)} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, opacity: pressed ? 0.7 : 1 })}>
                 <Tile color={bad ? fg : "#4C64D6"} paths={TOOL_ICONS.recipe} size={40} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Txt style={{ color: bad ? fg : C.fg, fontWeight: "800", fontSize: 15.5 }}>{tn("recipe.home", recipeChanges.length)}</Txt>

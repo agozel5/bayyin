@@ -1,11 +1,13 @@
 // Photos du produit en grand : le produit, la liste d'ingrédients, le tableau nutritionnel.
 // Pincer pour zoomer (iPhone), toucher deux fois pour agrandir, glisser vers le bas pour fermer.
-import React, { useRef, useState } from "react";
-import { View, Text, Pressable, Modal, ScrollView, Image, useWindowDimensions, Animated, PanResponder, Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Pressable, Modal, ScrollView, Image, useWindowDimensions, Animated, PanResponder, Platform } from "react-native";
+import { Text } from "./Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Glyph } from "./Art";
 import { t } from "../i18n";
 import { haptic } from "../motion";
+import { swipeLock } from "./EdgeSwipe";
 
 // Photos d'une fiche : [{ k, u }] (format de la version web), anciennes fiches gardées : [[k, u]]
 export const photoList = (p) => {
@@ -57,9 +59,16 @@ export default function PhotoZoom({ p, visible, start = 0, onClose }) {
   const [i, setI] = useState(start);
   const pager = useRef(null);
   const dy = useRef(new Animated.Value(0)).current;
+  // Visionneuse ouverte : le geste « retour » des écrans du dessous est suspendu (balayer entre les photos ne ferme plus la fiche)
+  useEffect(() => {
+    if (!visible) return undefined;
+    swipeLock.n++;
+    setI(start); dy.setValue(0);
+    return () => { swipeLock.n = Math.max(0, swipeLock.n - 1); };
+  }, [visible]);
   // Glisser vers le bas : la photo suit le doigt, puis se ferme
   const pan = useRef(PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 14 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+    onMoveShouldSetPanResponder: (_, g) => g.dy > 18 && Math.abs(g.dy) > Math.abs(g.dx) * 2.2,
     onPanResponderMove: (_, g) => dy.setValue(Math.max(0, g.dy)),
     onPanResponderRelease: (_, g) => {
       if (g.dy > 120 || g.vy > 1.2) { haptic.tap(); onClose(); dy.setValue(0); }

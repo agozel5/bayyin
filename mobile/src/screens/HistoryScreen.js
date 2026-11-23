@@ -1,20 +1,26 @@
-// Historique, en deux vues : « Produits » (recherche, filtres, produits par jour, affichés par pages)
-// et « Bilan » (anneau des verdicts, semaine, note moyenne).
+// Historique, en deux vues : « Bilan » (anneau des verdicts, semaine, note moyenne, ouvert en premier)
+// et « Produits » (recherche, filtres, produits par jour, affichés par pages).
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, Easing, PanResponder } from "react-native";
+import { CountUp } from "../components/Fx";
+import { View, Pressable, Animated, Easing, PanResponder, Platform, Share } from "react-native";
+import { Text } from "../components/Text";
 import Svg, { Circle } from "react-native-svg";
 import { Txt, Muted, Row, FadeIn } from "../components/ui";
 import Screen from "../components/Screen";
 import { PageHead, Chip, ChipRow, Segmented, SearchBox } from "../components/Controls";
-import { ListRow } from "../components/Cards";
+import { ListRow, Khatam } from "../components/Cards";
 import { Glyph, Art, Tile } from "../components/Art";
-import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift } from "../theme";
+import { C, R, STATUS_COLORS, GRADE_COLORS, dir, lift, isDark } from "../theme";
 import { t, tn, locale } from "../i18n";
 import { getHistory, clearHistory, removeFromHistory, toggleFav } from "../storage";
 import { ChoiceSheet } from "../components/ToolKit";
+import { FavStrip, streaks } from "../components/HistoryInsights";
 import SwipeRow from "../components/SwipeRow";
 import EmptyState from "../components/Empty";
-import { verdictOf, relTime, S, scoreOf, nameOf } from "../view";
+import { verdictOf, relTime, S, scoreOf, nameOf, kindOf } from "../view";
+import { shareCardImage } from "../components/ShareCard";
+import { WEB } from "../config";
+import { getShopList, onShopList as onShopList2, inShopList, toggleShopList } from "../shoplist";
 import { RANK_ART } from "../../../public/lib/rank-art.js";
 import { haptic, ms } from "../motion";
 import { isPremium, canUse, FREE_HISTORY_DAYS } from "../premium";
@@ -28,6 +34,10 @@ const FILTERS = [
   { id: "halal", test: (e) => verdictOf(e.p).status.startsWith("halal") },
   { id: "doubt", test: (e) => verdictOf(e.p).status === "mashbouh" },
   { id: "haram", test: (e) => verdictOf(e.p).status === "haram" },
+  // Par type de produit (affichés seulement s'il y en a)
+  { id: "food", label: "kindtab.food", test: (e) => kindOf(e.p) === "food", opt: true },
+  { id: "beauty", label: "kindtab.beauty", test: (e) => kindOf(e.p) === "beauty", opt: true },
+  { id: "medicine", label: "kind.medicine", test: (e) => kindOf(e.p) === "medicine", opt: true },
 ];
 const col = (st) => STATUS_COLORS[st][0];
 
@@ -204,7 +214,7 @@ function AvgGauge({ avg }) {
     <View style={{ gap: 8, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: C.line }}>
       <Row style={{ justifyContent: "space-between" }}>
         <Text style={{ color: C.muted, fontSize: 13.5, flex: 1, textAlign: dir().ta }}>{t("bilan.avg")}</Text>
-        <Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 18 }}>{avg}<Text style={{ fontSize: 12, color: C.muted }}>/100</Text></Text>
+        <Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 18 }}>{Math.round(avg * k)}<Text style={{ fontSize: 12, color: C.muted }}>/100</Text></Text>
         <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: GRADE_COLORS[g] + "33" }}><Text style={{ color: GRADE_COLORS[g], fontWeight: "800", fontSize: 12 }}>{t(`grade.${g}`)}</Text></View>
       </Row>
       <View style={{ direction: "ltr" }}>
@@ -222,7 +232,9 @@ function groups(entries) {
   return ["today", "yesterday", "week", "older"].map((g) => ({ g, list: entries.filter((e) => bucket(e.at) === g) })).filter((x) => x.list.length);
 }
 
-export default function HistoryScreen({ onOpen, onScan, toast }) {
+export default function HistoryScreen({ onOpen, onScan, toast, onShopList, onCompare }) {
+  const [shopN, setShopN] = useState(getShopList().length);
+  useEffect(() => onShopList2((l) => setShopN(l.length)), []);
   const [menu, setMenu] = useState(null); // appui long sur un produit : actions rapides
   const lastMenu = useRef(null); if (menu) lastMenu.current = menu;
   const m = menu || lastMenu.current;
@@ -231,17 +243,26 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
     <ChoiceSheet visible={!!menu} onClose={() => setMenu(null)} title={m ? nameOf(m.p) : ""} items={m ? [
       { id: "open", color: "#14805A", paths: '<path d="M9 5l7 7-7 7"/>', title: t("history.open"), onPress: () => onOpen(m.code) },
       { id: "fav", color: "#E9A100", paths: '<path d="M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>', title: t(m.fav ? "sheet.fav_remove" : "sheet.fav_add"), onPress: () => { toggleFav(m.code); toast && toast(t(m.fav ? "sheet.fav_removed" : "sheet.fav_added")); } },
+      ...(onCompare && kindOf(m.p) !== "medicine" ? [{ id: "cmp", color: "#4C64D6", paths: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>', title: t("cmp.title"), onPress: () => onCompare(m.code, m.p) }] : []),
+      { id: "shop", color: "#E07B2E", paths: '<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>', title: t(inShopList(m.code) ? "shop.in" : "shop.add"),
+        onPress: () => { const on = toggleShopList(m.p); toast && toast(t(on ? "shop.added" : "shop.removed")); } },
       { id: "del", color: "#E0423A", paths: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>', title: t("history.delete_one"), onPress: () => { removeFromHistory(m.code); toast && toast(t("history.deleted_one")); } },
     ] : []} />
   );
   const [filter, setFilter] = useState("all");
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistFilter = setFilter; // captures automatiques (web)
   const [confirm, setConfirm] = useState(false);
-  const [view, setView] = useState("list"); // « list » : les produits d'abord ; « bilan » : les chiffres
+  const [view, setView] = useState("bilan"); // ouverture sur le bilan (les chiffres) ; « list » : les produits, un toucher plus loin
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
   if (typeof window !== "undefined" && window.__bayyin) window.__bayyinHistView = setView; // captures automatiques (web)
   const [weeksAgo, setWeeksAgo] = useState(0);
+  const bilanRef = useRef(null);
+  const shareBilan = async () => {
+    haptic.tap();
+    const ok = await shareCardImage(bilanRef, { name: t("bilan.title"), message: t("share_app.msg", { url: WEB }) });
+    if (!ok) Share.share({ message: t("share_app.msg", { url: WEB }) }).catch(() => {});
+  };
   const [period, setPeriod] = useState("week");
   // Sans Premium (quand il est en vente) : les 30 derniers jours, favoris compris
   const full = getHistory();
@@ -266,6 +287,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   base.forEach((e) => { const st = verdictOf(e.p).status; counts[st] = (counts[st] || 0) + 1; });
   const scores = base.map((e) => scoreOf(e.p)).filter(Boolean).map((x) => x.score);
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const streak = streaks(all).cur;
   const okShare = base.length ? Math.round((((counts.halal_certifie || 0) + (counts.halal_probable || 0)) / base.length) * 100) : 0;
   const needle = fold(q.trim());
   const matches = all.filter(FILTERS.find((f) => f.id === filter).test)
@@ -275,7 +297,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
   return (
     <Screen gap={16} title={t("history.title")}>
       <PageHead title={t("history.title")} sub={t("history.sub")} />
-      <Segmented items={[["list", `${t("history.v.list")} · ${all.length}`], ["bilan", t("bilan.title")]]} value={view} onChange={setView} />
+      <Segmented items={[["bilan", t("bilan.title")], ["list", `${t("history.v.list")} · ${all.length}`]]} value={view} onChange={setView} />
       {view === "list" && hidden > 0 ? (
         <Pressable onPress={() => canUse("history")} accessibilityRole="button"
           style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
@@ -290,9 +312,16 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
 
       {view === "bilan" ? (
       <FadeIn distance={6}>
-      <View style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
+      <View ref={bilanRef} collapsable={false} style={[{ backgroundColor: C.surface, borderRadius: R.xl, padding: 16, gap: 14 }, lift()]}>
         <Row style={{ justifyContent: "space-between" }}>
           <Txt style={{ fontWeight: "800", fontSize: 18, flex: 1 }}>{t("bilan.title")}</Txt>
+          {/* Partager le bilan en image */}
+          {base.length && Platform.OS !== "web" ? (
+            <Pressable onPress={shareBilan} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("bilan.share")}
+              style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: pressed ? C.tint2 : C.tint, marginEnd: 8 })}>
+              <Glyph paths='<path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>' size={17} color={C.fg} width={2.1} />
+            </Pressable>
+          ) : null}
           {/* Semaine / depuis le début */}
           <View style={{ flexDirection: dir().row, padding: 3, borderRadius: 99, backgroundColor: C.tint }} accessibilityRole="tablist">
             {["week", "all"].map((k) => (
@@ -314,6 +343,12 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
                   </Text>
                 </View>
               ) : null}
+              {streak > 1 ? (
+                <View style={{ flexDirection: dir().row, alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: "#E07B2E" + (isDark() ? "33" : "1F") }}>
+                  <Glyph paths='<path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.1 2.1-4.6 3.1-6.9.4 1.4 1.2 2.2 2 2.6-.2-2.9 1-5.7 3.4-7.1-.4 2.6.5 4.2 1.8 5.8 1 1.2 1.7 2.6 1.7 4.6C18 18.6 15.6 21 12 21z"/>' size={12} color="#E07B2E" width={2.4} />
+                  <Text style={{ fontSize: 12, fontWeight: "800", color: "#E07B2E" }}>{tn("hist.streak", streak)}</Text>
+                </View>
+              ) : null}
             </View>
           </FadeIn>
         ) : null}
@@ -326,7 +361,7 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col(s) }} />
                 <Text numberOfLines={1} style={{ flex: 1, fontSize: 13.5, color: C.fg, textAlign: dir().ta }}>{S(s, "label")}</Text>
                 <Text style={{ fontSize: 13.5, fontWeight: "800", color: C.fg }}>{counts[s]}</Text>
-                <Text style={{ fontSize: 12, color: C.muted, width: 38, textAlign: "right" }}>{Math.round((counts[s] / all.length) * 100)} %</Text>
+                <Text numberOfLines={1} style={{ fontSize: 12, color: C.muted, minWidth: 44, textAlign: "right", fontVariant: ["tabular-nums"] }}>{Math.round((counts[s] / base.length) * 100)} %</Text>
               </Row></FadeIn>
             ))}
           </View>
@@ -339,10 +374,10 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
         )}
         {base.length ? (
           <View style={{ flexDirection: dir().row, gap: 10 }}>
-            {[["ok", okShare + " %", t("bilan.k_halal"), C.cert], ["n", String(base.length), t(base.length === 1 ? "history.count_one" : "history.count_other"), C.fg], ["bad", String((counts.haram || 0) + (counts.mashbouh || 0)), t("bilan.k_avoid"), (counts.haram || 0) + (counts.mashbouh || 0) ? C.doubt : C.muted]].map(([k, v, l, c], i) => (
+            {[["ok", okShare + " %", t("bilan.k_halal2"), C.cert], ["n", String(base.length), t(base.length === 1 ? "history.count_one" : "history.count_other"), C.fg], ["bad", String((counts.haram || 0) + (counts.mashbouh || 0)), t("bilan.k_avoid"), (counts.haram || 0) + (counts.mashbouh || 0) ? C.doubt : C.muted]].map(([k, v, l, c], i) => (
               <FadeIn key={k + period + weeksAgo} delay={200 + i * 80} style={{ flex: 1 }}>
                 <View style={{ flex: 1, minHeight: 78, padding: 10, borderRadius: R.md, backgroundColor: C.tint, alignItems: "center", justifyContent: "center", gap: 2 }}>
-                  <Text style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }}>{v}</Text>
+                  <CountUp to={parseInt(v, 10)} suffix={k === "ok" ? " %" : ""} delay={300 + i * 80} style={{ fontSize: 19, fontWeight: "800", color: c, fontVariant: ["tabular-nums"] }} />
                   <Text numberOfLines={2} style={{ fontSize: 11.5, color: C.muted, textAlign: "center" }}>{l}</Text>
                 </View>
               </FadeIn>
@@ -355,17 +390,30 @@ export default function HistoryScreen({ onOpen, onScan, toast }) {
       </FadeIn>
       ) : (
       <>
+      {onShopList ? (
+        <Pressable onPress={() => { haptic.tap(); onShopList(); }} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: dir().row, alignItems: "center", gap: 12, padding: 14, borderRadius: R.lg, backgroundColor: pressed ? C.tint : C.surface }, lift()]}>
+          <Tile color="#E07B2E" paths='<path d="M4 6h2l2 10h10l2-7H7"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>' size={38} />
+          <Txt style={{ flex: 1, fontWeight: "800", fontSize: 15.5 }}>{t("shop.title")}</Txt>
+          {shopN ? <View style={{ minWidth: 24, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: "#E07B2E", alignItems: "center" }}><Text style={{ color: "#fff", fontWeight: "800", fontSize: 12.5 }}>{shopN}</Text></View> : null}
+          <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={17} color={C.faint} /></View>
+        </Pressable>
+      ) : null}
+      {!needle && filter === "all" ? <FavStrip all={all} onOpen={onOpen} /> : null}
       <SearchBox value={q} onChangeText={(x) => { setQ(x); setLimit(PAGE); }} placeholder={t("history.search_ph")} />
       <ChipRow>
-        {FILTERS.map((f) => <Chip key={f.id} text={t(`history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => { setFilter(f.id); setLimit(PAGE); }} />)}
+        {FILTERS.filter((f) => !f.opt || (all.some(f.test) && !all.every(f.test))).map((f) => <Chip key={f.id} text={t(f.label || `history.f.${f.id}`)} n={all.filter(f.test).length} on={filter === f.id} onPress={() => { setFilter(f.id); setLimit(PAGE); }} />)}
       </ChipRow>
       {shown.length ? groups(shown).map(({ g, list }) => (
         <View key={g} style={{ gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: "700", color: C.muted, textAlign: dir().ta }}>{t(`history.g.${g}`)}</Text>
+          <Row gap={8} style={{ paddingHorizontal: 4 }}>
+            <Text style={{ fontSize: 13, fontWeight: "800", letterSpacing: 0.6, color: C.muted, textTransform: "uppercase" }}>{t(`history.g.${g}`)}</Text>
+            <View style={{ minWidth: 22, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 99, backgroundColor: C.tint2, alignItems: "center" }}><Text style={{ fontSize: 11.5, fontWeight: "800", color: C.muted }}>{list.length}</Text></View>
+          </Row>
           <View style={[{ backgroundColor: C.surface, borderRadius: R.lg, overflow: "hidden" }, lift()]}>
             {list.map((e, i) => (
               <SwipeRow key={e.code} label={t("history.delete_one")} onDelete={() => { removeFromHistory(e.code); toast && toast(t("history.deleted_one")); }}>
-                <View style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} onLongPress={() => setMenu(e)} /></View>
+                <FadeIn delay={Math.min(i, 8) * 45} distance={10} style={{ backgroundColor: C.surface }}><ListRow p={e.p} fav={e.fav} when={relTime(e.at)} first={i === 0} onPress={() => onOpen(e.code)} onLongPress={() => setMenu(e)} /></FadeIn>
               </SwipeRow>
             ))}
           </View>

@@ -2,7 +2,8 @@
 // la fin du suhoor et l'iftar du jour avec un compte à rebours. Calcul sur le téléphone,
 // position arrondie (environ 1 km) gardée dans les réglages.
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Pressable, ActivityIndicator } from "react-native";
+import { Text } from "./Text";
 import Svg, { Path } from "react-native-svg";
 import { Khatam } from "./Cards";
 import { Glyph } from "./Art";

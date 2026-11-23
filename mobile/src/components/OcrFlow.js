@@ -2,7 +2,8 @@
 // La lecture se fait sur le téléphone avec Tesseract.js, exécuté dans une WebView invisible
 // (même moteur et même prétraitement que la version web).
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import { View, TextInput, ScrollView, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import { Text } from "./Text";
 import SafeWebView, { safeJson, PAGE_BASE } from "./SafeWebView";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

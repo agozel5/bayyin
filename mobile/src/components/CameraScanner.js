@@ -2,7 +2,8 @@
 // Même mise en scène que la version web : fond assombri autour d'un cadre large, coins qui respirent,
 // trait de lecture qui balaie, cadre vert quand le code est lu.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Linking, StyleSheet, Animated, Easing, useWindowDimensions } from "react-native";
+import { View, Pressable, Linking, StyleSheet, Animated, Easing, useWindowDimensions } from "react-native";
+import { Text } from "./Text";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Svg, { Path, Rect, Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,10 +12,11 @@ import { Art, Glyph } from "./Art";
 import { C } from "../theme";
 import { t } from "../i18n";
 import { normalizeScan } from "../core";
-import { STATUS_COLORS } from "../theme";
+import { STATUS_COLORS, dir } from "../theme";
 import { nameOf, verdictOf, profileOf, S } from "../view";
 import { fetchProduct } from "../api";
 import { haptic, ms } from "../motion";
+import { playScan } from "../sound";
 import { mascot } from "../../../public/lib/mascot.js";
 
 const TYPES = ["ean13", "ean8", "upc_a", "upc_e"];
@@ -66,8 +68,8 @@ export function lookOf(p) {
 function Morph({ width, height, look }) {
   const read = useRef(new Animated.Value(0)).current;
   const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => { Animated.timing(read, { toValue: 1, duration: 320, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(); }, []);
-  useEffect(() => { if (look) Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: false }).start(); }, [!!look]);
+  useEffect(() => { Animated.timing(read, { toValue: 1, duration: ms(320), easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(); }, []);
+  useEffect(() => { if (look) (ms(1) ? Animated.spring(v, { toValue: 1, friction: 6, tension: 120, useNativeDriver: false }) : Animated.timing(v, { toValue: 1, duration: 0, useNativeDriver: false })).start(); }, [!!look]);
   const gap = 4.4, total = WIDTHS.reduce((a, w) => a + w, 0) + gap * (WIDTHS.length - 1);
   let x = 150 - total / 2;
   const bars = WIDTHS.map((w, i) => { const cx = x + w / 2; const r = { x, w, dx: 150 - cx }; x += w + gap; return r; });
@@ -145,9 +147,15 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAi
       done.current = true;
       setFound(true);
       haptic.success();
+      playScan();
       const res = onBasketAdd(code); // { added, product: Promise }
       setFlash({ code, again: !res.added });
-      res.product && res.product.then((p) => p && setFlash((f) => (f && f.code === code ? { ...f, p } : f))).catch(() => {});
+      res.product && res.product.then((p) => {
+        if (!p) return;
+        setFlash((f) => (f && f.code === code ? { ...f, p } : f));
+        const st = verdictOf(p).status; // vibration différente si le produit est douteux ou haram
+        if (st === "haram") haptic.error && haptic.error(); else if (st === "mashbouh") haptic.warn && haptic.warn();
+      }).catch(() => {});
       setTimeout(() => { done.current = false; setFound(false); }, 1100);
       return;
     }
@@ -155,6 +163,7 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAi
     setFound(true);
     setBurst((n) => n + 1);
     haptic.tap(); // code lu ; le verdict a sa propre vibration
+    playScan();
     if (!ms(1)) return onCode(code);
     reveal(code);
   };
@@ -234,14 +243,15 @@ export default function CameraScanner({ onCode, onClose, onManual, onPhoto, onAi
         const st = flash.p ? verdictOf(flash.p).status : null;
         const [fg, bg] = st ? STATUS_COLORS[st] : ["#fff", "rgba(255,255,255,0.2)"];
         return (
-          <View key={flash.code + (flash.p ? "p" : "")} style={{ position: "absolute", top: insets.top + 70, left: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 16, backgroundColor: "rgba(12,20,16,0.82)" }} accessibilityLiveRegion="polite">
+          <Pressable onPress={() => { haptic.tap(); onCode(flash.code); }} key={flash.code + (flash.p ? "p" : "")} style={{ position: "absolute", top: insets.top + 70, left: 16, right: 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 16, backgroundColor: "rgba(12,20,16,0.82)" }} accessibilityLiveRegion="polite">
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: st ? fg : "#9AA59F" }} />
             <View style={{ flex: 1 }}>
               <Text numberOfLines={1} style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{flash.p ? nameOf(flash.p) : flash.code}</Text>
               <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12.5 }}>{t(flash.again ? "basket.again" : "basket.scanned")}</Text>
             </View>
             {st ? <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99, backgroundColor: bg }}><Text style={{ color: fg, fontWeight: "800", fontSize: 12 }}>{S(st, "short")}</Text></View> : null}
-          </View>
+            <View style={{ transform: [{ scaleX: dir().rtl ? -1 : 1 }] }}><Glyph name="chev" size={16} color="rgba(255,255,255,0.7)" /></View>
+          </Pressable>
         );
       })() : null}
 

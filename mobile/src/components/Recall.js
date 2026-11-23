@@ -1,6 +1,7 @@
 // Rappel officiel (RappelConso) pour le code-barres de la fiche
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Pressable, Linking } from "react-native";
+import { Text } from "./Text";
 import { Txt, Muted, Row } from "./ui";
 import { Tile } from "./Art";
 import { C, R, STATUS_COLORS, dir, lift } from "../theme";
