@@ -27,7 +27,7 @@ L'app utilise **RevenueCat**, qui gère les deux stores avec un seul code.
 
 1. Créez les abonnements dans App Store Connect et dans la Google Play Console (annuel et mensuel, avec l'essai gratuit si vous en voulez un).
 2. Créez un compte RevenueCat, ajoutez les deux apps, puis :
-   - un **entitlement** nommé `premium` ;
+   - un **entitlement** (ici `bayyin_pro`, à reporter dans `extra.revenuecat.entitlement`) ;
    - une **offering** par défaut (« current ») avec un package **Annual** et un package **Monthly**.
 3. Copiez les **clés publiques** du SDK (elles commencent par `appl_` pour iOS et `goog_` pour Android) dans `mobile/app.json` :
 
