@@ -1,45 +1,49 @@
 mueslis : 300 lus, 80 gardés
 cereal_bars : 300 lus, 80 gardés
-choco_biscuits : 300 lus, 80 gardés
-candies : 301 lus, 80 gardés
-biscuits : 567 lus, 80 gardés
+choco_biscuits : 278 lus, 80 gardés
+  candies en:gummies p1 : HTTP 503
+candies : 300 lus, 80 gardés
+  biscuits en:shortbread-cookies p2 : HTTP 503
+biscuits : 390 lus, 80 gardés
 breakfast_cereals : 300 lus, 80 gardés
 chocolates : 300 lus, 80 gardés
-spreads : 334 lus, 80 gardés
-  jams en:jams p1 : HTTP 503
-jams : 0 lus, 0 gardés
-  jams : version précédente gardée
-yogurts : 300 lus, 80 gardés
+  spreads en:cocoa-and-hazelnuts-spreads p2 : HTTP 503
+spreads : 300 lus, 80 gardés
+jams : 300 lus, 80 gardés
+  yogurts en:yogurts p1 : HTTP 503
+yogurts : 0 lus, 0 gardés
+  yogurts : version précédente gardée
 desserts : 99 lus, 80 gardés
 cheeses : 300 lus, 80 gardés
 ice_creams : 300 lus, 80 gardés
-  crisps en:potato-crisps p2 : HTTP 503
-crisps : 399 lus, 80 gardés
-sodas : 300 lus, 80 gardés
+  crisps en:tortilla-chips p3 : HTTP 503
+crisps : 498 lus, 80 gardés
+  sodas en:sodas p3 : HTTP 503
+sodas : 200 lus, 80 gardés
 juices : 300 lus, 80 gardés
-breads : 489 lus, 80 gardés
-  meals en:meals p3 : HTTP 503
-meals : 200 lus, 80 gardés
-  pizzas en:pizzas p3 : HTTP 503
-pizzas : 200 lus, 80 gardés
-  sausages en:sausages p1 : HTTP 503
-sausages : 300 lus, 9 gardés
-sauces : 831 lus, 80 gardés
-toothpastes : 273 lus, 80 gardés
-deodorants : 267 lus, 80 gardés
-shower_gels : 274 lus, 80 gardés
-shampoos : 286 lus, 80 gardés
+  breads en:sandwich-breads p3 : HTTP 503
+  breads en:breads p3 : HTTP 503
+breads : 326 lus, 80 gardés
+meals : 300 lus, 80 gardés
+pizzas : 300 lus, 80 gardés
+sausages : 552 lus, 23 gardés
+  sauces en:sauces p1 : HTTP 503
+sauces : 600 lus, 80 gardés
+toothpastes : 266 lus, 80 gardés
+deodorants : 271 lus, 80 gardés
+shower_gels : 275 lus, 80 gardés
+shampoos : 281 lus, 80 gardés
 conditioners : 108 lus, 78 gardés
-body_creams : 260 lus, 80 gardés
-face_creams : 189 lus, 80 gardés
+body_creams : 263 lus, 80 gardés
+face_creams : 185 lus, 80 gardés
 cleansers : 137 lus, 80 gardés
-lip_balms : 231 lus, 80 gardés
+lip_balms : 228 lus, 80 gardés
 hand_creams : 95 lus, 67 gardés
-sunscreens : 143 lus, 79 gardés
+sunscreens : 144 lus, 80 gardés
 lipsticks : 60 lus, 41 gardés
 mascaras : 88 lus, 43 gardés
-nail_polishes : 146 lus, 80 gardés
+nail_polishes : 147 lus, 80 gardés
 eye_makeup : 52 lus, 29 gardés
 complexion : 90 lus, 73 gardés
-makeup_other : 264 lus, 80 gardés
-{"updated":"2026-11-18","categories":{"mueslis":80,"cereal_bars":80,"choco_biscuits":80,"candies":80,"biscuits":80,"breakfast_cereals":80,"chocolates":80,"spreads":80,"jams":80,"yogurts":80,"desserts":80,"cheeses":80,"ice_creams":80,"crisps":80,"sodas":80,"juices":80,"breads":80,"meals":80,"pizzas":80,"sausages":9,"sauces":80,"toothpastes":80,"deodorants":80,"shower_gels":80,"shampoos":80,"conditioners":78,"body_creams":80,"face_creams":80,"cleansers":80,"lip_balms":80,"hand_creams":67,"sunscreens":79,"lipsticks":41,"mascaras":43,"nail_polishes":80,"eye_makeup":29,"complexion":73,"makeup_other":80}}
+makeup_other : 268 lus, 80 gardés
+{"updated":"2026-11-25","categories":{"mueslis":80,"cereal_bars":80,"choco_biscuits":80,"candies":80,"biscuits":80,"breakfast_cereals":80,"chocolates":80,"spreads":80,"jams":80,"yogurts":80,"desserts":80,"cheeses":80,"ice_creams":80,"crisps":80,"sodas":80,"juices":80,"breads":80,"meals":80,"pizzas":80,"sausages":23,"sauces":80,"toothpastes":80,"deodorants":80,"shower_gels":80,"shampoos":80,"conditioners":78,"body_creams":80,"face_creams":80,"cleansers":80,"lip_balms":80,"hand_creams":67,"sunscreens":80,"lipsticks":41,"mascaras":43,"nail_polishes":80,"eye_makeup":29,"complexion":73,"makeup_other":80}}
