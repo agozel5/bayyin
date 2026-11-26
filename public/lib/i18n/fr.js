@@ -1506,6 +1506,7 @@ export default {
   "offocr.t": "Une photo des ingrédients existe",
   "offocr.p": "Personne ne l'a encore recopiée sur Open Food Facts. Bayyin peut la lire pour vous.",
   "offocr.btn": "Lire la photo",
+  "offocr.recheck": "Le texte ne correspond pas à l'emballage ? Relire la photo",
   "offocr.loading": "Téléchargement…",
   "offocr.error": "Photo indisponible pour le moment. Réessayez avec une meilleure connexion.",
   "offocr.crop_hint": "Photo publiée sur Open Food Facts. Ajustez le cadre sur la liste d'ingrédients si besoin (une seule langue suffit).",

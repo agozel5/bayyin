@@ -1492,6 +1492,7 @@ export default {
   "offocr.t": "İçindekilerin fotoğrafı var",
   "offocr.p": "Henüz kimse Open Food Facts'e yazmadı. Bayyin sizin için okuyabilir.",
   "offocr.btn": "Fotoğrafı oku",
+  "offocr.recheck": "Metin ambalajla uyuşmuyor mu? Fotoğrafı yeniden oku",
   "offocr.loading": "İndiriliyor…",
   "offocr.error": "Fotoğraf şu an alınamıyor. Daha iyi bir bağlantıyla tekrar deneyin.",
   "offocr.crop_hint": "Open Food Facts'te yayınlanan fotoğraf. Gerekirse çerçeveyi içindekiler listesine ayarlayın (tek dil yeterli).",

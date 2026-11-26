@@ -63,8 +63,14 @@ export const ingredientsPhoto = (p) => {
   return (ph && (ph.u || ph[1])) || (p.raw && p.raw.image_ingredients_url) || null;
 };
 export function OffPhoto({ p, v, onOcr }) {
-  const url = v.status === "inconnu" && isBarcode(p.code) && kindOf(p) === "food" ? ingredientsPhoto(p) : null;
+  const food = isBarcode(p.code) && kindOf(p) === "food";
+  const url = food ? ingredientsPhoto(p) : null;
   if (!url) return null;
+  // Texte déjà saisi sur Open Food Facts : il peut dater d'une ancienne recette. On propose de relire la photo actuelle.
+  if (v.status !== "inconnu") {
+    if (v.status === "halal_certifie" || (p.raw && p.raw.ocr_from === "off")) return null;
+    return <Btn title={t("offocr.recheck")} icon="doc" kind="soft" onPress={() => onOcr(p.code, url)} />;
+  }
   return (
     <Box>
       <Row gap={12} style={{ alignItems: "center" }}>

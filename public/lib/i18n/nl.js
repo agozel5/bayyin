@@ -1471,6 +1471,7 @@ export default {
   "offocr.t": "Er bestaat een foto van de ingrediënten",
   "offocr.p": "Niemand heeft die nog in Open Food Facts ingevoerd. Bayyin kan hem voor u lezen.",
   "offocr.btn": "De foto lezen",
+  "offocr.recheck": "Klopt de tekst niet met de verpakking? Lees de foto opnieuw",
   "offocr.loading": "Downloaden…",
   "offocr.error": "Foto momenteel niet beschikbaar. Probeer het opnieuw met een betere verbinding.",
   "offocr.crop_hint": "Foto gepubliceerd op Open Food Facts. Pas zo nodig het kader aan de ingrediëntenlijst aan (één taal volstaat).",

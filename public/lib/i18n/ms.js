@@ -1471,6 +1471,7 @@ export default {
   "offocr.t": "Foto ramuan tersedia",
   "offocr.p": "Belum ada sesiapa yang menaipnya ke dalam Open Food Facts. Bayyin boleh membacanya untuk Anda.",
   "offocr.btn": "Baca foto",
+  "offocr.recheck": "Teks tidak sepadan dengan pembungkusan? Baca semula foto",
   "offocr.loading": "Memuat turun…",
   "offocr.error": "Foto tidak tersedia buat masa ini. Cuba lagi dengan sambungan yang lebih baik.",
   "offocr.crop_hint": "Foto diterbitkan di Open Food Facts. Laraskan bingkai pada senarai ramuan jika perlu (satu bahasa sudah memadai).",

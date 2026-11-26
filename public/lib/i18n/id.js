@@ -1471,6 +1471,7 @@ export default {
   "offocr.t": "Tersedia foto komposisi",
   "offocr.p": "Belum ada yang mengetiknya di Open Food Facts. Bayyin dapat membacanya untuk Anda.",
   "offocr.btn": "Baca foto",
+  "offocr.recheck": "Teks tidak sesuai kemasan? Baca ulang foto",
   "offocr.loading": "Mengunduh…",
   "offocr.error": "Foto tidak tersedia saat ini. Coba lagi dengan koneksi yang lebih baik.",
   "offocr.crop_hint": "Foto dipublikasikan di Open Food Facts. Sesuaikan bingkai pada daftar komposisi bila perlu (satu bahasa sudah cukup).",
