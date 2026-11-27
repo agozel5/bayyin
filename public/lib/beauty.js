@@ -30,7 +30,7 @@ export const BEAUTY_RULES = [
   {
     id: "cosm_animal", severity: "mashbouh",
     label: "Ingrédient d'origine animale",
-    match: /\b(keratin|keratine|hydrolyzed keratin|elastin|elastine|placenta\w*|shark liver|civet|castoreum|animal fat|graisse animale)\b/,
+    match: /\b(keratin|keratine|hydrolyzed keratin|elastin|elastine|placenta\w*|shark liver|squalus|civet|castoreum|animal fat|graisse animale|animal protein|hydrolyzed animal protein|mink oil|mustela|emu oil|dromiceius|horse oil|horse fat|equus|bave d.escargot|snail secretion|snail mucin|helix aspersa|bovine|bos taurus|ox bile|fel tauri|colostrum)\b/,
     exclude: /\b(vegetal|plant|olive|amaranth|vegan|phyto)\b/,
   },
   {

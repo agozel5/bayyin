@@ -101,3 +101,14 @@ test("traductions des cosmétiques, médicaments et allergènes du profil", () =
   ];
   assert.deepEqual(keys.filter((k) => !(k in DICTS.fr)), []);
 });
+
+test("cosmétique : autres origines animales (vison, émeu, cheval, escargot, bovin, requin)", () => {
+  for (const txt of ["Aqua, Mink Oil, Parfum", "Emu Oil, Glycerin", "Horse Oil, Aqua", "Snail Secretion Filtrate, Aqua",
+    "Aqua, Hydrolyzed Animal Protein", "Bovine Colostrum, Aqua", "Squalus Acanthias Liver Oil, Aqua"]) {
+    assert.ok(ids(classifyBeauty(beauty(txt))).includes("cosm_animal"), txt);
+  }
+  // Pas de faux positif sur les ingrédients végétaux ou synthétiques courants
+  for (const txt of ["Aqua, Squalane, Glycerin", "Aqua, Olea Europaea Fruit Oil, Tocopherol", "Aqua, Sodium Hyaluronate, Parfum"]) {
+    assert.ok(!ids(classifyBeauty(beauty(txt))).includes("cosm_animal"), txt);
+  }
+});
